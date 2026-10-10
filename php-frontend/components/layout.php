@@ -75,14 +75,17 @@ window.FIREBASE_ENV_CONFIG = {
           <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
             <i data-lucide="wind" style="width: 20px; height: 20px;"></i>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 2px; overflow: hidden;">
-            <div style="font-size: clamp(17px, 3vw, 20px); font-weight: 700; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+          <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden; padding-top: 2px;">
+            <div style="font-size: clamp(16px, 3vw, 19px); font-weight: 700; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1;">
               Smart <span style="font-weight: 500; color: #00bfa5;">WeatherNet</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px; flex-wrap: wrap;">
-              <div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></div>
-              <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
-              <span style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; white-space: nowrap;" class="hidden sm:inline">13°15'40" N, 74°47'13" E</span>
+            <div style="display: flex; flex-direction: column; justify-content: center; margin-top: 2px;">
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 5px; height: 5px; border-radius: 50%; background: #10b981;"></div>
+                <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
+                <span class="hidden md:inline" style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
+              </div>
+              <span class="md:hidden" style="font-size: 9.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; margin-left: 10px; margin-top: 1px;">13°15'40" N, 74°47'13" E</span>
             </div>
           </div>
         </a>

@@ -275,7 +275,7 @@ function handleAuthSubmit(e) {
     errBlock.style.display = 'none';
     
     if (currentAuthMode === 'admin') {
-        if (pass === '1234') {
+        if (pass === '2847') {
             btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
             lucide.createIcons();
             setTimeout(() => {
@@ -288,7 +288,7 @@ function handleAuthSubmit(e) {
         return;
     }
     
-    if (email.toLowerCase() === 'admin' && pass === '1234') {
+    if (email.toLowerCase() === 'admin' && pass === '2847') {
         btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
         lucide.createIcons();
         setTimeout(() => {

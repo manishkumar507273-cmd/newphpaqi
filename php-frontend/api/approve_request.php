@@ -32,23 +32,24 @@ if (!file_exists($requests_file)) {
 
 $requests = json_decode(file_get_contents($requests_file), true) ?: [];
 $found = false;
-$target_email = '';
-$req_name = '';
+$target_email = isset($input['email']) ? $input['email'] : '';
+$req_name = isset($input['name']) ? $input['name'] : 'Requester';
 
 foreach ($requests as &$req) {
     if ($req['id'] === $input['id']) {
         $req['status'] = 'approved';
         $req['approved_at'] = date('Y-m-d H:i:s');
-        $target_email = $req['email'];
-        $req_name = isset($req['name']) ? $req['name'] : 'Requester';
+        if (empty($target_email)) $target_email = $req['email'];
+        if (empty($req_name)) $req_name = isset($req['name']) ? $req['name'] : 'Requester';
         $found = true;
         break;
     }
 }
 
-if (!$found) {
+// If not found in backend, but frontend provided an email (Vercel stateless bypass), proceed!
+if (!$found && empty($target_email)) {
     http_response_code(404);
-    echo json_encode(['error' => 'Request ID not found']);
+    echo json_encode(['error' => 'Request ID not found and no email provided']);
     exit;
 }
 

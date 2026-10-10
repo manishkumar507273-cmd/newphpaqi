@@ -175,7 +175,7 @@ function loadRequests() {
               }
           ];
           
-          const combinedLocal = localReqs.length > 0 ? localReqs : defaultReqs;
+          const combinedLocal = [...localReqs, ...defaultReqs];
           
           // Combine and remove duplicates by ID
           const backendData = Array.isArray(data) ? data : [];
@@ -269,10 +269,17 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
     btn.style.opacity = '0.8';
     lucide.createIcons();
     
+    const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
+    const reqData = localReqs.find(r => r.id === pendingApprovalId);
+    
     fetch('api/approve_request.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: pendingApprovalId })
+        body: JSON.stringify({ 
+            id: pendingApprovalId,
+            email: reqData ? reqData.email : null,
+            name: reqData ? reqData.name : null
+        })
     })
     .then(res => res.json())
     .then(data => {
@@ -295,7 +302,8 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
         if(data.success || updatedLocal) {
             closeConfirmModal();
             loadRequests();
-            showToast("Request approved! The dataset (last 24h) has been successfully emailed via SMTP.", "success");
+            const msg = (data && data.message) ? data.message : "Request approved! The dataset (last 24h) has been successfully emailed via SMTP.";
+            showToast(msg, data.message && data.message.includes('failed') ? "error" : "success");
         } else {
             showToast("Error: " + (data.error || "Request not found"), "error");
         }

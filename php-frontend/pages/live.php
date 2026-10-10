@@ -444,7 +444,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<?php include 'weather.php'; ?>
+<?php include __DIR__ . '/weather.php'; ?>
 
 </div>
 
@@ -474,7 +474,12 @@ function switchLiveTab(tab) {
 
 function updateTag(elementId, value, limit) {
     const el = document.getElementById(elementId);
-    if (!el || value === '--') return;
+    if (!el) return;
+    if (value == null || value === 'N/A' || value === '--') {
+        el.style.display = 'none';
+        return;
+    }
+    el.style.display = 'inline-flex';
     const isSafe = parseFloat(value) <= limit;
     
     if (isSafe) {
@@ -673,15 +678,15 @@ async function refreshDashboard() {
             }
 
             // Quick PM Summary
-            document.getElementById('hero-pm25').innerText = `${d.pm25 ?? '--'} µg/m³`;
-            document.getElementById('hero-pm10').innerText = `${d.pm10 ?? '--'} µg/m³`;
+            document.getElementById('hero-pm25').innerText = `${d.pm25 ?? 'N/A'} µg/m³`;
+            document.getElementById('hero-pm10').innerText = `${d.pm10 ?? 'N/A'} µg/m³`;
 
             // Cards
-            document.getElementById('card-pm25').innerText = d.pm25 ?? '--';
-            document.getElementById('card-pm10').innerText = d.pm10 ?? '--';
-            document.getElementById('card-co').innerText = d.co ?? '--';
-            document.getElementById('card-no2').innerText = d.no2 ?? '--';
-            document.getElementById('card-o3').innerText = d.o3 ?? '--';
+            document.getElementById('card-pm25').innerText = d.pm25 ?? 'N/A';
+            document.getElementById('card-pm10').innerText = d.pm10 ?? 'N/A';
+            document.getElementById('card-co').innerText = d.co ?? 'N/A';
+            document.getElementById('card-no2').innerText = d.no2 ?? 'N/A';
+            document.getElementById('card-o3').innerText = d.o3 ?? 'N/A';
 
             updateTag('tag-pm25', d.pm25, 15);
             updateTag('tag-pm10', d.pm10, 45);
@@ -693,7 +698,7 @@ async function refreshDashboard() {
         // WEATHER DATA POPULATION
         if (weatherData) {
             const w = weatherData;
-            const fmt = (val) => val != null ? Number(val).toFixed(1) : '--';
+            const fmt = (val) => val != null ? Number(val).toFixed(1) : 'N/A';
             
             document.getElementById('weather-hero-temp').innerText = fmt(w.temperature);
             document.getElementById('feed-temp').innerText = fmt(w.temperature) + '°C';
@@ -712,7 +717,7 @@ async function refreshDashboard() {
             document.getElementById('card-rain').innerText = fmt(w.rain_gauge) + ' mm';
             
             const getCompassDir = (val) => {
-              if (val == null) return '--';
+              if (val == null) return 'N/A';
               const deg = Math.round(Number(val) % 360);
               if (isNaN(deg)) return val;
               const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];

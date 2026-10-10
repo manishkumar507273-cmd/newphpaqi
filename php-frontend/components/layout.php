@@ -220,11 +220,11 @@ window.FIREBASE_ENV_CONFIG = {
   <main style="flex: 1; display: flex; flex-direction: column;">
     <div style="flex-grow: 1;">
       <?php
-        $page_file = 'pages/' . $current_page . '.php';
+        $page_file = __DIR__ . '/../pages/' . $current_page . '.php';
         if (file_exists($page_file)) {
             include $page_file;
         } else {
-            echo "<div style='padding: 40px; text-align: center; color: #64748b;'>Page not found.</div>";
+            echo "<div style='padding: 40px; text-align: center; color: #64748b;'>Page not found. (" . htmlspecialchars($current_page) . ")</div>";
         }
       ?>
     </div>
@@ -245,7 +245,7 @@ window.FIREBASE_ENV_CONFIG = {
     </div>
   </main>
   
-  <?php include 'auth-modal.php'; ?>
+  <?php include __DIR__ . '/auth-modal.php'; ?>
   
   <!-- Contact Us Developer Modal -->
   <div id="contact-modal" style="display: none; position: fixed; z-index: 100; inset: 0; align-items: center; justify-content: center; padding: 20px;">

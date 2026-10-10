@@ -80,7 +80,7 @@ if ($page !== 'overview' && !$is_logged_in) {
 </head>
 <body class="bg-[#f1f5f9] text-[#0f172a] font-sans antialiased">
     
-    <?php include 'components/layout.php'; ?>
+    <?php include __DIR__ . '/components/layout.php'; ?>
 
     <!-- Load custom JavaScript -->
     <script src="js/api.js"></script>

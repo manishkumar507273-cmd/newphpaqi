@@ -65,9 +65,9 @@ for ($i = 24; $i >= 0; $i--) {
 }
 
 // --- Import PHPMailer ---
-require '../libs/PHPMailer/Exception.php';
-require '../libs/PHPMailer/PHPMailer.php';
-require '../libs/PHPMailer/SMTP.php';
+require __DIR__ . '/../libs/PHPMailer/Exception.php';
+require __DIR__ . '/../libs/PHPMailer/PHPMailer.php';
+require __DIR__ . '/../libs/PHPMailer/SMTP.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;

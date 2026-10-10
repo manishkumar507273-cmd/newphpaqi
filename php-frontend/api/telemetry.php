@@ -122,13 +122,17 @@ function adjustTemperature($temp, $tsRaw) {
     }
     
     $adj = 0.0;
-    if ($hour === 8) $adj = -0.5;
-    else if ($hour === 9) $adj = -1.0;
-    else if ($hour === 10) $adj = -1.5;
-    else if ($hour >= 11 && $hour <= 17) $adj = -2.0;
-    else if ($hour === 18) $adj = -1.5;
-    else if ($hour === 19) $adj = -1.0;
-    else if ($hour === 20) $adj = -0.5;
+    
+    // Only apply daytime heat compensation if temperature is above 29.9°C
+    if ($temp > 29.9) {
+        if ($hour === 8) $adj = -0.5;
+        else if ($hour === 9) $adj = -1.0;
+        else if ($hour === 10) $adj = -1.5;
+        else if ($hour >= 11 && $hour <= 17) $adj = -2.0;
+        else if ($hour === 18) $adj = -1.5;
+        else if ($hour === 19) $adj = -1.0;
+        else if ($hour === 20) $adj = -0.5;
+    }
     
     return round($temp + $adj, 2);
 }

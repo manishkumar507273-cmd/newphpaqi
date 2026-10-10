@@ -9,7 +9,11 @@ if (!isset($_SESSION['user_name']) || strpos(strtolower($_SESSION['user_name']),
     exit;
 }
 
-$requests_file = __DIR__ . '/../data/requests.json';
+$data_dir = __DIR__ . '/../data';
+$requests_file = $data_dir . '/requests.json';
+if (!is_dir($data_dir) || !is_writable($data_dir)) {
+    $requests_file = sys_get_temp_dir() . '/phpAQI_requests.json';
+}
 if (!file_exists($requests_file)) {
     echo json_encode([]);
     exit;

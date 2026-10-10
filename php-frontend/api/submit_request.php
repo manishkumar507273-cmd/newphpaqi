@@ -16,9 +16,13 @@ if (!$input || !isset($input['email']) || !isset($input['scope'])) {
     exit;
 }
 
-$requests_file = __DIR__ . '/../data/requests.json';
-if (!is_dir(__DIR__ . '/../data')) {
-    mkdir(__DIR__ . '/../data', 0777, true);
+$data_dir = __DIR__ . '/../data';
+$requests_file = $data_dir . '/requests.json';
+if (!is_dir($data_dir)) {
+    @mkdir($data_dir, 0777, true);
+}
+if (!is_dir($data_dir) || !is_writable($data_dir)) {
+    $requests_file = sys_get_temp_dir() . '/phpAQI_requests.json';
 }
 
 $requests = [];

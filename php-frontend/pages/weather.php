@@ -106,9 +106,7 @@
             <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
           </div>
         </div>
-        <div class="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-        </div>
+
       </div>
       <div id="card-temp" class="font-mono text-[22px] sm:text-[26px] font-extrabold text-orange-600 mt-4 leading-none tracking-tight">--</div>
     </div>
@@ -122,9 +120,7 @@
             <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
           </div>
         </div>
-        <div class="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-        </div>
+
       </div>
       <div id="card-hum" class="font-mono text-[22px] sm:text-[26px] font-extrabold text-sky-600 mt-4 leading-none tracking-tight">--</div>
     </div>
@@ -138,9 +134,7 @@
             <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
           </div>
         </div>
-        <div class="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-        </div>
+
       </div>
       <div id="card-wind" class="font-mono text-[22px] sm:text-[26px] font-extrabold text-indigo-600 mt-4 leading-none tracking-tight">--</div>
     </div>
@@ -154,9 +148,7 @@
             <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
           </div>
         </div>
-        <div class="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-        </div>
+
       </div>
       <div id="card-gust" class="font-mono text-[22px] sm:text-[26px] font-extrabold text-purple-600 mt-4 leading-none tracking-tight">--</div>
     </div>
@@ -170,9 +162,7 @@
             <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
           </div>
         </div>
-        <div class="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-        </div>
+
       </div>
       <div id="card-rain" class="font-mono text-[22px] sm:text-[26px] font-extrabold text-cyan-600 mt-4 leading-none tracking-tight">--</div>
     </div>
@@ -186,9 +176,7 @@
             <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
           </div>
         </div>
-        <div class="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-        </div>
+
       </div>
       <div id="card-dir" class="font-sans text-[22px] sm:text-[26px] font-extrabold text-slate-600 mt-4 leading-none tracking-tight">--</div>
     </div>

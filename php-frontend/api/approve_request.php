@@ -23,7 +23,11 @@ if (!$input || !isset($input['id'])) {
     exit;
 }
 
-$requests_file = __DIR__ . '/../data/requests.json';
+$data_dir = __DIR__ . '/../data';
+$requests_file = $data_dir . '/requests.json';
+if (!is_dir($data_dir) || !is_writable($data_dir)) {
+    $requests_file = sys_get_temp_dir() . '/phpAQI_requests.json';
+}
 if (!file_exists($requests_file)) {
     http_response_code(404);
     echo json_encode(['error' => 'No requests found']);

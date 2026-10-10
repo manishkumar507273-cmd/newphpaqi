@@ -1,0 +1,313 @@
+<?php
+$current_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
+$is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : false;
+$is_logged_in = isset($_SESSION['user_id']);
+
+// Parse credentials from frontend or shared .env
+$env_paths = [
+    __DIR__ . '/../.env',
+    __DIR__ . '/../../.env',
+    __DIR__ . '/../../../.env',
+    __DIR__ . '/../../php-backend/.env',
+    __DIR__ . '/../../backend/.env'
+];
+
+$env_config = [
+    'firebaseApiKey' => '',
+    'firebaseAuthDomain' => '',
+    'firebaseProjectId' => '',
+    'supabaseUrl' => '',
+    'supabaseKey' => ''
+];
+
+foreach ($env_paths as $env_path) {
+    if (file_exists($env_path)) {
+        $lines = file($env_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), '#') === 0) continue;
+            if (strpos($line, '=') !== false) {
+                list($name, $value) = explode('=', $line, 2);
+                $name = trim($name);
+                $value = trim($value);
+                if (($name === 'VITE_FIREBASE_API_KEY' || $name === 'FIREBASE_API_KEY') && empty($env_config['firebaseApiKey'])) $env_config['firebaseApiKey'] = $value;
+                if (($name === 'VITE_FIREBASE_AUTH_DOMAIN' || $name === 'FIREBASE_AUTH_DOMAIN') && empty($env_config['firebaseAuthDomain'])) $env_config['firebaseAuthDomain'] = $value;
+                if (($name === 'VITE_FIREBASE_PROJECT_ID' || $name === 'FIREBASE_PROJECT_ID') && empty($env_config['firebaseProjectId'])) $env_config['firebaseProjectId'] = $value;
+                if (($name === 'VITE_SUPABASE_URL' || $name === 'SUPABASE_URL') && empty($env_config['supabaseUrl'])) $env_config['supabaseUrl'] = $value;
+                if (($name === 'VITE_SUPABASE_ANON_KEY' || $name === 'SUPABASE_KEY') && empty($env_config['supabaseKey'])) $env_config['supabaseKey'] = $value;
+            }
+        }
+    }
+}
+?>
+
+<script>
+window.ENV_CONFIG = <?= json_encode($env_config) ?>;
+// For backward compatibility with auth-modal.php
+window.FIREBASE_ENV_CONFIG = {
+    apiKey: window.ENV_CONFIG.firebaseApiKey,
+    authDomain: window.ENV_CONFIG.firebaseAuthDomain,
+    projectId: window.ENV_CONFIG.firebaseProjectId
+};
+</script>
+
+<div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; overflow-x: hidden; width: 100%;">
+
+  <!-- Sticky Header -->
+  <header style="min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding: 0 16px;">
+    
+    <!-- Left: Brand -->
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+        <?php if ($current_page !== 'overview'): ?>
+          <a href="?page=overview" title="Back to Atmosphere Snapshot" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid #e2e8f0; background-color: #f8fafc; color: #475569; cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; text-decoration: none;" onmouseenter="this.style.backgroundColor='#00bfa5'; this.style.color='#ffffff'; this.style.borderColor='#00bfa5';" onmouseleave="this.style.backgroundColor='#f8fafc'; this.style.color='#475569'; this.style.borderColor='#e2e8f0';">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+          </a>
+        <?php endif; ?>
+        <a href="?page=overview" style="display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none;">
+          <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
+            <i data-lucide="wind" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: clamp(17px, 3vw, 20px); font-weight: 700; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; line-height: 1.2;">
+              Smart <span style="font-weight: 500; color: #00bfa5;">WeatherNet</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px; flex-wrap: wrap;">
+              <div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></div>
+              <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
+              <span style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Center: Desktop Nav -->
+    <?php if ($current_page !== 'overview'): ?>
+    <nav style="display: inline-flex; align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="hidden md:flex">
+      <a href="?page=live" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'live' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: color 0.15s ease;">
+        <i data-lucide="radio" style="width: 15px; height: 15px; opacity: <?= $current_page === 'live' ? '1' : '0.75' ?>;"></i> Live Data Stream
+      </a>
+      <a href="?page=historical" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'historical' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: color 0.15s ease;">
+        <i data-lucide="database" style="width: 15px; height: 15px; opacity: <?= $current_page === 'historical' ? '1' : '0.75' ?>;"></i> Analytics Archive
+      </a>
+      <a href="?page=predictive" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: color 0.15s ease;">
+        <i data-lucide="line-chart" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Predictive Forecast (Under Dev)
+      </a>
+    </nav>
+    <?php endif; ?>
+
+    <!-- Right: Auth & Admin -->
+    <!-- Right: Auth & Admin -->
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <?php if ($current_page === 'overview'): ?>
+        <a href="?page=live" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; border: 1.5px solid #7dd3fc; background-color: #f0f9ff; color: #0284c7; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.12); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);" class="md:px-[22px]">
+          <span class="hidden sm:inline">View Dashboard</span>
+          <span class="sm:hidden">Dashboard</span>
+          <i data-lucide="arrow-up-right" style="width: 16px; height: 16px; stroke-width: 2.5; color: #0284c7;"></i>
+        </a>
+      <?php endif; ?>
+      
+
+      <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
+        <a href="?page=admin" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #e2e8f0; background-color: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.15s ease;" class="hidden md:inline-flex">
+          <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #00bfa5;"></i>
+          <span>Admin Center</span>
+        </a>
+      <?php endif; ?>
+
+      <?php if ($is_logged_in): ?>
+        <div style="display: flex; align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);" class="hidden md:flex">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.3);">
+            <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
+          </div>
+          <span style="font-size: 12px; font-weight: 700; color: #0f172a;" class="hidden sm:inline"><?= $_SESSION['user_name'] ?></span>
+          <a href="?logout=true" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
+            <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
+          </a>
+        </div>
+      <?php else: ?>
+        <button onclick="openAuthModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; border: none; background-color: #0f172a; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);" class="hidden md:inline-flex">
+          <i data-lucide="user" style="width: 14px; height: 14px;"></i>
+          <span class="hidden sm:inline">Sign In</span>
+        </button>
+      <?php endif; ?>
+      
+      <!-- Live Badge -->
+      <div style="padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;" class="hidden md:flex">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #16a34a;"></span>
+        <span>LIVE</span>
+      </div>
+
+      <!-- Mobile Right Items (Visible only on mobile) -->
+      <?php if ($current_page !== 'overview'): ?>
+      <div class="flex items-center gap-2 md:hidden">
+        <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
+          <a href="?page=admin" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background-color: #0f172a; border: 1.5px solid #1e293b; color: #ffffff; text-decoration: none;">
+            <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i>
+          </a>
+        <?php endif; ?>
+        
+        <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #10b981;">
+           <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; box-shadow: 0 0 0 2px #dcfce7;"></div>
+        </div>
+
+        <button onclick="toggleMobileMenu()" id="mobile-menu-btn" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #0f172a; cursor: pointer;">
+          <i data-lucide="menu" id="mobile-menu-icon" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <?php endif; ?>
+    </div>
+  </header>
+
+  <!-- Mobile Menu Dropdown -->
+  <div id="mobile-menu" style="display: none; position: absolute; top: 70px; left: 12px; right: 12px; background: white; border-radius: 20px; padding: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; z-index: 40; flex-direction: column; gap: 8px;">
+    <?php if ($is_logged_in): ?>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 4px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #c084fc; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
+            <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 15px; font-weight: 700; color: #0f172a;"><?= $_SESSION['user_name'] ?></span>
+            <span style="font-size: 12px; font-weight: 500; color: #64748b;"><?= isset($_SESSION['user_email']) ? $_SESSION['user_email'] : 'user@example.com' ?></span>
+          </div>
+        </div>
+        <a href="?logout=true" style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; border: 1.5px solid #fecdd3; background-color: #fff1f2; color: #e11d48; font-size: 13px; font-weight: 700; text-decoration: none;">
+          <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> Sign Out
+        </a>
+      </div>
+    <?php else: ?>
+      <button onclick="openAuthModal(); toggleMobileMenu();" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 12px; border: none; background-color: #0f172a; color: #ffffff; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 4px;">
+        <i data-lucide="user" style="width: 16px; height: 16px;"></i> Sign In
+      </button>
+    <?php endif; ?>
+
+    <a href="?page=live" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : '#ffffff' ?>;">
+      <i data-lucide="radio" style="width: 18px; height: 18px;"></i> Live Data Stream
+    </a>
+    <a href="?page=historical" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : '#ffffff' ?>;">
+      <i data-lucide="database" style="width: 18px; height: 18px;"></i> Analytics Archive
+    </a>
+    <a href="?page=predictive" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : '#ffffff' ?>;">
+      <i data-lucide="line-chart" style="width: 18px; height: 18px;"></i> Predictive Forecast (Under Dev)
+    </a>
+  </div>
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      const icon = document.getElementById('mobile-menu-icon');
+      if (menu.style.display === 'none' || menu.style.display === '') {
+        menu.style.display = 'flex';
+        icon.setAttribute('data-lucide', 'x');
+      } else {
+        menu.style.display = 'none';
+        icon.setAttribute('data-lucide', 'menu');
+      }
+      lucide.createIcons();
+    }
+  </script>
+
+  <!-- Main Content Area -->
+  <main style="min-height: calc(100vh - 140px); padding-bottom: 60px;">
+    <?php
+      $page_file = 'pages/' . $current_page . '.php';
+      if (file_exists($page_file)) {
+          include $page_file;
+      } else {
+          echo "<div style='padding: 40px; text-align: center; color: #64748b;'>Page not found.</div>";
+      }
+    ?>
+    
+    <!-- Global Footer (Contact Us) -->
+    <div style="margin-top: 40px; margin-bottom: 20px; text-align: center; position: relative; z-index: 2;">
+      <button onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 13.5px; font-weight: 700; color: #64748b; cursor: pointer; text-decoration: underline; text-decoration-color: #cbd5e1; text-underline-offset: 4px; transition: all 0.2s;" onmouseover="this.style.color='#00bfa5'; this.style.textDecorationColor='#00bfa5';" onmouseout="this.style.color='#64748b'; this.style.textDecorationColor='#cbd5e1';">
+        Contact Us
+      </button>
+    </div>
+  </main>
+  
+  <?php include 'auth-modal.php'; ?>
+  
+  <!-- Contact Us Developer Modal -->
+  <div id="contact-modal" style="display: none; position: fixed; z-index: 100; inset: 0; align-items: center; justify-content: center; padding: 20px;">
+    <!-- Backdrop -->
+    <div style="position: absolute; inset: 0; background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);" onclick="document.getElementById('contact-modal').style.display='none';"></div>
+    
+    <!-- Modal Content -->
+    <div style="position: relative; background: #ffffff; border-radius: 24px; padding: 32px 24px; max-width: 400px; width: 100%; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1); border: 1px solid #e2e8f0; text-align: center; animation: fade-in 0.2s ease-out;">
+      <button onclick="document.getElementById('contact-modal').style.display='none';" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b;">
+        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+      </button>
+      
+      <div style="width: 48px; height: 48px; border-radius: 16px; background: #e6fcf9; color: #00bfa5; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+        <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+      </div>
+
+      <p style="margin: 0; font-size: 14px; font-weight: 600; color: #475569; line-height: 1.8;">
+        Developed by<br/>
+        <span style="color: #00bfa5;">Manish Kumar</span><br/>
+        <span style="color: #00bfa5;">Manikanta CH</span><br/>
+        <span style="color: #00bfa5;">Madan</span><br/>
+        <span style="color: #00bfa5;">Aditya Thunga K</span><br/>
+        <span style="color: #00bfa5;">Prathvish Kumar</span>
+      </p>
+      
+      <div style="margin: 20px auto; width: 40px; height: 2px; background-color: #e2e8f0; border-radius: 2px;"></div>
+
+      <p style="margin: 0; font-size: 13px; font-weight: 500; color: #64748b;">
+        Under the Guidance of<br/>
+        <a href="https://sode-edu.in/smvitm/about-smvitm/principal/" target="_blank" style="color: #334155; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border-bottom: 1.5px solid #334155; padding-bottom: 1px; margin-top: 4px;">
+          Dr. Nagaraj Bhat <i data-lucide="arrow-up-right" style="width: 14px; height: 14px;"></i>
+        </a>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Mobile Bottom Navigation -->
+<?php if ($current_page !== 'overview'): ?>
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pb-safe pt-2 px-2 z-50 shadow-[0_-4px_20px_rgba(15,23,42,0.05)]" style="padding-bottom: env(safe-area-inset-bottom, 12px);">
+  <a href="?page=live" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; text-decoration: none; color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>;">
+    <i data-lucide="radio" style="width: 22px; height: 22px;"></i>
+    <span style="font-size: 10px; font-weight: 800;">Live</span>
+  </a>
+  <a href="?page=historical" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; text-decoration: none; color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>;">
+    <i data-lucide="database" style="width: 22px; height: 22px;"></i>
+    <span style="font-size: 10px; font-weight: 800;">Archive</span>
+  </a>
+  <a href="?page=predictive" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; text-decoration: none; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>;">
+    <i data-lucide="line-chart" style="width: 22px; height: 22px;"></i>
+    <span style="font-size: 10px; font-weight: 800;">Forecast</span>
+  </a>
+  <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
+  <a href="?page=admin" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; text-decoration: none; color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>;">
+    <i data-lucide="shield-check" style="width: 22px; height: 22px;"></i>
+    <span style="font-size: 10px; font-weight: 800;">Admin</span>
+  </a>
+  <?php endif; ?>
+</nav>
+<?php endif; ?>
+
+<?php if (isset($_GET['require_login']) && $_GET['require_login'] === 'true'): ?>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+          if (typeof openAuthModal === 'function') {
+              openAuthModal();
+              
+              const errBlock = document.getElementById('auth-error-msg');
+              const errText = document.getElementById('auth-error-text');
+              if (errBlock && errText) {
+                  errText.innerText = "Please sign in to access this page.";
+                  errBlock.style.backgroundColor = "rgba(0, 191, 165, 0.1)";
+                  errBlock.style.color = "#00bfa5";
+                  errBlock.style.border = "1px solid rgba(0, 191, 165, 0.2)";
+                  errBlock.style.display = 'flex';
+              }
+          }
+      }, 100);
+  });
+</script>
+<?php endif; ?>

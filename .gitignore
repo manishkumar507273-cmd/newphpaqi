@@ -1,0 +1,45 @@
+# Operating System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# SQLite / Local Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Node
+node_modules/
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.local
+php-backend/.env
+php-backend/.env.*
+php-frontend/.env
+php-frontend/.env.*
+files_for_friend/
+*.zip
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo

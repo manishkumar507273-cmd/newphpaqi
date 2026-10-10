@@ -16,6 +16,15 @@
 
 <div id="aqi-view" style="display: block; animation: fade-in 0.4s ease-out;">
 
+<!-- Offline Banner -->
+<div id="aqi-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+  <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569;">
+    <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f97316; margin-top: 2px; flex-shrink: 0;"></i>
+    <span><strong style="color: #c2410c;">AQI Sensor Node Offline:</strong> No new live telemetry received in cloud for >15 mins (Last update: <strong style="color: #f97316;" id="aqi-offline-last-update">--</strong>). Showing last recorded cloud values below.</span>
+  </div>
+  <div id="aqi-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</div>
+</div>
+
   <!-- Page Header Titles -->
   <div>
     <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
@@ -23,7 +32,7 @@
     </h1>
     <div style="font-size: 12.5px; color: #64748b; margin-top: 6px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
       <span>Last Updated: <span id="latest-time" style="color: #00bfa5; font-weight: 600;">Syncing...</span></span>
-      <span style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+      <span id="aqi-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
         <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
         LIVE
       </span>
@@ -593,7 +602,7 @@ async function refreshDashboard() {
             bulkData = window.INITIAL_DATA;
             window.INITIAL_DATA = null;
         } else {
-            const res = await fetch('api/telemetry.php?action=live_bulk&limit=50');
+            const res = await fetch('api/telemetry.php?action=live_bulk&limit=60');
             bulkData = await res.json();
         }
         
@@ -772,7 +781,88 @@ async function refreshDashboard() {
         renderLiveTable();
 
         const now = new Date();
-        document.getElementById('latest-time').innerText = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        // --- AQI Offline Check ---
+        let isAqiOffline = true;
+        let aqiOfflineMinutes = 0;
+        let aqiLastUpdateTimeStr = "Unknown";
+        
+        if (aqiData && aqiData.timestamp) {
+            const lastUpdate = new Date(aqiData.timestamp);
+            const diffMs = now - lastUpdate;
+            aqiOfflineMinutes = Math.floor(diffMs / 60000);
+            isAqiOffline = aqiOfflineMinutes > 15;
+            aqiLastUpdateTimeStr = lastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        const aqiBanner = document.getElementById('aqi-offline-banner');
+        if (isAqiOffline) {
+            if (aqiBanner) {
+                document.getElementById('aqi-offline-last-update').innerText = aqiLastUpdateTimeStr + ' • ' + aqiOfflineMinutes + 'm ago';
+                document.getElementById('aqi-offline-badge-text').innerText = 'OFFLINE (' + aqiOfflineMinutes + 'M AGO)';
+                aqiBanner.style.display = 'flex';
+            }
+            const aqiLiveBadge = document.getElementById('aqi-live-badge');
+            if (aqiLiveBadge) {
+                aqiLiveBadge.style.backgroundColor = '#fff7ed';
+                aqiLiveBadge.style.color = '#ea580c';
+                aqiLiveBadge.style.borderColor = '#fed7aa';
+                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE (${aqiOfflineMinutes}m ago)`;
+            }
+            document.getElementById('latest-time').innerText = aqiLastUpdateTimeStr;
+        } else {
+            if (aqiBanner) aqiBanner.style.display = 'none';
+            const aqiLiveBadge = document.getElementById('aqi-live-badge');
+            if (aqiLiveBadge) {
+                aqiLiveBadge.style.backgroundColor = '#ecfdf5';
+                aqiLiveBadge.style.color = '#059669';
+                aqiLiveBadge.style.borderColor = '#a7f3d0';
+                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
+            }
+            document.getElementById('latest-time').innerText = aqiLastUpdateTimeStr;
+        }
+
+        // --- Weather Offline Check ---
+        let isWeatherOffline = true;
+        let weatherOfflineMinutes = 0;
+        let weatherLastUpdateTimeStr = "Unknown";
+
+        if (weatherData && weatherData.timestamp) {
+            const wLastUpdate = new Date(weatherData.timestamp);
+            const wDiffMs = now - wLastUpdate;
+            weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
+            isWeatherOffline = weatherOfflineMinutes > 15;
+            weatherLastUpdateTimeStr = wLastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        const weatherBanner = document.getElementById('weather-offline-banner');
+        const weatherLatestTime = document.getElementById('weather-latest-time');
+        
+        if (isWeatherOffline) {
+            if (weatherBanner) {
+                document.getElementById('weather-offline-last-update').innerText = weatherLastUpdateTimeStr + ' • ' + weatherOfflineMinutes + 'm ago';
+                document.getElementById('weather-offline-badge-text').innerText = 'OFFLINE (' + weatherOfflineMinutes + 'M AGO)';
+                weatherBanner.style.display = 'flex';
+            }
+            const weatherLiveBadge = document.getElementById('weather-live-badge');
+            if (weatherLiveBadge) {
+                weatherLiveBadge.style.backgroundColor = '#fff7ed';
+                weatherLiveBadge.style.color = '#ea580c';
+                weatherLiveBadge.style.borderColor = '#fed7aa';
+                weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE (${weatherOfflineMinutes}m ago)`;
+            }
+            if(weatherLatestTime) weatherLatestTime.innerText = weatherLastUpdateTimeStr;
+        } else {
+            if (weatherBanner) weatherBanner.style.display = 'none';
+            const weatherLiveBadge = document.getElementById('weather-live-badge');
+            if (weatherLiveBadge) {
+                weatherLiveBadge.style.backgroundColor = '#ecfdf5';
+                weatherLiveBadge.style.color = '#059669';
+                weatherLiveBadge.style.borderColor = '#a7f3d0';
+                weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
+            }
+            if(weatherLatestTime) weatherLatestTime.innerText = weatherLastUpdateTimeStr;
+        }
         lucide.createIcons();
     } catch (e) {
         console.error("Live page error:", e);

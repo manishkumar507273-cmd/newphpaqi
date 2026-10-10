@@ -194,37 +194,115 @@
 
     </div>
 
-    <!-- AQI Line Plot Card -->
-    <div style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div>
-          <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="activity" style="width: 16px; height: 16px; color: #00bfa5;"></i>
-            AQI Line Plot
+    <!-- Horizontal Scrollable Charts Container -->
+    <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
+      <!-- CSS to hide scrollbar for webkit is below in style block -->
+      
+      <!-- AQI Line Plot Card -->
+      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="activity" style="width: 16px; height: 16px; color: #00bfa5;"></i>
+              AQI Line Plot
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+              Real-time Air Quality progression
+            </div>
           </div>
-          <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-            Real-time Air Quality Index progression
+          <div style="background-color: rgba(0, 191, 165, 0.1); border: 1px solid rgba(0, 191, 165, 0.25); padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #00bfa5; font-family: var(--font-mono);">
+            Current: <span id="overview-chart-current">--</span>
           </div>
         </div>
-        <div style="background-color: rgba(0, 191, 165, 0.1); border: 1px solid rgba(0, 191, 165, 0.25); padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #00bfa5; font-family: var(--font-mono);">
-          Current: <span id="overview-chart-current">--</span>
+
+        <div style="width: 100%; height: 250px; position: relative;">
+          <canvas id="overview-aqi-chart"></canvas>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;" id="overview-chart-stats">
+          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background-color: #ecfdf5; border: 1px solid #a7f3d0; font-size: 11.5px; font-weight: 700; color: #047857; font-family: var(--font-mono);">
+            <i data-lucide="arrow-down-right" style="width: 14px; height: 14px;"></i>
+            <span id="overview-chart-lowest">Lowest: --</span>
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background-color: #fff7ed; border: 1px solid #fed7aa; font-size: 11.5px; font-weight: 700; color: #c2410c; font-family: var(--font-mono);">
+            <i data-lucide="arrow-up-right" style="width: 14px; height: 14px;"></i>
+            <span id="overview-chart-highest">Highest: --</span>
+          </div>
         </div>
       </div>
 
-      <div style="width: 100%; height: 250px; position: relative;">
-        <canvas id="overview-aqi-chart"></canvas>
+      <!-- Temperature Plot Card -->
+      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="thermometer" style="width: 16px; height: 16px; color: #f97316;"></i>
+              Temperature Plot
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+              Real-time Temperature progression
+            </div>
+          </div>
+        </div>
+        <div style="width: 100%; height: 250px; position: relative;">
+          <canvas id="overview-temp-chart"></canvas>
+        </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;" id="overview-chart-stats">
-        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background-color: #ecfdf5; border: 1px solid #a7f3d0; font-size: 11.5px; font-weight: 700; color: #047857; font-family: var(--font-mono);">
-          <i data-lucide="arrow-down-right" style="width: 14px; height: 14px;"></i>
-          <span id="overview-chart-lowest">Lowest: --</span>
+      <!-- Humidity Plot Card -->
+      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="droplets" style="width: 16px; height: 16px; color: #0ea5e9;"></i>
+              Humidity Plot
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+              Real-time Humidity progression
+            </div>
+          </div>
         </div>
-        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background-color: #fff7ed; border: 1px solid #fed7aa; font-size: 11.5px; font-weight: 700; color: #c2410c; font-family: var(--font-mono);">
-          <i data-lucide="arrow-up-right" style="width: 14px; height: 14px;"></i>
-          <span id="overview-chart-highest">Highest: --</span>
+        <div style="width: 100%; height: 250px; position: relative;">
+          <canvas id="overview-hum-chart"></canvas>
         </div>
       </div>
+
+      <!-- Wind Speed Plot Card -->
+      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="wind" style="width: 16px; height: 16px; color: #10b981;"></i>
+              Wind Speed Plot
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+              Real-time Wind Speed progression
+            </div>
+          </div>
+        </div>
+        <div style="width: 100%; height: 250px; position: relative;">
+          <canvas id="overview-wind-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Rainfall Plot Card -->
+      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="cloud-rain" style="width: 16px; height: 16px; color: #6366f1;"></i>
+              Rainfall Plot
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+              Real-time Rainfall progression
+            </div>
+          </div>
+        </div>
+        <div style="width: 100%; height: 250px; position: relative;">
+          <canvas id="overview-rain-chart"></canvas>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -487,7 +565,29 @@ async function refreshData() {
                 document.getElementById('overview-chart-highest').innerText = `Highest: ${maxAqi} @ ${maxDt}`;
             }
 
-            renderOverviewChart(labels, data);
+            renderGenericChart('overview-aqi-chart', labels, data, 'AQI', '#00bfa5');
+        }
+
+        // Weather History Charts
+        const weatherHistoryRes = bulkData.weather_history;
+        if (weatherHistoryRes && weatherHistoryRes.length > 0) {
+            const wHistory = weatherHistoryRes.slice().reverse();
+            const wLabels = [];
+            const tempData = [], humData = [], windData = [], rainData = [];
+
+            wHistory.forEach(row => {
+                const dt = new Date(row.timestamp || row.created_at || new Date());
+                wLabels.push(dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase());
+                tempData.push(row.temperature || 0);
+                humData.push(row.humidity || 0);
+                windData.push(row.wind_speed || 0);
+                rainData.push(row.rain_gauge || 0);
+            });
+
+            renderGenericChart('overview-temp-chart', wLabels, tempData, 'Temperature (°C)', '#f97316');
+            renderGenericChart('overview-hum-chart', wLabels, humData, 'Humidity (%)', '#0ea5e9');
+            renderGenericChart('overview-wind-chart', wLabels, windData, 'Wind Speed (km/h)', '#10b981');
+            renderGenericChart('overview-rain-chart', wLabels, rainData, 'Rainfall (mm)', '#6366f1');
         }
         
     } catch(e) {
@@ -499,32 +599,43 @@ async function refreshData() {
     }
 }
 
-function renderOverviewChart(labels, data) {
-    const ctx = document.getElementById('overview-aqi-chart').getContext('2d');
-    if (overviewChartInstance) {
-        overviewChartInstance.destroy();
+let chartInstances = {};
+
+function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    if (chartInstances[canvasId]) {
+        chartInstances[canvasId].destroy();
     }
     
     // Create gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-    gradient.addColorStop(0, 'rgba(0, 191, 165, 0.4)');
-    gradient.addColorStop(1, 'rgba(0, 191, 165, 0.0)');
+    // hex to rgb
+    let hex = colorHex.replace('#', '');
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+    
+    gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.4)`);
+    gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
 
-    overviewChartInstance = new Chart(ctx, {
+    chartInstances[canvasId] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
-                label: 'AQI',
+                label: labelName,
                 data: data,
-                borderColor: '#00bfa5',
+                borderColor: colorHex,
                 backgroundColor: gradient,
                 borderWidth: 2.5,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
                 pointHoverRadius: 5,
-                pointHoverBackgroundColor: '#00bfa5',
+                pointHoverBackgroundColor: colorHex,
                 pointHoverBorderColor: '#ffffff',
                 pointHoverBorderWidth: 2,
             }]
@@ -549,7 +660,7 @@ function renderOverviewChart(labels, data) {
                     displayColors: false,
                     callbacks: {
                         label: function(context) {
-                            return 'AQI: ' + context.parsed.y;
+                            return labelName + ': ' + context.parsed.y;
                         }
                     }
                 }

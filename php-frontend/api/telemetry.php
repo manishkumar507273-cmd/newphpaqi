@@ -107,11 +107,55 @@ function parseToIstIso($tsRaw) {
     return $tsStr;
 }
 
+function adjustTemperature($temp, $tsRaw) {
+    if ($temp === null) return null;
+    $temp = (float)$temp;
+    $tsStr = parseToIstIso($tsRaw);
+    $hour = null;
+    try {
+        if ($tsStr) {
+            $dt = new DateTime($tsStr);
+            $hour = (int)$dt->format('H');
+        }
+    } catch(Exception $e) {
+        return $temp;
+    }
+    
+    $adj = 0.0;
+    if ($hour === 8) $adj = -0.5;
+    else if ($hour === 9) $adj = -1.0;
+    else if ($hour === 10) $adj = -1.5;
+    else if ($hour >= 11 && $hour <= 17) $adj = -2.0;
+    else if ($hour === 18) $adj = -1.5;
+    else if ($hour === 19) $adj = -1.0;
+    else if ($hour === 20) $adj = -0.5;
+    
+    return round($temp + $adj, 2);
+}
+
+function formatWeatherReading($row) {
+    if (!$row) return null;
+    $tsRaw = $row['timestamp_hour'] ?? $row['created_at'] ?? $row['timestamp'] ?? null;
+    $row['timestamp'] = parseToIstIso($tsRaw);
+    if (isset($row['temperature'])) {
+        $row['temperature'] = adjustTemperature($row['temperature'], $tsRaw);
+    }
+    return $row;
+}
+
 function formatRawReading($raw) {
     if (!$raw) return null;
+    $tsRaw = $raw['timestamp_hour'] ?? $raw['created_at'] ?? $raw['timestamp'] ?? null;
+    
+    $origTemp = isset($raw['temperature']) ? (float)$raw['temperature'] : 27.0;
+
+    if (isset($raw['temperature'])) {
+        $raw['temperature'] = adjustTemperature($raw['temperature'], $tsRaw);
+    }
+    
     if (isset($raw['is_calibrated']) && $raw['is_calibrated'] && isset($raw['cpcb_aqi'])) return $raw;
 
-    $tempVal = isset($raw['temperature']) ? (float)$raw['temperature'] : 27.0;
+    $tempVal = $origTemp;
     $humVal = isset($raw['humidity']) ? (float)$raw['humidity'] : 60.0;
 
     $rawPm25 = isset($raw['pm25']) ? (float)$raw['pm25'] : (isset($raw['pm2.5']) ? (float)$raw['pm2.5'] : null);
@@ -227,7 +271,7 @@ switch ($action) {
         break;
         
     case 'aqi_live_history':
-        $lim = isset($_GET['limit']) ? intval($_GET['limit']) : 50;
+        $lim = isset($_GET['limit']) ? intval($_GET['limit']) : 60;
         $url = "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}";
         $data = fetchSupabase($url, $supabaseKey);
         $result = [];
@@ -241,7 +285,7 @@ switch ($action) {
         break;
         
     case 'weather_live_history':
-        $lim = isset($_GET['limit']) ? intval($_GET['limit']) : 50;
+        $lim = isset($_GET['limit']) ? intval($_GET['limit']) : 60;
         $url = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=created_at.desc.nullslast&limit={$lim}";
         $data = fetchSupabase($url, $supabaseKey);
         echo json_encode($data ? $data : []);
@@ -250,24 +294,35 @@ switch ($action) {
     case 'overview_bulk':
         $aqi_url = "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=id.desc&limit=1";
         $weather_url = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=id.desc&limit=1";
-        $hist_url = "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit=50";
+        $hist_aqi_url = "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit=60";
+        $hist_weather_url = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=created_at.desc.nullslast&limit=60";
 
         $aqi = fetchSupabase($aqi_url, $supabaseKey);
         $weather = fetchSupabase($weather_url, $supabaseKey);
-        $hist = fetchSupabase($hist_url, $supabaseKey);
+        $hist_aqi = fetchSupabase($hist_aqi_url, $supabaseKey);
+        $hist_weather = fetchSupabase($hist_weather_url, $supabaseKey);
 
         $res = [];
         $res['aqi'] = ($aqi && count($aqi) > 0) ? formatRawReading($aqi[0]) : null;
-        $res['weather'] = ($weather && count($weather) > 0) ? $weather[0] : null;
+        $res['weather'] = ($weather && count($weather) > 0) ? formatWeatherReading($weather[0]) : null;
         
         $hist_formatted = [];
-        if ($hist) {
-            foreach ($hist as $row) {
+        if ($hist_aqi) {
+            foreach ($hist_aqi as $row) {
                 $f = formatRawReading($row);
                 if ($f) $hist_formatted[] = $f;
             }
         }
         $res['history'] = $hist_formatted;
+        
+        $hist_weather_fmt = [];
+        if ($hist_weather) {
+            foreach ($hist_weather as $row) {
+                $hw = formatWeatherReading($row);
+                if ($hw) $hist_weather_fmt[] = $hw;
+            }
+        }
+        $res['weather_history'] = $hist_weather_fmt;
         echo json_encode($res);
         break;
 
@@ -300,16 +355,15 @@ switch ($action) {
         }
         if ($weather) {
             foreach ($weather as $row) {
-                $ts = $row['timestamp_hour'] ?? $row['created_at'] ?? $row['timestamp'] ?? null;
-                $row['timestamp'] = parseToIstIso($ts);
-                $res['weather'][] = $row;
+                $fw = formatWeatherReading($row);
+                if ($fw) $res['weather'][] = $fw;
             }
         }
         echo json_encode($res);
         break;
 
     case 'live_bulk':
-        $lim = isset($_GET['limit']) ? intval($_GET['limit']) : 50;
+        $lim = isset($_GET['limit']) ? intval($_GET['limit']) : 60;
         
         $aqi_url = "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=id.desc&limit=1";
         $weather_url = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=id.desc&limit=1";
@@ -323,7 +377,7 @@ switch ($action) {
 
         $res = [];
         $res['aqi'] = ($aqi && count($aqi) > 0) ? formatRawReading($aqi[0]) : null;
-        $res['weather'] = ($weather && count($weather) > 0) ? $weather[0] : null;
+        $res['weather'] = ($weather && count($weather) > 0) ? formatWeatherReading($weather[0]) : null;
         
         $ah_fmt = [];
         if ($aqi_hist) {
@@ -333,7 +387,15 @@ switch ($action) {
             }
         }
         $res['aqi_history'] = $ah_fmt;
-        $res['weather_history'] = $weather_hist ? $weather_hist : [];
+        
+        $weather_hist_fmt = [];
+        if ($weather_hist) {
+            foreach ($weather_hist as $row) {
+                $wh = formatWeatherReading($row);
+                if ($wh) $weather_hist_fmt[] = $wh;
+            }
+        }
+        $res['weather_history'] = $weather_hist_fmt;
         
         echo json_encode($res);
         break;

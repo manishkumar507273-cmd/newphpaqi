@@ -58,7 +58,7 @@ window.FIREBASE_ENV_CONFIG = {
 };
 </script>
 
-<div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; overflow-x: hidden; width: 100%;">
+<div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; overflow-x: hidden; width: 100%; display: flex; flex-direction: column;">
 
   <!-- Sticky Header -->
   <header style="min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding: 0 16px;">
@@ -217,21 +217,31 @@ window.FIREBASE_ENV_CONFIG = {
   </script>
 
   <!-- Main Content Area -->
-  <main style="min-height: calc(100vh - 140px); padding-bottom: 60px;">
-    <?php
-      $page_file = 'pages/' . $current_page . '.php';
-      if (file_exists($page_file)) {
-          include $page_file;
-      } else {
-          echo "<div style='padding: 40px; text-align: center; color: #64748b;'>Page not found.</div>";
-      }
-    ?>
+  <main style="flex: 1; display: flex; flex-direction: column;">
+    <div style="flex-grow: 1;">
+      <?php
+        $page_file = 'pages/' . $current_page . '.php';
+        if (file_exists($page_file)) {
+            include $page_file;
+        } else {
+            echo "<div style='padding: 40px; text-align: center; color: #64748b;'>Page not found.</div>";
+        }
+      ?>
+    </div>
     
     <!-- Global Footer (Contact Us) -->
-    <div style="margin-top: 40px; margin-bottom: 20px; text-align: center; position: relative; z-index: 2;">
-      <button onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 13.5px; font-weight: 700; color: #64748b; cursor: pointer; text-decoration: underline; text-decoration-color: #cbd5e1; text-underline-offset: 4px; transition: all 0.2s;" onmouseover="this.style.color='#00bfa5'; this.style.textDecorationColor='#00bfa5';" onmouseout="this.style.color='#64748b'; this.style.textDecorationColor='#cbd5e1';">
+    <div style="margin-top: auto; padding: 24px 0; text-align: center; position: relative; z-index: 2; font-size: 14px; background-color: #0f172a; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; width: 100%;">
+      
+      <button onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 14px; font-weight: 600; color: #cbd5e1; cursor: pointer; text-decoration: underline; text-decoration-color: #475569; text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#00bfa5'; this.style.textDecorationColor='#00bfa5';" onmouseout="this.style.color='#cbd5e1'; this.style.textDecorationColor='#475569';">
         Contact Us
       </button>
+
+      <span style="color: #334155; font-weight: 300;">|</span>
+
+      <a href="mailto:weathernet@sode-edu.in" style="font-weight: 600; color: #00bfa5; text-decoration: none; display: flex; align-items: center; gap: 4px; transition: color 0.2s;" onmouseover="this.style.color='#047857'" onmouseout="this.style.color='#00bfa5'">
+        <i data-lucide="mail" style="width: 14px; height: 14px;"></i> weathernet@sode-edu.in
+      </a>
+      
     </div>
   </main>
   

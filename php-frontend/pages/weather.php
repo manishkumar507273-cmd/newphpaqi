@@ -1,13 +1,19 @@
 <div id="weather-view" style="display: none; animation: fade-in 0.4s ease-out; width: 100%;">
   
-
-
+  <!-- Offline Banner -->
+  <div id="weather-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569;">
+      <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f97316; margin-top: 2px; flex-shrink: 0;"></i>
+      <span><strong style="color: #c2410c;">Weather Sensor Node Offline:</strong> No new live telemetry received in cloud for >15 mins (Last update: <strong style="color: #f97316;" id="weather-offline-last-update">--</strong>). Showing last recorded cloud values below.</span>
+    </div>
+    <div id="weather-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</div>
+  </div>
   <!-- Titles -->
   <div>
     <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; margin: 0; letter-spacing: -0.02em;">Weather Conditions</h1>
     <div style="font-size: 12.5px; color: #64748b; margin-top: 6px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
       <span>Last Updated: <span id="weather-latest-time" style="color: #00bfa5; font-weight: 600;">Syncing...</span></span>
-      <span style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+      <span id="weather-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
         <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE
       </span>
     </div>

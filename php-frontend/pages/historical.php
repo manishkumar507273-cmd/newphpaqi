@@ -1,12 +1,5 @@
 <div style="display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; padding: 24px; animation: fade-in 0.4s ease-out; font-family: var(--font-sans); color: #0f172a;">
   
-  <!-- Page Header -->
-  <div style="animation: fade-in 0.4s ease-out;">
-    <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; margin: 0; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px;">
-      <i data-lucide="database" style="width: 22px; height: 22px; color: #00bfa5;"></i>
-      Analytics Archive
-    </h1>
-  </div>
 
   <!-- Header -->
   <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">

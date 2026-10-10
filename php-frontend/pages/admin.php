@@ -208,8 +208,14 @@ function loadRequests() {
                 : `<span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background-color: #fffbeb; border: 1px solid #fde68a; color: #b45309; font-size: 12.5px; font-weight: 700;"><i data-lucide="clock" style="width:14px;height:14px;"></i> Pending Review</span>`;
                 
               const actionBtn = isApproved
-                ? `<span style="display: inline-flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 13px; font-weight: 600;"><i data-lucide="mail-check" style="width: 15px; height: 15px;"></i> Emailed securely</span>`
-                : `<button onclick="approveRequest('${req.id}')" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 16px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00bfa5 0%, #00a693 100%); color: white; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0, 191, 165, 0.25);" onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 191, 165, 0.35)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 191, 165, 0.25)';"><i data-lucide="send" style="width:14px;height:14px;"></i> Authorize</button>`;
+                ? `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
+                     <span style="display: inline-flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 13px; font-weight: 600;"><i data-lucide="mail-check" style="width: 15px; height: 15px;"></i> Emailed securely</span>
+                     <button onclick="deleteRequest('${req.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; display: flex; align-items: center; opacity: 0.7; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.7'" title="Delete Request"><i data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
+                   </div>`
+                : `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
+                     <button onclick="approveRequest('${req.id}')" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 16px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00bfa5 0%, #00a693 100%); color: white; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0, 191, 165, 0.25);" onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 191, 165, 0.35)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 191, 165, 0.25)';"><i data-lucide="send" style="width:14px;height:14px;"></i> Authorize</button>
+                     <button onclick="deleteRequest('${req.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; display: flex; align-items: center; opacity: 0.7; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.7'" title="Delete Request"><i data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
+                   </div>`;
                 
               const tr = document.createElement('tr');
               tr.style.borderBottom = '1px solid #f1f5f9';
@@ -234,7 +240,7 @@ function loadRequests() {
                   <div style="color: #94a3b8; font-size: 12px; font-family: var(--font-mono);">Req ID: #${req.id.substring(0,8)}</div>
                 </td>
                 <td style="padding: 20px 24px;">${statusBadge}</td>
-                <td style="padding: 20px 24px; text-align: right;">${actionBtn}</td>
+                <td style="padding: 20px 24px;">${actionBtn}</td>
               `;
               tbody.appendChild(tr);
           });
@@ -244,6 +250,18 @@ function loadRequests() {
           tbody.innerHTML = `<tr><td colspan="5" style="padding: 60px 40px; text-align: center;"><div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #ef4444;"><i data-lucide="alert-triangle" style="width: 32px; height: 32px;"></i><span style="font-size: 15px; font-weight: 600;">Failed to synchronize requests. Please try again.</span></div></td></tr>`;
           lucide.createIcons();
       });
+}
+
+function deleteRequest(id) {
+    if(confirm("Are you sure you want to delete this request?")) {
+        // Remove from localStorage
+        const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
+        const updatedReqs = localReqs.filter(r => r.id !== id);
+        localStorage.setItem('phpAQI_mock_requests', JSON.stringify(updatedReqs));
+        
+        showToast("Request deleted successfully.", "success");
+        loadRequests();
+    }
 }
 
 let pendingApprovalId = null;

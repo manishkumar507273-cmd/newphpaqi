@@ -88,72 +88,72 @@
   </div>
 
   <!-- Weather Cards Grid -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 24px;">
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
     
-    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 16px rgba(15,23,42,0.04);">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #ffedd5; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 20px;">🌡️</div>
+    <div class="flex flex-col gap-3 sm:gap-4 bg-white border border-slate-200 rounded-2xl p-3 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm sm:text-xl shrink-0">🌡️</div>
         <div>
-          <div style="font-size: 14.5px; font-weight: 700; color: #0f172a;">Temperature</div>
-          <div style="font-size: 10.5px; color: #64748b;">Live Telemetry</div>
+          <div class="text-[13px] sm:text-[14.5px] font-bold text-slate-900 leading-tight">Temperature</div>
+          <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-temp" style="font-family: var(--font-mono); font-size: 21px; font-weight: 800; color: #ea580c;">--</div>
+      <div id="card-temp" class="font-mono text-lg sm:text-[21px] font-extrabold text-orange-600">--</div>
     </div>
 
-    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 16px rgba(15,23,42,0.04);">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">💧</div>
+    <div class="flex flex-col gap-3 sm:gap-4 bg-white border border-slate-200 rounded-2xl p-3 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center text-sm sm:text-xl shrink-0">💧</div>
         <div>
-          <div style="font-size: 14.5px; font-weight: 700; color: #0f172a;">Humidity</div>
-          <div style="font-size: 10.5px; color: #64748b;">Live Telemetry</div>
+          <div class="text-[13px] sm:text-[14.5px] font-bold text-slate-900 leading-tight">Humidity</div>
+          <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-hum" style="font-family: var(--font-mono); font-size: 21px; font-weight: 800; color: #0284c7;">--</div>
+      <div id="card-hum" class="font-mono text-lg sm:text-[21px] font-extrabold text-sky-600">--</div>
     </div>
 
-    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 16px rgba(15,23,42,0.04);">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #e0e7ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 20px;">💨</div>
+    <div class="flex flex-col gap-3 sm:gap-4 bg-white border border-slate-200 rounded-2xl p-3 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm sm:text-xl shrink-0">💨</div>
         <div>
-          <div style="font-size: 14.5px; font-weight: 700; color: #0f172a;">Wind Speed</div>
-          <div style="font-size: 10.5px; color: #64748b;">Live Telemetry</div>
+          <div class="text-[13px] sm:text-[14.5px] font-bold text-slate-900 leading-tight">Wind Speed</div>
+          <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-wind" style="font-family: var(--font-mono); font-size: 21px; font-weight: 800; color: #4f46e5;">--</div>
+      <div id="card-wind" class="font-mono text-lg sm:text-[21px] font-extrabold text-indigo-600">--</div>
     </div>
 
-    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 16px rgba(15,23,42,0.04);">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #f5f3ff; color: #8b5cf6; display: flex; align-items: center; justify-content: center; font-size: 20px;">🌪️</div>
+    <div class="flex flex-col gap-3 sm:gap-4 bg-white border border-slate-200 rounded-2xl p-3 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm sm:text-xl shrink-0">🌪️</div>
         <div>
-          <div style="font-size: 14.5px; font-weight: 700; color: #0f172a;">Wind Gust</div>
-          <div style="font-size: 10.5px; color: #64748b;">Live Telemetry</div>
+          <div class="text-[13px] sm:text-[14.5px] font-bold text-slate-900 leading-tight">Wind Gust</div>
+          <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-gust" style="font-family: var(--font-mono); font-size: 21px; font-weight: 800; color: #8b5cf6;">--</div>
+      <div id="card-gust" class="font-mono text-lg sm:text-[21px] font-extrabold text-purple-600">--</div>
     </div>
 
-    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 16px rgba(15,23,42,0.04);">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #cff4fc; color: #0891b2; display: flex; align-items: center; justify-content: center; font-size: 20px;">🌧️</div>
+    <div class="flex flex-col gap-3 sm:gap-4 bg-white border border-slate-200 rounded-2xl p-3 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center text-sm sm:text-xl shrink-0">🌧️</div>
         <div>
-          <div style="font-size: 14.5px; font-weight: 700; color: #0f172a;">Rainfall</div>
-          <div style="font-size: 10.5px; color: #64748b;">Live Telemetry</div>
+          <div class="text-[13px] sm:text-[14.5px] font-bold text-slate-900 leading-tight">Rainfall</div>
+          <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-rain" style="font-family: var(--font-mono); font-size: 21px; font-weight: 800; color: #0891b2;">--</div>
+      <div id="card-rain" class="font-mono text-lg sm:text-[21px] font-extrabold text-cyan-600">--</div>
     </div>
 
-    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 16px rgba(15,23,42,0.04);">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 20px;">🧭</div>
+    <div class="flex flex-col gap-3 sm:gap-4 bg-white border border-slate-200 rounded-2xl p-3 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-sm sm:text-xl shrink-0">🧭</div>
         <div>
-          <div style="font-size: 14.5px; font-weight: 700; color: #0f172a;">Wind Direction</div>
-          <div style="font-size: 10.5px; color: #64748b;">Live Telemetry</div>
+          <div class="text-[13px] sm:text-[14.5px] font-bold text-slate-900 leading-tight">Wind Dir</div>
+          <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-dir" style="font-family: var(--font-sans); font-size: 21px; font-weight: 800; color: #475569;">--</div>
+      <div id="card-dir" class="font-sans text-lg sm:text-[21px] font-extrabold text-slate-600">--</div>
     </div>
 
   </div>

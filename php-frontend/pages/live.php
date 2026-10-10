@@ -123,133 +123,133 @@
     </div>
 
     <!-- Pollutants Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
       
       <!-- PM2.5 -->
-      <div class="pollutant-card" onclick="openPollutantModal('pm25')" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px; color: #0f172a; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); transition: all 0.2s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='#00bfa5'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='translateY(0)'">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #f0f9ff; color: #0ea5e9; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">🌫️</div>
+      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('pm25')">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🌫️</div>
             <div>
-              <div style="font-size: 15px; font-weight: 700; font-family: var(--font-sans); color: #0f172a; line-height: 1.1;">PM₂.₅</div>
-              <div style="font-size: 10.5px; color: #64748b; margin-top: 2px; white-space: nowrap;">WHO: ≤15</div>
+              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₂.₅</div>
+              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤15</div>
             </div>
           </div>
-          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #f8fafc; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; color: #64748b; flex-shrink: 0;">
-            <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
-        <div style="display: flex; align-items: flex-end; justify-content: space-between; width: 100%; margin-top: 2px;">
+        <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-pm25" style="font-family: var(--font-mono); font-size: 24px; font-weight: 800; color: #0ea5e9; line-height: 1;">--</div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; font-family: var(--font-mono);">µg/m³</div>
+            <div id="card-pm25" class="font-mono text-lg sm:text-2xl font-extrabold text-sky-500 leading-none">--</div>
+            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
-          <div id="tag-pm25" style="padding: 4px 10px; border-radius: 999px; background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #94a3b8;"></span>
+          <div id="tag-pm25" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
             <span>Load</span>
           </div>
         </div>
       </div>
 
       <!-- PM10 -->
-      <div class="pollutant-card" onclick="openPollutantModal('pm10')" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px; color: #0f172a; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); transition: all 0.2s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='#00bfa5'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='translateY(0)'">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #eef2ff; color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">☁️</div>
+      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('pm10')">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☁️</div>
             <div>
-              <div style="font-size: 15px; font-weight: 700; font-family: var(--font-sans); color: #0f172a; line-height: 1.1;">PM₁₀</div>
-              <div style="font-size: 10.5px; color: #64748b; margin-top: 2px; white-space: nowrap;">WHO: ≤45</div>
+              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₁₀</div>
+              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤45</div>
             </div>
           </div>
-          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #f8fafc; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; color: #64748b; flex-shrink: 0;">
-            <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
-        <div style="display: flex; align-items: flex-end; justify-content: space-between; width: 100%; margin-top: 2px;">
+        <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-pm10" style="font-family: var(--font-mono); font-size: 24px; font-weight: 800; color: #6366f1; line-height: 1;">--</div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; font-family: var(--font-mono);">µg/m³</div>
+            <div id="card-pm10" class="font-mono text-lg sm:text-2xl font-extrabold text-indigo-500 leading-none">--</div>
+            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
-          <div id="tag-pm10" style="padding: 4px 10px; border-radius: 999px; background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #94a3b8;"></span>
+          <div id="tag-pm10" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
             <span>Load</span>
           </div>
         </div>
       </div>
 
       <!-- CO -->
-      <div class="pollutant-card" onclick="openPollutantModal('co')" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px; color: #0f172a; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); transition: all 0.2s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='#00bfa5'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='translateY(0)'">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #f8fafc; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">💨</div>
+      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('co')">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center text-sm sm:text-lg shrink-0">💨</div>
             <div>
-              <div style="font-size: 15px; font-weight: 700; font-family: var(--font-sans); color: #0f172a; line-height: 1.1;">CO</div>
-              <div style="font-size: 10.5px; color: #64748b; margin-top: 2px; white-space: nowrap;">WHO: ≤4</div>
+              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">CO</div>
+              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤4</div>
             </div>
           </div>
-          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #f8fafc; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; color: #64748b; flex-shrink: 0;">
-            <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
-        <div style="display: flex; align-items: flex-end; justify-content: space-between; width: 100%; margin-top: 2px;">
+        <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-co" style="font-family: var(--font-mono); font-size: 24px; font-weight: 800; color: #475569; line-height: 1;">--</div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; font-family: var(--font-mono);">mg/m³</div>
+            <div id="card-co" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-600 leading-none">--</div>
+            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">mg/m³</div>
           </div>
-          <div id="tag-co" style="padding: 4px 10px; border-radius: 999px; background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #94a3b8;"></span>
+          <div id="tag-co" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
             <span>Load</span>
           </div>
         </div>
       </div>
 
       <!-- NO2 -->
-      <div class="pollutant-card" onclick="openPollutantModal('no2')" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px; color: #0f172a; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); transition: all 0.2s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='#00bfa5'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='translateY(0)'">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #faf5ff; color: #a855f7; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">🏭</div>
+      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('no2')">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🏭</div>
             <div>
-              <div style="font-size: 15px; font-weight: 700; font-family: var(--font-sans); color: #0f172a; line-height: 1.1;">NO₂</div>
-              <div style="font-size: 10.5px; color: #64748b; margin-top: 2px; white-space: nowrap;">WHO: ≤25</div>
+              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">NO₂</div>
+              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤25</div>
             </div>
           </div>
-          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #f8fafc; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; color: #64748b; flex-shrink: 0;">
-            <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
-        <div style="display: flex; align-items: flex-end; justify-content: space-between; width: 100%; margin-top: 2px;">
+        <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-no2" style="font-family: var(--font-mono); font-size: 24px; font-weight: 800; color: #a855f7; line-height: 1;">--</div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; font-family: var(--font-mono);">µg/m³</div>
+            <div id="card-no2" class="font-mono text-lg sm:text-2xl font-extrabold text-purple-500 leading-none">--</div>
+            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
-          <div id="tag-no2" style="padding: 4px 10px; border-radius: 999px; background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #94a3b8;"></span>
+          <div id="tag-no2" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
             <span>Load</span>
           </div>
         </div>
       </div>
 
       <!-- O3 -->
-      <div class="pollutant-card" onclick="openPollutantModal('o3')" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px; color: #0f172a; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); transition: all 0.2s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='#00bfa5'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='translateY(0)'">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background-color: #fefce8; color: #eab308; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">☀️</div>
+      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('o3')">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☀️</div>
             <div>
-              <div style="font-size: 15px; font-weight: 700; font-family: var(--font-sans); color: #0f172a; line-height: 1.1;">O₃</div>
-              <div style="font-size: 10.5px; color: #64748b; margin-top: 2px; white-space: nowrap;">WHO: ≤100</div>
+              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">O₃</div>
+              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤100</div>
             </div>
           </div>
-          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #f8fafc; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; color: #64748b; flex-shrink: 0;">
-            <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
-        <div style="display: flex; align-items: flex-end; justify-content: space-between; width: 100%; margin-top: 2px;">
+        <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-o3" style="font-family: var(--font-mono); font-size: 24px; font-weight: 800; color: #eab308; line-height: 1;">--</div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; font-family: var(--font-mono);">µg/m³</div>
+            <div id="card-o3" class="font-mono text-lg sm:text-2xl font-extrabold text-amber-500 leading-none">--</div>
+            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
-          <div id="tag-o3" style="padding: 4px 10px; border-radius: 999px; background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #94a3b8;"></span>
+          <div id="tag-o3" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
             <span>Load</span>
           </div>
         </div>

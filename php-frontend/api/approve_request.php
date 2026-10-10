@@ -111,9 +111,15 @@ try {
                 }
             }
             if ($smtp_user && $smtp_pass) break;
+            if ($smtp_user && $smtp_pass) break;
         }
     }
 
+    // Fallback to environment variables if not found in .env (for Vercel)
+    if (empty($smtp_user)) $smtp_user = getenv('SMTP_USER') ?: '';
+    if (empty($smtp_pass)) $smtp_pass = getenv('SMTP_PASSWORD') ?: '';
+    if (empty($smtp_host) || $smtp_host === 'smtp.gmail.com') $smtp_host = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
+    if ($smtp_port === 587) $smtp_port = getenv('SMTP_PORT') ? intval(getenv('SMTP_PORT')) : 587;
     $mail->Host       = $smtp_host;
     $mail->Port       = $smtp_port ?: 587;
     $mail->Username   = $smtp_user;

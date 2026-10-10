@@ -812,6 +812,20 @@ function submitDatasetRequest(e) {
     .then(response => response.json())
     .then(data => {
         if(data.success) {
+            // Save to localStorage for Vercel serverless persistence
+            const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
+            localReqs.unshift({
+                id: data.request_id || 'req_' + Math.floor(Math.random()*10000),
+                name: formData.name,
+                email: formData.email,
+                org: formData.org,
+                industry: formData.industry,
+                scope: formData.scope,
+                status: 'pending',
+                created_at: new Date().toISOString()
+            });
+            localStorage.setItem('phpAQI_mock_requests', JSON.stringify(localReqs));
+
             document.getElementById('dataset-form').style.display = 'none';
             document.getElementById('dataset-success').style.display = 'flex';
             document.getElementById('dataset-form').reset();

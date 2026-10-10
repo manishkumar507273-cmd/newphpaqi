@@ -306,22 +306,22 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
           }).then(res => res.json()).then(data => ({data, fbKey}));
       })
       .then(({data, fbKey}) => {
-          // Update Firebase status if we found the key
-          if (fbKey) {
-              fetch(`https://smart-air-net-default-rtdb.firebaseio.com/requests/${fbKey}.json`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ status: 'approved' })
-              });
-          }
-
-          if(data.success || fbKey) {
+          if(data && data.success) {
+              // Update Firebase status only if email successfully sent
+              if (fbKey) {
+                  fetch(`https://smart-air-net-default-rtdb.firebaseio.com/requests/${fbKey}.json`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ status: 'approved' })
+                  });
+              }
+              
               closeConfirmModal();
               setTimeout(loadRequests, 800);
-              const msg = (data && data.message) ? data.message : "Request approved! The dataset (last 24h) has been successfully emailed via SMTP.";
-              showToast(msg, data.message && data.message.includes('failed') ? "error" : "success");
+              const msg = data.message || "Request approved! The dataset (last 24h) has been successfully emailed via SMTP.";
+              showToast(msg, msg.includes('failed') ? "error" : "success");
           } else {
-              showToast("Error: " + (data.error || "Request not found"), "error");
+              showToast("Error: " + (data ? data.error || data.message || "Failed to send email" : "Unknown Error"), "error");
           }
       })
       .catch(err => {

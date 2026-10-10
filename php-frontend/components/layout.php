@@ -91,7 +91,7 @@ window.FIREBASE_ENV_CONFIG = {
 
     <!-- Center: Desktop Nav -->
     <?php if ($current_page !== 'overview'): ?>
-    <nav style="display: inline-flex; align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="hidden md:flex">
+    <nav style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="hidden md:inline-flex">
       <a href="?page=live" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'live' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: color 0.15s ease;">
         <i data-lucide="radio" style="width: 15px; height: 15px; opacity: <?= $current_page === 'live' ? '1' : '0.75' ?>;"></i> Live Data Stream
       </a>
@@ -117,14 +117,14 @@ window.FIREBASE_ENV_CONFIG = {
       
 
       <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
-        <a href="?page=admin" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #e2e8f0; background-color: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.15s ease;" class="hidden md:inline-flex">
+        <a href="?page=admin" style="align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #e2e8f0; background-color: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.15s ease;" class="hidden md:inline-flex">
           <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #00bfa5;"></i>
           <span>Admin Center</span>
         </a>
       <?php endif; ?>
 
       <?php if ($is_logged_in): ?>
-        <div style="display: flex; align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);" class="hidden md:flex">
+        <div style="align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);" class="hidden md:flex">
           <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.3);">
             <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
           </div>
@@ -134,36 +134,36 @@ window.FIREBASE_ENV_CONFIG = {
           </a>
         </div>
       <?php else: ?>
-        <button onclick="openAuthModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; border: none; background-color: #0f172a; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);" class="hidden md:inline-flex">
+        <button onclick="openAuthModal()" style="align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; border: none; background-color: #0f172a; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);" class="hidden md:inline-flex">
           <i data-lucide="user" style="width: 14px; height: 14px;"></i>
           <span class="hidden sm:inline">Sign In</span>
         </button>
       <?php endif; ?>
       
       <!-- Live Badge -->
-      <div style="padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;" class="hidden md:flex">
+      <div style="padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;" class="hidden md:flex">
         <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #16a34a;"></span>
         <span>LIVE</span>
       </div>
 
       <!-- Mobile Right Items (Visible only on mobile) -->
-      <?php if ($current_page !== 'overview'): ?>
       <div class="flex items-center gap-2 md:hidden">
-        <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
+        <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false && $current_page !== 'overview'): ?>
           <a href="?page=admin" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background-color: #0f172a; border: 1.5px solid #1e293b; color: #ffffff; text-decoration: none;">
             <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i>
           </a>
         <?php endif; ?>
         
+        <?php if ($current_page !== 'overview'): ?>
         <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #10b981;">
            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; box-shadow: 0 0 0 2px #dcfce7;"></div>
         </div>
+        <?php endif; ?>
 
         <button onclick="toggleMobileMenu()" id="mobile-menu-btn" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #0f172a; cursor: pointer;">
-          <i data-lucide="menu" id="mobile-menu-icon" style="width: 20px; height: 20px;"></i>
+          <i data-lucide="more-vertical" id="mobile-menu-icon" style="width: 20px; height: 20px;"></i>
         </button>
       </div>
-      <?php endif; ?>
     </div>
   </header>
 

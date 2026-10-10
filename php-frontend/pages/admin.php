@@ -145,15 +145,23 @@ function loadRequests() {
     tbody.innerHTML = `<tr><td colspan="5" style="padding: 60px 40px; text-align: center;"><div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;"><i data-lucide="loader-2" class="lucide-spin" style="width: 32px; height: 32px; color: #00bfa5; animation: spin 1s linear infinite;"></i><span style="color: #64748b; font-size: 15px; font-weight: 500;">Fetching secure requests...</span></div></td></tr>`;
     lucide.createIcons();
     
-    fetch('api/get_requests.php')
-      .then(res => res.json())
-      .then(data => {
-          // Merge with localStorage demo requests for Vercel persistence
-          const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
+    Promise.all([
+        fetch('api/get_requests.php').then(res => res.json()).catch(() => []),
+        fetch('https://smart-air-net-default-rtdb.firebaseio.com/requests.json').then(res => res.json()).catch(() => ({}))
+    ])
+    .then(([backendDataRaw, firebaseData]) => {
+          // Parse Firebase data from object map to array
+          let firebaseReqs = [];
+          if (firebaseData && typeof firebaseData === 'object') {
+              firebaseReqs = Object.keys(firebaseData).map(k => ({...firebaseData[k], _fbKey: k}));
+          }
+          
+          // Sort by newest first
+          firebaseReqs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           
           // Combine and remove duplicates by ID
-          const backendData = Array.isArray(data) ? data : [];
-          const allData = [...localReqs, ...backendData];
+          const backendData = Array.isArray(backendDataRaw) ? backendDataRaw : [];
+          const allData = [...firebaseReqs, ...backendData];
           const uniqueDataMap = new Map();
           allData.forEach(item => uniqueDataMap.set(item.id, item));
           const finalData = Array.from(uniqueDataMap.values());
@@ -228,13 +236,23 @@ function loadRequests() {
 
 function deleteRequest(id) {
     if(confirm("Are you sure you want to delete this request?")) {
-        // Remove from localStorage
-        const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
-        const updatedReqs = localReqs.filter(r => r.id !== id);
-        localStorage.setItem('phpAQI_mock_requests', JSON.stringify(updatedReqs));
-        
-        showToast("Request deleted successfully.", "success");
-        loadRequests();
+        // Remove from Firebase Realtime Database
+        fetch('https://smart-air-net-default-rtdb.firebaseio.com/requests.json')
+          .then(res => res.json())
+          .then(data => {
+              if (data) {
+                  for (let key in data) {
+                      if (data[key].id === id) {
+                          fetch(`https://smart-air-net-default-rtdb.firebaseio.com/requests/${key}.json`, { method: 'DELETE' });
+                      }
+                  }
+              }
+          })
+          .catch(e => console.error(e))
+          .finally(() => {
+              showToast("Request deleted successfully.", "success");
+              setTimeout(loadRequests, 800);
+          });
     }
 }
 
@@ -261,56 +279,54 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
     btn.style.opacity = '0.8';
     lucide.createIcons();
     
-    const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
-    const reqData = localReqs.find(r => r.id === pendingApprovalId);
-    
-    fetch('api/approve_request.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            id: pendingApprovalId,
-            email: reqData ? reqData.email : null,
-            name: reqData ? reqData.name : null
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        // Fallback for Vercel serverless environment: update localStorage
-        const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
-        let updatedLocal = false;
-        
-        for (let i = 0; i < localReqs.length; i++) {
-            if (localReqs[i].id === pendingApprovalId) {
-                localReqs[i].status = 'approved';
-                updatedLocal = true;
-                break;
-            }
-        }
-        
-        if (updatedLocal) {
-            localStorage.setItem('phpAQI_mock_requests', JSON.stringify(localReqs));
-        }
+    // First get the request from Firebase to extract email for the backend
+    fetch('https://smart-air-net-default-rtdb.firebaseio.com/requests.json')
+      .then(res => res.json())
+      .then(fbData => {
+          let reqData = null;
+          let fbKey = null;
+          if (fbData) {
+              for (let key in fbData) {
+                  if (fbData[key].id === pendingApprovalId) {
+                      reqData = fbData[key];
+                      fbKey = key;
+                      break;
+                  }
+              }
+          }
+          
+          return fetch('api/approve_request.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  id: pendingApprovalId,
+                  email: reqData ? reqData.email : null,
+                  name: reqData ? reqData.name : null
+              })
+          }).then(res => res.json()).then(data => ({data, fbKey}));
+      })
+      .then(({data, fbKey}) => {
+          // Update Firebase status if we found the key
+          if (fbKey) {
+              fetch(`https://smart-air-net-default-rtdb.firebaseio.com/requests/${fbKey}.json`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ status: 'approved' })
+              });
+          }
 
-        if(data.success || updatedLocal) {
-            closeConfirmModal();
-            loadRequests();
-            const msg = (data && data.message) ? data.message : "Request approved! The dataset (last 24h) has been successfully emailed via SMTP.";
-            showToast(msg, data.message && data.message.includes('failed') ? "error" : "success");
-        } else {
-            showToast("Error: " + (data.error || "Request not found"), "error");
-        }
-    })
-    .catch(err => {
-        // Fallback if the fetch fails completely but we updated local storage
-        const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
-        if (localReqs.some(r => r.id === pendingApprovalId)) {
-             closeConfirmModal();
-             loadRequests();
-             showToast("Request approved! The dataset (last 24h) has been successfully emailed via SMTP.", "success");
-        } else {
-             showToast("Failed to connect to secure server.", "error");
-        }
-    })
+          if(data.success || fbKey) {
+              closeConfirmModal();
+              setTimeout(loadRequests, 800);
+              const msg = (data && data.message) ? data.message : "Request approved! The dataset (last 24h) has been successfully emailed via SMTP.";
+              showToast(msg, data.message && data.message.includes('failed') ? "error" : "success");
+          } else {
+              showToast("Error: " + (data.error || "Request not found"), "error");
+          }
+      })
+      .catch(err => {
+          showToast("Failed to connect to secure server.", "error");
+      })
     .finally(() => {
         btn.innerHTML = originalText;
         btn.style.pointerEvents = 'auto';

@@ -812,9 +812,8 @@ function submitDatasetRequest(e) {
     .then(response => response.json())
     .then(data => {
         if(data.success) {
-            // Save to localStorage for Vercel serverless persistence
-            const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
-            localReqs.unshift({
+            // Save to Firebase Realtime Database for true cross-device sync
+            const reqData = {
                 id: data.request_id || 'req_' + Math.floor(Math.random()*10000),
                 name: formData.name,
                 email: formData.email,
@@ -823,13 +822,18 @@ function submitDatasetRequest(e) {
                 scope: formData.scope,
                 status: 'pending',
                 created_at: new Date().toISOString()
+            };
+            
+            fetch("https://smart-air-net-default-rtdb.firebaseio.com/requests.json", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reqData)
+            }).then(() => {
+                document.getElementById('dataset-form').style.display = 'none';
+                document.getElementById('dataset-success').style.display = 'flex';
+                document.getElementById('dataset-form').reset();
+                lucide.createIcons();
             });
-            localStorage.setItem('phpAQI_mock_requests', JSON.stringify(localReqs));
-
-            document.getElementById('dataset-form').style.display = 'none';
-            document.getElementById('dataset-success').style.display = 'flex';
-            document.getElementById('dataset-form').reset();
-            lucide.createIcons();
         } else {
             alert("Error: " + (data.error || "Unknown error occurred"));
         }

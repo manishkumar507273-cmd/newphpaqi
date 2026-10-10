@@ -32,6 +32,11 @@ foreach ($env_paths as $env_path) {
     }
 }
 
+// Fallback to Vercel/System environment variables if not found in .env file
+if (empty($supabaseUrl)) $supabaseUrl = getenv('VITE_SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: '';
+if (empty($supabaseKey)) $supabaseKey = getenv('VITE_SUPABASE_ANON_KEY') ?: getenv('SUPABASE_KEY') ?: '';
+
+
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 50;
 

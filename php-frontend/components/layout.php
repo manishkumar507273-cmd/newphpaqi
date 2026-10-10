@@ -38,6 +38,14 @@ foreach ($env_paths as $env_path) {
         }
     }
 }
+
+// Fallback to Vercel/System environment variables if not found in .env file
+if (empty($env_config['supabaseUrl'])) $env_config['supabaseUrl'] = getenv('VITE_SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: '';
+if (empty($env_config['supabaseKey'])) $env_config['supabaseKey'] = getenv('VITE_SUPABASE_ANON_KEY') ?: getenv('SUPABASE_KEY') ?: '';
+if (empty($env_config['firebaseApiKey'])) $env_config['firebaseApiKey'] = getenv('VITE_FIREBASE_API_KEY') ?: getenv('FIREBASE_API_KEY') ?: '';
+if (empty($env_config['firebaseAuthDomain'])) $env_config['firebaseAuthDomain'] = getenv('VITE_FIREBASE_AUTH_DOMAIN') ?: getenv('FIREBASE_AUTH_DOMAIN') ?: '';
+if (empty($env_config['firebaseProjectId'])) $env_config['firebaseProjectId'] = getenv('VITE_FIREBASE_PROJECT_ID') ?: getenv('FIREBASE_PROJECT_ID') ?: '';
+
 ?>
 
 <script>

@@ -151,35 +151,9 @@ function loadRequests() {
           // Merge with localStorage demo requests for Vercel persistence
           const localReqs = JSON.parse(localStorage.getItem('phpAQI_mock_requests') || '[]');
           
-          // Add default presentation mockups if empty
-          const defaultReqs = [
-              {
-                  id: 'req_demox1',
-                  name: 'Dr. Sarah Jenkins',
-                  email: 's.jenkins@stanford.edu',
-                  org: 'Stanford Climate Research',
-                  industry: 'academia',
-                  scope: 'Last 24 Hours (High Resolution)',
-                  status: 'pending',
-                  created_at: new Date(Date.now() - 3600000).toISOString()
-              },
-              {
-                  id: 'req_demox2',
-                  name: 'James Chen',
-                  email: 'jchen@eco-logistics.com',
-                  org: 'EcoLogistics Global',
-                  industry: 'enterprise',
-                  scope: 'Previous 30 Days (Aggregated)',
-                  status: 'approved',
-                  created_at: new Date(Date.now() - 86400000).toISOString()
-              }
-          ];
-          
-          const combinedLocal = [...localReqs, ...defaultReqs];
-          
           // Combine and remove duplicates by ID
           const backendData = Array.isArray(data) ? data : [];
-          const allData = [...combinedLocal, ...backendData];
+          const allData = [...localReqs, ...backendData];
           const uniqueDataMap = new Map();
           allData.forEach(item => uniqueDataMap.set(item.id, item));
           const finalData = Array.from(uniqueDataMap.values());

@@ -75,14 +75,14 @@ window.FIREBASE_ENV_CONFIG = {
           <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
             <i data-lucide="wind" style="width: 20px; height: 20px;"></i>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <div style="font-size: clamp(17px, 3vw, 20px); font-weight: 700; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; line-height: 1.2;">
+          <div style="display: flex; flex-direction: column; gap: 2px; overflow: hidden;">
+            <div style="font-size: clamp(17px, 3vw, 20px); font-weight: 700; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
               Smart <span style="font-weight: 500; color: #00bfa5;">WeatherNet</span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px; flex-wrap: wrap;">
               <div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></div>
               <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
-              <span style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
+              <span style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; white-space: nowrap;" class="hidden sm:inline">13°15'40" N, 74°47'13" E</span>
             </div>
           </div>
         </a>
@@ -210,7 +210,7 @@ window.FIREBASE_ENV_CONFIG = {
         icon.setAttribute('data-lucide', 'x');
       } else {
         menu.style.display = 'none';
-        icon.setAttribute('data-lucide', 'menu');
+        icon.setAttribute('data-lucide', 'more-vertical');
       }
       lucide.createIcons();
     }
@@ -284,29 +284,7 @@ window.FIREBASE_ENV_CONFIG = {
 
 </div>
 
-<!-- Mobile Bottom Navigation -->
-<?php if ($current_page !== 'overview'): ?>
-<nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pb-safe pt-2 px-2 z-50 shadow-[0_-4px_20px_rgba(15,23,42,0.05)]" style="padding-bottom: env(safe-area-inset-bottom, 12px);">
-  <a href="?page=live" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; text-decoration: none; color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>;">
-    <i data-lucide="radio" style="width: 22px; height: 22px;"></i>
-    <span style="font-size: 10px; font-weight: 800;">Live</span>
-  </a>
-  <a href="?page=historical" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; text-decoration: none; color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>;">
-    <i data-lucide="database" style="width: 22px; height: 22px;"></i>
-    <span style="font-size: 10px; font-weight: 800;">Archive</span>
-  </a>
-  <a href="?page=predictive" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; text-decoration: none; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>;">
-    <i data-lucide="line-chart" style="width: 22px; height: 22px;"></i>
-    <span style="font-size: 10px; font-weight: 800;">Forecast</span>
-  </a>
-  <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
-  <a href="?page=admin" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; text-decoration: none; color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>;">
-    <i data-lucide="shield-check" style="width: 22px; height: 22px;"></i>
-    <span style="font-size: 10px; font-weight: 800;">Admin</span>
-  </a>
-  <?php endif; ?>
-</nav>
-<?php endif; ?>
+
 
 <?php if (isset($_GET['require_login']) && $_GET['require_login'] === 'true'): ?>
 <script>

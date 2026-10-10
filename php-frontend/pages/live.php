@@ -337,6 +337,100 @@
     </div>
   </div>
 
+    <!-- Air Quality Index (AQI) Scale Card -->
+    <div style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+      <div>
+        <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
+          <i data-lucide="shield-alert" style="width: 20px; height: 20px; color: #00bfa5;"></i>
+          Air Quality Index (AQI) Scale
+        </h2>
+        <p style="font-size: 12.5px; color: #64748b; margin-top: 4px; margin-bottom: 0;">
+          Know what each category of the Air Quality Index implies for health and ambient safety.
+        </p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Scale Items -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #f0fdf4; border: 1px solid #bbf7d0; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #22c55e; flex-shrink: 0;"></span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Good</span>
+                <span style="font-size: 12px; font-weight: 700; color: #22c55e; font-family: var(--font-mono);">(0 to 50)</span>
+              </div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Air quality is considered satisfactory, and air pollution poses little or no risk.</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fefce8; border: 1px solid #fef08a; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #eab308; flex-shrink: 0;"></span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Moderate</span>
+                <span style="font-size: 12px; font-weight: 700; color: #eab308; font-family: var(--font-mono);">(51 to 100)</span>
+              </div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fff7ed; border: 1px solid #fed7aa; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #f97316; flex-shrink: 0;"></span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Poor</span>
+                <span style="font-size: 12px; font-weight: 700; color: #f97316; font-family: var(--font-mono);">(101 to 200)</span>
+              </div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Breathing discomfort to people with lungs, asthma, and heart diseases.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fef2f2; border: 1px solid #fecaca; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #ef4444; flex-shrink: 0;"></span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Unhealthy</span>
+                <span style="font-size: 12px; font-weight: 700; color: #ef4444; font-family: var(--font-mono);">(201 to 300)</span>
+              </div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #faf5ff; border: 1px solid #e9d5ff; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #a855f7; flex-shrink: 0;"></span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Severe</span>
+                <span style="font-size: 12px; font-weight: 700; color: #a855f7; font-family: var(--font-mono);">(301 to 400)</span>
+              </div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fff1f2; border: 1px solid #fecdd3; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #f43f5e; flex-shrink: 0;"></span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Hazardous</span>
+                <span style="font-size: 12px; font-weight: 700; color: #f43f5e; font-family: var(--font-mono);">(401+)</span>
+              </div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">May cause serious health impacts on entire population. Wear N95 masks and stay indoors.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

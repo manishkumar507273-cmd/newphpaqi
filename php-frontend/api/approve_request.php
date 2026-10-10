@@ -24,11 +24,7 @@ $requests_file = $data_dir . '/requests.json';
 if (!is_dir($data_dir) || !is_writable($data_dir)) {
     $requests_file = sys_get_temp_dir() . '/phpAQI_requests.json';
 }
-if (!file_exists($requests_file)) {
-    http_response_code(404);
-    echo json_encode(['error' => 'No requests found']);
-    exit;
-}
+// Removed file_exists check to allow Vercel bypass to work even if file is missing
 
 $requests = json_decode(file_get_contents($requests_file), true) ?: [];
 $found = false;

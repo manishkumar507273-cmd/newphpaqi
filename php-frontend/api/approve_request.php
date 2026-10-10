@@ -26,7 +26,10 @@ if (!is_dir($data_dir) || !is_writable($data_dir)) {
 }
 // Removed file_exists check to allow Vercel bypass to work even if file is missing
 
-$requests = json_decode(file_get_contents($requests_file), true) ?: [];
+$requests = [];
+if (file_exists($requests_file)) {
+    $requests = json_decode(file_get_contents($requests_file), true) ?: [];
+}
 $found = false;
 $target_email = isset($input['email']) ? $input['email'] : '';
 $req_name = isset($input['name']) ? $input['name'] : 'Requester';

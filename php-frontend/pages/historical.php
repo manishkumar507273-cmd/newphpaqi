@@ -824,7 +824,11 @@ function submitDatasetRequest(e) {
                 created_at: new Date().toISOString()
             };
             
-            fetch("https://smart-air-net-default-rtdb.firebaseio.com/requests.json", {
+            const fbDbUrl = (window.ENV_CONFIG && window.ENV_CONFIG.firebaseDatabaseUrl) 
+                ? window.ENV_CONFIG.firebaseDatabaseUrl.replace(/\/$/, '') 
+                : 'https://smart-air-net-default-rtdb.firebaseio.com';
+            
+            fetch(`${fbDbUrl}/requests.json`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(reqData)

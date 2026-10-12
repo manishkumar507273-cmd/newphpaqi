@@ -16,6 +16,7 @@ $env_config = [
     'firebaseApiKey' => '',
     'firebaseAuthDomain' => '',
     'firebaseProjectId' => '',
+    'firebaseDatabaseUrl' => '',
     'supabaseUrl' => '',
     'supabaseKey' => ''
 ];
@@ -32,6 +33,7 @@ foreach ($env_paths as $env_path) {
                 if (($name === 'VITE_FIREBASE_API_KEY' || $name === 'FIREBASE_API_KEY') && empty($env_config['firebaseApiKey'])) $env_config['firebaseApiKey'] = $value;
                 if (($name === 'VITE_FIREBASE_AUTH_DOMAIN' || $name === 'FIREBASE_AUTH_DOMAIN') && empty($env_config['firebaseAuthDomain'])) $env_config['firebaseAuthDomain'] = $value;
                 if (($name === 'VITE_FIREBASE_PROJECT_ID' || $name === 'FIREBASE_PROJECT_ID') && empty($env_config['firebaseProjectId'])) $env_config['firebaseProjectId'] = $value;
+                if (($name === 'FIREBASE_DATABASE_URL' || $name === 'VITE_FIREBASE_DATABASE_URL') && empty($env_config['firebaseDatabaseUrl'])) $env_config['firebaseDatabaseUrl'] = $value;
                 if (($name === 'VITE_SUPABASE_URL' || $name === 'SUPABASE_URL') && empty($env_config['supabaseUrl'])) $env_config['supabaseUrl'] = $value;
                 if (($name === 'VITE_SUPABASE_ANON_KEY' || $name === 'SUPABASE_KEY') && empty($env_config['supabaseKey'])) $env_config['supabaseKey'] = $value;
             }
@@ -45,16 +47,21 @@ if (empty($env_config['supabaseKey'])) $env_config['supabaseKey'] = getenv('VITE
 if (empty($env_config['firebaseApiKey'])) $env_config['firebaseApiKey'] = getenv('VITE_FIREBASE_API_KEY') ?: getenv('FIREBASE_API_KEY') ?: '';
 if (empty($env_config['firebaseAuthDomain'])) $env_config['firebaseAuthDomain'] = getenv('VITE_FIREBASE_AUTH_DOMAIN') ?: getenv('FIREBASE_AUTH_DOMAIN') ?: '';
 if (empty($env_config['firebaseProjectId'])) $env_config['firebaseProjectId'] = getenv('VITE_FIREBASE_PROJECT_ID') ?: getenv('FIREBASE_PROJECT_ID') ?: '';
+if (empty($env_config['firebaseDatabaseUrl'])) $env_config['firebaseDatabaseUrl'] = getenv('FIREBASE_DATABASE_URL') ?: getenv('VITE_FIREBASE_DATABASE_URL') ?: '';
 
 ?>
 
 <script>
 window.ENV_CONFIG = <?= json_encode($env_config) ?>;
-// For backward compatibility with auth-modal.php
 window.FIREBASE_ENV_CONFIG = {
-    apiKey: window.ENV_CONFIG.firebaseApiKey,
-    authDomain: window.ENV_CONFIG.firebaseAuthDomain,
-    projectId: window.ENV_CONFIG.firebaseProjectId
+    apiKey: window.ENV_CONFIG.firebaseApiKey || "AIzaSyC8UYQMhOaS5SFAdkCcdISTkEWw57WsmFs",
+    authDomain: window.ENV_CONFIG.firebaseAuthDomain || "smart-air-net.firebaseapp.com",
+    projectId: window.ENV_CONFIG.firebaseProjectId || "smart-air-net",
+    databaseURL: window.ENV_CONFIG.firebaseDatabaseUrl || "https://smart-air-net-default-rtdb.firebaseio.com",
+    storageBucket: "smart-air-net.firebasestorage.app",
+    messagingSenderId: "647061464752",
+    appId: "1:647061464752:web:349c77286659f3a9d4fd75",
+    measurementId: "G-09JTD9RQQJ"
 };
 </script>
 

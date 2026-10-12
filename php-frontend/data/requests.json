@@ -1,8 +1,21 @@
 [
     {
+        "id": "req_6accaa4ed6f14",
+        "name": "Weather Net",
+        "email": "weathernet@sode-edu.in",
+        "org": "ssj",
+        "industry": "env",
+        "use_case": "ss",
+        "scope": "AQI Telemetry \u2014 2026-10-12\n* Data provided is strictly limited to 1 day (for the requested date).",
+        "status": "approved",
+        "created_at": "2026-10-12 11:37:18",
+        "user_id": "guest",
+        "approved_at": "2026-10-12 11:37:46"
+    },
+    {
         "id": "req_6ac9d7b8e20d9",
         "name": "Mani Ch",
-        "email": "mb507273@gmail.com",
+        "email": "weathernet@sode-edu.in",
         "org": "msvitm",
         "industry": "research",
         "use_case": "djjjfhf",
@@ -28,7 +41,7 @@
     {
         "id": "req_6ac8c19bb1a06",
         "name": "Manish B",
-        "email": "mb507273@gmail.com",
+        "email": "weathernet@sode-edu.in",
         "org": "s,dd",
         "industry": "tech",
         "use_case": "nn",
@@ -63,31 +76,5 @@
         "created_at": "2026-10-08 20:22:11",
         "user_id": "guest",
         "approved_at": "2026-10-08 20:22:26"
-    },
-    {
-        "id": "req_6ac7dccea5c6d",
-        "name": "Manish B",
-        "email": "mb507273@gmail.com",
-        "org": "msvik",
-        "industry": "tech",
-        "use_case": "msmdjdjd",
-        "scope": "AQI Telemetry \u2014 2026-10-08\n\n* Restrictive Access: Output strictly limited to previous 24 hours.",
-        "status": "approved",
-        "created_at": "2026-10-08 20:11:26",
-        "user_id": "guest",
-        "approved_at": "2026-10-08 20:11:46"
-    },
-    {
-        "id": "req_6ac7db30d468f",
-        "name": "Manish B",
-        "email": "mb507273@gmail.com",
-        "org": "smvitm",
-        "industry": "research",
-        "use_case": "smsjjs",
-        "scope": "AQI Telemetry \u2014 2026-10-08",
-        "status": "approved",
-        "created_at": "2026-10-08 20:04:32",
-        "user_id": "guest",
-        "approved_at": "2026-10-08 20:05:47"
     }
 ]

@@ -127,7 +127,7 @@ try {
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
 
     // Recipients
-    $mail->setFrom($smtp_user ?: 'mb507273@gmail.com', $sender_name);
+    $mail->setFrom($smtp_user ?: 'weathernet@sode-edu.in', $sender_name);
     $mail->addAddress($target_email, $req_name);
 
     // Attachments

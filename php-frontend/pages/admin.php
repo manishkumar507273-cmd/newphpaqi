@@ -31,8 +31,8 @@
       </h2>
     </div>
     
-    <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+      <table style="width: 100%; min-width: 820px; border-collapse: collapse; text-align: left;">
         <thead>
           <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <th style="padding: 16px 24px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Requester Profile</th>
@@ -140,6 +140,10 @@ function showToast(message, type = 'success') {
     }, 5000);
 }
 
+const getFbDbUrl = () => (window.ENV_CONFIG && window.ENV_CONFIG.firebaseDatabaseUrl) 
+    ? window.ENV_CONFIG.firebaseDatabaseUrl.replace(/\/$/, '') 
+    : 'https://smart-air-net-default-rtdb.firebaseio.com';
+
 function loadRequests() {
     const tbody = document.getElementById('requests-tbody');
     tbody.innerHTML = `<tr><td colspan="5" style="padding: 60px 40px; text-align: center;"><div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;"><i data-lucide="loader-2" class="lucide-spin" style="width: 32px; height: 32px; color: #00bfa5; animation: spin 1s linear infinite;"></i><span style="color: #64748b; font-size: 15px; font-weight: 500;">Fetching secure requests...</span></div></td></tr>`;
@@ -147,7 +151,7 @@ function loadRequests() {
     
     Promise.all([
         fetch('api/get_requests.php').then(res => res.json()).catch(() => []),
-        fetch('https://smart-air-net-default-rtdb.firebaseio.com/requests.json').then(res => res.json()).catch(() => ({}))
+        fetch(`${getFbDbUrl()}/requests.json`).then(res => res.json()).catch(() => ({}))
     ])
     .then(([backendDataRaw, firebaseData]) => {
           // Parse Firebase data from object map to array
@@ -190,13 +194,13 @@ function loadRequests() {
                 : `<span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background-color: #fffbeb; border: 1px solid #fde68a; color: #b45309; font-size: 12.5px; font-weight: 700;"><i data-lucide="clock" style="width:14px;height:14px;"></i> Pending Review</span>`;
                 
               const actionBtn = isApproved
-                ? `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
-                     <span style="display: inline-flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 13px; font-weight: 600;"><i data-lucide="mail-check" style="width: 15px; height: 15px;"></i> Emailed securely</span>
-                     <button onclick="deleteRequest('${req.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; display: flex; align-items: center; opacity: 0.7; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.7'" title="Delete Request"><i data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
+                ? `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                     <span style="display: inline-flex; align-items: center; gap: 5px; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; white-space: nowrap;"><i data-lucide="mail-check" style="width: 14px; height: 14px;"></i> Dispatched</span>
+                     <button type="button" onclick="deleteRequest('${req.id}')" aria-label="Delete Request" style="background-color: #fef2f2; border: 1px solid #fee2e2; color: #ef4444; cursor: pointer; min-width: 38px; min-height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;" onmouseenter="this.style.backgroundColor='#fee2e2'; this.style.borderColor='#fca5a5';" onmouseleave="this.style.backgroundColor='#fef2f2'; this.style.borderColor='#fee2e2';" title="Delete Request"><i data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
                    </div>`
-                : `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
-                     <button onclick="approveRequest('${req.id}')" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 16px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00bfa5 0%, #00a693 100%); color: white; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0, 191, 165, 0.25);" onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 191, 165, 0.35)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 191, 165, 0.25)';"><i data-lucide="send" style="width:14px;height:14px;"></i> Authorize</button>
-                     <button onclick="deleteRequest('${req.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; display: flex; align-items: center; opacity: 0.7; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.7'" title="Delete Request"><i data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
+                : `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                     <button type="button" onclick="approveRequest('${req.id}')" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00bfa5 0%, #00a693 100%); color: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0, 191, 165, 0.25); white-space: nowrap;"><i data-lucide="send" style="width:14px;height:14px;"></i> Authorize</button>
+                     <button type="button" onclick="deleteRequest('${req.id}')" aria-label="Delete Request" style="background-color: #fef2f2; border: 1px solid #fee2e2; color: #ef4444; cursor: pointer; min-width: 38px; min-height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;" onmouseenter="this.style.backgroundColor='#fee2e2'; this.style.borderColor='#fca5a5';" onmouseleave="this.style.backgroundColor='#fef2f2'; this.style.borderColor='#fee2e2';" title="Delete Request"><i data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
                    </div>`;
                 
               const tr = document.createElement('tr');
@@ -234,25 +238,43 @@ function loadRequests() {
       });
 }
 
-function deleteRequest(id) {
-    if(confirm("Are you sure you want to delete this request?")) {
-        // Remove from Firebase Realtime Database
-        fetch('https://smart-air-net-default-rtdb.firebaseio.com/requests.json')
-          .then(res => res.json())
-          .then(data => {
-              if (data) {
-                  for (let key in data) {
-                      if (data[key].id === id) {
-                          fetch(`https://smart-air-net-default-rtdb.firebaseio.com/requests/${key}.json`, { method: 'DELETE' });
-                      }
-                  }
-              }
-          })
-          .catch(e => console.error(e))
-          .finally(() => {
-              showToast("Request deleted successfully.", "success");
-              setTimeout(loadRequests, 800);
-          });
+async function deleteRequest(id) {
+    if (!confirm("Are you sure you want to delete this request?")) return;
+    
+    try {
+        // 1. Delete from backend JSON storage
+        const backendDeletePromise = fetch('api/delete_request.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        }).catch(err => console.warn('Backend delete warning:', err));
+
+        // 2. Delete from Firebase Realtime Database
+        const firebaseDeletePromise = fetch(`${getFbDbUrl()}/requests.json`)
+            .then(res => res.json())
+            .then(async data => {
+                if (data && typeof data === 'object') {
+                    const deletePromises = [];
+                    for (let key in data) {
+                        if (data[key].id === id) {
+                            deletePromises.push(
+                                fetch(`${getFbDbUrl()}/requests/${key}.json`, { method: 'DELETE' })
+                            );
+                        }
+                    }
+                    await Promise.all(deletePromises);
+                }
+            })
+            .catch(err => console.warn('Firebase delete warning:', err));
+
+        // Wait for both backend and Firebase deletion to finish
+        await Promise.all([backendDeletePromise, firebaseDeletePromise]);
+        showToast("Request deleted successfully.", "success");
+    } catch (e) {
+        console.error("Error deleting request:", e);
+        showToast("Error deleting request.", "error");
+    } finally {
+        loadRequests();
     }
 }
 
@@ -280,7 +302,7 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
     lucide.createIcons();
     
     // First get the request from Firebase to extract email for the backend
-    fetch('https://smart-air-net-default-rtdb.firebaseio.com/requests.json')
+    fetch(`${getFbDbUrl()}/requests.json`)
       .then(res => res.json())
       .then(fbData => {
           let reqData = null;
@@ -309,7 +331,7 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
           if(data && data.success) {
               // Update Firebase status only if email successfully sent
               if (fbKey) {
-                  fetch(`https://smart-air-net-default-rtdb.firebaseio.com/requests/${fbKey}.json`, {
+                  fetch(`${getFbDbUrl()}/requests/${fbKey}.json`, {
                       method: 'PATCH',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ status: 'approved' })

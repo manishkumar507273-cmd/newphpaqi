@@ -6,7 +6,7 @@ A modern intelligence platform for real-time air quality index (AQI) telemetry a
 
 ---
 
-## 🌟 Tech Stack
+## 🌟 Tech Stack 
 
 | Layer | Technology |
 |---|---|

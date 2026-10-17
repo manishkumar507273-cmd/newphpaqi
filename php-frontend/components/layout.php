@@ -143,9 +143,9 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
 
     <!-- Right: Auth & Admin & Mobile Trigger -->
     <div style="display: flex; align-items: center; gap: 8px;">
-      <a href="?page=live" id="header-dashboard-btn" style="display: <?= $current_page === 'overview' ? 'inline-flex' : 'none' ?>; align-items: center; gap: 8px; padding: 7px 18px; border-radius: 999px; border: 1.5px solid #7dd3fc; background-color: #f0f9ff; color: #0284c7; font-size: 13.5px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.12); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+      <a href="?page=live" id="header-dashboard-btn" class="header-dashboard-btn" style="display: <?= $current_page === 'overview' ? 'inline-flex' : 'none' ?>; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 8px; border: 1.5px solid #0284c7; background-color: #0284c7; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
         <span>View Dashboard</span>
-        <i data-lucide="arrow-up-right" style="width: 15px; height: 15px; stroke-width: 2.5; color: #0284c7;"></i>
+        <i data-lucide="arrow-up-right" style="width: 14px; height: 14px; stroke-width: 2.5; color: #ffffff;"></i>
       </a>
 
       <!-- Desktop Auth & Admin -->
@@ -277,45 +277,45 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
   </main>
 
   <!-- Fixed Native Mobile Bottom Navigation Bar -->
-  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden">
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: center; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid #e2e8f0; height: calc(52px + env(safe-area-inset-bottom, 12px)); padding: 4px 6px env(safe-area-inset-bottom, 12px); box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
     
-    <a href="?page=overview" data-bottom-nav="overview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
-      <i data-lucide="wind" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'overview' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em;">Snapshot</span>
+    <a href="?page=overview" data-bottom-nav="overview" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <i data-lucide="wind" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'overview' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 11px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Snapshot</span>
     </a>
 
-    <a href="?page=live" data-bottom-nav="live" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
-      <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'live' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em;">Live Feed</span>
+    <a href="?page=live" data-bottom-nav="live" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <i data-lucide="radio" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'live' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 11px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
     </a>
 
-    <a href="?page=historical" data-bottom-nav="historical" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
-      <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'historical' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em;">Analytics</span>
+    <a href="?page=historical" data-bottom-nav="historical" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <i data-lucide="database" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'historical' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 11px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
     </a>
 
-    <a href="?page=predictive" data-bottom-nav="predictive" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
-      <i data-lucide="line-chart" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'predictive' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em;">Forecast</span>
+    <a href="?page=predictive" data-bottom-nav="predictive" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <i data-lucide="line-chart" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 11px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
     </a>
 
     <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
-      <a href="?page=admin" data-bottom-nav="admin" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
-        <i data-lucide="shield-check" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'admin' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
-        <span style="font-size: 10px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em;">Admin</span>
+      <a href="?page=admin" data-bottom-nav="admin" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+        <i data-lucide="shield-check" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'admin' ? 'color: #00bfa5;' : '' ?>"></i>
+        <span style="font-size: 11px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Admin</span>
       </a>
     <?php else: ?>
       <?php if ($is_logged_in): ?>
-        <a href="?logout=true" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; color: #64748b; transition: all 0.15s ease;">
-          <div style="width: 22px; height: 22px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">
+        <a href="?logout=true" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; color: #64748b; transition: all 0.15s ease;">
+          <div style="width: 18px; height: 18px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0;">
             <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
           </div>
-          <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em;">Sign Out</span>
+          <span style="font-size: 11px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign Out</span>
         </a>
       <?php else: ?>
-        <button onclick="openAuthModal()" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.15s ease;">
-          <i data-lucide="user" style="width: 20px; height: 20px; stroke-width: 2.2;"></i>
-          <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em;">Sign In</span>
+        <button onclick="openAuthModal()" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.15s ease;">
+          <i data-lucide="user" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0;"></i>
+          <span style="font-size: 11px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign In</span>
         </button>
       <?php endif; ?>
     <?php endif; ?>

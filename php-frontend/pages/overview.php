@@ -12,14 +12,14 @@
   <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 20px;">
     
     <!-- Compact Toolbar -->
-    <div class="overview-toolbar" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
-      <div style="display: flex; align-items: center; gap: 6px;">
+    <div class="overview-toolbar" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
         <div style="display: flex; background-color: #ffffff; border-radius: 999px; padding: 3px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); gap: 2px;">
-          <button id="btn-temp" onclick="toggleTemp()" style="padding: 4px 8px; border-radius: 999px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">°C</button>
-          <button id="btn-wind" onclick="toggleWind()" style="padding: 4px 8px; border-radius: 999px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">km/h</button>
+          <button id="btn-temp" onclick="toggleTemp()" style="min-height: 38px; min-width: 44px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">°C</button>
+          <button id="btn-wind" onclick="toggleWind()" style="min-height: 38px; min-width: 52px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">km/h</button>
         </div>
-        <button id="btn-refresh" onclick="refreshData()" class="overview-refresh-btn" style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); transition: all 0.2s ease;">
-          <i data-lucide="refresh-cw" id="icon-refresh" style="width: 14px; height: 14px; color: #00bfa5;"></i>
+        <button id="btn-refresh" onclick="refreshData()" class="overview-refresh-btn" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); transition: all 0.2s ease;">
+          <i data-lucide="refresh-cw" id="icon-refresh" style="width: 17px; height: 17px; color: #00bfa5;"></i>
         </button>
       </div>
     </div>
@@ -344,20 +344,20 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 700;
-      color: #94a3b8;
+      color: #64748b;
       font-family: var(--font-mono);
       line-height: 1;
-      margin-top: 4px;
+      margin-top: 5px;
     }
     .overview-sub-badge {
       display: flex;
       align-items: center;
       gap: 3px;
-      padding: 2.5px 7px;
+      padding: 3px 8px;
       border-radius: 6px;
-      font-size: 10px;
+      font-size: 10.5px;
       font-weight: 700;
       white-space: nowrap;
     }
@@ -372,24 +372,28 @@
       .overview-toolbar { justify-content: space-between !important; width: 100% !important; }
       .overview-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
       .overview-grid > *:first-child { grid-column: span 2 !important; }
-      .overview-core-card { padding: 10px !important; min-height: 122px !important; border-radius: 14px !important; }
-      .overview-card-icon { width: 24px !important; height: 24px !important; border-radius: 7px !important; }
-      .overview-card-title { font-size: 12px !important; }
-      .overview-card-badge { font-size: 9.5px !important; padding: 2px 6px !important; }
-      .overview-card-val { font-size: 26px !important; }
+      .overview-core-card { padding: 12px 10px !important; min-height: 124px !important; border-radius: 14px !important; }
+      .overview-card-icon { width: 26px !important; height: 26px !important; border-radius: 8px !important; }
+      .overview-card-title { font-size: 12.5px !important; }
+      .overview-card-badge { font-size: 10px !important; padding: 2px 7px !important; }
+      .overview-card-val { font-size: 28px !important; }
+    }
+    @media (max-width: 360px) {
+      .overview-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+      .overview-grid > *:first-child { grid-column: span 1 !important; }
     }
   </style>
 </div>
 
 <script>
-let tempUnit = 'C';
-let windUnit = 'kmh';
-let rawTemp = null;
-let rawWind = null;
-let isRainingGlobal = false;
-let animationFrameId = null;
+var tempUnit = 'C';
+var windUnit = 'kmh';
+var rawTemp = null;
+var rawWind = null;
+var isRainingGlobal = false;
+var animationFrameId = null;
 
-const getAqiCategory = (val) => {
+var getAqiCategory = function(val) {
     const v = Number(val);
     if (v <= 50) return { label: 'Good', color: '#16a34a', bg: '#f0fdf4', border: '#86efac', text: '#15803d' };
     if (v <= 100) return { label: 'Satisfactory', color: '#65a30d', bg: '#f7fee7', border: '#bef264', text: '#3f6212' };
@@ -794,7 +798,18 @@ function initCanvas() {
     render();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+window.__cleanupCurrentPage = function() {
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", () => {
+        refreshData();
+    });
+} else {
     refreshData();
-});
+}
 </script>

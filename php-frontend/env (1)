@@ -1,0 +1,14 @@
+# Supabase Configuration
+VITE_SUPABASE_URL=https://sgkdpliqlhgiqsabxzxe.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30
+
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=AIzaSyC8UYQMhOaS5SFAdkCcdISTkEWw57WsmFs
+VITE_FIREBASE_AUTH_DOMAIN=smart-air-net.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=smart-air-net
+
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=mb507273@gmail.com
+SMTP_PASSWORD=oarh uxzl ravd vezs

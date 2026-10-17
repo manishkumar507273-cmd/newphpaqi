@@ -1,45 +1,44 @@
-<div style="display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; padding: 24px; animation: fade-in 0.4s ease-out; font-family: var(--font-sans); color: #0f172a;">
+<div class="p-3.5 sm:p-6 flex flex-col gap-5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
   
-
   <!-- Header -->
-  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+  <div class="flex justify-between items-end mb-2 sm:mb-4">
     <div>
-      <h1 style="font-size: 28px; font-weight: 800; color: #0f172a; margin: 0 0 4px; letter-spacing: -0.03em;">Analytics Archive</h1>
-      <p style="margin: 0; color: #64748b; font-size: 14px; font-weight: 500;">Access and analyze historical telemetry logs.</p>
+      <h1 class="text-2xl sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Analytics Archive</h1>
+      <p class="m-0 text-slate-500 text-xs sm:text-sm font-medium mt-1">Access and analyze historical telemetry logs.</p>
     </div>
   </div>
 
   <!-- Sub-Navigation Selector: AQI Historical vs Weather Historical -->
-  <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
-    <div style="display: inline-flex; align-items: center; background-color: #ffffff; padding: 5px; border-radius: 999px; border: 1px solid #cbd5e1; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); gap: 6px;">
-      <button id="tab-aqi" onclick="switchHistTab('aqi')" style="position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 24px; border-radius: 999px; border: none; font-size: 14px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: #00bfa5; color: #ffffff; transition: all 0.15s ease;">
-        <i data-lucide="activity" style="width: 17px; height: 17px; z-index: 1;"></i>
-        <span style="z-index: 1;">AQI Historical Analytics</span>
+  <div class="flex items-center justify-center mb-1">
+    <div class="w-full sm:w-auto grid grid-cols-2 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
+      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[42px]">
+        <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
+        <span>AQI <span class="hidden min-[400px]:inline">Historical</span></span>
       </button>
-      <button id="tab-weather" onclick="switchHistTab('weather')" style="position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 24px; border-radius: 999px; border: none; font-size: 14px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: transparent; color: #64748b; transition: all 0.15s ease;">
-        <i data-lucide="cloud-sun" style="width: 17px; height: 17px; z-index: 1;"></i>
-        <span style="z-index: 1;">Weather Historical Analytics</span>
+      <button id="tab-weather" onclick="switchHistTab('weather')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[42px]">
+        <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
+        <span>Weather <span class="hidden min-[400px]:inline">Historical</span></span>
       </button>
     </div>
   </div>
 
   <!-- UNIFIED DATE SELECTOR & 24-HOUR SUMMARY CARD -->
-  <div style="background-color: #ffffff; border-radius: 24px; padding: 20px 24px; border: 1.5px solid #00bfa5; box-shadow: 0 4px 20px rgba(0, 191, 165, 0.08); transition: border-color 0.2s ease, box-shadow 0.2s ease;">
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
     
     <!-- Top Header Row: Date Selector & Controls -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
       
       <!-- Left Title & Status -->
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 40px; height: 40px; border-radius: 12px; background-color: #ecfdf5; border: 1px solid #a7f3d0; display: flex; align-items: center; justify-content: center; color: #00bfa5;">
+        <div style="width: 40px; height: 40px; border-radius: 12px; background-color: #ecfdf5; border: 1px solid #a7f3d0; display: flex; align-items: center; justify-content: center; color: #00bfa5; flex-shrink: 0;">
           <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
         </div>
         <div>
-          <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-            <span>Select Date (24-Hour Telemetry: 12:00 AM – 11:00 PM)</span>
+          <div style="font-size: 14px; sm:font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <span>Select Date (24-Hour Telemetry)</span>
           </div>
           <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-            <span id="date-subtitle-desktop">Select any date to view its 24-hour hourly records</span>
+            <span id="date-subtitle-desktop">Hourly records: 12:00 AM – 11:00 PM</span>
           </div>
         </div>
       </div>
@@ -47,7 +46,7 @@
       <!-- Right Action Controls: Native Calendar Input -->
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
         <div style="position: relative; display: inline-flex; align-items: center;">
-          <input type="date" id="history-date-picker" style="padding: 8px 14px 8px 34px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background-color: #f8fafc; cursor: pointer; font-family: var(--font-sans); outline: none;">
+          <input type="date" id="history-date-picker" class="min-h-[42px]" style="padding: 8px 14px 8px 34px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background-color: #f8fafc; cursor: pointer; font-family: var(--font-sans); outline: none;">
           <i data-lucide="calendar" style="position: absolute; left: 11px; width: 15px; height: 15px; color: #00bfa5; pointer-events: none;"></i>
         </div>
       </div>
@@ -64,7 +63,7 @@
         <div>
           <div id="summary-date-display" style="font-size: 15px; font-weight: 800; color: #0f172a;">--</div>
           <div style="font-size: 12px; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-weight: 700; color: #00bfa5;">24 Hourly Points (<span id="log-count">0</span> Logged) • 12 AM – 11 PM</span>
+            <span style="font-weight: 700; color: #00bfa5;">24 Hourly Points (<span id="log-count">0</span> Logged)</span>
           </div>
         </div>
       </div>
@@ -127,11 +126,11 @@
           <strong id="w-max-gust" style="color: #8b5cf6; font-family: var(--font-mono);">--</strong>
         </div>
         <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #115e59; font-weight: 600;">Avg Wind Dir (Mode): </span>
+          <span style="color: #115e59; font-weight: 600;">Avg Wind Dir: </span>
           <strong id="w-mode-dir" style="color: #0d9488; font-family: var(--font-mono);">--</strong>
         </div>
         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #1e40af; font-weight: 600;">Total Rain (24h Sum): </span>
+          <span style="color: #1e40af; font-weight: 600;">Total Rain: </span>
           <strong id="w-total-rain" style="color: #2563eb; font-family: var(--font-mono);">--</strong>
         </div>
       </div>
@@ -140,7 +139,7 @@
   </div>
 
   <!-- CHART SECTION -->
-  <div style="background-color: #ffffff; border-radius: 24px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);">
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.05)]">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
       <div>
         <h2 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 6px;">
@@ -152,38 +151,38 @@
         </p>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full lg:w-auto">
         <!-- Chart Type Toggle -->
         <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 999px; border: 1px solid #e2e8f0;">
-          <button onclick="setChartType('line')" id="btn-type-line" style="display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: all 0.15s ease;">
+          <button onclick="setChartType('line')" id="btn-type-line" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: all 0.15s ease; min-height: 36px;">
             <i data-lucide="trending-up" style="width: 13px; height: 13px; color: #00bfa5;" id="icon-type-line"></i>
             <span>Curve</span>
           </button>
-          <button onclick="setChartType('bar')" id="btn-type-bar" style="display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: transparent; color: #64748b; box-shadow: none; transition: all 0.15s ease;">
+          <button onclick="setChartType('bar')" id="btn-type-bar" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: transparent; color: #64748b; box-shadow: none; transition: all 0.15s ease; min-height: 36px;">
             <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #64748b;" id="icon-type-bar"></i>
             <span>Bars</span>
           </button>
         </div>
 
-        <!-- Parameter Filter Chips (AQI) -->
-        <div id="chips-aqi" style="display: flex; gap: 5px; flex-wrap: wrap; background: #f8fafc; padding: 3px; border-radius: 999px; border: 1px solid #e2e8f0;">
-          <button onclick="setParam('cpcb_aqi')" id="btn-cpcb_aqi" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: #00bfa5; color: #ffffff; transition: all 0.15s ease;">AQI</button>
-          <button onclick="setParam('temperature')" id="btn-temperature_aqi" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">Temp</button>
-          <button onclick="setParam('humidity')" id="btn-humidity_aqi" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">Hum.</button>
-          <button onclick="setParam('pm25')" id="btn-pm25" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">PM2.5</button>
-          <button onclick="setParam('pm10')" id="btn-pm10" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">PM10</button>
-          <button onclick="setParam('co')" id="btn-co" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">CO</button>
-          <button onclick="setParam('no2')" id="btn-no2" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">NO₂</button>
-          <button onclick="setParam('o3')" id="btn-o3" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">O₃</button>
+        <!-- Parameter Filter Chips (AQI) - horizontally scrollable on mobile -->
+        <div id="chips-aqi" class="flex gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
+          <button onclick="setParam('cpcb_aqi')" id="btn-cpcb_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-[#00bfa5] text-white transition-all">AQI</button>
+          <button onclick="setParam('temperature')" id="btn-temperature_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Temp</button>
+          <button onclick="setParam('humidity')" id="btn-humidity_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Hum.</button>
+          <button onclick="setParam('pm25')" id="btn-pm25" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">PM2.5</button>
+          <button onclick="setParam('pm10')" id="btn-pm10" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">PM10</button>
+          <button onclick="setParam('co')" id="btn-co" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">CO</button>
+          <button onclick="setParam('no2')" id="btn-no2" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">NO₂</button>
+          <button onclick="setParam('o3')" id="btn-o3" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">O₃</button>
         </div>
 
-        <!-- Parameter Filter Chips (Weather) -->
-        <div id="chips-weather" style="display: none; gap: 5px; flex-wrap: wrap; background: #f8fafc; padding: 3px; border-radius: 999px; border: 1px solid #e2e8f0;">
-          <button onclick="setParam('temperature')" id="btn-temperature" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: #00bfa5; color: #ffffff; transition: all 0.15s ease;">Temp</button>
-          <button onclick="setParam('humidity')" id="btn-humidity" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">Hum.</button>
-          <button onclick="setParam('wind_speed')" id="btn-wind_speed" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">Wind Spd</button>
-          <button onclick="setParam('wind_gust')" id="btn-wind_gust" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">Wind Gust</button>
-          <button onclick="setParam('rain_gauge')" id="btn-rain_gauge" style="padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 600; background: transparent; color: #64748b; transition: all 0.15s ease;">Rain</button>
+        <!-- Parameter Filter Chips (Weather) - horizontally scrollable on mobile -->
+        <div id="chips-weather" class="hidden gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
+          <button onclick="setParam('temperature')" id="btn-temperature" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-[#00bfa5] text-white transition-all">Temp</button>
+          <button onclick="setParam('humidity')" id="btn-humidity" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Hum.</button>
+          <button onclick="setParam('wind_speed')" id="btn-wind_speed" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Wind Spd</button>
+          <button onclick="setParam('wind_gust')" id="btn-wind_gust" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Wind Gust</button>
+          <button onclick="setParam('rain_gauge')" id="btn-rain_gauge" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Rain</button>
         </div>
       </div>
     </div>
@@ -199,34 +198,40 @@
   </div>
 
   <!-- TABLE SECTION -->
-  <div style="background-color: #ffffff; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);">
-    <div style="padding: 20px 24px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9;">
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] border border-slate-200 overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.05)]">
+    <div class="p-4 sm:p-5 flex items-center justify-between flex-wrap gap-3 border-b border-slate-100">
       <div>
         <h2 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="table" style="width: 18px; height: 18px; color: #00bfa5;"></i>
           <span id="table-title">AQI Historical Telemetry Table (12 AM – 11 PM)</span>
         </h2>
         <p style="font-size: 12px; color: #64748b; margin-top: 2px; margin-bottom: 0;">
-          <span id="table-subtitle">24 Hourly Telemetry Rows for Date (0 Logged Readings)</span>
+          <span id="table-subtitle">24 Hourly Telemetry Rows for Date</span>
         </p>
       </div>
     </div>
 
     <!-- Bulk Dataset Download Bar -->
-    <div style="padding: 12px 24px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div class="px-4 py-3 sm:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-3">
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: #1e293b;">
           <i data-lucide="file-spreadsheet" style="width: 17px; height: 17px; color: #00bfa5;"></i>
           <span>Bulk Dataset Download:</span>
         </div>
-        <button onclick="openDatasetModal()" style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 18px; border-radius: 999px; border: none; background-color: #00bfa5; color: #ffffff; font-size: 12.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(0, 191, 165, 0.28); transition: all 0.15s ease; white-space: nowrap;">
+        <button onclick="openDatasetModal()" class="min-h-[38px]" style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 18px; border-radius: 999px; border: none; background-color: #00bfa5; color: #ffffff; font-size: 12.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(0, 191, 165, 0.28); transition: all 0.15s ease; white-space: nowrap;">
           <i data-lucide="download" style="width: 14px; height: 14px;"></i>
           <span>Request Dataset</span>
         </button>
       </div>
     </div>
 
-    <div style="overflow-x: auto; max-height: 440px;">
+    <!-- Mobile swipe indicator -->
+    <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
+      <span>👈 Swipe horizontally to view all hourly readings</span>
+      <span class="font-mono text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">24 HRS</span>
+    </div>
+
+    <div style="overflow-x: auto; max-height: 440px; -webkit-overflow-scrolling: touch;">
       <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 750px;">
         <thead style="position: sticky; top: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; z-index: 2;">
           <tr style="color: #475569; font-size: 12px;" id="table-head-row">
@@ -243,13 +248,13 @@
 </div>
 
 <!-- Enterprise Data Access Request Modal -->
-<div id="dataset-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 24px; background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease;">
+<div id="dataset-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 12px sm:padding: 24px; background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease;">
   <div id="dataset-backdrop" onclick="closeDatasetModal()" style="position: absolute; inset: 0;"></div>
   
-  <div id="dataset-modal-content" style="position: relative; z-index: 10; width: 100%; max-width: 520px; max-height: 90vh; background-color: #ffffff; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; overflow: hidden;">
+  <div id="dataset-modal-content" class="w-full max-w-[520px] max-h-[92vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden m-2 sm:m-4" style="position: relative; z-index: 10; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
     
     <!-- Dark Header -->
-    <div style="background-color: #1e293b; padding: 24px; position: relative; flex-shrink: 0;">
+    <div style="background-color: #1e293b; padding: 20px 24px; position: relative; flex-shrink: 0;">
       <button onclick="closeDatasetModal()" style="position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(255, 255, 255, 0.1); color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;" onmouseenter="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.color='#ffffff';" onmouseleave="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='#94a3b8';">
         <i data-lucide="x" style="width: 16px; height: 16px;"></i>
       </button>
@@ -361,15 +366,15 @@
 </div>
 
 <script>
-let currentSubTab = 'aqi';
-let currentParam = 'cpcb_aqi';
-let currentChartType = 'line';
-let historicalDataAqi = [];
-let historicalDataWeather = [];
-let chartInstance = null;
-let filteredDayData = [];
+var currentSubTab = 'aqi';
+var currentParam = 'cpcb_aqi';
+var currentChartType = 'line';
+var historicalDataAqi = [];
+var historicalDataWeather = [];
+var chartInstance = null;
+var filteredDayData = [];
 
-const PARAM_COLORS = {
+var PARAM_COLORS = {
     cpcb_aqi: '#00bfa5', pm25: '#0284c7', pm10: '#6366f1',
     co: '#16a34a', no2: '#9333ea', o3: '#d97706',
     temperature: '#00bfa5', humidity: '#00bfa5',
@@ -377,7 +382,7 @@ const PARAM_COLORS = {
     wind_direction: '#0284c7', rain_gauge: '#0891b2'
 };
 
-const getAqiCategory = (val) => {
+var getAqiCategory = function(val) {
     const v = Number(val);
     if (v <= 50) return { label: 'Good', color: '#16a34a', bg: '#f0fdf4', border: '#86efac', text: '#15803d', badgeBg: '#16a34a', badgeText: '#ffffff' };
     if (v <= 100) return { label: 'Satisfactory', color: '#65a30d', bg: '#f7fee7', border: '#bef264', text: '#3f6212', badgeBg: '#65a30d', badgeText: '#ffffff' };
@@ -387,7 +392,7 @@ const getAqiCategory = (val) => {
     return { label: 'Severe', color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe', text: '#6b21a8', badgeBg: '#9333ea', badgeText: '#ffffff' };
 };
 
-const getCompassDir = (val) => {
+var getCompassDir = function(val) {
     if (val == null) return '--';
     const deg = Math.round(Number(val) % 360);
     if (isNaN(deg)) return val;
@@ -571,26 +576,32 @@ function renderUI() {
 
     document.getElementById('chart-empty').style.display = 'none';
     
-    // Summary calculations
-    let sumAqi = 0, sumPm25 = 0, sumPm10 = 0, sumCo = 0, sumNo2 = 0, sumO3 = 0;
+    // Summary calculations — track valid (non-null) counts per field
+    let sumAqi = 0, countAqi = 0;
+    let sumPm25 = 0, countPm25 = 0;
+    let sumPm10 = 0, countPm10 = 0;
+    let sumCo = 0, countCo = 0;
+    let sumNo2 = 0, countNo2 = 0;
+    let sumO3 = 0, countO3 = 0;
     let minAqi = 9999, maxAqi = -1;
-    let sumTemp = 0, sumHum = 0, sumWind = 0, maxGust = -1, sumRain = 0;
+    let sumTemp = 0, countTemp = 0;
+    let sumHum = 0, countHum = 0;
+    let sumWind = 0, countWind = 0;
+    let maxGust = -1, sumRain = 0;
     let windDirs = [];
-    
+
     filteredDayData.forEach(d => {
-        if(currentSubTab === 'aqi') {
-            sumAqi += d.cpcb_aqi || 0;
-            sumPm25 += d.pm25 || 0;
-            sumPm10 += d.pm10 || 0;
-            sumCo += d.co || 0;
-            sumNo2 += d.no2 || 0;
-            sumO3 += d.o3 || 0;
-            if ((d.cpcb_aqi || 0) < minAqi) minAqi = d.cpcb_aqi || 0;
-            if ((d.cpcb_aqi || 0) > maxAqi) maxAqi = d.cpcb_aqi || 0;
+        if (currentSubTab === 'aqi') {
+            if (d.cpcb_aqi != null) { sumAqi += d.cpcb_aqi; countAqi++; if (d.cpcb_aqi < minAqi) minAqi = d.cpcb_aqi; if (d.cpcb_aqi > maxAqi) maxAqi = d.cpcb_aqi; }
+            if (d.pm25 != null)    { sumPm25 += d.pm25; countPm25++; }
+            if (d.pm10 != null)    { sumPm10 += d.pm10; countPm10++; }
+            if (d.co != null)      { sumCo   += d.co;   countCo++;   }
+            if (d.no2 != null)     { sumNo2  += d.no2;  countNo2++;  }
+            if (d.o3 != null)      { sumO3   += d.o3;   countO3++;   }
         } else {
-            sumTemp += d.temperature || 0;
-            sumHum += d.humidity || 0;
-            sumWind += d.wind_speed || 0;
+            if (d.temperature != null) { sumTemp += d.temperature; countTemp++; }
+            if (d.humidity != null)    { sumHum  += d.humidity;    countHum++;  }
+            if (d.wind_speed != null)  { sumWind += d.wind_speed;  countWind++; }
             if ((d.wind_gust || 0) > maxGust) maxGust = d.wind_gust || 0;
             sumRain += d.rain_gauge || 0;
             if (d.wind_direction != null) windDirs.push(d.wind_direction);
@@ -598,23 +609,23 @@ function renderUI() {
     });
 
     const count = filteredDayData.length;
-    
-    if(currentSubTab === 'aqi') {
-        const avgAqi = Math.round(sumAqi / count);
+
+    if (currentSubTab === 'aqi') {
+        const avgAqi = countAqi > 0 ? Math.round(sumAqi / countAqi) : 0;
         const aqiCat = getAqiCategory(avgAqi);
         document.getElementById('avg-aqi-val').innerText = avgAqi;
         document.getElementById('avg-aqi-val').style.color = aqiCat.text;
-        
+
         const label = document.getElementById('avg-aqi-label');
         label.innerText = aqiCat.label;
         label.style.display = 'inline-block';
         label.style.backgroundColor = aqiCat.badgeBg;
         label.style.color = aqiCat.badgeText;
-        
-        document.getElementById('min-aqi-val').innerText = minAqi;
-        document.getElementById('max-aqi-val').innerText = maxAqi;
+
+        document.getElementById('min-aqi-val').innerText = countAqi > 0 ? minAqi : '--';
+        document.getElementById('max-aqi-val').innerText = countAqi > 0 ? maxAqi : '--';
         document.getElementById('min-max-aqi').style.display = 'flex';
-        
+
         const badge = document.getElementById('avg-aqi-badge-container');
         badge.style.backgroundColor = aqiCat.bg;
         badge.style.borderColor = aqiCat.border;
@@ -622,11 +633,11 @@ function renderUI() {
         document.getElementById('avg-aqi-title').style.color = aqiCat.text;
 
         document.getElementById('mini-chips-container').style.display = 'flex';
-        document.getElementById('avg-pm25').innerText = (sumPm25/count).toFixed(3);
-        document.getElementById('avg-pm10').innerText = (sumPm10/count).toFixed(3);
-        document.getElementById('avg-co').innerText = (sumCo/count).toFixed(3);
-        document.getElementById('avg-no2').innerText = (sumNo2/count).toFixed(3);
-        document.getElementById('avg-o3').innerText = (sumO3/count).toFixed(3);
+        document.getElementById('avg-pm25').innerText = countPm25 > 0 ? (sumPm25/countPm25).toFixed(3) : 'N/A';
+        document.getElementById('avg-pm10').innerText = countPm10 > 0 ? (sumPm10/countPm10).toFixed(3) : 'N/A';
+        document.getElementById('avg-co').innerText   = countCo   > 0 ? (sumCo/countCo).toFixed(3)     : 'N/A';
+        document.getElementById('avg-no2').innerText  = countNo2  > 0 ? (sumNo2/countNo2).toFixed(3)   : 'N/A';
+        document.getElementById('avg-o3').innerText   = countO3   > 0 ? (sumO3/countO3).toFixed(3)     : 'N/A';
     } else {
         document.getElementById('w-avg-temp').innerText = (sumTemp/count).toFixed(1) + '°C';
         document.getElementById('w-avg-hum').innerText = (sumHum/count).toFixed(1) + '%';
@@ -649,7 +660,8 @@ function renderUI() {
         const dt = new Date(d.timestamp);
         return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
     });
-    const dataPoints = filteredDayData.map(d => d[currentParam] || 0);
+    // Use null for missing values so Chart.js draws a gap instead of a flat 0 line
+    const dataPoints = filteredDayData.map(d => (d[currentParam] != null && d[currentParam] !== 0) ? d[currentParam] : null);
     const color = PARAM_COLORS[currentParam];
 
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
@@ -673,7 +685,8 @@ function renderUI() {
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 pointRadius: 0,
-                pointHoverRadius: 5
+                pointHoverRadius: 5,
+                spanGaps: false
             }]
         },
         options: {
@@ -726,7 +739,7 @@ function renderUI() {
                 <td style="padding: 10px 16px; font-weight: 800; color: ${getAqiCategory(d.cpcb_aqi).text};">${Math.round(d.cpcb_aqi || 0)}</td>
                 <td style="padding: 10px 16px; color: #475569;">${Number(d.pm25 || 0).toFixed(3)}</td>
                 <td style="padding: 10px 16px; color: #475569;">${Number(d.pm10 || 0).toFixed(3)}</td>
-                <td style="padding: 10px 16px; color: #475569;">${Number(d.co || 0).toFixed(3)}</td>
+                <td style="padding: 10px 16px; color: ${d.co != null ? '#475569' : '#94a3b8'}; font-style: ${d.co != null ? 'normal' : 'italic'}">${d.co != null ? Number(d.co).toFixed(3) : 'N/A'}</td>
                 <td style="padding: 10px 16px; color: #475569;">${Number(d.no2 || 0).toFixed(3)}</td>
                 <td style="padding: 10px 16px; color: #475569;">${Number(d.o3 || 0).toFixed(3)}</td>
             </tr>`;
@@ -879,8 +892,18 @@ function downloadCSV() {
     window.URL.revokeObjectURL(url);
 }
 
+window.__cleanupCurrentPage = function() {
+    if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+    }
+};
+
 setTimeout(() => {
-    document.getElementById('history-date-picker').addEventListener('change', () => fetchAllHistory());
+    const dp = document.getElementById('history-date-picker');
+    if (dp) {
+        dp.onchange = () => fetchAllHistory();
+    }
     fetchAllHistory();
 }, 0);
 </script>

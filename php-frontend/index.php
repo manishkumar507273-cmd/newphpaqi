@@ -31,8 +31,40 @@ if (!in_array($page, $allowed_pages)) {
 }
 
 $is_logged_in = isset($_SESSION['user_id']);
+$is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
+
 if ($page !== 'overview' && !$is_logged_in) {
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'require_login' => true,
+            'redirect' => '?page=overview&require_login=true'
+        ]);
+        exit;
+    }
     header("Location: ?page=overview&require_login=true");
+    exit;
+}
+
+if ($is_ajax) {
+    ob_start();
+    $page_file = __DIR__ . '/pages/' . $page . '.php';
+    if (file_exists($page_file)) {
+        include $page_file;
+    } else {
+        echo "<div style='padding: 40px; text-align: center; color: #64748b;'>Page not found. (" . htmlspecialchars($page) . ")</div>";
+    }
+    $page_content = ob_get_clean();
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'page' => $page,
+        'title' => 'Smart WeatherNet | Real-Time Air Quality & Weather Monitor',
+        'content' => $page_content,
+        'is_logged_in' => $is_logged_in,
+        'user_name' => isset($_SESSION['user_name']) ? $_SESSION['user_name'] : null
+    ]);
     exit;
 }
 ?>
@@ -41,6 +73,10 @@ if ($page !== 'overview' && !$is_logged_in) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#f1f5f9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Smart WeatherNet | Real-Time Air Quality & Weather Monitor</title>
     
     <!-- Google Fonts -->
@@ -84,6 +120,7 @@ if ($page !== 'overview' && !$is_logged_in) {
 
     <!-- Load custom JavaScript -->
     <script src="js/api.js"></script>
+    <script src="js/router.js"></script>
     <script>
         // Initialize Lucide icons
         lucide.createIcons();

@@ -1,45 +1,51 @@
-<div style="padding: 32px 24px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; font-family: var(--font-sans);">
+<div class="p-3.5 sm:p-6 md:p-8 max-w-[1200px] mx-auto flex flex-col gap-6 sm:gap-8 font-sans">
   
   <!-- Header Section -->
-  <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #e2e8f0; padding-bottom: 24px;">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-slate-200 pb-5 sm:pb-6 gap-4">
     <div>
-      <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background-color: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; margin-bottom: 12px;">
+      <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background-color: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; margin-bottom: 10px;">
         <i data-lucide="shield-alert" style="width: 14px; height: 14px; color: #6366f1;"></i>
         <span>Restricted Area</span>
       </div>
-      <h1 style="font-size: 36px; font-weight: 800; color: #0f172a; margin: 0 0 8px; letter-spacing: -0.03em;">Data Requests Center</h1>
-      <p style="margin: 0; color: #64748b; font-size: 15px; font-weight: 500; max-width: 600px; line-height: 1.5;">
+      <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 m-0 tracking-tight">Data Requests Center</h1>
+      <p class="m-0 text-slate-500 text-xs sm:text-sm md:text-base font-medium max-w-[600px] leading-relaxed mt-1.5">
         Review, verify, and approve incoming enterprise data access requests. Approved requests will automatically transmit secure data payloads via email.
       </p>
     </div>
-    <div style="display: flex; gap: 12px;">
-      <button onclick="loadRequests()" style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" onmouseenter="this.style.backgroundColor='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseleave="this.style.backgroundColor='#ffffff'; this.style.borderColor='#e2e8f0';">
+    <div class="w-full sm:w-auto flex justify-end">
+      <button onclick="loadRequests()" class="w-full sm:w-auto min-h-[44px] justify-center" style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" onmouseenter="this.style.backgroundColor='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseleave="this.style.backgroundColor='#ffffff'; this.style.borderColor='#e2e8f0';">
         <i data-lucide="refresh-cw" style="width: 16px; height: 16px; color: #64748b;"></i>
-        Sync Requests
+        <span>Sync Requests</span>
       </button>
     </div>
   </div>
 
   <!-- Table Card -->
-  <div style="background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.08); overflow: hidden;">
-    <div style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background-color: #ffffff;">
-      <h2 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 10px;">
-        <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; display: flex; align-items: center; justify-content: center;">
+  <div class="bg-white rounded-2xl sm:rounded-[20px] border border-slate-200 shadow-sm overflow-hidden">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-white">
+      <h2 style="font-size: 17px; sm:font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 10px;">
+        <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
           <i data-lucide="inbox" style="width: 18px; height: 18px; color: #4f46e5;"></i>
         </div>
         Pending Access Requests
       </h2>
+    </div>
+
+    <!-- Mobile swipe indicator -->
+    <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
+      <span>👈 Swipe horizontally to view all request columns</span>
+      <span class="font-mono text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">REQUESTS</span>
     </div>
     
     <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
       <table style="width: 100%; min-width: 820px; border-collapse: collapse; text-align: left;">
         <thead>
           <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-            <th style="padding: 16px 24px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Requester Profile</th>
-            <th style="padding: 16px 24px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Context / Industry</th>
-            <th style="padding: 16px 24px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Dataset Scope</th>
-            <th style="padding: 16px 24px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
-            <th style="padding: 16px 24px; text-align: right; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Administrative Action</th>
+            <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Requester Profile</th>
+            <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Context / Industry</th>
+            <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Dataset Scope</th>
+            <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+            <th style="padding: 14px 20px; text-align: right; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Administrative Action</th>
           </tr>
         </thead>
         <tbody id="requests-tbody">
@@ -140,7 +146,7 @@ function showToast(message, type = 'success') {
     }, 5000);
 }
 
-const getFbDbUrl = () => (window.ENV_CONFIG && window.ENV_CONFIG.firebaseDatabaseUrl) 
+var getFbDbUrl = () => (window.ENV_CONFIG && window.ENV_CONFIG.firebaseDatabaseUrl) 
     ? window.ENV_CONFIG.firebaseDatabaseUrl.replace(/\/$/, '') 
     : 'https://smart-air-net-default-rtdb.firebaseio.com';
 
@@ -278,7 +284,7 @@ async function deleteRequest(id) {
     }
 }
 
-let pendingApprovalId = null;
+var pendingApprovalId = null;
 
 function approveRequest(id) {
     pendingApprovalId = id;
@@ -356,7 +362,11 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
     });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        loadRequests();
+    });
+} else {
     loadRequests();
-});
+}
 </script>

@@ -73,11 +73,9 @@ window.FIREBASE_ENV_CONFIG = {
     <!-- Left: Brand -->
     <div style="display: flex; align-items: center; gap: 20px;">
       <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-        <?php if ($current_page !== 'overview'): ?>
-          <a href="?page=overview" title="Back to Atmosphere Snapshot" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid #e2e8f0; background-color: #f8fafc; color: #475569; cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; text-decoration: none;" onmouseenter="this.style.backgroundColor='#00bfa5'; this.style.color='#ffffff'; this.style.borderColor='#00bfa5';" onmouseleave="this.style.backgroundColor='#f8fafc'; this.style.color='#475569'; this.style.borderColor='#e2e8f0';">
-            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-          </a>
-        <?php endif; ?>
+        <a href="?page=overview" id="header-back-btn" title="Back to Atmosphere Snapshot" style="display: <?= $current_page !== 'overview' ? 'flex' : 'none' ?>; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid #e2e8f0; background-color: #f8fafc; color: #475569; cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; text-decoration: none;" onmouseenter="this.style.backgroundColor='#00bfa5'; this.style.color='#ffffff'; this.style.borderColor='#00bfa5';" onmouseleave="this.style.backgroundColor='#f8fafc'; this.style.color='#475569'; this.style.borderColor='#e2e8f0';">
+          <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        </a>
         <a href="?page=overview" style="display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none;">
           <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
             <i data-lucide="wind" style="width: 20px; height: 20px;"></i>
@@ -100,30 +98,25 @@ window.FIREBASE_ENV_CONFIG = {
     </div>
 
     <!-- Center: Desktop Nav -->
-    <?php if ($current_page !== 'overview'): ?>
-    <nav style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="hidden md:inline-flex">
-      <a href="?page=live" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'live' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: color 0.15s ease;">
+    <nav id="desktop-nav" style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px; display: <?= $current_page !== 'overview' ? 'inline-flex' : 'none' ?>;" class="<?= $current_page !== 'overview' ? 'hidden md:inline-flex' : 'hidden' ?>">
+      <a href="?page=live" data-nav-link="live" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'live' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
         <i data-lucide="radio" style="width: 15px; height: 15px; opacity: <?= $current_page === 'live' ? '1' : '0.75' ?>;"></i> Live Data Stream
       </a>
-      <a href="?page=historical" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'historical' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: color 0.15s ease;">
+      <a href="?page=historical" data-nav-link="historical" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'historical' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
         <i data-lucide="database" style="width: 15px; height: 15px; opacity: <?= $current_page === 'historical' ? '1' : '0.75' ?>;"></i> Analytics Archive
       </a>
-      <a href="?page=predictive" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: color 0.15s ease;">
+      <a href="?page=predictive" data-nav-link="predictive" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
         <i data-lucide="line-chart" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Predictive Forecast (Under Dev)
       </a>
     </nav>
-    <?php endif; ?>
 
     <!-- Right: Auth & Admin -->
-    <!-- Right: Auth & Admin -->
     <div style="display: flex; align-items: center; gap: 10px;">
-      <?php if ($current_page === 'overview'): ?>
-        <a href="?page=live" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; border: 1.5px solid #7dd3fc; background-color: #f0f9ff; color: #0284c7; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.12); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);" class="md:px-[22px]">
-          <span class="hidden sm:inline">View Dashboard</span>
-          <span class="sm:hidden">Dashboard</span>
-          <i data-lucide="arrow-up-right" style="width: 16px; height: 16px; stroke-width: 2.5; color: #0284c7;"></i>
-        </a>
-      <?php endif; ?>
+      <a href="?page=live" id="header-dashboard-btn" style="display: <?= $current_page === 'overview' ? 'inline-flex' : 'none' ?>; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; border: 1.5px solid #7dd3fc; background-color: #f0f9ff; color: #0284c7; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.12); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);" class="md:px-[22px]">
+        <span class="hidden sm:inline">View Dashboard</span>
+        <span class="sm:hidden">Dashboard</span>
+        <i data-lucide="arrow-up-right" style="width: 16px; height: 16px; stroke-width: 2.5; color: #0284c7;"></i>
+      </a>
       
 
       <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
@@ -164,11 +157,9 @@ window.FIREBASE_ENV_CONFIG = {
           </a>
         <?php endif; ?>
         
-        <?php if ($current_page !== 'overview'): ?>
-        <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #10b981;">
+        <div id="mobile-live-dot" style="display: <?= $current_page !== 'overview' ? 'flex' : 'none' ?>; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #10b981;">
            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; box-shadow: 0 0 0 2px #dcfce7;"></div>
         </div>
-        <?php endif; ?>
 
         <button onclick="toggleMobileMenu()" id="mobile-menu-btn" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #0f172a; cursor: pointer;">
           <i data-lucide="more-vertical" id="mobile-menu-icon" style="width: 20px; height: 20px;"></i>
@@ -200,22 +191,25 @@ window.FIREBASE_ENV_CONFIG = {
       </button>
     <?php endif; ?>
 
-    <a href="?page=live" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : '#ffffff' ?>;">
+    <a href="?page=live" data-mobile-nav-link="live" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : '#ffffff' ?>; transition: all 0.2s ease;">
       <i data-lucide="radio" style="width: 18px; height: 18px;"></i> Live Data Stream
     </a>
-    <a href="?page=historical" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : '#ffffff' ?>;">
+    <a href="?page=historical" data-mobile-nav-link="historical" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : '#ffffff' ?>; transition: all 0.2s ease;">
       <i data-lucide="database" style="width: 18px; height: 18px;"></i> Analytics Archive
     </a>
-    <a href="?page=predictive" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : '#ffffff' ?>;">
+    <a href="?page=predictive" data-mobile-nav-link="predictive" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : '#ffffff' ?>; transition: all 0.2s ease;">
       <i data-lucide="line-chart" style="width: 18px; height: 18px;"></i> Predictive Forecast (Under Dev)
     </a>
   </div>
 
   <script>
-    function toggleMobileMenu() {
+    function toggleMobileMenu(forceState = null) {
       const menu = document.getElementById('mobile-menu');
       const icon = document.getElementById('mobile-menu-icon');
-      if (menu.style.display === 'none' || menu.style.display === '') {
+      if (!menu || !icon) return;
+      const isOpen = menu.style.display === 'flex';
+      const shouldOpen = forceState === null ? !isOpen : Boolean(forceState);
+      if (shouldOpen) {
         menu.style.display = 'flex';
         icon.setAttribute('data-lucide', 'x');
       } else {
@@ -227,8 +221,8 @@ window.FIREBASE_ENV_CONFIG = {
   </script>
 
   <!-- Main Content Area -->
-  <main style="flex: 1; display: flex; flex-direction: column;">
-    <div style="flex-grow: 1;">
+  <main style="flex: 1; display: flex; flex-direction: column; position: relative;" class="pb-[76px] md:pb-0">
+    <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 1;">
       <?php
         $page_file = __DIR__ . '/../pages/' . $current_page . '.php';
         if (file_exists($page_file)) {
@@ -240,9 +234,9 @@ window.FIREBASE_ENV_CONFIG = {
     </div>
     
     <!-- Global Footer (Contact Us) -->
-    <div style="margin-top: auto; padding: 24px 0; text-align: center; position: relative; z-index: 2; font-size: 14px; background-color: #0f172a; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; width: 100%;">
+    <div style="margin-top: auto; padding: 20px 0; text-align: center; position: relative; z-index: 2; font-size: 13px; background-color: #0f172a; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; width: 100%;">
       
-      <button onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 14px; font-weight: 600; color: #cbd5e1; cursor: pointer; text-decoration: underline; text-decoration-color: #475569; text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#00bfa5'; this.style.textDecorationColor='#00bfa5';" onmouseout="this.style.color='#cbd5e1'; this.style.textDecorationColor='#475569';">
+      <button onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 13px; font-weight: 600; color: #cbd5e1; cursor: pointer; text-decoration: underline; text-decoration-color: #475569; text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#00bfa5'; this.style.textDecorationColor='#00bfa5';" onmouseout="this.style.color='#cbd5e1'; this.style.textDecorationColor='#475569';">
         Contact Us
       </button>
 
@@ -254,6 +248,52 @@ window.FIREBASE_ENV_CONFIG = {
       
     </div>
   </main>
+
+  <!-- Fixed Bottom Navigation Bar (Mobile Native App Bar) -->
+  <nav id="mobile-bottom-nav" class="flex md:hidden" style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05); padding-top: 6px; padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); padding-left: 6px; padding-right: 6px; justify-content: space-around; align-items: center;">
+    
+    <a href="?page=overview" data-bottom-nav="overview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
+      <i data-lucide="wind" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'overview' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em;">Snapshot</span>
+    </a>
+
+    <a href="?page=live" data-bottom-nav="live" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
+      <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'live' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em;">Live Feed</span>
+    </a>
+
+    <a href="?page=historical" data-bottom-nav="historical" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
+      <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'historical' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em;">Analytics</span>
+    </a>
+
+    <a href="?page=predictive" data-bottom-nav="predictive" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
+      <i data-lucide="line-chart" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'predictive' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em;">Forecast</span>
+    </a>
+
+    <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
+      <a href="?page=admin" data-bottom-nav="admin" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
+        <i data-lucide="shield-check" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'admin' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>
+        <span style="font-size: 10px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em;">Admin</span>
+      </a>
+    <?php else: ?>
+      <?php if ($is_logged_in): ?>
+        <a href="?logout=true" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; color: #64748b; transition: all 0.15s ease;">
+          <div style="width: 22px; height: 22px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">
+            <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
+          </div>
+          <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em;">Sign Out</span>
+        </a>
+      <?php else: ?>
+        <button onclick="openAuthModal()" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.15s ease;">
+          <i data-lucide="user" style="width: 20px; height: 20px; stroke-width: 2.2;"></i>
+          <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em;">Sign In</span>
+        </button>
+      <?php endif; ?>
+    <?php endif; ?>
+
+  </nav>
   
   <?php include __DIR__ . '/auth-modal.php'; ?>
   

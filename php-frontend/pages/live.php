@@ -1,15 +1,15 @@
-<div style="display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; padding: 24px; animation: fade-in 0.4s ease-out;">
+<div style="display: flex; flex-direction: column; gap: 20px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-3.5 sm:p-6">
 
   <!-- Sub-Navigation Selector -->
   <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-    <div style="display: inline-flex; align-items: center; background-color: #ffffff; padding: 5px; border-radius: 999px; border: 1px solid #cbd5e1; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); gap: 6px;">
-      <button id="tab-aqi" onclick="switchLiveTab('aqi')" style="position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 24px; border-radius: 999px; border: none; font-size: 14px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: #00bfa5; color: #ffffff; transition: all 0.15s ease;">
+    <div style="display: inline-flex; align-items: center; background-color: #ffffff; padding: 4px; border-radius: 999px; border: 1px solid #cbd5e1; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); gap: 4px;" class="w-full sm:w-auto">
+      <button id="tab-aqi" onclick="switchLiveTab('aqi')" class="flex-1 sm:flex-initial" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 999px; border: none; font-size: 13.5px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: #00bfa5; color: #ffffff; transition: all 0.15s ease; min-height: 44px;">
         <i data-lucide="activity" style="width: 17px; height: 17px; z-index: 1;"></i>
-        <span style="z-index: 1;">AQI Live Telemetry</span>
+        <span style="z-index: 1;">AQI Telemetry</span>
       </button>
-      <button id="tab-weather" onclick="switchLiveTab('weather')" style="position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 24px; border-radius: 999px; border: none; font-size: 14px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: transparent; color: #64748b; transition: all 0.15s ease;">
+      <button id="tab-weather" onclick="switchLiveTab('weather')" class="flex-1 sm:flex-initial" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 999px; border: none; font-size: 13.5px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: transparent; color: #64748b; transition: all 0.15s ease; min-height: 44px;">
         <i data-lucide="cloud-sun" style="width: 17px; height: 17px; z-index: 1;"></i>
-        <span style="z-index: 1;">Weather Live Telemetry</span>
+        <span style="z-index: 1;">Weather Telemetry</span>
       </button>
     </div>
   </div>
@@ -283,20 +283,20 @@
         </div>
 
         <!-- Pollutant Filter Chips -->
-        <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="pollutant-filters">
-          <button onclick="togglePollutant('pm25')" id="filter-pm25" data-active="true" data-color="#0284c7" style="padding: 4px 10px; border-radius: 999px; border: 1px solid #0284c7; background-color: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+        <div style="display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none;" class="sm:flex-wrap" id="pollutant-filters">
+          <button onclick="togglePollutant('pm25')" id="filter-pm25" data-active="true" data-color="#0284c7" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #0284c7; background-color: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #0284c7;"></span> PM2.5
           </button>
-          <button onclick="togglePollutant('pm10')" id="filter-pm10" data-active="true" data-color="#6366f1" style="padding: 4px 10px; border-radius: 999px; border: 1px solid #6366f1; background-color: rgba(99, 102, 241, 0.15); color: #6366f1; font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+          <button onclick="togglePollutant('pm10')" id="filter-pm10" data-active="true" data-color="#6366f1" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #6366f1; background-color: rgba(99, 102, 241, 0.15); color: #6366f1; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #6366f1;"></span> PM10
           </button>
-          <button onclick="togglePollutant('co')" id="filter-co" data-active="true" data-color="#64748b" style="padding: 4px 10px; border-radius: 999px; border: 1px solid #64748b; background-color: rgba(100, 116, 139, 0.15); color: #64748b; font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+          <button onclick="togglePollutant('co')" id="filter-co" data-active="true" data-color="#64748b" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #64748b; background-color: rgba(100, 116, 139, 0.15); color: #64748b; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #64748b;"></span> CO
           </button>
-          <button onclick="togglePollutant('no2')" id="filter-no2" data-active="true" data-color="#9333ea" style="padding: 4px 10px; border-radius: 999px; border: 1px solid #9333ea; background-color: rgba(147, 51, 234, 0.15); color: #9333ea; font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+          <button onclick="togglePollutant('no2')" id="filter-no2" data-active="true" data-color="#9333ea" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #9333ea; background-color: rgba(147, 51, 234, 0.15); color: #9333ea; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #9333ea;"></span> NO₂
           </button>
-          <button onclick="togglePollutant('o3')" id="filter-o3" data-active="true" data-color="#d97706" style="padding: 4px 10px; border-radius: 999px; border: 1px solid #d97706; background-color: rgba(217, 119, 6, 0.15); color: #d97706; font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+          <button onclick="togglePollutant('o3')" id="filter-o3" data-active="true" data-color="#d97706" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #d97706; background-color: rgba(217, 119, 6, 0.15); color: #d97706; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #d97706;"></span> O₃
           </button>
         </div>
@@ -313,11 +313,14 @@
 
   <!-- NETWORK READINGS TABLE -->
   <div style="margin-top: 8px;">
-    <div style="margin-bottom: 12px;">
+    <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
       <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
         <i data-lucide="table" style="width: 18px; height: 18px; color: #00bfa5;"></i>
         <span>Network Readings &amp; Status</span>
       </h2>
+      <span class="text-[11px] text-slate-400 font-medium md:hidden flex items-center gap-1">
+        <i data-lucide="chevrons-right" style="width: 14px; height: 14px;"></i> Swipe table
+      </span>
     </div>
 
     <div style="background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);">
@@ -495,10 +498,10 @@ function updateTag(elementId, value, limit) {
     }
 }
 
-let liveDataStream = [];
-let comparisonChartInstance = null;
-const visiblePollutants = { pm25: true, pm10: true, co: true, no2: true, o3: true };
-const pollutantColors = { pm25: '#0284c7', pm10: '#6366f1', co: '#64748b', no2: '#9333ea', o3: '#d97706' };
+var liveDataStream = [];
+var comparisonChartInstance = null;
+var visiblePollutants = { pm25: true, pm10: true, co: true, no2: true, o3: true };
+var pollutantColors = { pm25: '#0284c7', pm10: '#6366f1', co: '#64748b', no2: '#9333ea', o3: '#d97706' };
 
 function togglePollutant(key) {
     visiblePollutants[key] = !visiblePollutants[key];
@@ -874,8 +877,19 @@ async function refreshDashboard() {
     }
 }
 
-let autoRefreshInterval = null;
-let currentTabIsAqi = true;
+var autoRefreshInterval = null;
+var currentTabIsAqi = true;
+
+window.__cleanupCurrentPage = function() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    if (comparisonChartInstance) {
+        comparisonChartInstance.destroy();
+        comparisonChartInstance = null;
+    }
+};
 
 setTimeout(() => {
     refreshDashboard();
@@ -886,7 +900,7 @@ setTimeout(() => {
     }, 15000);
 }, 0);
 
-const pollutantDetails = {
+var pollutantDetails = {
     pm25: {
         id: 'pm25', title: 'Particulate Matter 2.5 (PM2.5)', icon: '🌫️', limit: 15, unit: 'µg/m³',
         scale: [30, 60, 90, 120, 250],

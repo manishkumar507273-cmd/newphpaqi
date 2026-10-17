@@ -57,7 +57,6 @@
 html {
   scroll-behavior: smooth;
   width: 100%;
-  min-width: 1200px;
 }
 
 body {
@@ -68,8 +67,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   width: 100%;
-  min-width: 1200px;
-  overflow-x: auto;
+  overflow-x: hidden;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -334,8 +332,8 @@ img, svg, video, canvas {
   display: none;
 }
 
-/* ── Mobile Layout Adaptations (Disabled: Mobile displays identical full desktop layout) ── */
-@media (max-width: 0px) {
+/* ── Mobile Layout Adaptations (≤ 768px) ── */
+@media (max-width: 768px) {
   /* ─ Mobile Charts Grid Override ─ */
   .mobile-chart-grid {
     grid-template-columns: 1fr !important;
@@ -818,24 +816,37 @@ img, svg, video, canvas {
   }
 }
 
-.desktop-only-nav {
-  display: flex !important;
+@media (min-width: 769px) {
+  .desktop-only-nav {
+    display: flex !important;
+  }
+  .mobile-only-header {
+    display: none !important;
+  }
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+  .desktop-only-inline {
+    display: inline !important;
+  }
+  .mobile-only-inline {
+    display: none !important;
+  }
 }
 
-.mobile-only-header {
-  display: none !important;
-}
-
-.mobile-bottom-nav {
-  display: none !important;
-}
-
-.desktop-only-inline {
-  display: inline !important;
-}
-
-.mobile-only-inline {
-  display: none !important;
+@media (max-width: 768px) {
+  .desktop-only-nav {
+    display: none !important;
+  }
+  .mobile-only-header {
+    display: flex !important;
+  }
+  .desktop-only-inline {
+    display: none !important;
+  }
+  .mobile-only-inline {
+    display: inline !important;
+  }
 }
 
 /* ── Smartboards & 4K (≥ 1920px) ── */

@@ -44,17 +44,20 @@
       </div>
     </div>
 
-    <!-- Mobile Subheader & Selection Controls (Hidden: desktop table view is used everywhere) -->
-    <div id="mobile-selection-bar" style="display: none !important;">
-      <input type="checkbox" id="select-all-mobile" style="display: none;">
-      <span id="mobile-selected-counter" style="display: none;"></span>
+    <!-- Mobile Subheader & Selection Controls -->
+    <div id="mobile-selection-bar" class="flex md:hidden items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" id="select-all-mobile" onchange="toggleSelectAll(this.checked)" class="w-4 h-4 rounded text-red-500 focus:ring-red-400">
+        <span>Select All</span>
+      </label>
+      <span id="mobile-selected-counter" class="text-slate-400 font-mono"></span>
     </div>
 
-    <!-- Mobile Native Card View (Hidden: desktop table view is used everywhere) -->
-    <div id="requests-mobile-cards" style="display: none !important;"></div>
+    <!-- Mobile Native Card View -->
+    <div id="requests-mobile-cards" class="block md:hidden divide-y divide-slate-100"></div>
     
-    <!-- Desktop Table View (visible on all screens to maintain desktop layout) -->
-    <div class="block overflow-x-auto w-full">
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto w-full">
       <table style="width: 100%; min-width: 860px; border-collapse: collapse; text-align: left;">
         <thead>
           <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">

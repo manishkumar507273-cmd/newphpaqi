@@ -408,6 +408,20 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       gap: 12px !important;
       margin-bottom: 8px !important;
     }
+    @media (max-width: 1024px) {
+      .overview-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+    }
+    @media (max-width: 640px) {
+      .overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+      }
+      .overview-grid > *:nth-child(5) {
+        grid-column: span 2 !important;
+      }
+    }
     .overview-core-card {
       background: #ffffff;
       border-radius: 16px;

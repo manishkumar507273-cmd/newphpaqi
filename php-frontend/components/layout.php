@@ -97,10 +97,10 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
 })();
 </script>
 
-<div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; overflow-x: auto; width: 100%; min-width: 1200px; display: flex; flex-direction: column;">
+<div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; width: 100%; display: flex; flex-direction: column;">
 
   <!-- Sticky Header -->
-  <header style="min-height: 64px; min-width: 1200px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding: 0 16px;">
+  <header style="min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding: 0 16px;">
     
     <!-- Left: Brand -->
     <div style="display: flex; align-items: center; gap: 20px;">
@@ -109,7 +109,7 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
           <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
         </a>
         <a href="?page=overview" style="display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none;">
-          <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
+          <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35); flex-shrink: 0;">
             <i data-lucide="wind" style="width: 20px; height: 20px;"></i>
           </div>
           <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden; padding-top: 2px;">
@@ -120,7 +120,7 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
               <div style="display: flex; align-items: center; gap: 5px;">
                 <div style="width: 5px; height: 5px; border-radius: 50%; background: #10b981;"></div>
                 <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
-                <span style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
+                <span class="hidden sm:inline" style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
               </div>
             </div>
           </div>
@@ -129,7 +129,7 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
     </div>
 
     <!-- Center: Desktop Nav -->
-    <nav id="desktop-nav" style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="<?= $current_page !== 'overview' ? 'inline-flex' : 'hidden' ?>">
+    <nav id="desktop-nav" style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="<?= $current_page !== 'overview' ? 'hidden md:inline-flex' : 'hidden' ?>">
       <a href="?page=live" data-nav-link="live" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'live' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
         <i data-lucide="radio" style="width: 15px; height: 15px; opacity: <?= $current_page === 'live' ? '1' : '0.75' ?>;"></i> Live Data Stream
       </a>
@@ -141,57 +141,55 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
       </a>
     </nav>
 
-    <!-- Right: Auth & Admin -->
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <a href="?page=live" id="header-dashboard-btn" style="display: <?= $current_page === 'overview' ? 'inline-flex' : 'none' ?>; align-items: center; gap: 8px; padding: 8px 22px; border-radius: 999px; border: 1.5px solid #7dd3fc; background-color: #f0f9ff; color: #0284c7; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.12); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+    <!-- Right: Auth & Admin & Mobile Trigger -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <a href="?page=live" id="header-dashboard-btn" style="display: <?= $current_page === 'overview' ? 'inline-flex' : 'none' ?>; align-items: center; gap: 8px; padding: 7px 18px; border-radius: 999px; border: 1.5px solid #7dd3fc; background-color: #f0f9ff; color: #0284c7; font-size: 13.5px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.12); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
         <span>View Dashboard</span>
-        <i data-lucide="arrow-up-right" style="width: 16px; height: 16px; stroke-width: 2.5; color: #0284c7;"></i>
+        <i data-lucide="arrow-up-right" style="width: 15px; height: 15px; stroke-width: 2.5; color: #0284c7;"></i>
       </a>
 
-      <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
-        <a href="?page=admin" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #e2e8f0; background-color: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
-          <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #00bfa5;"></i>
-          <span>Admin Center</span>
-        </a>
-      <?php endif; ?>
-
-      <?php if ($is_logged_in): ?>
-        <div style="display: flex; align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
-          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.3);">
-            <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
-          </div>
-          <span style="font-size: 12px; font-weight: 700; color: #0f172a;"><?= $_SESSION['user_name'] ?></span>
-          <a href="?logout=true" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
-            <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
-          </a>
-        </div>
-      <?php else: ?>
-        <button onclick="openAuthModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; border: none; background-color: #0f172a; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
-          <i data-lucide="user" style="width: 14px; height: 14px;"></i>
-          <span>Sign In</span>
-        </button>
-      <?php endif; ?>
-      
-      <!-- Live Badge -->
-      <div style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;">
-        <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #16a34a;"></span>
-        <span>LIVE</span>
-      </div>
-
-      <!-- Mobile Right Items (Strictly hidden to keep desktop layout identical everywhere) -->
-      <div style="display: none !important;">
-        <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false && $current_page !== 'overview'): ?>
-          <a href="?page=admin" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background-color: #0f172a; border: 1.5px solid #1e293b; color: #ffffff; text-decoration: none;">
-            <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i>
+      <!-- Desktop Auth & Admin -->
+      <div class="hidden md:flex items-center gap-2.5">
+        <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
+          <a href="?page=admin" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #e2e8f0; background-color: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
+            <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #00bfa5;"></i>
+            <span>Admin Center</span>
           </a>
         <?php endif; ?>
+
+        <?php if ($is_logged_in): ?>
+          <div style="display: flex; align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.3);">
+              <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
+            </div>
+            <span style="font-size: 12px; font-weight: 700; color: #0f172a;"><?= $_SESSION['user_name'] ?></span>
+            <a href="?logout=true" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
+              <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
+            </a>
+          </div>
+        <?php else: ?>
+          <button onclick="openAuthModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; border: none; background-color: #0f172a; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+            <i data-lucide="user" style="width: 14px; height: 14px;"></i>
+            <span>Sign In</span>
+          </button>
+        <?php endif; ?>
         
-        <div id="mobile-live-dot" style="display: none; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #10b981;">
-           <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; box-shadow: 0 0 0 2px #dcfce7;"></div>
+        <!-- Live Badge -->
+        <div style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #16a34a;"></span>
+          <span>LIVE</span>
+        </div>
+      </div>
+
+      <!-- Mobile Right Items (Visible on mobile screens) -->
+      <div class="flex md:hidden items-center gap-2">
+        <div style="display: flex; padding: 5px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; align-items: center; gap: 5px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #16a34a;"></span>
+          <span>LIVE</span>
         </div>
 
-        <button onclick="toggleMobileMenu()" id="mobile-menu-btn" style="display: none; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #0f172a; cursor: pointer;">
-          <i data-lucide="more-vertical" id="mobile-menu-icon" style="width: 20px; height: 20px;"></i>
+        <button onclick="toggleMobileMenu()" id="mobile-menu-btn" aria-label="Toggle Menu" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #0f172a; cursor: pointer;">
+          <i data-lucide="menu" id="mobile-menu-icon" style="width: 20px; height: 20px;"></i>
         </button>
       </div>
     </div>
@@ -278,8 +276,8 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
     </div>
   </main>
 
-  <!-- Fixed Bottom Navigation Bar (Hidden: mobile renders identical desktop layout without bottom nav) -->
-  <nav id="mobile-bottom-nav" style="display: none !important;">
+  <!-- Fixed Native Mobile Bottom Navigation Bar -->
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden">
     
     <a href="?page=overview" data-bottom-nav="overview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 56px; min-height: 48px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.08)' : 'transparent' ?>;">
       <i data-lucide="wind" style="width: 20px; height: 20px; stroke-width: 2.2; transition: transform 0.15s ease; <?= $current_page === 'overview' ? 'transform: scale(1.1); color: #00bfa5;' : '' ?>"></i>

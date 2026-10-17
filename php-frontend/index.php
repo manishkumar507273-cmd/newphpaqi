@@ -174,25 +174,8 @@ if ($is_ajax) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" id="viewport-meta" content="width=1200, initial-scale=0.35, minimum-scale=0.2, maximum-scale=3.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <script>
-        // Ensure mobile devices render the identical desktop layout (scaled edge-to-edge like laptop)
-        (function() {
-            function updateDesktopViewport() {
-                var meta = document.getElementById('viewport-meta');
-                if (!meta) return;
-                var sw = window.screen.width;
-                if (sw < 1200) {
-                    var scale = (sw / 1200).toFixed(4);
-                    meta.setAttribute('content', 'width=1200, initial-scale=' + scale + ', minimum-scale=0.1, maximum-scale=3.0, user-scalable=yes');
-                } else {
-                    meta.setAttribute('content', 'width=1200, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes');
-                }
-            }
-            updateDesktopViewport();
-            window.addEventListener('resize', updateDesktopViewport);
-            window.addEventListener('orientationchange', updateDesktopViewport);
-        })();
 
         // Fast code update detector: checks on window/tab focus without lagging the server
         (function() {

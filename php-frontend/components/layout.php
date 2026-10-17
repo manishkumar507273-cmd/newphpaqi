@@ -143,9 +143,10 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
 
     <!-- Right: Auth & Admin & Mobile Trigger -->
     <div style="display: flex; align-items: center; gap: 8px;">
-      <a href="?page=live" id="header-dashboard-btn" class="header-dashboard-btn" style="display: <?= $current_page === 'overview' ? 'inline-flex' : 'none' ?>; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 8px; border: 1.5px solid #0284c7; background-color: #0284c7; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+      <a href="?page=live" id="header-dashboard-btn" class="header-dashboard-btn" style="display: <?= $current_page === 'overview' ? 'inline-flex' : 'none' ?>; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25); border: 1px solid rgba(0, 191, 165, 0.4); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+        <i data-lucide="layout-dashboard" style="width: 14px; height: 14px; stroke-width: 2.2;"></i>
         <span>View Dashboard</span>
-        <i data-lucide="arrow-up-right" style="width: 14px; height: 14px; stroke-width: 2.5; color: #ffffff;"></i>
+        <i data-lucide="arrow-right" style="width: 13px; height: 13px; stroke-width: 2.5; opacity: 0.9;"></i>
       </a>
 
       <!-- Desktop Auth & Admin -->
@@ -279,10 +280,6 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
   <!-- Fixed Native Mobile Bottom Navigation Bar -->
   <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: center; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid #e2e8f0; height: calc(52px + env(safe-area-inset-bottom, 12px)); padding: 4px 6px env(safe-area-inset-bottom, 12px); box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
     
-    <a href="?page=overview" data-bottom-nav="overview" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-      <i data-lucide="wind" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'overview' ? 'color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 11px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Snapshot</span>
-    </a>
 
     <a href="?page=live" data-bottom-nav="live" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="radio" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'live' ? 'color: #00bfa5;' : '' ?>"></i>

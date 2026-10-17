@@ -856,22 +856,29 @@ img, svg, video, canvas {
   }
 }
 
-/* Header View Dashboard Button (Square-like) */
+/* Header View Dashboard Button (Square-like, Brand Teal Gradient) */
 .header-dashboard-btn {
   display: inline-flex;
   align-items: center;
   border-radius: 8px !important;
-  border: 1.5px solid #0284c7;
-  background-color: #0284c7;
+  background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(0, 191, 165, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 .header-dashboard-btn:hover {
-  background-color: #0369a1 !important;
-  border-color: #0369a1 !important;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35) !important;
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #00d6b9 0%, #0f766e 100%) !important;
+  border-color: rgba(0, 214, 185, 0.6) !important;
+  box-shadow: 0 6px 20px rgba(0, 191, 165, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+.header-dashboard-btn:active {
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 8px rgba(0, 191, 165, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 /* ── Smartboards & 4K (≥ 1920px) ── */

@@ -32,7 +32,7 @@ A modern intelligence platform for real-time air quality index (AQI) telemetry a
 - **Historical Telemetry Archive**:
   - Historical table view and charts for past 24-hour logs.
 - **Enterprise Dataset Delivery**:
-  - Authenticated requests for historical datasets, dispatched directly to the requester's corporate email via secure SMTP.
+  - Authenticated requests for historical datasets, dispatched directly to the requester's email via secure SMTP.
 
 ---
 

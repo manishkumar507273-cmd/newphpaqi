@@ -57,6 +57,7 @@
 html {
   scroll-behavior: smooth;
   width: 100%;
+  min-width: 1200px;
 }
 
 body {
@@ -67,6 +68,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   width: 100%;
+  min-width: 1200px;
+  overflow-x: auto;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -331,8 +334,8 @@ img, svg, video, canvas {
   display: none;
 }
 
-/* ── Mobile Layout Adaptations (< 768px) ── */
-@media (max-width: 767px) {
+/* ── Mobile Layout Adaptations (Disabled: Mobile displays identical full desktop layout) ── */
+@media (max-width: 0px) {
   /* ─ Mobile Charts Grid Override ─ */
   .mobile-chart-grid {
     grid-template-columns: 1fr !important;
@@ -815,26 +818,24 @@ img, svg, video, canvas {
   }
 }
 
-@media (min-width: 768px) {
-  .desktop-only-nav {
-    display: flex !important;
-  }
+.desktop-only-nav {
+  display: flex !important;
+}
 
-  .mobile-only-header {
-    display: none !important;
-  }
+.mobile-only-header {
+  display: none !important;
+}
 
-  .mobile-bottom-nav {
-    display: none !important;
-  }
+.mobile-bottom-nav {
+  display: none !important;
+}
 
-  .desktop-only-inline {
-    display: inline !important;
-  }
+.desktop-only-inline {
+  display: inline !important;
+}
 
-  .mobile-only-inline {
-    display: none !important;
-  }
+.mobile-only-inline {
+  display: none !important;
 }
 
 /* ── Smartboards & 4K (≥ 1920px) ── */
@@ -869,9 +870,9 @@ img, svg, video, canvas {
 
 /* Overview Dashboard Specific Layouts */
 .overview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 12px !important;
   width: 100%;
 }
 
@@ -887,7 +888,7 @@ img, svg, video, canvas {
   flex-direction: column;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 0px) {
   .overview-page-root {
     background: transparent !important;
     border: none !important;
@@ -961,15 +962,14 @@ img, svg, video, canvas {
   }
 }
 
-/* Responsive adjustments for the top header to prevent mobile overflow */
-@media (max-width: 850px) {
+/* Responsive adjustments (Disabled: Keep desktop view everywhere) */
+@media (max-width: 0px) {
   .global-location-badge {
     display: none !important;
   }
 }
 
-/* Ensure desktop pill navbar is strictly hidden on mobile devices */
-@media (max-width: 767px) {
+@media (max-width: 0px) {
   #desktop-nav {
     display: none !important;
   }

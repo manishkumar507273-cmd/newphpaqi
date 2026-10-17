@@ -1,10 +1,98 @@
+<?php
+// Retrieve cached bulk telemetry for 0ms instant first-paint on both desktop and mobile
+$cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
+$init_bulk = null;
+if (file_exists($cache_file)) {
+    $raw_cache = @file_get_contents($cache_file);
+    if ($raw_cache && strlen($raw_cache) > 20) {
+        $init_bulk = @json_decode($raw_cache, true);
+    }
+}
+
+// AQI pre-calculated fields
+$init_aqi = null;
+$init_aqi_color = '#16a34a';
+$init_aqi_bg = '#f0fdf4';
+$init_aqi_border = '#86efac';
+$init_aqi_text = '#15803d';
+$init_aqi_label = 'Good';
+$init_aqi_dom = 'O₃';
+$init_aqi_bar_width = '6%';
+
+if (!empty($init_bulk['aqi'])) {
+    $aqi_data = $init_bulk['aqi'];
+    if (isset($aqi_data['cpcb_aqi'])) {
+        $init_aqi = (int)round($aqi_data['cpcb_aqi']);
+        $init_aqi_dom = !empty($aqi_data['dominant_pollutant']) ? htmlspecialchars($aqi_data['dominant_pollutant']) : 'O₃';
+        
+        if ($init_aqi <= 50) {
+            $init_aqi_label = 'Good'; $init_aqi_color = '#16a34a'; $init_aqi_bg = '#f0fdf4'; $init_aqi_border = '#86efac'; $init_aqi_text = '#15803d';
+        } elseif ($init_aqi <= 100) {
+            $init_aqi_label = 'Satisfactory'; $init_aqi_color = '#65a30d'; $init_aqi_bg = '#f7fee7'; $init_aqi_border = '#bef264'; $init_aqi_text = '#3f6212';
+        } elseif ($init_aqi <= 200) {
+            $init_aqi_label = 'Moderate'; $init_aqi_color = '#d97706'; $init_aqi_bg = '#fffbeb'; $init_aqi_border = '#fde68a'; $init_aqi_text = '#92400e';
+        } elseif ($init_aqi <= 300) {
+            $init_aqi_label = 'Poor'; $init_aqi_color = '#ea580c'; $init_aqi_bg = '#fff7ed'; $init_aqi_border = '#fed7aa'; $init_aqi_text = '#9a3412';
+        } elseif ($init_aqi <= 400) {
+            $init_aqi_label = 'Very Poor'; $init_aqi_color = '#dc2626'; $init_aqi_bg = '#fef2f2'; $init_aqi_border = '#fecaca'; $init_aqi_text = '#991b1b';
+        } else {
+            $init_aqi_label = 'Severe'; $init_aqi_color = '#9333ea'; $init_aqi_bg = '#faf5ff'; $init_aqi_border = '#e9d5ff'; $init_aqi_text = '#6b21a8';
+        }
+        $init_aqi_bar_width = min(100, max(4, round(($init_aqi / 500) * 100))) . '%';
+    }
+}
+
+// Weather pre-calculated fields
+$init_temp = '--';
+$init_temp_badge = 'Pleasant';
+$init_temp_bar_width = '0%';
+
+$init_hum = '--';
+$init_hum_badge = 'Comfort';
+$init_hum_bar_width = '0%';
+
+$init_wind = '--';
+$init_wind_badge = 'Calm';
+$init_wind_bar_width = '0%';
+$init_wind_kmh = 0.0;
+
+$init_live_rain = '--';
+$init_today_rain = '--';
+
+if (!empty($init_bulk['weather'])) {
+    $w = $init_bulk['weather'];
+    if (isset($w['temperature']) && $w['temperature'] !== null) {
+        $init_temp = number_format((float)$w['temperature'], 1, '.', '');
+        $init_temp_badge = ((float)$w['temperature'] > 30) ? 'Warm' : (((float)$w['temperature'] < 22) ? 'Cool' : 'Pleasant');
+        $init_temp_bar_width = min(100, max(5, round((((float)$w['temperature'] - 10) / 35) * 100))) . '%';
+    }
+    if (isset($w['humidity']) && $w['humidity'] !== null) {
+        $init_hum = number_format((float)$w['humidity'], 1, '.', '');
+        $init_hum_badge = ((float)$w['humidity'] >= 60) ? '☁️ Cloudy' : '☀️ Sunny';
+        $init_hum_bar_width = min(100, max(5, round((float)$w['humidity']))) . '%';
+    }
+    if (isset($w['wind_speed']) && $w['wind_speed'] !== null) {
+        $init_wind_kmh = (float)$w['wind_speed'];
+        $init_wind = number_format($init_wind_kmh, 1, '.', '');
+        $init_wind_badge = ($init_wind_kmh > 15) ? 'Breezy' : (($init_wind_kmh > 2) ? 'Gentle' : 'Light');
+        $init_wind_bar_width = min(100, max(4, round(($init_wind_kmh / 30) * 100))) . '%';
+    }
+    if (isset($w['rain_gauge']) && $w['rain_gauge'] !== null) {
+        $init_live_rain = number_format((float)$w['rain_gauge'], 1, '.', '');
+    }
+}
+
+if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null) {
+    $init_today_rain = number_format((float)$init_bulk['today_rain_total'], 1, '.', '');
+}
+?>
 <div class="overview-page-root" style="position: relative; min-height: 85vh; border-radius: 24px; overflow: hidden; padding: clamp(16px, 3vw, 28px); background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
   
   <!-- Dynamic Ambient Canvas -->
   <canvas id="ambient-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.9;"></canvas>
 
   <!-- Floating Environmental Pastel Auras -->
-  <div id="aura-top" style="position: absolute; top: -10%; right: -5%; width: 45vw; height: 45vw; max-width: 500px; max-height: 500px; border-radius: 50%; background: radial-gradient(circle, #16a34a15 0%, rgba(241, 245, 249, 0) 70%); filter: blur(60px); pointer-events: none; z-index: 0; animation: breathAtmosphere 10s ease-in-out infinite alternate;"></div>
+  <div id="aura-top" style="position: absolute; top: -10%; right: -5%; width: 45vw; height: 45vw; max-width: 500px; max-height: 500px; border-radius: 50%; background: radial-gradient(circle, <?= $init_aqi_color ?>15 0%, rgba(241, 245, 249, 0) 70%); filter: blur(60px); pointer-events: none; z-index: 0; animation: breathAtmosphere 10s ease-in-out infinite alternate;"></div>
   
   <div style="position: absolute; bottom: -10%; left: -5%; width: 45vw; height: 45vw; max-width: 500px; max-height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, rgba(241, 245, 249, 0) 70%); filter: blur(60px); pointer-events: none; z-index: 0;"></div>
 
@@ -17,6 +105,7 @@
         <div style="display: flex; background-color: #ffffff; border-radius: 999px; padding: 3px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); gap: 2px;">
           <button id="btn-temp" onclick="toggleTemp()" style="min-height: 38px; min-width: 44px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">°C</button>
           <button id="btn-wind" onclick="toggleWind()" style="min-height: 38px; min-width: 52px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">km/h</button>
+          <button id="btn-rain" onclick="toggleRain()" title="Toggle rain unit: mm or cm" style="min-height: 38px; min-width: 48px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">mm</button>
         </div>
         <button id="btn-refresh" onclick="refreshData(false)" class="overview-refresh-btn" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); transition: all 0.2s ease;">
           <i data-lucide="refresh-cw" id="icon-refresh" style="width: 17px; height: 17px; color: #00bfa5;"></i>
@@ -28,34 +117,34 @@
     <div class="overview-grid">
       
       <!-- CARD 1: AIR QUALITY INDEX -->
-      <div class="overview-core-card" id="card-aqi" style="border-color: #86efac;">
-        <div id="aqi-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #16a34a, #06b6d4);"></div>
+      <div class="overview-core-card" id="card-aqi" style="border-color: <?= $init_aqi_border ?>;">
+        <div id="aqi-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, <?= $init_aqi_color ?>, #06b6d4);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 7px;">
-            <div id="aqi-icon-bg" class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: #f0fdf4; display: flex; align-items: center; justify-content: center; color: #16a34a; border: 1px solid #86efac;">
+            <div id="aqi-icon-bg" class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: <?= $init_aqi_bg ?>; display: flex; align-items: center; justify-content: center; color: <?= $init_aqi_color ?>; border: 1px solid <?= $init_aqi_border ?>;">
               <i data-lucide="gauge" style="width: 15px; height: 15px;"></i>
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Air Quality</h4>
           </div>
-          <span id="aqi-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac; display: inline-flex; align-items: center; gap: 4px;">
-            <span id="aqi-badge-dot" style="width: 5px; height: 5px; border-radius: 50%; background-color: #16a34a;"></span>
-            <span id="aqi-badge-text">Good</span>
+          <span id="aqi-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= $init_aqi_bg ?>; color: <?= $init_aqi_text ?>; border: 1px solid <?= $init_aqi_border ?>; display: inline-flex; align-items: center; gap: 4px;">
+            <span id="aqi-badge-dot" style="width: 5px; height: 5px; border-radius: 50%; background-color: <?= $init_aqi_color ?>;"></span>
+            <span id="aqi-badge-text"><?= $init_aqi_label ?></span>
           </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
           <div>
             <div style="display: flex; align-items: baseline; gap: 3px;">
-              <span id="aqi-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #16a34a; font-family: var(--font-mono);">--</span>
+              <span id="aqi-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: <?= $init_aqi_color ?>; font-family: var(--font-mono);"><?= $init_aqi !== null ? $init_aqi : '--' ?></span>
               <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">/ 500</span>
             </div>
             <div style="margin-top: 3px; font-size: 10px; color: #64748b;">
-              Dominant: <strong id="aqi-dom" style="color: #0f172a;">O₃</strong>
+              Dominant: <strong id="aqi-dom" style="color: #0f172a;"><?= $init_aqi_dom ?></strong>
             </div>
           </div>
         </div>
         <div style="margin-top: auto; padding-top: 8px;">
           <div style="height: 5px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
-            <div id="aqi-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981 0%, #16a34a 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
+            <div id="aqi-bar" style="height: 100%; width: <?= $init_aqi_bar_width ?>; background: linear-gradient(90deg, #10b981 0%, <?= $init_aqi_color ?> 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
           </div>
           <div class="overview-bar-scale">
             <span>0</span><span style="color: #cbd5e1;">•</span><span>100</span><span style="color: #cbd5e1;">•</span><span>500</span>
@@ -74,18 +163,18 @@
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Temperature</h4>
           </div>
           <span id="temp-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;">
-            --
+            <?= $init_temp_badge ?>
           </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
           <div style="display: flex; align-items: baseline; gap: 2px;">
-            <span id="temp-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #ea580c; font-family: var(--font-mono);">--</span>
+            <span id="temp-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #ea580c; font-family: var(--font-mono);"><?= $init_temp ?></span>
             <span id="temp-unit-display" style="font-size: 14px; font-weight: 700; color: #94a3b8;">°C</span>
           </div>
         </div>
         <div style="margin-top: auto; padding-top: 8px;">
           <div style="height: 5px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
-            <div id="temp-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8 0%, #facc15 50%, #ea580c 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
+            <div id="temp-bar" style="height: 100%; width: <?= $init_temp_bar_width ?>; background: linear-gradient(90deg, #38bdf8 0%, #facc15 50%, #ea580c 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
           </div>
           <div class="overview-bar-scale">
             <span id="temp-scale-0">15°</span><span style="color: #cbd5e1;">•</span><span id="temp-scale-50">28°</span><span style="color: #cbd5e1;">•</span><span id="temp-scale-100">40°</span>
@@ -103,22 +192,22 @@
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Humidity</h4>
           </div>
-          <span id="hum-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
-            --
+          <span id="hum-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#f1f5f9' : '#fef9c3' ?>; color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#475569' : '#854d0e' ?>; border: 1px solid <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#cbd5e1' : '#fde047' ?>;">
+            <?= $init_hum_badge ?>
           </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
           <div style="display: flex; align-items: baseline; gap: 2px;">
-            <span id="hum-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);">--</span>
+            <span id="hum-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);"><?= $init_hum ?></span>
             <span style="font-size: 14px; font-weight: 700; color: #94a3b8;">%</span>
           </div>
         </div>
         <div style="margin-top: auto; padding-top: 8px;">
           <div style="height: 5px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
-            <div id="hum-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8 0%, #0284c7 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
+            <div id="hum-bar" style="height: 100%; width: <?= $init_hum_bar_width ?>; background: linear-gradient(90deg, #38bdf8 0%, #0284c7 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
           </div>
           <div class="overview-bar-scale">
-            <span>20% Dry</span><span style="color: #cbd5e1;">•</span><span>55%</span><span style="color: #cbd5e1;">•</span><span>90% Humid</span>
+            <span>&lt; 60% Sunny</span><span style="color: #cbd5e1;">•</span><span>60%</span><span style="color: #cbd5e1;">•</span><span>≥ 60% Cloudy</span>
           </div>
         </div>
       </div>
@@ -134,24 +223,24 @@
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Wind Speed</h4>
           </div>
           <span id="wind-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">
-            Calm
+            <?= $init_wind_badge ?>
           </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
           <div style="display: flex; align-items: baseline; gap: 2px;">
-            <span id="wind-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #059669; font-family: var(--font-mono);">--</span>
+            <span id="wind-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #059669; font-family: var(--font-mono);"><?= $init_wind ?></span>
             <span id="wind-unit-display" style="font-size: 12px; font-weight: 700; color: #94a3b8;">km/h</span>
           </div>
           <div class="overview-wind-equalizer" style="display: flex; align-items: flex-end; gap: 3px; height: 16px;">
-            <div id="eq-1" style="width: 3.5px; height: 8px; border-radius: 2px; background-color: #e2e8f0; transition: background-color 0.3s ease;"></div>
-            <div id="eq-2" style="width: 3.5px; height: 11px; border-radius: 2px; background-color: #e2e8f0; transition: background-color 0.3s ease;"></div>
-            <div id="eq-3" style="width: 3.5px; height: 14px; border-radius: 2px; background-color: #e2e8f0; transition: background-color 0.3s ease;"></div>
-            <div id="eq-4" style="width: 3.5px; height: 17px; border-radius: 2px; background-color: #e2e8f0; transition: background-color 0.3s ease;"></div>
+            <div id="eq-1" style="width: 3.5px; height: 8px; border-radius: 2px; background-color: <?= $init_wind_kmh >= 2.5 ? '#059669' : '#e2e8f0' ?>; transition: background-color 0.3s ease;"></div>
+            <div id="eq-2" style="width: 3.5px; height: 11px; border-radius: 2px; background-color: <?= $init_wind_kmh >= 5.0 ? '#059669' : '#e2e8f0' ?>; transition: background-color 0.3s ease;"></div>
+            <div id="eq-3" style="width: 3.5px; height: 14px; border-radius: 2px; background-color: <?= $init_wind_kmh >= 7.5 ? '#059669' : '#e2e8f0' ?>; transition: background-color 0.3s ease;"></div>
+            <div id="eq-4" style="width: 3.5px; height: 17px; border-radius: 2px; background-color: <?= $init_wind_kmh >= 10.0 ? '#059669' : '#e2e8f0' ?>; transition: background-color 0.3s ease;"></div>
           </div>
         </div>
         <div style="margin-top: auto; padding-top: 8px;">
           <div style="height: 5px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
-            <div id="wind-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #34d399 0%, #059669 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
+            <div id="wind-bar" style="height: 100%; width: <?= $init_wind_bar_width ?>; background: linear-gradient(90deg, #34d399 0%, #059669 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
           </div>
           <div class="overview-bar-scale">
             <span>0</span><span style="color: #cbd5e1;">•</span><span id="wind-scale-50">15</span><span style="color: #cbd5e1;">•</span><span id="wind-scale-100">30 km/h</span>
@@ -169,24 +258,21 @@
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Rainfall</h4>
           </div>
-          <span id="rain-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe;">
-            Live
-          </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; margin-bottom: auto; padding: 6px 0;">
           <div>
             <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Live</div>
             <div style="display: flex; align-items: baseline; gap: 2px;">
-              <span id="rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #4f46e5; font-family: var(--font-mono);">--</span>
-              <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">mm</span>
+              <span id="rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #4f46e5; font-family: var(--font-mono);"><?= $init_live_rain ?></span>
+              <span id="rain-unit-live" onclick="toggleRain()" title="Click to toggle mm / cm" style="font-size: 11px; font-weight: 700; color: #94a3b8; cursor: pointer; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,0.03); transition: all 0.15s ease;">mm</span>
             </div>
           </div>
           <div style="width: 1px; height: 36px; background: #e2e8f0; margin: 0 4px;"></div>
           <div style="text-align: right;">
             <div style="font-size: 10.5px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Today's Rain</div>
             <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 2px;">
-              <span id="total-rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);">--</span>
-              <span style="font-size: 11px; font-weight: 700; color: #0284c7;">mm</span>
+              <span id="total-rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);"><?= $init_today_rain ?></span>
+              <span id="rain-unit-total" onclick="toggleRain()" title="Click to toggle mm / cm" style="font-size: 11px; font-weight: 700; color: #0284c7; cursor: pointer; padding: 1px 4px; border-radius: 4px; background: rgba(2, 132, 199, 0.08); transition: all 0.15s ease;">mm</span>
             </div>
           </div>
         </div>
@@ -361,37 +447,25 @@
       font-weight: 700;
       white-space: nowrap;
     }
-    @media (max-width: 1100px) {
-      .overview-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; gap: 10px !important; }
-    }
-    @media (max-width: 768px) {
-      .overview-page-root { padding: 14px 12px !important; border-radius: 18px !important; min-height: auto !important; }
-    }
-    @media (max-width: 640px) {
-      .overview-page-root { padding: 10px 8px !important; border-radius: 16px !important; }
-      .overview-toolbar { justify-content: space-between !important; width: 100% !important; }
-      .overview-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-      .overview-grid > *:first-child { grid-column: span 2 !important; }
-      .overview-core-card { padding: 12px 10px !important; min-height: 124px !important; border-radius: 14px !important; }
-      .overview-card-icon { width: 26px !important; height: 26px !important; border-radius: 8px !important; }
-      .overview-card-title { font-size: 12px !important; }
-      .overview-card-badge { font-size: 9.5px !important; padding: 2px 6px !important; }
-      .overview-card-val { font-size: 24px !important; }
-    }
-    @media (max-width: 360px) {
-      .overview-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
-      .overview-grid > *:first-child { grid-column: span 1 !important; }
-    }
   </style>
 </div>
 
 <script>
 var tempUnit = 'C';
 var windUnit = 'kmh';
-var rawTemp = null;
-var rawWind = null;
-var isRainingGlobal = false;
+var rainUnit = 'mm';
+var rawTemp = <?= isset($init_bulk['weather']['temperature']) && $init_bulk['weather']['temperature'] !== null ? json_encode((float)$init_bulk['weather']['temperature']) : 'null' ?>;
+var rawWind = <?= isset($init_bulk['weather']['wind_speed']) && $init_bulk['weather']['wind_speed'] !== null ? json_encode((float)$init_bulk['weather']['wind_speed']) : 'null' ?>;
+var rawLiveRain = <?= isset($init_bulk['weather']['rain_gauge']) && $init_bulk['weather']['rain_gauge'] !== null ? json_encode((float)$init_bulk['weather']['rain_gauge']) : '0' ?>;
+var rawTodayRain = <?= isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null ? json_encode((float)$init_bulk['today_rain_total']) : '0' ?>;
+var cachedWeatherHistory = null;
+var isRainingGlobal = <?= !empty($init_bulk['weather']['rain_gauge']) && (float)$init_bulk['weather']['rain_gauge'] > 0 ? 'true' : 'false' ?>;
 var animationFrameId = null;
+var canvasResizeHandler = null;
+
+if (!window.INITIAL_DATA && <?= $init_bulk ? 'true' : 'false' ?>) {
+    window.INITIAL_DATA = <?= json_encode($init_bulk) ?>;
+}
 
 var getAqiCategory = function(val) {
     const v = Number(val);
@@ -413,6 +487,35 @@ function toggleWind() {
     windUnit = windUnit === 'kmh' ? 'ms' : 'kmh';
     document.getElementById('btn-wind').innerText = windUnit === 'kmh' ? 'km/h' : 'm/s';
     updateWindDisplay();
+}
+
+function toggleRain() {
+    rainUnit = rainUnit === 'mm' ? 'cm' : 'mm';
+    updateRainDisplay();
+    if (cachedWeatherHistory) {
+        renderWeatherHistoryCharts(cachedWeatherHistory);
+    }
+}
+
+function updateRainDisplay() {
+    const liveEl = document.getElementById('rain-val');
+    const totalEl = document.getElementById('total-rain-val');
+    const unitLiveEl = document.getElementById('rain-unit-live');
+    const unitTotalEl = document.getElementById('rain-unit-total');
+    const btn = document.getElementById('btn-rain');
+
+    if (btn) btn.innerText = rainUnit;
+    if (unitLiveEl) unitLiveEl.innerText = rainUnit;
+    if (unitTotalEl) unitTotalEl.innerText = rainUnit;
+
+    if (rainUnit === 'mm') {
+        if (liveEl) liveEl.innerText = rawLiveRain != null ? Number(rawLiveRain).toFixed(1) : '--';
+        if (totalEl) totalEl.innerText = rawTodayRain != null ? Number(rawTodayRain).toFixed(1) : '--';
+    } else {
+        // In cm: 1 cm = 10 mm
+        if (liveEl) liveEl.innerText = rawLiveRain != null ? (Number(rawLiveRain) / 10).toFixed(2) : '--';
+        if (totalEl) totalEl.innerText = rawTodayRain != null ? (Number(rawTodayRain) / 10).toFixed(2) : '--';
+    }
 }
 
 function updateTempDisplay() {
@@ -445,7 +548,7 @@ function updateWindDisplay() {
     document.getElementById('wind-bar').style.width = pct + '%';
 }
 
-let overviewChartInstance = null;
+var overviewChartInstance = null;
 
 async function refreshData(isSilent = false) {
     const icon = document.getElementById('icon-refresh');
@@ -455,9 +558,11 @@ async function refreshData(isSilent = false) {
     
     try {
         let bulkData;
+        let usedInitialData = false;
         if (window.INITIAL_DATA) {
             bulkData = window.INITIAL_DATA;
             window.INITIAL_DATA = null;
+            usedInitialData = true;
         } else {
             const response = await fetch(`api/telemetry.php?action=overview_bulk`);
             bulkData = await response.json();
@@ -508,7 +613,14 @@ async function refreshData(isSilent = false) {
             // Hum
             document.getElementById('hum-val').innerText = hum != null ? Number(hum).toFixed(1) : '--';
             document.getElementById('hum-bar').style.width = hum != null ? Math.min(100, Math.max(5, Number(hum))) + '%' : '0%';
-            document.getElementById('hum-badge').innerText = hum > 75 ? 'Humid' : (hum < 40 ? 'Dry' : 'Comfort');
+            const isCloudy = hum != null && Number(hum) >= 60;
+            const humBadge = document.getElementById('hum-badge');
+            if (humBadge) {
+                humBadge.innerHTML = isCloudy ? '☁️ Cloudy' : '☀️ Sunny';
+                humBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
+                humBadge.style.color = isCloudy ? '#475569' : '#854d0e';
+                humBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
+            }
             
             // Wind EQ
             const wkmh = Number(rawWind || 0);
@@ -517,33 +629,25 @@ async function refreshData(isSilent = false) {
                 document.getElementById('eq-'+i).style.backgroundColor = wkmh >= (i*2.5) ? '#059669' : '#e2e8f0';
             }
             
-            // Rain (Live Rate & Today's Total in one card)
+            // Rain (Live & Today's Rain in one card)
             const isRaining = rain != null && Number(rain) > 0;
             isRainingGlobal = isRaining;
-            const liveRainVal = rain != null ? Number(rain) : 0;
-            const todayRain = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total) : 0;
+            rawLiveRain = rain != null ? Number(rain) : 0;
+            rawTodayRain = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total) : 0;
             
-            document.getElementById('rain-val').innerText = rain != null ? liveRainVal.toFixed(1) : '--';
-            const totalRainValEl = document.getElementById('total-rain-val');
-            if (totalRainValEl) {
-                totalRainValEl.innerText = todayRain.toFixed(1);
-            }
+            updateRainDisplay();
             
             document.getElementById('card-rain').style.borderColor = isRaining ? '#7dd3fc' : '#c7d2fe';
             document.getElementById('rain-grad').style.background = isRaining ? 'linear-gradient(90deg, #0284c7, #38bdf8)' : 'linear-gradient(90deg, #6366f1, #0284c7)';
             document.getElementById('rain-icon-bg').style.backgroundColor = isRaining ? '#f0f9ff' : '#eef2ff';
             document.getElementById('rain-icon-bg').style.color = isRaining ? '#0284c7' : '#4f46e5';
             document.getElementById('rain-icon-bg').style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
-            document.getElementById('rain-badge').innerText = isRaining ? '🌧️ Rain' : 'Live';
-            document.getElementById('rain-badge').style.backgroundColor = isRaining ? '#e0f2fe' : '#eef2ff';
-            document.getElementById('rain-badge').style.color = isRaining ? '#0369a1' : '#4338ca';
-            document.getElementById('rain-badge').style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
-            
-            const rainBarEl = document.getElementById('rain-bar');
-            if (rainBarEl) {
-                const maxRainMetric = Math.max(liveRainVal, todayRain);
-                rainBarEl.style.background = isRaining ? 'linear-gradient(90deg, #38bdf8 0%, #0284c7 100%)' : 'linear-gradient(90deg, #818cf8 0%, #0284c7 100%)';
-                rainBarEl.style.width = Math.min(100, Math.max(maxRainMetric > 0 ? 8 : 2, (maxRainMetric / 50) * 100)) + '%';
+            const rainBadgeEl = document.getElementById('rain-badge');
+            if (rainBadgeEl) {
+                rainBadgeEl.innerText = isRaining ? '🌧️ Rain' : 'Live';
+                rainBadgeEl.style.backgroundColor = isRaining ? '#e0f2fe' : '#eef2ff';
+                rainBadgeEl.style.color = isRaining ? '#0369a1' : '#4338ca';
+                rainBadgeEl.style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
             }
         }
 
@@ -585,24 +689,11 @@ async function refreshData(isSilent = false) {
         // Weather History Charts
         const weatherHistoryRes = bulkData.weather_history;
         if (weatherHistoryRes && weatherHistoryRes.length > 0) {
-            const wHistory = weatherHistoryRes.slice().reverse();
-            const wLabels = [];
-            const tempData = [], humData = [], windData = [], rainData = [];
-
-            wHistory.forEach(row => {
-                const dt = new Date(row.timestamp || row.created_at || new Date());
-                wLabels.push(dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase());
-                tempData.push(row.temperature || 0);
-                humData.push(row.humidity || 0);
-                windData.push(row.wind_speed || 0);
-                rainData.push(row.rain_gauge || 0);
-            });
-
-            renderGenericChart('overview-temp-chart', wLabels, tempData, 'Temperature (°C)', '#f97316');
-            renderGenericChart('overview-hum-chart', wLabels, humData, 'Humidity (%)', '#0ea5e9');
-            renderGenericChart('overview-wind-chart', wLabels, windData, 'Wind Speed (km/h)', '#10b981');
-            renderGenericChart('overview-rain-chart', wLabels, rainData, 'Rainfall (mm)', '#6366f1');
+            cachedWeatherHistory = weatherHistoryRes;
+            renderWeatherHistoryCharts(weatherHistoryRes);
         }
+
+        // Telemetry rendered cleanly from initial payload
         
     } catch(e) {
         console.error(e);
@@ -617,7 +708,30 @@ async function refreshData(isSilent = false) {
     }
 }
 
-let chartInstances = {};
+function renderWeatherHistoryCharts(weatherHistoryRes) {
+    if (!weatherHistoryRes || !weatherHistoryRes.length) return;
+    const wHistory = weatherHistoryRes.slice().reverse();
+    const wLabels = [];
+    const tempData = [], humData = [], windData = [], rainData = [];
+
+    wHistory.forEach(row => {
+        const dt = new Date(row.timestamp || row.created_at || new Date());
+        wLabels.push(dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase());
+        tempData.push(row.temperature || 0);
+        humData.push(row.humidity || 0);
+        windData.push(row.wind_speed || 0);
+        const rVal = row.rain_gauge || 0;
+        rainData.push(rainUnit === 'cm' ? Number((rVal / 10).toFixed(2)) : rVal);
+    });
+
+    renderGenericChart('overview-temp-chart', wLabels, tempData, 'Temperature (°C)', '#f97316');
+    renderGenericChart('overview-hum-chart', wLabels, humData, 'Humidity (%)', '#0ea5e9');
+    renderGenericChart('overview-wind-chart', wLabels, windData, 'Wind Speed (km/h)', '#10b981');
+    renderGenericChart('overview-rain-chart', wLabels, rainData, `Rainfall (${rainUnit})`, '#6366f1');
+}
+
+var chartInstances = window.__chartInstances || {};
+window.__chartInstances = chartInstances;
 
 function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
     const canvas = document.getElementById(canvasId);
@@ -722,11 +836,16 @@ function initCanvas() {
     
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
+    if (canvasResizeHandler) {
+        window.removeEventListener('resize', canvasResizeHandler);
+    }
     function resize() {
+        if (!canvas || !canvas.parentElement) return;
         canvas.width = canvas.parentElement.offsetWidth || window.innerWidth;
         canvas.height = canvas.parentElement.offsetHeight || window.innerHeight;
     }
-    window.addEventListener('resize', resize);
+    canvasResizeHandler = resize;
+    window.addEventListener('resize', canvasResizeHandler);
     resize();
 
     const speedFactor = Math.max(0.6, (Number(rawWind || 3.5) / 10.0));
@@ -819,7 +938,7 @@ function initCanvas() {
     render();
 }
 
-let autoRefreshOverviewTimer = null;
+var autoRefreshOverviewTimer = null;
 
 function startAutoRefreshOverview() {
     if (autoRefreshOverviewTimer) clearInterval(autoRefreshOverviewTimer);
@@ -834,6 +953,10 @@ window.__cleanupCurrentPage = function() {
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
+    }
+    if (canvasResizeHandler) {
+        window.removeEventListener('resize', canvasResizeHandler);
+        canvasResizeHandler = null;
     }
     if (autoRefreshOverviewTimer) {
         clearInterval(autoRefreshOverviewTimer);

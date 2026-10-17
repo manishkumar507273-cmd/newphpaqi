@@ -47,7 +47,7 @@
       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
         <span id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e; display: inline-block;"></span>
         <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
-          <span class="hidden md:inline">Status Panel • </span>Live Stream
+          <span>Status Panel • </span>Live Stream
         </span>
       </div>
 
@@ -318,7 +318,7 @@
         <i data-lucide="table" style="width: 18px; height: 18px; color: #00bfa5;"></i>
         <span>Network Readings &amp; Status</span>
       </h2>
-      <span class="text-[11px] text-slate-400 font-medium md:hidden flex items-center gap-1">
+      <span style="display: none !important;">
         <i data-lucide="chevrons-right" style="width: 14px; height: 14px;"></i> Swipe table
       </span>
     </div>
@@ -693,43 +693,54 @@ async function refreshDashboard() {
             }
 
             // Quick PM Summary
-            document.getElementById('hero-pm25').innerText = `${d.pm25 ?? 'N/A'} µg/m³`;
-            document.getElementById('hero-pm10').innerText = `${d.pm10 ?? 'N/A'} µg/m³`;
+            document.getElementById('hero-pm25').innerText = `${d.pm25 != null ? d.pm25 : 0} µg/m³`;
+            document.getElementById('hero-pm10').innerText = `${d.pm10 != null ? d.pm10 : 0} µg/m³`;
 
-            // Cards
-            document.getElementById('card-pm25').innerText = d.pm25 ?? 'N/A';
-            document.getElementById('card-pm10').innerText = d.pm10 ?? 'N/A';
-            document.getElementById('card-co').innerText = d.co ?? 'N/A';
-            document.getElementById('card-no2').innerText = d.no2 ?? 'N/A';
-            document.getElementById('card-o3').innerText = d.o3 ?? 'N/A';
+            // Cards: If Supabase states 0 (or null), show 0 everywhere, never N/A
+            document.getElementById('card-pm25').innerText = d.pm25 != null ? d.pm25 : 0;
+            document.getElementById('card-pm10').innerText = d.pm10 != null ? d.pm10 : 0;
+            document.getElementById('card-co').innerText = d.co != null ? d.co : 0;
+            document.getElementById('card-no2').innerText = d.no2 != null ? d.no2 : 0;
+            document.getElementById('card-o3').innerText = d.o3 != null ? d.o3 : 0;
 
-            updateTag('tag-pm25', d.pm25, 15);
-            updateTag('tag-pm10', d.pm10, 45);
-            updateTag('tag-co', d.co, 4);
-            updateTag('tag-no2', d.no2, 25);
-            updateTag('tag-o3', d.o3, 100);
+            updateTag('tag-pm25', d.pm25 != null ? d.pm25 : 0, 15);
+            updateTag('tag-pm10', d.pm10 != null ? d.pm10 : 0, 45);
+            updateTag('tag-co', d.co != null ? d.co : 0, 4);
+            updateTag('tag-no2', d.no2 != null ? d.no2 : 0, 25);
+            updateTag('tag-o3', d.o3 != null ? d.o3 : 0, 100);
         }
         
         // WEATHER DATA POPULATION
         if (weatherData) {
             const w = weatherData;
-            const fmt = (val) => val != null ? Number(val).toFixed(1) : 'N/A';
+            const fmt = (val) => (val != null && !isNaN(Number(val))) ? Number(val).toFixed(1) : '0.0';
             
             document.getElementById('weather-hero-temp').innerText = fmt(w.temperature);
-            document.getElementById('feed-temp').innerText = fmt(w.temperature) + '°C';
             document.getElementById('card-temp').innerText = fmt(w.temperature) + '°C';
-            
-            document.getElementById('feed-hum').innerText = fmt(w.humidity) + '%';
             document.getElementById('card-hum').innerText = fmt(w.humidity) + '%';
-            
-            document.getElementById('feed-wind').innerText = fmt(w.wind_speed) + ' km/h';
             document.getElementById('card-wind').innerText = fmt(w.wind_speed) + ' km/h';
-            
-            document.getElementById('feed-gust').innerText = fmt(w.wind_gust) + ' km/h';
             document.getElementById('card-gust').innerText = fmt(w.wind_gust) + ' km/h';
-            
-            document.getElementById('feed-rain').innerText = fmt(w.rain_gauge) + ' mm';
             document.getElementById('card-rain').innerText = fmt(w.rain_gauge) + ' mm';
+            
+            // Today's rainfall synchronized with overview page
+            const todayRainEl = document.getElementById('card-today-rain');
+            if (todayRainEl) {
+                const tr = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total).toFixed(1) : '0.0';
+                todayRainEl.innerText = tr + ' mm';
+            }
+
+            // Humidity condition: Low (< 60%) = Sunny, High (>= 60%) = Cloudy
+            const humVal = (w.humidity != null && !isNaN(Number(w.humidity))) ? Number(w.humidity) : null;
+            const isCloudy = humVal != null && humVal >= 60;
+            const isRaining = w.rain_gauge != null && Number(w.rain_gauge) > 0;
+
+            const wHumBadge = document.getElementById('weather-hum-badge');
+            if (wHumBadge) {
+                wHumBadge.innerHTML = isCloudy ? '☁️ Cloudy' : '☀️ Sunny';
+                wHumBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
+                wHumBadge.style.color = isCloudy ? '#475569' : '#854d0e';
+                wHumBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
+            }
             
             const getCompassDir = (val) => {
               if (val == null) return 'N/A';
@@ -739,14 +750,21 @@ async function refreshDashboard() {
               return dirs[Math.round(deg / 22.5) % 16];
             };
             const dir = getCompassDir(w.wind_direction);
-            document.getElementById('feed-dir').innerText = dir;
             document.getElementById('card-dir').innerText = dir;
 
             let tLabel = 'Pleasant';
             if (w.temperature < 20) tLabel = 'Cool';
             if (w.temperature > 30) tLabel = 'Warm';
             if (w.temperature > 35) tLabel = 'Hot';
-            document.getElementById('weather-hero-label').innerText = tLabel;
+
+            const conditionText = isRaining ? 'Rainy' : (isCloudy ? 'Cloudy' : 'Sunny');
+            const weatherIcon = isRaining ? '🌧️' : (isCloudy ? '☁️' : '☀️');
+
+            const tempIconEl = document.getElementById('weather-temp-icon');
+            if (tempIconEl) tempIconEl.innerText = weatherIcon;
+
+            const heroLabelEl = document.getElementById('weather-hero-label');
+            if (heroLabelEl) heroLabelEl.innerText = `${conditionText} · ${tLabel}`;
             
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });

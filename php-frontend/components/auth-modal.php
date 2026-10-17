@@ -121,20 +121,104 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
   const app = initializeApp(window.FIREBASE_ENV_CONFIG);
   const auth = getAuth(app);
   const googleProvider = new GoogleAuthProvider();
 
+  // Expose auth instance and helpers globally for seamless modal pre-fill
+  window.firebaseAuth = auth;
+  window.getFirebaseAuthEmail = () => (auth && auth.currentUser && auth.currentUser.email) ? auth.currentUser.email : null;
+  window.getFirebaseAuthName = () => (auth && auth.currentUser) ? (auth.currentUser.displayName || (auth.currentUser.email ? auth.currentUser.email.split('@')[0] : '')) : null;
+
+  // Clear any legacy mock auth from localStorage
+  if (localStorage.getItem('auth_email') === 'manish@sode-edu.in' || localStorage.getItem('auth_email') === 'manishb@sode-edu.in') {
+      localStorage.removeItem('auth_email');
+      localStorage.removeItem('auth_name');
+  }
+
+  window.firebaseSignOut = async () => {
+      try {
+          await signOut(auth);
+      } catch (e) {
+          console.warn("Firebase sign out error", e);
+      }
+  };
+
+  // If user signed out via URL (?logged_out=true), clean up localStorage and sign out of Firebase
+  if (window.location.search.includes('logged_out=true')) {
+      localStorage.removeItem('auth_logged_in');
+      localStorage.removeItem('auth_email');
+      localStorage.removeItem('auth_name');
+      window.firebaseSignOut();
+      try {
+          const cleanUrl = window.location.pathname + '?page=overview';
+          window.history.replaceState({}, document.title, cleanUrl);
+      } catch(e) {}
+  }
+
+  // Automatic persistent Google account re-entry:
+  // When a user previously signed in using Google, Firebase retains the authenticated state
+  // in IndexedDB across browser reopens on both mobile & laptop.
+  // onAuthStateChanged lets them in directly without asking for login again!
+  onAuthStateChanged(auth, (user) => {
+      if (user && user.email) {
+          const userName = user.displayName || user.email.split('@')[0];
+          const userEmail = user.email;
+          
+          localStorage.setItem('auth_email', userEmail);
+          localStorage.setItem('auth_name', userName);
+          localStorage.setItem('auth_logged_in', 'true');
+
+          // Dynamically fill dataset modal email and name if open/present on the page
+          const emailInput = document.getElementById('dataset-email-input');
+          if (emailInput && (!emailInput.value || emailInput.value === 'manishb@sode-edu.in' || emailInput.value === 'manish@sode-edu.in' || emailInput.value !== userEmail)) {
+              emailInput.value = userEmail;
+          }
+          const nameInput = document.querySelector('#dataset-form input[name="fullName"]');
+          if (nameInput && (!nameInput.value || nameInput.value === 'Manish B')) {
+              nameInput.value = userName;
+          }
+
+          const isPhpLoggedIn = window.__currentUser && window.__currentUser.is_logged_in;
+          const currentPhpEmail = window.__currentUser ? window.__currentUser.email : '';
+
+          // If PHP has not recorded this real email yet or has legacy mock email, sync it
+          if ((!isPhpLoggedIn || !currentPhpEmail || currentPhpEmail === 'manishb@sode-edu.in' || currentPhpEmail === 'manish@sode-edu.in' || currentPhpEmail !== userEmail) && !window.location.search.includes('logged_out=true')) {
+              console.log("Firebase detected existing Google session, syncing real user email:", userEmail);
+              const curPage = window.__currentPage || 'overview';
+              window.location.replace('?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(userName) + '&email=' + encodeURIComponent(userEmail));
+          }
+      }
+  });
+
   window.firebaseLoginWithGoogle = async () => {
       const result = await signInWithPopup(auth, googleProvider);
-      return result.user.displayName || result.user.email;
+      const userName = result.user.displayName || (result.user.email ? result.user.email.split('@')[0] : 'Google User');
+      const userEmail = result.user.email || '';
+      if (userEmail) {
+          localStorage.setItem('auth_email', userEmail);
+          localStorage.setItem('auth_name', userName);
+          localStorage.setItem('auth_logged_in', 'true');
+      }
+      return {
+          name: userName,
+          email: userEmail
+      };
   };
 
   window.firebaseLoginWithEmail = async (email, pass) => {
       const result = await signInWithEmailAndPassword(auth, email, pass);
-      return result.user.displayName || result.user.email;
+      const userName = result.user.displayName || email.split('@')[0];
+      const userEmail = result.user.email || email;
+      localStorage.setItem('auth_email', userEmail);
+      localStorage.setItem('auth_name', userName);
+      localStorage.setItem('auth_logged_in', 'true');
+      return {
+          name: userName,
+          email: userEmail
+      };
   };
 </script>
 
@@ -245,23 +329,47 @@ function mockLogin() {
     btn.style.pointerEvents = 'none';
     lucide.createIcons();
     
-    if (window.firebaseLoginWithGoogle) {
-        window.firebaseLoginWithGoogle()
-            .then((name) => {
-                window.location.href = '?page=live&auth=true&name=' + encodeURIComponent(name);
-            })
-            .catch((err) => {
-                btn.innerHTML = `<span>Continue with Google</span>`;
-                btn.style.pointerEvents = 'auto';
-                errText.innerText = err.message || 'Google Auth Failed';
-                errBlock.style.display = 'flex';
-                console.error("Firebase Auth Error", err);
-            });
-    } else {
-        setTimeout(() => {
-            window.location.href = '?page=live&auth=true&name=Google+User';
-        }, 1200);
+    const curPage = window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'overview';
+
+    function executeGoogleLogin() {
+        if (window.firebaseLoginWithGoogle) {
+            window.firebaseLoginWithGoogle()
+                .then((u) => {
+                    const name = typeof u === 'object' ? u.name : u;
+                    const email = typeof u === 'object' ? u.email : '';
+                    if (email) {
+                        localStorage.setItem('auth_email', email);
+                        localStorage.setItem('auth_name', name);
+                        localStorage.setItem('auth_logged_in', 'true');
+                    }
+                    window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + (email ? '&email=' + encodeURIComponent(email) : '');
+                })
+                .catch((err) => {
+                    btn.innerHTML = `<span>Continue with Google</span>`;
+                    btn.style.pointerEvents = 'auto';
+                    errText.innerText = err.message || 'Google Auth Failed';
+                    errBlock.style.display = 'flex';
+                    console.error("Firebase Auth Error", err);
+                });
+        } else {
+            let waitCount = 0;
+            const waitTimer = setInterval(() => {
+                waitCount++;
+                if (window.firebaseLoginWithGoogle) {
+                    clearInterval(waitTimer);
+                    executeGoogleLogin();
+                } else if (waitCount > 30) {
+                    clearInterval(waitTimer);
+                    btn.innerHTML = `<span>Continue with Google</span>`;
+                    btn.style.pointerEvents = 'auto';
+                    errText.innerText = 'Google authentication service is still connecting. Please click again in a moment.';
+                    errBlock.style.display = 'flex';
+                }
+            }, 100);
+        }
     }
+
+    executeGoogleLogin();
 }
 
 function handleAuthSubmit(e) {
@@ -273,13 +381,17 @@ function handleAuthSubmit(e) {
     const errText = document.getElementById('auth-error-text');
     
     errBlock.style.display = 'none';
+    const curPage = window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'overview';
     
     if (currentAuthMode === 'admin') {
         if (pass === '2847') {
             btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
             lucide.createIcons();
+            localStorage.setItem('auth_email', 'admin@smartairnet.org');
+            localStorage.setItem('auth_name', 'Admin Developer');
+            localStorage.setItem('auth_logged_in', 'true');
             setTimeout(() => {
-                window.location.href = '?page=live&auth=true&name=Admin+Developer';
+                window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=Admin+Developer&email=admin%40smartairnet.org';
             }, 800);
         } else {
             errText.innerText = 'Incorrect Admin Password.';
@@ -291,8 +403,11 @@ function handleAuthSubmit(e) {
     if (email.toLowerCase() === 'admin' && pass === '2847') {
         btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
         lucide.createIcons();
+        localStorage.setItem('auth_email', 'admin@smartairnet.org');
+        localStorage.setItem('auth_name', 'Admin Developer');
+        localStorage.setItem('auth_logged_in', 'true');
         setTimeout(() => {
-            window.location.href = '?page=live&auth=true&name=Admin+Developer';
+            window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=Admin+Developer&email=admin%40smartairnet.org';
         }, 800);
         return;
     }
@@ -303,8 +418,13 @@ function handleAuthSubmit(e) {
     
     if (window.firebaseLoginWithEmail && currentAuthMode === 'login') {
         window.firebaseLoginWithEmail(email, pass)
-            .then((name) => {
-                window.location.href = '?page=live&auth=true&name=' + encodeURIComponent(name);
+            .then((u) => {
+                const name = typeof u === 'object' ? u.name : (email.split('@')[0]);
+                const uEmail = typeof u === 'object' ? u.email : email;
+                localStorage.setItem('auth_email', uEmail);
+                localStorage.setItem('auth_name', name);
+                localStorage.setItem('auth_logged_in', 'true');
+                window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(uEmail);
             })
             .catch((err) => {
                 btn.innerHTML = `<span>Sign In & Unlock Dashboard</span>`;
@@ -316,7 +436,8 @@ function handleAuthSubmit(e) {
         setTimeout(() => {
             let name = email.split('@')[0];
             name = name.charAt(0).toUpperCase() + name.slice(1);
-            window.location.href = '?page=live&auth=true&name=' + encodeURIComponent(name);
+            localStorage.setItem('auth_email', email);
+            window.location.href = '?page=live&auth=true&name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(email);
         }, 1200);
     }
 }

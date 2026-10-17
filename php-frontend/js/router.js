@@ -29,24 +29,39 @@
         }, 280);
     }
 
-    // Prefetch page data on hover/touch
+    // Prefetch page data on hover/touch or eager pre-cache
     function prefetchPage(url) {
         try {
             const urlObj = new URL(url, window.location.origin);
             const targetPage = urlObj.searchParams.get('page') || 'overview';
             if (targetPage === currentPage || pageCache.has(targetPage)) return;
 
-            fetch(`?page=${encodeURIComponent(targetPage)}`, {
+            fetch(`?page=${encodeURIComponent(targetPage)}&_t=${Date.now()}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(res => res.json())
             .then(data => {
                 if (data && data.success) {
-                    pageCache.set(targetPage, data);
+                    pageCache.set(targetPage, { data, time: Date.now() });
                 }
             })
             .catch(() => {});
         } catch (e) {}
+    }
+
+    // Eagerly pre-cache all main pages in background so page switching is 0ms instant
+    const CORE_PAGES = ['overview', 'live', 'historical', 'predictive', 'admin'];
+    if (document.readyState === 'complete') {
+        setTimeout(initPrecache, 100);
+    } else {
+        window.addEventListener('load', () => setTimeout(initPrecache, 150));
+    }
+    function initPrecache() {
+        CORE_PAGES.forEach((pg, idx) => {
+            if (pg !== currentPage && !pageCache.has(pg)) {
+                setTimeout(() => prefetchPage(`?page=${pg}`), idx * 80);
+            }
+        });
     }
 
     // Update Header Navigation elements to match target page
@@ -70,14 +85,14 @@
             if (targetPage === 'overview') {
                 desktopNav.className = 'hidden';
             } else {
-                desktopNav.className = 'hidden md:inline-flex';
+                desktopNav.className = 'inline-flex';
             }
         }
 
-        // Mobile live dot
+        // Mobile live dot (hidden in desktop view)
         const mobileLiveDot = document.getElementById('mobile-live-dot');
         if (mobileLiveDot) {
-            mobileLiveDot.style.display = targetPage !== 'overview' ? 'flex' : 'none';
+            mobileLiveDot.style.display = 'none';
         }
 
         // Update Desktop Nav items
@@ -174,14 +189,16 @@
         }
 
         try {
-            // Check prefetch cache or fetch from server
-            let data = pageCache.get(targetPage);
+            // Check prefetch cache or fetch from server (10s TTL)
+            let cached = pageCache.get(targetPage);
+            let data = (cached && (Date.now() - cached.time < 10000)) ? cached.data : null;
             if (!data) {
                 setProgressBar(65, 1);
-                const res = await fetch(`?page=${encodeURIComponent(targetPage)}`, {
+                const res = await fetch(`?page=${encodeURIComponent(targetPage)}&_t=${Date.now()}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 data = await res.json();
+                pageCache.set(targetPage, { data, time: Date.now() });
             }
 
             // Handle auth requirement
@@ -212,9 +229,7 @@
                 return;
             }
 
-            // 140ms duration for exit fade
-            await new Promise(r => setTimeout(r, 140));
-
+            // Instant content swap (no artificial delays)
             // Push to history
             if (pushState) {
                 history.pushState({ page: targetPage }, '', `?page=${targetPage}`);
@@ -229,9 +244,7 @@
 
             // Swap content
             if (wrapper) {
-                // Prepare enter state
                 wrapper.classList.remove('page-fade-leave');
-                wrapper.classList.add('page-fade-enter');
                 wrapper.innerHTML = data.content;
 
                 // Re-execute scripts inside swapped content
@@ -245,7 +258,7 @@
                     oldScript.parentNode.replaceChild(newScript, oldScript);
                 });
 
-                // Scroll to top instantly before revealing
+                // Scroll to top instantly
                 window.scrollTo({ top: 0, behavior: 'instant' });
 
                 // Render Lucide icons
@@ -253,25 +266,17 @@
                     lucide.createIcons();
                 }
 
-                // Smoothly fade & slide in
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        wrapper.classList.remove('page-fade-enter');
-                        wrapper.classList.add('page-fade-active');
-                    });
-                });
+                wrapper.classList.add('page-fade-active');
             }
 
             setProgressBar(100, 1);
-            setTimeout(resetProgressBar, 220);
+            resetProgressBar();
 
         } catch (err) {
             console.error('Smooth navigation error, falling back to standard load:', err);
             window.location.href = url;
         } finally {
-            setTimeout(() => {
-                isTransitioning = false;
-            }, 250);
+            isTransitioning = false;
         }
     }
 

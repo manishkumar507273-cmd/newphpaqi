@@ -41,8 +41,8 @@
     <!-- Divider for Mobile -->
     <hr class="border-slate-100 lg:hidden">
 
-    <!-- 2. Middle (Temp Range) -->
-    <div class="flex-1 min-w-[260px] flex flex-col items-center justify-center lg:border-x lg:border-slate-100 lg:px-6">
+    <!-- 2. Right (Temp Range) -->
+    <div class="flex-1 min-w-[260px] flex flex-col items-center justify-center lg:border-l lg:border-slate-100 lg:px-6">
       <div class="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4">
         Today's Temp Range
       </div>
@@ -58,37 +58,6 @@
         <div>
           <div id="weather-high-temp" class="font-mono text-2xl sm:text-3xl font-extrabold text-orange-500">--°</div>
           <div class="text-[10px] sm:text-[11px] font-bold text-slate-400 mt-1">HIGH</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Divider for Mobile -->
-    <hr class="border-slate-100 lg:hidden">
-
-    <!-- 3. Right (Live Sensor Feed Mini-Grid) -->
-    <div class="bg-slate-50 border border-slate-200 rounded-[20px] p-4 sm:p-5 flex-[1.5] min-w-[280px]">
-      <div class="text-[11px] sm:text-xs text-slate-500 uppercase font-bold mb-3 flex justify-between items-center tracking-wider">
-        <span>Live Sensor Feed</span>
-        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-      </div>
-      <div class="grid grid-cols-2 gap-2 sm:gap-3 text-[11px] sm:text-xs text-slate-900">
-        <div class="p-2 sm:px-3 sm:py-2 rounded-xl bg-white border border-slate-200 flex items-center gap-1.5 whitespace-nowrap">
-          <span>🌡️</span><span class="text-slate-500">Temp:</span> <strong id="feed-temp" class="font-mono text-orange-600">--</strong>
-        </div>
-        <div class="p-2 sm:px-3 sm:py-2 rounded-xl bg-white border border-slate-200 flex items-center gap-1.5 whitespace-nowrap">
-          <span>💧</span><span class="text-slate-500">Humidity:</span> <strong id="feed-hum" class="font-mono text-sky-600">--</strong>
-        </div>
-        <div class="p-2 sm:px-3 sm:py-2 rounded-xl bg-white border border-slate-200 flex items-center gap-1.5 whitespace-nowrap">
-          <span>💨</span><span class="text-slate-500">Wind:</span> <strong id="feed-wind" class="font-mono text-indigo-500">--</strong>
-        </div>
-        <div class="p-2 sm:px-3 sm:py-2 rounded-xl bg-white border border-slate-200 flex items-center gap-1.5 whitespace-nowrap">
-          <span>🌪️</span><span class="text-slate-500">Gust:</span> <strong id="feed-gust" class="font-mono text-purple-500">--</strong>
-        </div>
-        <div class="p-2 sm:px-3 sm:py-2 rounded-xl bg-white border border-slate-200 flex items-center gap-1.5 whitespace-nowrap">
-          <span>🌧️</span><span class="text-slate-500">Rain:</span> <strong id="feed-rain" class="font-mono text-cyan-600">--</strong>
-        </div>
-        <div class="p-2 sm:px-3 sm:py-2 rounded-xl bg-white border border-slate-200 flex items-center gap-1.5 whitespace-nowrap">
-          <span>🧭</span><span class="text-slate-500">Dir:</span> <strong id="feed-dir" class="font-mono text-slate-700">--</strong>
         </div>
       </div>
     </div>
@@ -120,7 +89,9 @@
             <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
           </div>
         </div>
-
+        <span id="weather-hum-badge" style="padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1; background-color: #f1f5f9; color: #475569;">
+          ☁️ Cloudy
+        </span>
       </div>
       <div id="card-hum" class="font-mono text-[22px] sm:text-[26px] font-extrabold text-sky-600 mt-4 leading-none tracking-tight">--</div>
     </div>
@@ -162,7 +133,9 @@
             <div class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
           </div>
         </div>
-
+        <span id="weather-today-rain-badge" style="padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #c7d2fe; background-color: #eef2ff; color: #4338ca;">
+          Today: <strong id="card-today-rain">0.0 mm</strong>
+        </span>
       </div>
       <div id="card-rain" class="font-mono text-[22px] sm:text-[26px] font-extrabold text-cyan-600 mt-4 leading-none tracking-tight">--</div>
     </div>

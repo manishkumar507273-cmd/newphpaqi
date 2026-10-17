@@ -79,13 +79,24 @@ foreach ($files_to_check as $file_path) {
     if (file_exists($file_path)) {
         $requests = json_decode(file_get_contents($file_path), true) ?: [];
         $orig_count = count($requests);
-        $requests = array_values(array_filter($requests, function($req) use ($target_ids, $target_keys) {
+        $remaining = [];
+        foreach ($requests as $req) {
             $req_id = isset($req['id']) ? (string)$req['id'] : '';
             $req_key = isset($req['_fbKey']) ? (string)$req['_fbKey'] : '';
-            if ($req_id !== '' && (in_array($req_id, $target_ids) || in_array($req_id, $target_keys))) return false;
-            if ($req_key !== '' && (in_array($req_key, $target_ids) || in_array($req_key, $target_keys))) return false;
-            return true;
-        }));
+            $match = ($req_id !== '' && (in_array($req_id, $target_ids) || in_array($req_id, $target_keys)))
+                  || ($req_key !== '' && (in_array($req_key, $target_ids) || in_array($req_key, $target_keys)));
+            if ($match) {
+                if (!empty($req['proof_file'])) {
+                    $p_path = __DIR__ . '/../' . ltrim($req['proof_file'], '/\\');
+                    if (file_exists($p_path) && is_file($p_path)) @unlink($p_path);
+                    $p_tmp = sys_get_temp_dir() . '/phpAQI_proofs/' . basename($req['proof_file']);
+                    if (file_exists($p_tmp) && is_file($p_tmp)) @unlink($p_tmp);
+                }
+            } else {
+                $remaining[] = $req;
+            }
+        }
+        $requests = $remaining;
         
         if (count($requests) < $orig_count) {
             file_put_contents($file_path, json_encode($requests, JSON_PRETTY_PRINT));

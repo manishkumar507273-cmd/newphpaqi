@@ -12,12 +12,6 @@
         Review, verify, and approve incoming enterprise data access requests. Approved requests will automatically transmit secure data payloads via email.
       </p>
     </div>
-    <div class="w-full sm:w-auto flex justify-end">
-      <button onclick="loadRequests(false)" class="w-full sm:w-auto min-h-[44px] justify-center" style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" onmouseenter="this.style.backgroundColor='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseleave="this.style.backgroundColor='#ffffff'; this.style.borderColor='#e2e8f0';">
-        <i data-lucide="refresh-cw" style="width: 16px; height: 16px; color: #64748b;"></i>
-        <span>Sync Requests</span>
-      </button>
-    </div>
   </div>
 
   <!-- Table Card -->
@@ -50,25 +44,17 @@
       </div>
     </div>
 
-    <!-- Mobile Subheader & Selection Controls (visible strictly on mobile < 768px) -->
-    <div id="mobile-selection-bar" class="md:hidden px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs text-slate-600 font-bold">
-      <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
-        <input type="checkbox" id="select-all-mobile" onchange="toggleSelectAll(this.checked)" style="width: 17px; height: 17px; border-radius: 5px; accent-color: #00bfa5; cursor: pointer;">
-        <span>Select All Requests</span>
-      </label>
-      <span id="mobile-selected-counter" style="color: #64748b; font-weight: 700; font-size: 12px;">0 selected</span>
+    <!-- Mobile Subheader & Selection Controls (Hidden: desktop table view is used everywhere) -->
+    <div id="mobile-selection-bar" style="display: none !important;">
+      <input type="checkbox" id="select-all-mobile" style="display: none;">
+      <span id="mobile-selected-counter" style="display: none;"></span>
     </div>
 
-    <!-- Mobile Native Card View (visible strictly on mobile screens < 768px) -->
-    <div id="requests-mobile-cards" class="flex flex-col md:hidden divide-y divide-slate-100">
-      <div style="padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; color: #64748b;">
-        <i data-lucide="loader-2" class="lucide-spin" style="width: 28px; height: 28px; color: #00bfa5; animation: spin 1s linear infinite;"></i>
-        <span style="font-size: 14px; font-weight: 500;">Fetching secure requests...</span>
-      </div>
-    </div>
+    <!-- Mobile Native Card View (Hidden: desktop table view is used everywhere) -->
+    <div id="requests-mobile-cards" style="display: none !important;"></div>
     
-    <!-- Desktop Table View (visible on desktop screens >= 768px) -->
-    <div class="hidden md:block overflow-x-auto w-full">
+    <!-- Desktop Table View (visible on all screens to maintain desktop layout) -->
+    <div class="block overflow-x-auto w-full">
       <table style="width: 100%; min-width: 860px; border-collapse: collapse; text-align: left;">
         <thead>
           <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
@@ -76,16 +62,15 @@
               <input type="checkbox" id="select-all-desktop" onchange="toggleSelectAll(this.checked)" style="width: 18px; height: 18px; border-radius: 5px; accent-color: #ef4444; cursor: pointer;" title="Select all requesters to delete">
             </th>
             <th style="padding: 14px 16px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span>Requester Profile</span>
-                <span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background-color: #fee2e2; color: #ef4444; text-transform: none; letter-spacing: normal;">Select to Delete</span>
-                <button id="header-bulk-delete-btn" type="button" onclick="openBulkDeleteModal()" style="display: none; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 8px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; font-size: 11px; font-weight: 700; border: none; cursor: pointer; text-transform: none; letter-spacing: normal; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);">
-                  <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
-                  <span>Delete Selected (<span id="header-selected-count">0</span>)</span>
-                </button>
+              <span>Requester Profile</span>
+            </th>
+            <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="calendar-clock" style="width: 14px; height: 14px; color: #00bfa5;"></i>
+                <span>Requested Date &amp; Time</span>
               </div>
             </th>
-            <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Context / Industry</th>
+            <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Context &amp; Verification</th>
             <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Dataset Scope</th>
             <th style="padding: 14px 20px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
             <th style="padding: 14px 20px; text-align: right; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Administrative Action</th>
@@ -93,7 +78,7 @@
         </thead>
         <tbody id="requests-tbody">
           <tr>
-            <td colspan="6" style="padding: 60px 40px; text-align: center;">
+            <td colspan="7" style="padding: 60px 40px; text-align: center;">
               <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
                 <i data-lucide="loader-2" class="lucide-spin" style="width: 32px; height: 32px; color: #00bfa5; animation: spin 1s linear infinite;"></i>
                 <span style="color: #64748b; font-size: 15px; font-weight: 500;">Fetching secure requests...</span>
@@ -118,9 +103,11 @@
         <i data-lucide="send" style="width: 28px; height: 28px; color: #16a34a; transform: rotate(5deg); margin-left: -2px;"></i>
       </div>
       <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 12px; letter-spacing: -0.02em;">Authorize Data Release</h3>
-      <p style="font-size: 15px; color: #64748b; line-height: 1.6; margin: 0 0 28px;">
-        By approving this request, the system will securely compile the requested dataset as a CSV and dispatch it to the user's corporate email.
+      <p style="font-size: 15px; color: #64748b; line-height: 1.6; margin: 0 0 20px;">
+        By approving this request, the system will securely compile the requested dataset as a CSV and dispatch it to the user's email.
       </p>
+
+      <div id="confirm-requester-info" style="display: none; margin-bottom: 24px;"></div>
       
       <div style="display: flex; gap: 12px;">
         <button type="button" onclick="closeConfirmModal()" style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; background-color: #ffffff; color: #64748b; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;" onmouseenter="this.style.backgroundColor='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseleave="this.style.backgroundColor='#ffffff'; this.style.borderColor='#e2e8f0';">
@@ -216,6 +203,16 @@ function showToast(message, type = 'success') {
     }, 5000);
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 var getFbDbUrl = () => (window.ENV_CONFIG && window.ENV_CONFIG.firebaseDatabaseUrl) 
     ? window.ENV_CONFIG.firebaseDatabaseUrl.replace(/\/$/, '') 
     : 'https://smart-air-net-default-rtdb.firebaseio.com';
@@ -227,7 +224,7 @@ function loadRequests(isSilent = false) {
     
     if (!isSilent) {
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="padding: 60px 40px; text-align: center;"><div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;"><i data-lucide="loader-2" class="lucide-spin" style="width: 32px; height: 32px; color: #00bfa5; animation: spin 1s linear infinite;"></i><span style="color: #64748b; font-size: 15px; font-weight: 500;">Fetching secure requests...</span></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="padding: 60px 40px; text-align: center;"><div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;"><i data-lucide="loader-2" class="lucide-spin" style="width: 32px; height: 32px; color: #00bfa5; animation: spin 1s linear infinite;"></i><span style="color: #64748b; font-size: 15px; font-weight: 500;">Fetching secure requests...</span></div></td></tr>`;
         }
         if (mobileCards) {
             mobileCards.innerHTML = `<div style="padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; color: #64748b;"><i data-lucide="loader-2" class="lucide-spin" style="width: 28px; height: 28px; color: #00bfa5; animation: spin 1s linear infinite;"></i><span style="font-size: 14px; font-weight: 500;">Fetching secure requests...</span></div>`;
@@ -252,6 +249,7 @@ function loadRequests(isSilent = false) {
           const uniqueDataMap = new Map();
           allData.forEach(item => uniqueDataMap.set(item.id, item));
           const finalData = Array.from(uniqueDataMap.values());
+          window.__lastLoadedRequests = finalData;
           
           if (countBadge) {
               countBadge.innerText = `${finalData.length} request${finalData.length === 1 ? '' : 's'}`;
@@ -259,7 +257,7 @@ function loadRequests(isSilent = false) {
           
           if (finalData.length === 0) {
               const emptyHtml = `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #94a3b8;"><i data-lucide="inbox" style="width: 32px; height: 32px; color: #94a3b8;"></i><span style="font-size: 14px; font-weight: 500; color: #64748b;">No dataset requests found.</span></div>`;
-              if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding: 60px 40px; text-align: center; border: none;">${emptyHtml}</td></tr>`;
+              if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="padding: 60px 40px; text-align: center; border: none;">${emptyHtml}</td></tr>`;
               if (mobileCards) mobileCards.innerHTML = `<div style="padding: 40px 20px; text-align: center;">${emptyHtml}</div>`;
               lucide.createIcons();
               return;
@@ -276,6 +274,23 @@ function loadRequests(isSilent = false) {
                 ? `<span style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; font-size: 11.5px; font-weight: 700;"><i data-lucide="check-circle" style="width:13px;height:13px;"></i> Approved</span>`
                 : `<span style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background-color: #fffbeb; border: 1px solid #fde68a; color: #b45309; font-size: 11.5px; font-weight: 700;"><i data-lucide="clock" style="width:13px;height:13px;"></i> Pending</span>`;
                 
+              // Format date & time of when it was requested
+              let formattedDate = 'Recently';
+              let formattedTime = '';
+              const rawTime = req.created_at || req.timestamp || req.date || req.createdAt || '';
+              if (rawTime) {
+                  let d = new Date(rawTime);
+                  if (isNaN(d.getTime()) && typeof rawTime === 'string' && rawTime.includes(' ')) {
+                      d = new Date(rawTime.replace(' ', 'T'));
+                  }
+                  if (!isNaN(d.getTime())) {
+                      formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' });
+                      formattedTime = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+                  } else {
+                      formattedDate = String(rawTime);
+                  }
+              }
+
               // 1. Populate Desktop Table Row
               if (tbody) {
                   const desktopActionBtn = isApproved
@@ -311,16 +326,35 @@ function loadRequests(isSilent = false) {
                     <td style="padding: 16px 16px;">
                       <div style="font-weight: 800; color: #0f172a; font-size: 14px; margin-bottom: 2px; display: flex; align-items: center; gap: 8px;">
                         <div style="width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">${(req.name || 'U').charAt(0).toUpperCase()}</div>
-                        ${req.name || 'Anonymous'}
+                        ${escapeHtml(req.name || 'Anonymous')}
                       </div>
-                      <div style="color: #64748b; font-size: 12.5px; margin-left: 36px;">${req.email || '--'}</div>
+                      <div style="color: #64748b; font-size: 12.5px; margin-left: 36px;">${escapeHtml(req.email || '--')}</div>
+                    </td>
+                    <td style="padding: 16px 20px; white-space: nowrap;">
+                      <div style="font-weight: 700; color: #0f172a; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="calendar" style="width: 14px; height: 14px; color: #00bfa5;"></i>
+                        <span>${formattedDate}</span>
+                      </div>
+                      ${formattedTime ? `
+                      <div style="color: #64748b; font-size: 11.5px; font-family: var(--font-mono); margin-top: 3px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="clock" style="width: 12px; height: 12px; color: #94a3b8;"></i>
+                        <span>${formattedTime}</span>
+                      </div>` : ''}
                     </td>
                     <td style="padding: 16px 20px;">
-                      <div style="font-weight: 700; color: #1e293b; font-size: 13.5px; margin-bottom: 3px;">${req.org || 'N/A'}</div>
-                      <div style="display: inline-block; padding: 2px 7px; border-radius: 6px; background-color: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${req.industry || 'General'}</div>
+                      <div style="font-weight: 700; color: #1e293b; font-size: 13.5px; margin-bottom: 3px;">${escapeHtml(req.org || 'N/A')}</div>
+                      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span style="display: inline-block; padding: 2px 7px; border-radius: 6px; background-color: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(req.industry || 'General')}</span>
+                      </div>
+                      <div style="margin-top: 8px;">
+                        <a href="api/view_request.php?id=${encodeURIComponent(reqId)}" target="_blank" onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; background-color: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; font-size: 12px; font-weight: 700; text-decoration: none; transition: all 0.15s; box-shadow: 0 1px 3px rgba(37,99,235,0.08);" onmouseenter="this.style.backgroundColor='#dbeafe'; this.style.borderColor='#93c5fd';" onmouseleave="this.style.backgroundColor='#eff6ff'; this.style.borderColor='#bfdbfe';" title="Open application details, full description, and official ID proof in another window">
+                          <i data-lucide="external-link" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                          <span>View ID Proof &amp; Description</span>
+                        </a>
+                      </div>
                     </td>
-                    <td style="padding: 16px 20px;">
-                      <div style="font-weight: 500; color: #334155; font-size: 13px; line-height: 1.45; margin-bottom: 4px; max-width: 280px;">${req.scope || '--'}</div>
+                    <td style="padding: 16px 20px; max-width: 280px;">
+                      <div style="font-weight: 600; color: #1e293b; font-size: 13px; line-height: 1.45; margin-bottom: 3px;">${escapeHtml(req.scope || '--')}</div>
                       <div style="color: #94a3b8; font-size: 11.5px; font-family: var(--font-mono);">Req ID: #${(reqId || '').substring(0,8)}</div>
                     </td>
                     <td style="padding: 16px 20px;">${statusBadge}</td>
@@ -355,8 +389,8 @@ function loadRequests(isSilent = false) {
                           ${(req.name || 'U').charAt(0).toUpperCase()}
                         </div>
                         <div style="min-width: 0;">
-                          <div style="font-weight: 800; color: #0f172a; font-size: 14.5px; line-height: 1.2; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${req.name || 'Anonymous'}</div>
-                          <div style="color: #64748b; font-size: 12.5px; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${req.email || '--'}</div>
+                          <div style="font-weight: 800; color: #0f172a; font-size: 14.5px; line-height: 1.2; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(req.name || 'Anonymous')}</div>
+                          <div style="color: #64748b; font-size: 12.5px; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(req.email || '--')}</div>
                         </div>
                       </div>
                       <div style="flex-shrink: 0;">
@@ -366,12 +400,22 @@ function loadRequests(isSilent = false) {
 
                     <div style="background-color: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 8px;">
                       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="font-weight: 700; color: #1e293b; font-size: 13px;">${req.org || 'Organization'}</span>
-                        <span style="padding: 2px 7px; border-radius: 6px; background-color: #ffffff; border: 1px solid #e2e8f0; color: #475569; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">${req.industry || 'General'}</span>
+                        <span style="font-weight: 700; color: #1e293b; font-size: 13px;">${escapeHtml(req.org || 'Organization')}</span>
+                        <span style="padding: 2px 7px; border-radius: 6px; background-color: #ffffff; border: 1px solid #e2e8f0; color: #475569; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">${escapeHtml(req.industry || 'General')}</span>
+                      </div>
+                      <div>
+                        <a href="api/view_request.php?id=${encodeURIComponent(reqId)}" target="_blank" onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; background-color: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; font-size: 12px; font-weight: 700; text-decoration: none;">
+                          <i data-lucide="external-link" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                          <span>View ID Proof &amp; Description &rarr;</span>
+                        </a>
                       </div>
                       <div style="font-size: 12.5px; color: #475569; line-height: 1.5; font-weight: 500;">
-                        ${req.scope || 'Telemetry Data'}
+                        ${escapeHtml(req.scope || 'Telemetry Data')}
                       </div>
+                      <div style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono); margin-top: 2px;">
+                        Req ID: #${(reqId || '').substring(0, 8)}
+                      </div>
+                    </div>
                       <div style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono); margin-top: 2px;">
                         Req ID: #${(reqId || '').substring(0, 8)}
                       </div>
@@ -396,7 +440,7 @@ function loadRequests(isSilent = false) {
               return;
           }
           const errHtml = `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #ef4444;"><i data-lucide="alert-triangle" style="width: 30px; height: 30px;"></i><span style="font-size: 14px; font-weight: 600;">Failed to synchronize requests. Please try again.</span></div>`;
-          if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding: 60px 40px; text-align: center;">${errHtml}</td></tr>`;
+          if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="padding: 60px 40px; text-align: center;">${errHtml}</td></tr>`;
           if (mobileCards) mobileCards.innerHTML = `<div style="padding: 40px 20px; text-align: center;">${errHtml}</div>`;
           lucide.createIcons();
       });
@@ -420,13 +464,6 @@ function updateSelectionUI() {
     if (textEl) textEl.innerText = `${count} requester${count === 1 ? '' : 's'} selected to delete`;
     const btnLabel = document.getElementById('bulk-delete-btn-label');
     if (btnLabel) btnLabel.innerText = `Delete Selected (${count})`;
-
-    const headerBtn = document.getElementById('header-bulk-delete-btn');
-    if (headerBtn) {
-        headerBtn.style.display = count > 0 ? 'inline-flex' : 'none';
-    }
-    const headerCount = document.getElementById('header-selected-count');
-    if (headerCount) headerCount.innerText = count;
     
     // 2. Mobile selection counter
     const mobileCounter = document.getElementById('mobile-selected-counter');
@@ -672,6 +709,38 @@ var pendingApprovalId = null;
 
 function approveRequest(id) {
     pendingApprovalId = id;
+    const targetReq = window.__lastLoadedRequests ? window.__lastLoadedRequests.find(r => (r.id === id || r._fbKey === id)) : null;
+    const infoContainer = document.getElementById('confirm-requester-info');
+    if (infoContainer) {
+        if (targetReq) {
+            infoContainer.innerHTML = `
+                <div style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px; text-align: left; font-size: 13px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <strong style="color: #0f172a; font-size: 14px;">${escapeHtml(targetReq.name || 'Requester')}</strong>
+                        <span style="font-size: 10.5px; font-weight: 700; background: #e2e8f0; color: #334155; padding: 2px 7px; border-radius: 6px; text-transform: uppercase;">${escapeHtml(targetReq.industry || 'General')}</span>
+                    </div>
+                    <div style="color: #64748b; font-size: 12px; margin-bottom: 8px;">${escapeHtml(targetReq.email || '--')} &bull; ${escapeHtml(targetReq.org || '--')}</div>
+                    
+                    ${(targetReq.proof_file || targetReq.proof_name) ? `
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; margin-bottom: 8px;">
+                            <span style="font-size: 12px; color: #64748b; font-weight: 600;">Official ID Proof:</span>
+                            <a href="api/view_proof.php?file=${encodeURIComponent((targetReq.proof_file || '').split('/').pop() || targetReq.proof_name)}" target="_blank" style="font-weight: 700; color: #1d4ed8; background: #eff6ff; border: 1.5px solid #bfdbfe; padding: 4px 10px; border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="file-check" style="width: 14px; height: 14px; color: #2563eb;"></i> View ID Proof &rarr;</a>
+                        </div>
+                    ` : ''}
+
+                    <div style="margin-top: 10px; padding: 10px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <span style="font-size: 12px; color: #64748b; font-weight: 600;">Dossier &amp; Description:</span>
+                        <a href="api/view_request.php?id=${encodeURIComponent(targetReq.id || targetReq._fbKey || '')}" target="_blank" style="font-weight: 700; color: #1d4ed8; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i data-lucide="external-link" style="width: 13px; height: 13px;"></i> Open in New Window &rarr;
+                        </a>
+                    </div>
+                </div>
+            `;
+            infoContainer.style.display = 'block';
+        } else {
+            infoContainer.style.display = 'none';
+        }
+    }
     document.getElementById('admin-confirm-modal').style.display = 'flex';
     lucide.createIcons();
 }

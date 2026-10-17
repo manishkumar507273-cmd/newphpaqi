@@ -967,3 +967,10 @@ img, svg, video, canvas {
     display: none !important;
   }
 }
+
+/* Ensure desktop pill navbar is strictly hidden on mobile devices */
+@media (max-width: 767px) {
+  #desktop-nav {
+    display: none !important;
+  }
+}

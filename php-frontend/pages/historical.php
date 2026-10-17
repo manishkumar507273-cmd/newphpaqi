@@ -211,19 +211,7 @@
       </div>
     </div>
 
-    <!-- Bulk Dataset Download Bar -->
-    <div class="px-4 py-3 sm:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-3">
-      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: #1e293b;">
-          <i data-lucide="file-spreadsheet" style="width: 17px; height: 17px; color: #00bfa5;"></i>
-          <span>Bulk Dataset Download:</span>
-        </div>
-        <button onclick="openDatasetModal()" class="min-h-[38px]" style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 18px; border-radius: 999px; border: none; background-color: #00bfa5; color: #ffffff; font-size: 12.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(0, 191, 165, 0.28); transition: all 0.15s ease; white-space: nowrap;">
-          <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-          <span>Request Dataset</span>
-        </button>
-      </div>
-    </div>
+
 
     <!-- Mobile swipe indicator -->
     <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
@@ -247,123 +235,7 @@
 
 </div>
 
-<!-- Enterprise Data Access Request Modal -->
-<div id="dataset-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 12px sm:padding: 24px; background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s ease;">
-  <div id="dataset-backdrop" onclick="closeDatasetModal()" style="position: absolute; inset: 0;"></div>
-  
-  <div id="dataset-modal-content" class="w-full max-w-[520px] max-h-[92vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden m-2 sm:m-4" style="position: relative; z-index: 10; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-    
-    <!-- Dark Header -->
-    <div style="background-color: #1e293b; padding: 20px 24px; position: relative; flex-shrink: 0;">
-      <button onclick="closeDatasetModal()" style="position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(255, 255, 255, 0.1); color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;" onmouseenter="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.color='#ffffff';" onmouseleave="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='#94a3b8';">
-        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-      </button>
-      
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-        <i data-lucide="shield-check" style="color: #00bfa5; width: 24px; height: 24px;"></i>
-        <h2 style="font-size: 20px; font-weight: 700; color: #ffffff; margin: 0; font-family: var(--font-sans);">Enterprise Data Access Request</h2>
-      </div>
-      <div style="display: flex; align-items: center; gap: 6px; padding-left: 2px;">
-        <i data-lucide="lock" style="color: #94a3b8; width: 14px; height: 14px;"></i>
-        <span style="font-size: 13px; color: #cbd5e1; font-weight: 500;">Secure Authorization Portal</span>
-      </div>
-    </div>
 
-    <!-- Body -->
-    <div style="padding: 24px; overflow-y: auto; flex-grow: 1;">
-      <form id="dataset-form" onsubmit="submitDatasetRequest(event)" style="display: flex; flex-direction: column; gap: 20px;">
-        
-        <!-- Scope Selection -->
-        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-          <label style="display: block; font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Requested Dataset Scope</label>
-          <div id="modal-dataset-scope" style="font-size: 14px; color: #64748b; font-weight: 400;">
-            AQI Telemetry — Data provided is strictly limited to 1 day (yesterday).
-          </div>
-        </div>
-
-        <!-- Full Name -->
-        <div>
-          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">Full Name *</label>
-          <div style="position: relative;">
-            <i data-lucide="user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; width: 18px; height: 18px;"></i>
-            <input type="text" name="fullName" required placeholder="" value="<?= isset($_SESSION['user_name']) ? htmlspecialchars($_SESSION['user_name']) : '' ?>" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px 12px 42px; font-size: 14px; font-weight: 500; color: #0f172a; outline: none; transition: all 0.2s; background-color: #f8fafc;" onfocus="this.style.borderColor='#00bfa5'; this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 0 0 3px rgba(0, 191, 165, 0.1)';" onblur="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#f8fafc'; this.style.boxShadow='none';">
-          </div>
-        </div>
-
-        <!-- Corporate Email -->
-        <div>
-          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">Corporate Email *</label>
-          <div style="position: relative;">
-            <i data-lucide="mail" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; width: 18px; height: 18px;"></i>
-            <input type="email" name="email" required placeholder="" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px 12px 42px; font-size: 14px; font-weight: 500; color: #0f172a; outline: none; transition: all 0.2s; background-color: #f8fafc;" onfocus="this.style.borderColor='#00bfa5'; this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 0 0 3px rgba(0, 191, 165, 0.1)';" onblur="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#f8fafc'; this.style.boxShadow='none';">
-          </div>
-        </div>
-
-        <!-- Organization -->
-        <div>
-          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">Organization / Institution *</label>
-          <div style="position: relative;">
-            <i data-lucide="building" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; width: 18px; height: 18px;"></i>
-            <input type="text" name="org" required placeholder="" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px 12px 42px; font-size: 14px; font-weight: 500; color: #0f172a; outline: none; transition: all 0.2s; background-color: #f8fafc;" onfocus="this.style.borderColor='#00bfa5'; this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 0 0 3px rgba(0, 191, 165, 0.1)';" onblur="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#f8fafc'; this.style.boxShadow='none';">
-          </div>
-        </div>
-
-        <!-- Industry -->
-        <div>
-          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">Industry *</label>
-          <select name="industry" required style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 14px; font-weight: 500; color: #0f172a; outline: none; transition: all 0.2s; background-color: #f8fafc; cursor: pointer; appearance: none;" onfocus="this.style.borderColor='#00bfa5'; this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 0 0 3px rgba(0, 191, 165, 0.1)';" onblur="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#f8fafc'; this.style.boxShadow='none';">
-            <option value="" disabled selected hidden>Select Industry</option>
-            <option value="research">Academic / Research</option>
-            <option value="gov">Government / Public Sector</option>
-            <option value="tech">Technology / Data Science</option>
-            <option value="env">Environmental Agency</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <!-- Intended Use Case -->
-        <div>
-          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">Intended Use Case *</label>
-          <textarea name="use_case" required placeholder="Describe your operational or analytical requirements for this telemetry data..." style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 14px; font-weight: 500; color: #0f172a; outline: none; transition: all 0.2s; background-color: #f8fafc; resize: none; min-height: 80px; font-family: var(--font-sans);" onfocus="this.style.borderColor='#00bfa5'; this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 0 0 3px rgba(0, 191, 165, 0.1)';" onblur="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#f8fafc'; this.style.boxShadow='none';"></textarea>
-        </div>
-
-        <!-- Agreement -->
-        <div style="background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #00bfa5; padding: 16px; margin-top: 4px;">
-          <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
-            <input type="checkbox" required style="width: 16px; height: 16px; margin-top: 3px; accent-color: #00bfa5; cursor: pointer;">
-            <span style="font-size: 13px; color: #64748b; line-height: 1.5;">
-              <strong style="color: #1e293b; font-weight: 700;">Data Governance Agreement:</strong> I acknowledge that this dataset is proprietary. I agree to abide by the Data Privacy Framework and confirm that this data will not be redistributed, monetized, or utilized for competitive benchmarking without explicit written consent.
-            </span>
-          </label>
-        </div>
-
-        <!-- Actions -->
-        <div style="display: flex; gap: 12px; margin-top: 8px;">
-          <button type="submit" id="dataset-submit-btn" style="flex: 1; padding: 14px; border-radius: 8px; border: none; background: #00bfa5; color: white; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 191, 165, 0.2);" onmouseenter="this.style.background='#00d6b9'; this.style.boxShadow='0 6px 8px -1px rgba(0, 191, 165, 0.3)';" onmouseleave="this.style.background='#00bfa5'; this.style.boxShadow='0 4px 6px -1px rgba(0, 191, 165, 0.2)';">
-            Submit Request securely
-          </button>
-          <button type="button" onclick="closeDatasetModal()" style="flex: 1; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #64748b; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#f8fafc'; this.style.color='#1e293b';" onmouseleave="this.style.background='white'; this.style.color='#64748b';">
-            Cancel
-          </button>
-        </div>
-      </form>
-
-    <!-- Success State -->
-    <div id="dataset-success" style="display: none; flex-direction: column; align-items: center; text-align: center; padding: 20px 0;">
-      <div style="width: 64px; height: 64px; border-radius: 50%; background: #dcfce7; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-        <i data-lucide="check" style="color: #16a34a; width: 32px; height: 32px;"></i>
-      </div>
-      <h3 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 12px;">Request Submitted</h3>
-      <p style="font-size: 15px; color: #64748b; line-height: 1.5; margin: 0 0 32px; max-width: 400px;">
-        Your enterprise data request has been logged. An administrator will review your submission shortly. Once approved, you will receive an encrypted payload via email.
-      </p>
-      <button onclick="closeDatasetModal()" style="padding: 10px 24px; border-radius: 8px; border: none; background: #f1f5f9; color: #475569; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseleave="this.style.background='#f1f5f9'; this.style.color='#475569';">
-        Close Window
-      </button>
-    </div>
-
-  </div>
-</div>
 
 <script>
 var currentSubTab = 'aqi';
@@ -654,7 +526,6 @@ function renderUI() {
 
     // Chart Render
     const ctx = document.getElementById('historical-chart').getContext('2d');
-    if (chartInstance) { chartInstance.destroy(); }
 
     const labels = filteredDayData.map(d => {
         const dt = new Date(d.timestamp);
@@ -668,52 +539,68 @@ function renderUI() {
     gradient.addColorStop(0, color + '66');
     gradient.addColorStop(1, color + '00');
 
-    chartInstance = new Chart(ctx, {
-        type: currentChartType,
-        data: {
-            labels: labels,
-            datasets: [{
-                label: currentParam.toUpperCase(),
-                data: dataPoints,
-                borderColor: color,
-                backgroundColor: currentChartType === 'line' ? gradient : color,
-                borderWidth: currentChartType === 'line' ? 2.5 : 0,
-                borderRadius: currentChartType === 'bar' ? 4 : 0,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: color,
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                spanGaps: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#0f172a',
-                    titleColor: '#94a3b8',
-                    bodyColor: color,
-                    bodyFont: { size: 14, weight: 'bold', family: 'monospace' },
-                    padding: 10,
-                    cornerRadius: 12,
-                    displayColors: false
-                }
-            },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: '#64748b' } },
-                y: { grid: { color: '#e2e8f0', borderDash: [3, 3] }, ticks: { color: '#64748b' }, beginAtZero: true }
-            }
+    // In-place silent update without destroying or flickering
+    if (chartInstance && chartInstance.config && chartInstance.config.type === currentChartType) {
+        chartInstance.data.labels = labels;
+        if (chartInstance.data.datasets && chartInstance.data.datasets[0]) {
+            chartInstance.data.datasets[0].label = currentParam.toUpperCase();
+            chartInstance.data.datasets[0].data = dataPoints;
+            chartInstance.data.datasets[0].borderColor = color;
+            chartInstance.data.datasets[0].backgroundColor = currentChartType === 'line' ? gradient : color;
+            chartInstance.data.datasets[0].borderWidth = currentChartType === 'line' ? 2.5 : 0;
+            chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? 4 : 0;
+            chartInstance.data.datasets[0].pointBackgroundColor = color;
         }
-    });
+        chartInstance.update('none');
+    } else {
+        if (chartInstance) { chartInstance.destroy(); }
+        chartInstance = new Chart(ctx, {
+            type: currentChartType,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: currentParam.toUpperCase(),
+                    data: dataPoints,
+                    borderColor: color,
+                    backgroundColor: currentChartType === 'line' ? gradient : color,
+                    borderWidth: currentChartType === 'line' ? 2.5 : 0,
+                    borderRadius: currentChartType === 'bar' ? 4 : 0,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: color,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    spanGaps: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleColor: '#94a3b8',
+                        bodyColor: color,
+                        bodyFont: { size: 14, weight: 'bold', family: 'monospace' },
+                        padding: 10,
+                        cornerRadius: 12,
+                        displayColors: false
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } },
+                    y: { grid: { color: '#e2e8f0', borderDash: [3, 3] }, ticks: { color: '#64748b' }, beginAtZero: true }
+                }
+            }
+        });
+    }
 
     // Table Render
     const theadRow = document.getElementById('table-head-row');
@@ -892,7 +779,26 @@ function downloadCSV() {
     window.URL.revokeObjectURL(url);
 }
 
+let autoRefreshHistInterval = null;
+
+function startAutoRefreshHist() {
+    if (autoRefreshHistInterval) clearInterval(autoRefreshHistInterval);
+    autoRefreshHistInterval = setInterval(() => {
+        if (document.hidden) return;
+        const dp = document.getElementById('history-date-picker');
+        if (!dp) return;
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (dp.value === todayStr) {
+            fetchAllHistory(todayStr);
+        }
+    }, 20000);
+}
+
 window.__cleanupCurrentPage = function() {
+    if (autoRefreshHistInterval) {
+        clearInterval(autoRefreshHistInterval);
+        autoRefreshHistInterval = null;
+    }
     if (chartInstance) {
         chartInstance.destroy();
         chartInstance = null;
@@ -905,5 +811,6 @@ setTimeout(() => {
         dp.onchange = () => fetchAllHistory();
     }
     fetchAllHistory();
+    startAutoRefreshHist();
 }, 0);
 </script>

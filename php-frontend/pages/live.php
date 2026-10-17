@@ -525,15 +525,20 @@ function renderComparisonChart() {
     const ctx = document.getElementById('comparison-chart');
     if (!ctx) return;
     
-    if (comparisonChartInstance) {
-        comparisonChartInstance.destroy();
-    }
-
     if (liveDataStream.length === 0) {
-        document.getElementById('comparison-chart-empty').style.display = 'flex';
-        document.getElementById('comparison-chart-empty').innerText = 'No telemetry stream available.';
+        if (comparisonChartInstance) {
+            comparisonChartInstance.destroy();
+            comparisonChartInstance = null;
+        }
+        const emptyEl = document.getElementById('comparison-chart-empty');
+        if (emptyEl) {
+            emptyEl.style.display = 'flex';
+            emptyEl.innerText = 'No telemetry stream available.';
+        }
         return;
     }
+    const emptyEl = document.getElementById('comparison-chart-empty');
+    if (emptyEl) emptyEl.style.display = 'none';
     document.getElementById('comparison-chart-empty').style.display = 'none';
 
     // Reverse the array to show chronological order (left to right)
@@ -549,6 +554,13 @@ function renderComparisonChart() {
     if (visiblePollutants.co) datasets.push({ label: 'CO', data: sortedData.map(d => d.co), borderColor: pollutantColors.co, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
     if (visiblePollutants.no2) datasets.push({ label: 'NO2', data: sortedData.map(d => d.no2), borderColor: pollutantColors.no2, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
     if (visiblePollutants.o3) datasets.push({ label: 'O3', data: sortedData.map(d => d.o3), borderColor: pollutantColors.o3, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
+
+    if (comparisonChartInstance) {
+        comparisonChartInstance.data.labels = labels;
+        comparisonChartInstance.data.datasets = datasets;
+        comparisonChartInstance.update('none');
+        return;
+    }
 
     comparisonChartInstance = new Chart(ctx, {
         type: 'line',
@@ -894,10 +906,13 @@ window.__cleanupCurrentPage = function() {
 setTimeout(() => {
     refreshDashboard();
     
-    // Auto-refresh every 15 seconds (but do NOT switch tabs automatically)
+    // Auto-refresh every 12 seconds silently in background
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {
-        refreshDashboard();
-    }, 15000);
+        if (!document.hidden) {
+            refreshDashboard();
+        }
+    }, 12000);
 }, 0);
 
 var pollutantDetails = {

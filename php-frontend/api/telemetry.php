@@ -369,16 +369,18 @@ switch ($action) {
 
     case 'live_bulk': {
         $lim   = min($limit, 120);
+        $today_ist = (new DateTime('now', new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
         $ckey  = "live_bulk_{$lim}";
         $cached = cacheGet($ckey, 30);
         if ($cached !== null) { echo json_encode($cached); break; }
 
-        // Fire all 4 requests simultaneously
+        // Fire all requests simultaneously
         $raw = fetchParallel([
             'aqi'          => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=id.desc&limit=1",
             'weather'      => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=id.desc&limit=1",
             'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
             'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
+            'today_weather'=> "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_HIST}?order=id.desc&limit=30",
         ], $supabaseKey);
 
         $res = [];
@@ -393,6 +395,24 @@ switch ($action) {
         if ($raw['weather_hist']) { foreach ($raw['weather_hist'] as $row) { $w = formatWeatherReading($row); if ($w) $wh[] = $w; } }
         $res['weather_history'] = $wh;
 
+        $today_rain_sum = 0.0;
+        if (!empty($raw['today_weather']) && is_array($raw['today_weather'])) {
+            foreach ($raw['today_weather'] as $row) {
+                $tsRaw = $row['timestamp_hour'] ?? '';
+                if ($tsRaw) {
+                    try {
+                        $dt = new DateTime($tsRaw);
+                        $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+                        if ($dt->format('Y-m-d') === $today_ist) {
+                            $r = (float)($row['rain_gauge'] ?? 0);
+                            if ($r > 0) $today_rain_sum += $r;
+                        }
+                    } catch (Exception $e) {}
+                }
+            }
+        }
+        $res['today_rain_total'] = round($today_rain_sum, 2);
+
         cacheSet($ckey, $res);
         echo json_encode($res);
         break;
@@ -400,6 +420,7 @@ switch ($action) {
 
     case 'overview_bulk': {
         $lim   = 60;
+        $today_ist = (new DateTime('now', new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
         $ckey  = "overview_bulk";
         $cached = cacheGet($ckey, 30);
         if ($cached !== null) { echo json_encode($cached); break; }
@@ -409,6 +430,7 @@ switch ($action) {
             'weather'      => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=id.desc&limit=1",
             'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
             'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
+            'today_weather'=> "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_HIST}?order=id.desc&limit=30",
         ], $supabaseKey);
 
         $res = [];
@@ -422,6 +444,24 @@ switch ($action) {
         $wh = [];
         if ($raw['weather_hist']) { foreach ($raw['weather_hist'] as $row) { $w = formatWeatherReading($row); if ($w) $wh[] = $w; } }
         $res['weather_history'] = $wh;
+
+        $today_rain_sum = 0.0;
+        if (!empty($raw['today_weather']) && is_array($raw['today_weather'])) {
+            foreach ($raw['today_weather'] as $row) {
+                $tsRaw = $row['timestamp_hour'] ?? '';
+                if ($tsRaw) {
+                    try {
+                        $dt = new DateTime($tsRaw);
+                        $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+                        if ($dt->format('Y-m-d') === $today_ist) {
+                            $r = (float)($row['rain_gauge'] ?? 0);
+                            if ($r > 0) $today_rain_sum += $r;
+                        }
+                    } catch (Exception $e) {}
+                }
+            }
+        }
+        $res['today_rain_total'] = round($today_rain_sum, 2);
 
         cacheSet($ckey, $res);
         echo json_encode($res);

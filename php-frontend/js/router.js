@@ -66,11 +66,10 @@
         // Desktop Nav container
         const desktopNav = document.getElementById('desktop-nav');
         if (desktopNav) {
+            desktopNav.style.removeProperty('display');
             if (targetPage === 'overview') {
-                desktopNav.style.display = 'none';
                 desktopNav.className = 'hidden';
             } else {
-                desktopNav.style.display = 'inline-flex';
                 desktopNav.className = 'hidden md:inline-flex';
             }
         }

@@ -18,7 +18,7 @@
           <button id="btn-temp" onclick="toggleTemp()" style="min-height: 38px; min-width: 44px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">°C</button>
           <button id="btn-wind" onclick="toggleWind()" style="min-height: 38px; min-width: 52px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">km/h</button>
         </div>
-        <button id="btn-refresh" onclick="refreshData()" class="overview-refresh-btn" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); transition: all 0.2s ease;">
+        <button id="btn-refresh" onclick="refreshData(false)" class="overview-refresh-btn" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); transition: all 0.2s ease;">
           <i data-lucide="refresh-cw" id="icon-refresh" style="width: 17px; height: 17px; color: #00bfa5;"></i>
         </button>
       </div>
@@ -159,9 +159,9 @@
         </div>
       </div>
 
-      <!-- CARD 5: RAINFALL -->
+      <!-- CARD 5: RAINFALL (LIVE & TODAY'S RAIN) -->
       <div class="overview-core-card" id="card-rain" style="border-color: #c7d2fe;">
-        <div id="rain-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #6366f1, #818cf8);"></div>
+        <div id="rain-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #6366f1, #0284c7);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 7px;">
             <div id="rain-icon-bg" class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: #eef2ff; display: flex; align-items: center; justify-content: center; color: #4f46e5; border: 1px solid #c7d2fe;">
@@ -170,24 +170,24 @@
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Rainfall</h4>
           </div>
           <span id="rain-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe;">
-            Dry
+            Live
           </span>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
-          <div style="display: flex; align-items: baseline; gap: 2px;">
-            <span id="rain-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #4f46e5; font-family: var(--font-mono);">--</span>
-            <span style="font-size: 12px; font-weight: 700; color: #94a3b8;">mm</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; margin-bottom: auto; padding: 6px 0;">
+          <div>
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Live</div>
+            <div style="display: flex; align-items: baseline; gap: 2px;">
+              <span id="rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #4f46e5; font-family: var(--font-mono);">--</span>
+              <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">mm</span>
+            </div>
           </div>
-          <div id="rain-sub" class="overview-sub-badge" style="background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca;">
-            No Rain
-          </div>
-        </div>
-        <div style="margin-top: auto; padding-top: 8px;">
-          <div style="height: 5px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
-            <div id="rain-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #818cf8 0%, #4f46e5 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
-          </div>
-          <div class="overview-bar-scale">
-            <span>Dry</span><span style="color: #cbd5e1;">•</span><span>15mm</span><span style="color: #cbd5e1;">•</span><span>50mm</span>
+          <div style="width: 1px; height: 36px; background: #e2e8f0; margin: 0 4px;"></div>
+          <div style="text-align: right;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Today's Rain</div>
+            <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 2px;">
+              <span id="total-rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);">--</span>
+              <span style="font-size: 11px; font-weight: 700; color: #0284c7;">mm</span>
+            </div>
           </div>
         </div>
       </div>
@@ -362,7 +362,7 @@
       white-space: nowrap;
     }
     @media (max-width: 1100px) {
-      .overview-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important; gap: 10px !important; }
+      .overview-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; gap: 10px !important; }
     }
     @media (max-width: 768px) {
       .overview-page-root { padding: 14px 12px !important; border-radius: 18px !important; min-height: auto !important; }
@@ -374,9 +374,9 @@
       .overview-grid > *:first-child { grid-column: span 2 !important; }
       .overview-core-card { padding: 12px 10px !important; min-height: 124px !important; border-radius: 14px !important; }
       .overview-card-icon { width: 26px !important; height: 26px !important; border-radius: 8px !important; }
-      .overview-card-title { font-size: 12.5px !important; }
-      .overview-card-badge { font-size: 10px !important; padding: 2px 7px !important; }
-      .overview-card-val { font-size: 28px !important; }
+      .overview-card-title { font-size: 12px !important; }
+      .overview-card-badge { font-size: 9.5px !important; padding: 2px 6px !important; }
+      .overview-card-val { font-size: 24px !important; }
     }
     @media (max-width: 360px) {
       .overview-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
@@ -447,9 +447,11 @@ function updateWindDisplay() {
 
 let overviewChartInstance = null;
 
-async function refreshData() {
+async function refreshData(isSilent = false) {
     const icon = document.getElementById('icon-refresh');
-    icon.style.animation = 'spin 0.8s linear infinite';
+    if (!isSilent && icon) {
+        icon.style.animation = 'spin 0.8s linear infinite';
+    }
     
     try {
         let bulkData;
@@ -515,26 +517,34 @@ async function refreshData() {
                 document.getElementById('eq-'+i).style.backgroundColor = wkmh >= (i*2.5) ? '#059669' : '#e2e8f0';
             }
             
-            // Rain
+            // Rain (Live Rate & Today's Total in one card)
             const isRaining = rain != null && Number(rain) > 0;
             isRainingGlobal = isRaining;
-            document.getElementById('rain-val').innerText = rain != null ? Number(rain).toFixed(1) : '--';
+            const liveRainVal = rain != null ? Number(rain) : 0;
+            const todayRain = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total) : 0;
+            
+            document.getElementById('rain-val').innerText = rain != null ? liveRainVal.toFixed(1) : '--';
+            const totalRainValEl = document.getElementById('total-rain-val');
+            if (totalRainValEl) {
+                totalRainValEl.innerText = todayRain.toFixed(1);
+            }
+            
             document.getElementById('card-rain').style.borderColor = isRaining ? '#7dd3fc' : '#c7d2fe';
-            document.getElementById('rain-grad').style.background = isRaining ? 'linear-gradient(90deg, #0284c7, #38bdf8)' : 'linear-gradient(90deg, #6366f1, #818cf8)';
+            document.getElementById('rain-grad').style.background = isRaining ? 'linear-gradient(90deg, #0284c7, #38bdf8)' : 'linear-gradient(90deg, #6366f1, #0284c7)';
             document.getElementById('rain-icon-bg').style.backgroundColor = isRaining ? '#f0f9ff' : '#eef2ff';
             document.getElementById('rain-icon-bg').style.color = isRaining ? '#0284c7' : '#4f46e5';
             document.getElementById('rain-icon-bg').style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
-            document.getElementById('rain-badge').innerText = isRaining ? '🌧️ Rain' : 'Dry';
+            document.getElementById('rain-badge').innerText = isRaining ? '🌧️ Rain' : 'Live';
             document.getElementById('rain-badge').style.backgroundColor = isRaining ? '#e0f2fe' : '#eef2ff';
             document.getElementById('rain-badge').style.color = isRaining ? '#0369a1' : '#4338ca';
             document.getElementById('rain-badge').style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
-            document.getElementById('rain-val').style.color = isRaining ? '#0284c7' : '#4f46e5';
-            document.getElementById('rain-sub').innerText = isRaining ? 'Precipitating' : 'No Rain';
-            document.getElementById('rain-sub').style.background = isRaining ? '#e0f2fe' : '#eef2ff';
-            document.getElementById('rain-sub').style.color = isRaining ? '#0369a1' : '#4338ca';
-            document.getElementById('rain-sub').style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
-            document.getElementById('rain-bar').style.background = isRaining ? 'linear-gradient(90deg, #38bdf8 0%, #0284c7 100%)' : 'linear-gradient(90deg, #818cf8 0%, #4f46e5 100%)';
-            document.getElementById('rain-bar').style.width = rain != null ? Math.min(100, Math.max(isRaining ? 15 : 2, (Number(rain) / 50) * 100)) + '%' : '0%';
+            
+            const rainBarEl = document.getElementById('rain-bar');
+            if (rainBarEl) {
+                const maxRainMetric = Math.max(liveRainVal, todayRain);
+                rainBarEl.style.background = isRaining ? 'linear-gradient(90deg, #38bdf8 0%, #0284c7 100%)' : 'linear-gradient(90deg, #818cf8 0%, #0284c7 100%)';
+                rainBarEl.style.width = Math.min(100, Math.max(maxRainMetric > 0 ? 8 : 2, (maxRainMetric / 50) * 100)) + '%';
+            }
         }
 
         // Live History Chart
@@ -597,8 +607,12 @@ async function refreshData() {
     } catch(e) {
         console.error(e);
     } finally {
-        icon.style.animation = 'none';
-        initCanvas(); // restart canvas with new wind/rain data
+        if (!isSilent && icon) {
+            icon.style.animation = 'none';
+        }
+        if (!animationFrameId) {
+            initCanvas();
+        }
         if (window.lucide) { lucide.createIcons(); }
     }
 }
@@ -610,8 +624,15 @@ function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
+    // In-place silent update without destroying or flickering
     if (chartInstances[canvasId]) {
-        chartInstances[canvasId].destroy();
+        const existingChart = chartInstances[canvasId];
+        existingChart.data.labels = labels;
+        if (existingChart.data.datasets && existingChart.data.datasets[0]) {
+            existingChart.data.datasets[0].data = data;
+        }
+        existingChart.update('none');
+        return;
     }
     
     // Create gradient
@@ -798,18 +819,41 @@ function initCanvas() {
     render();
 }
 
+let autoRefreshOverviewTimer = null;
+
+function startAutoRefreshOverview() {
+    if (autoRefreshOverviewTimer) clearInterval(autoRefreshOverviewTimer);
+    autoRefreshOverviewTimer = setInterval(() => {
+        if (!document.hidden) {
+            refreshData(true);
+        }
+    }, 12000);
+}
+
 window.__cleanupCurrentPage = function() {
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
     }
+    if (autoRefreshOverviewTimer) {
+        clearInterval(autoRefreshOverviewTimer);
+        autoRefreshOverviewTimer = null;
+    }
+    Object.keys(chartInstances).forEach(k => {
+        if (chartInstances[k]) {
+            try { chartInstances[k].destroy(); } catch(e) {}
+        }
+    });
+    chartInstances = {};
 };
 
 if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", () => {
-        refreshData();
+        refreshData(false);
+        startAutoRefreshOverview();
     });
 } else {
-    refreshData();
+    refreshData(false);
+    startAutoRefreshOverview();
 }
 </script>

@@ -98,7 +98,7 @@ window.FIREBASE_ENV_CONFIG = {
     </div>
 
     <!-- Center: Desktop Nav -->
-    <nav id="desktop-nav" style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px; display: <?= $current_page !== 'overview' ? 'inline-flex' : 'none' ?>;" class="<?= $current_page !== 'overview' ? 'hidden md:inline-flex' : 'hidden' ?>">
+    <nav id="desktop-nav" style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="<?= $current_page !== 'overview' ? 'hidden md:inline-flex' : 'hidden' ?>">
       <a href="?page=live" data-nav-link="live" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'live' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
         <i data-lucide="radio" style="width: 15px; height: 15px; opacity: <?= $current_page === 'live' ? '1' : '0.75' ?>;"></i> Live Data Stream
       </a>

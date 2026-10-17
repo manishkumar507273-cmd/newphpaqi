@@ -17,15 +17,19 @@
   <!-- Table Card -->
   <div class="bg-white rounded-2xl sm:rounded-[20px] border border-slate-200 shadow-sm overflow-hidden">
     <!-- Top Card Header -->
-    <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-white">
-      <h2 style="font-size: 17px; sm:font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 10px;">
-        <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          <i data-lucide="inbox" style="width: 18px; height: 18px; color: #4f46e5;"></i>
+    <div class="p-3.5 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-white gap-2">
+      <h2 style="font-size: 15px; sm:font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px; min-width: 0;">
+        <div style="width: 30px; height: 30px; border-radius: 8px; background: #e0e7ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <i data-lucide="inbox" style="width: 17px; height: 17px; color: #4f46e5;"></i>
         </div>
-        <span>Pending Access Requests</span>
+        <span class="truncate">Pending Requests</span>
       </h2>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span id="requests-count-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 font-mono">--</span>
+      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+        <span id="requests-count-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 font-mono" style="border-radius: 8px;">--</span>
+        <button id="admin-sync-btn" type="button" onclick="triggerManualSync()" title="Sync Requests" class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-sm active:scale-95" style="border-radius: 8px; height: 30px;">
+          <i data-lucide="refresh-cw" id="sync-icon" style="width: 14px; height: 14px; color: #64748b;"></i>
+          <span class="hidden sm:inline">Sync Requests</span>
+        </button>
       </div>
     </div>
 
@@ -415,10 +419,6 @@ function loadRequests(isSilent = false) {
                       <div style="font-size: 12.5px; color: #475569; line-height: 1.5; font-weight: 500;">
                         ${escapeHtml(req.scope || 'Telemetry Data')}
                       </div>
-                      <div style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono); margin-top: 2px;">
-                        Req ID: #${(reqId || '').substring(0, 8)}
-                      </div>
-                    </div>
                       <div style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono); margin-top: 2px;">
                         Req ID: #${(reqId || '').substring(0, 8)}
                       </div>
@@ -817,6 +817,21 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
         btn.style.opacity = '1';
     });
 });
+
+function triggerManualSync() {
+    const icon = document.getElementById('sync-icon');
+    if (icon) {
+        icon.classList.add('lucide-spin');
+        icon.style.animation = 'spin 1s linear infinite';
+    }
+    loadRequests(false);
+    setTimeout(() => {
+        if (icon) {
+            icon.classList.remove('lucide-spin');
+            icon.style.animation = '';
+        }
+    }, 800);
+}
 
 let adminAutoRefreshTimer = null;
 

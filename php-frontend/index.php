@@ -174,49 +174,13 @@ if ($is_ajax) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <script>
-
-        // Fast code update detector: checks on window/tab focus without lagging the server
-        (function() {
-            var lastMtime = null;
-            var isChecking = false;
-
-            async function checkCodeUpdate() {
-                if (isChecking) return;
-                isChecking = true;
-                try {
-                    var res = await fetch('api/check_update.php?_t=' + Date.now(), { cache: 'no-store' });
-                    var data = await res.json();
-                    if (data && data.latest_mtime) {
-                        if (lastMtime !== null && data.latest_mtime > lastMtime) {
-                            console.log('🔄 Code changes detected. Auto-refreshing view...');
-                            window.location.reload();
-                            return;
-                        }
-                        lastMtime = data.latest_mtime;
-                    }
-                } catch (e) {
-                } finally {
-                    isChecking = false;
-                }
-            }
-
-            // Immediately check when user switches focus to the browser window/tab
-            window.addEventListener('focus', checkCodeUpdate);
-            document.addEventListener('visibilitychange', function() {
-                if (!document.hidden) {
-                    checkCodeUpdate();
-                }
-            });
-            // Initial check once and interval every 4 seconds
-            checkCodeUpdate();
-            setInterval(checkCodeUpdate, 4000);
-        })();
-    </script>
-    <meta name="theme-color" content="#f1f5f9">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f1f5f9" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WeatherNet">
     <meta name="mobile-web-app-capable" content="yes">
     <title>Smart WeatherNet | Real-Time Air Quality & Weather Monitor</title>
     

@@ -22,8 +22,20 @@
     </div>
   </div>
 
-  <!-- ── Analytics Date Picker Card ── -->
-  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
+  <!-- Mobile Filter & Date Drawer Bar (< 640px) -->
+  <div class="flex sm:hidden items-center justify-between gap-2 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+    <button type="button" onclick="openHistoricalFilterDrawer()" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-900 text-white font-bold text-xs shadow-sm">
+      <i data-lucide="sliders-horizontal" class="w-4 h-4 text-[#00bfa5]"></i>
+      <span id="mobile-filter-btn-label">Filter Date &amp; View</span>
+    </button>
+    <button type="button" onclick="openDatasetModal()" class="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs">
+      <i data-lucide="download" class="w-4 h-4 text-[#00bfa5]"></i>
+      <span>Export</span>
+    </button>
+  </div>
+
+  <!-- ── Analytics Date Picker Card (Desktop / Tablet) ── -->
+  <div class="hidden sm:block bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
 
     <!-- Top Header Row: Date Selector & Controls -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
@@ -217,13 +229,13 @@
       </div>
     </div>
 
-    <!-- Mobile swipe indicator -->
-    <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
-      <span>👈 Swipe horizontally to view all hourly readings</span>
-      <span class="font-mono text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">24 HRS</span>
+    <!-- Mobile Telemetry Card List (< 768px) -->
+    <div id="hist-card-list" class="block md:hidden p-3 space-y-2.5 max-h-[460px] overflow-y-auto" style="-webkit-overflow-scrolling: touch;">
+      <div style="padding: 24px; text-align: center; color: #64748b; font-size: 13px;">Loading telemetry rows...</div>
     </div>
 
-    <div style="overflow-x: auto; max-height: 440px; -webkit-overflow-scrolling: touch;">
+    <!-- Desktop Table (>= 768px) -->
+    <div class="hidden md:block" style="overflow-x: auto; max-height: 440px; -webkit-overflow-scrolling: touch;">
       <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 750px;">
         <thead style="position: sticky; top: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; z-index: 2;">
           <tr style="color: #475569; font-size: 12px;" id="table-head-row">
@@ -237,6 +249,47 @@
     </div>
   </div>
 
+</div>
+
+<!-- Mobile Analytics Filter Bottom Sheet Drawer -->
+<div id="hist-drawer-backdrop" class="bottom-sheet-backdrop" onclick="closeHistoricalFilterDrawer()"></div>
+<div id="hist-filter-drawer" class="bottom-sheet">
+  <div class="bottom-sheet-drag-handle"></div>
+  <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i data-lucide="sliders-horizontal" style="width: 18px; height: 18px; color: #00bfa5;"></i>
+      <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">Filters &amp; Date Range</h3>
+    </div>
+    <button type="button" onclick="closeHistoricalFilterDrawer()" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+    </button>
+  </div>
+  
+  <div style="margin-bottom: 16px;">
+    <label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Select Date</label>
+    <input type="date" id="history-date-picker-mobile" onchange="syncDatePicker(this.value)" style="width: 100%; padding: 11px 14px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 16px; font-weight: 600; color: #0f172a; background: #f8fafc; outline: none; box-sizing: border-box;">
+    <div style="display: flex; gap: 6px; margin-top: 8px;">
+      <button type="button" onclick="setQuickDate('today')" style="flex: 1; padding: 7px; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">Today</button>
+      <button type="button" onclick="setQuickDate('yesterday')" style="flex: 1; padding: 7px; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">Yesterday</button>
+      <button type="button" onclick="setQuickDate('week')" style="flex: 1; padding: 7px; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">-7 Days</button>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Chart Style</label>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      <button type="button" onclick="setChartType('line'); closeHistoricalFilterDrawer();" style="padding: 10px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #f8fafc; font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+        <i data-lucide="trending-up" style="width: 15px; height: 15px; color: #00bfa5;"></i> Curve Plot
+      </button>
+      <button type="button" onclick="setChartType('bar'); closeHistoricalFilterDrawer();" style="padding: 10px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #f8fafc; font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+        <i data-lucide="bar-chart-2" style="width: 15px; height: 15px; color: #00bfa5;"></i> Bar Plot
+      </button>
+    </div>
+  </div>
+
+  <button type="button" onclick="closeHistoricalFilterDrawer()" style="width: 100%; padding: 13px; border-radius: 14px; border: none; background: #00bfa5; color: #ffffff; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.3);">
+    Apply &amp; View Trends
+  </button>
 </div>
 
 <!-- Enterprise Data Access Request Modal -->
@@ -458,6 +511,58 @@ var getLocalDateStr = function(d = new Date()) {
     return `${yr}-${mo}-${da}`;
 };
 
+function openHistoricalFilterDrawer() {
+    const backdrop = document.getElementById('hist-drawer-backdrop');
+    const drawer = document.getElementById('hist-filter-drawer');
+    if (backdrop && drawer) {
+        backdrop.classList.add('active');
+        drawer.classList.add('active');
+    }
+    const deskPicker = document.getElementById('history-date-picker');
+    const mobPicker = document.getElementById('history-date-picker-mobile');
+    if (deskPicker && mobPicker && deskPicker.value) {
+        mobPicker.value = deskPicker.value;
+    }
+    if (window.triggerHaptic) window.triggerHaptic('light');
+}
+
+function closeHistoricalFilterDrawer() {
+    const backdrop = document.getElementById('hist-drawer-backdrop');
+    const drawer = document.getElementById('hist-filter-drawer');
+    if (backdrop && drawer) {
+        backdrop.classList.remove('active');
+        drawer.classList.remove('active');
+    }
+}
+
+function syncDatePicker(val) {
+    const deskPicker = document.getElementById('history-date-picker');
+    const mobPicker = document.getElementById('history-date-picker-mobile');
+    if (deskPicker) deskPicker.value = val;
+    if (mobPicker) mobPicker.value = val;
+    const mobLabel = document.getElementById('mobile-filter-btn-label');
+    if (mobLabel) mobLabel.innerText = `Date: ${val}`;
+    fetchAllHistory(val);
+}
+
+function setQuickDate(range) {
+    const today = new Date();
+    let target = new Date();
+    if (range === 'today') {
+        target = today;
+    } else if (range === 'yesterday') {
+        target.setDate(today.getDate() - 1);
+    } else if (range === 'week') {
+        target.setDate(today.getDate() - 7);
+    }
+    const dateStr = getLocalDateStr(target);
+    syncDatePicker(dateStr);
+    closeHistoricalFilterDrawer();
+    if (window.showMobileToast) {
+        window.showMobileToast(`Loaded: ${dateStr}`, 'calendar');
+    }
+}
+
 async function fetchAllHistory(forcedDate = null) {
     try {
         const datePicker = document.getElementById('history-date-picker');
@@ -468,6 +573,11 @@ async function fetchAllHistory(forcedDate = null) {
             queryDate = getLocalDateStr();
             datePicker.value = queryDate;
         }
+
+        const mobPicker = document.getElementById('history-date-picker-mobile');
+        if (mobPicker) mobPicker.value = queryDate;
+        const mobLabel = document.getElementById('mobile-filter-btn-label');
+        if (mobLabel) mobLabel.innerText = `Date: ${queryDate}`;
 
         let data;
         if (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.aqi) && !forcedDate) {
@@ -676,6 +786,10 @@ function renderUI(skipDayFilter = false) {
         document.getElementById('w-total-rain').innerText = '--';
         
         document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 36px 20px; color: #64748b;">No telemetry records available for ${rangeLabel}.</td></tr>`;
+        const histCardList = document.getElementById('hist-card-list');
+        if (histCardList) {
+            histCardList.innerHTML = `<div style="padding: 32px 16px; text-align: center; color: #64748b; font-size: 13px;">No telemetry records available for ${rangeLabel}.</div>`;
+        }
         return;
     }
 
@@ -901,9 +1015,10 @@ function renderUI(skipDayFilter = false) {
         });
     }
 
-    // Table Render
+    // Table & Mobile Card Render
     const theadRow = document.getElementById('table-head-row');
     const tbody = document.getElementById('table-body');
+    const histCardList = document.getElementById('hist-card-list');
     
     if(currentSubTab === 'aqi') {
         theadRow.innerHTML = `
@@ -942,6 +1057,52 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px; color: #475569;">${d.o3 != null ? Number(d.o3).toFixed(3) : '0.000'}</td>
             </tr>`;
         }).join('');
+
+        if (histCardList) {
+            histCardList.innerHTML = filteredDayData.map(d => {
+                const parts = (d.timestamp || '').split('T');
+                let dateStr = '', timeStr = '';
+                if (parts.length === 2) {
+                    const [yr, mo, da] = parts[0].split('-').map(Number);
+                    const [hr, mn] = parts[1].split(':').map(Number);
+                    const dt = new Date(yr, mo - 1, da, hr, mn || 0);
+                    dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
+                    timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    const dt = new Date(d.timestamp);
+                    dateStr = dt.toLocaleDateString('en-GB');
+                    timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                }
+                const aqiVal = d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '--';
+                const cat = getAqiCategory(d.cpcb_aqi);
+
+                return `
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 800; font-size: 14px; color: #0f172a; font-family: var(--font-mono);">${timeStr}</span>
+                            <span style="font-size: 11px; color: #64748b;">${dateStr}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: ${cat.bg}; border: 1px solid ${cat.border}; color: ${cat.text};">
+                                ${cat.label}
+                            </span>
+                            <span style="font-family: var(--font-mono); font-weight: 900; font-size: 14px; color: ${cat.text};">
+                                ${aqiVal} AQI
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-top: 8px; border-top: 1px solid #f1f5f9; font-size: 11px;">
+                        <div><span style="color:#64748b;">PM2.5:</span> <strong style="color:#0284c7; font-family:var(--font-mono);">${d.pm25 != null ? Number(d.pm25).toFixed(1) : '0.0'}</strong></div>
+                        <div><span style="color:#64748b;">PM10:</span> <strong style="color:#6366f1; font-family:var(--font-mono);">${d.pm10 != null ? Number(d.pm10).toFixed(1) : '0.0'}</strong></div>
+                        <div><span style="color:#64748b;">CO:</span> <strong style="color:#16a34a; font-family:var(--font-mono);">${d.co != null ? Number(d.co).toFixed(2) : '0.00'}</strong></div>
+                        <div><span style="color:#64748b;">NO₂:</span> <strong style="color:#9333ea; font-family:var(--font-mono);">${d.no2 != null ? Number(d.no2).toFixed(2) : '0.00'}</strong></div>
+                        <div><span style="color:#64748b;">O₃:</span> <strong style="color:#d97706; font-family:var(--font-mono);">${d.o3 != null ? Number(d.o3).toFixed(2) : '0.00'}</strong></div>
+                        <div><span style="color:#64748b;">Temp:</span> <strong style="color:#0f172a; font-family:var(--font-mono);">${d.temperature != null ? Number(d.temperature).toFixed(1) + '°' : '--'}</strong></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
     } else {
         theadRow.innerHTML = `
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Date</th>
@@ -979,6 +1140,48 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px; color: #475569;">${d.rain_gauge != null ? Number(d.rain_gauge).toFixed(3) : '0.000'}</td>
             </tr>`;
         }).join('');
+
+        if (histCardList) {
+            histCardList.innerHTML = filteredDayData.map(d => {
+                const parts = (d.timestamp || '').split('T');
+                let dateStr = '', timeStr = '';
+                if (parts.length === 2) {
+                    const [yr, mo, da] = parts[0].split('-').map(Number);
+                    const [hr, mn] = parts[1].split(':').map(Number);
+                    const dt = new Date(yr, mo - 1, da, hr, mn || 0);
+                    dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
+                    timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    const dt = new Date(d.timestamp);
+                    dateStr = dt.toLocaleDateString('en-GB');
+                    timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                }
+
+                return `
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 800; font-size: 14px; color: #0f172a; font-family: var(--font-mono);">${timeStr}</span>
+                            <span style="font-size: 11px; color: #64748b;">${dateStr}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;">
+                                ${d.temperature != null ? Number(d.temperature).toFixed(1) + '°C' : '--'}
+                            </span>
+                            <span style="font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #e0e7ff; border: 1px solid #c7d2fe; color: #3730a3;">
+                                ${d.humidity != null ? Number(d.humidity).toFixed(0) + '%' : '--'}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-top: 8px; border-top: 1px solid #f1f5f9; font-size: 11px;">
+                        <div><span style="color:#64748b;">Wind:</span> <strong style="color:#4f46e5; font-family:var(--font-mono);">${d.wind_speed != null ? Number(d.wind_speed).toFixed(1) : '0.0'} km/h</strong></div>
+                        <div><span style="color:#64748b;">Gust:</span> <strong style="color:#8b5cf6; font-family:var(--font-mono);">${d.wind_gust != null ? Number(d.wind_gust).toFixed(1) : '0.0'} km/h</strong></div>
+                        <div><span style="color:#64748b;">Dir:</span> <strong style="color:#0284c7; font-family:var(--font-mono);">${getCompassDir(d.wind_direction)}</strong></div>
+                        <div><span style="color:#64748b;">Rain:</span> <strong style="color:#0891b2; font-family:var(--font-mono);">${d.rain_gauge != null ? Number(d.rain_gauge).toFixed(1) : '0.0'} mm</strong></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
     }
     updateMobileStatChips();
 }

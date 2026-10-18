@@ -1330,3 +1330,175 @@ img, svg, video, canvas {
   .overview-bar-scale { display: flex !important; }
   /* Revert bottom nav to smaller height on desktop (hidden anyway) */
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Mobile Native App Enhancements (PWA & Native Touch Interactions)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Safe Area Inset Helpers */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+.pt-safe { padding-top: max(16px, env(safe-area-inset-top, 0px)); }
+.pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
+
+/* ── Skeleton Shimmer Loaders ── */
+@keyframes shimmerWave {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+  background-size: 400% 100%;
+  animation: shimmerWave 1.4s ease infinite;
+}
+
+.skeleton-box {
+  border-radius: 8px;
+  background-color: #f1f5f9;
+}
+
+/* ── Prevent iOS Safari Auto-Zoom on Inputs ── */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ── Native Touch Target Standards (>= 44px) ── */
+.touch-target-44 {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Native Mobile Bottom Sheet / Drawer ── */
+.bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bottom-sheet-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 85vh;
+  background: #ffffff;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -12px 36px rgba(15, 23, 42, 0.15);
+  border-top: 1px solid #e2e8f0;
+  z-index: 1000;
+  transform: translateY(105%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 14px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bottom-sheet.active {
+  transform: translateY(0);
+}
+
+.bottom-sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  margin: 0 auto 14px auto;
+  cursor: grab;
+}
+
+/* ── Native Carousel Snap Points ── */
+.carousel-snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  display: flex;
+  overflow-x: auto;
+}
+
+.carousel-snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  flex-shrink: 0;
+}
+
+/* ── Chart Touch Scrubber Crosshair & Tooltip Pill ── */
+.chart-touch-scrubber {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: #00bfa5;
+  pointer-events: none;
+  z-index: 10;
+  display: none;
+}
+
+.chart-touch-pill {
+  position: absolute;
+  top: 12px;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.94);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  pointer-events: none;
+  z-index: 11;
+  white-space: nowrap;
+  display: none;
+}
+
+/* ── Native Toast Notification ── */
+.mobile-toast {
+  position: fixed;
+  top: calc(72px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translate(-50%, -20px);
+  background: rgba(15, 23, 42, 0.94);
+  color: #ffffff;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.mobile-toast.show {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}

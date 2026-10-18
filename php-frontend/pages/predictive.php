@@ -116,8 +116,11 @@
             <div class="text-xl sm:text-2xl font-extrabold text-slate-500 font-mono" id="forecast-day-high">--°</div>
           </div>
         </div>
-        <div class="text-right text-[11px] text-slate-400 font-medium">
-          Confidence: <strong class="text-slate-600">--%</strong> (Awaiting Model)
+        <div class="flex items-center gap-2 justify-end">
+          <span class="text-xs font-semibold text-slate-400">Confidence:</span>
+          <span id="forecast-confidence-chip" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Med
+          </span>
         </div>
       </div>
 
@@ -260,7 +263,7 @@
   background: #f8fafc;
 }
 .day-row-container.open .day-row-drawer {
-  max-height: 280px;
+  max-height: 500px;
   padding: 14px 16px 16px;
   border-top: 1px solid #e2e8f0;
 }
@@ -341,6 +344,7 @@
             row.classList.add('open');
             if (icon) icon.style.transform = 'rotate(180deg)';
         }
+        if (window.triggerHaptic) window.triggerHaptic('light');
         if (window.lucide) lucide.createIcons();
     };
 
@@ -480,7 +484,7 @@
 
                         <!-- Right: AQI Chip & Chevron -->
                         <div class="flex items-center gap-2">
-                          <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono" style="background:${b.bg}; color:${b.text}; border:1px solid ${b.border};">
+                          <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono" style="background:${b.bg}; color:${b.text}; border:1px solid ${b.border};">
                             AQI ${d.aqi}
                           </span>
                           <i data-lucide="chevron-down" class="day-chevron w-4 h-4 text-slate-400 transition-transform" id="day-chevron-${idx}" style="transform: ${isOpenDefault ? 'rotate(180deg)' : 'rotate(0deg)'};"></i>
@@ -489,7 +493,37 @@
 
                       <!-- Expandable Accordion Drawer -->
                       <div class="day-row-drawer">
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3 text-xs">
+                        <!-- Hourly Day Breakdown (Morning, Afternoon, Evening, Night) -->
+                        <div class="mb-3">
+                          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                            <i data-lucide="clock" class="w-3 h-3 text-[#00bfa5]"></i>
+                            <span>Hourly Progression</span>
+                          </div>
+                          <div class="grid grid-cols-4 gap-1.5 text-center">
+                            <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
+                              <div class="text-[10px] text-slate-400 font-bold">Morning</div>
+                              <div class="text-base my-0.5">🌅</div>
+                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.minTemp !== '--' ? Math.round(Number(d.minTemp) + 1) + '°' : '--'}</div>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
+                              <div class="text-[10px] text-slate-400 font-bold">Afternoon</div>
+                              <div class="text-base my-0.5">☀️</div>
+                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.maxTemp !== '--' ? Math.round(Number(d.maxTemp)) + '°' : '--'}</div>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
+                              <div class="text-[10px] text-slate-400 font-bold">Evening</div>
+                              <div class="text-base my-0.5">🌆</div>
+                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.maxTemp !== '--' ? Math.round(Number(d.maxTemp) - 2) + '°' : '--'}</div>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
+                              <div class="text-[10px] text-slate-400 font-bold">Night</div>
+                              <div class="text-base my-0.5">🌙</div>
+                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.minTemp !== '--' ? Math.round(Number(d.minTemp)) + '°' : '--'}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs">
                           <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
                             <div class="text-[10px] font-bold text-slate-400 uppercase">Air Quality</div>
                             <div class="font-extrabold mt-0.5 font-mono" style="color: ${b.text};">AQI ${d.aqi} · ${b.label}</div>

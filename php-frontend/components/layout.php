@@ -106,9 +106,44 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
         }
     }
 })();
+
+// Global Native Mobile App Helpers: Haptic & Toasts
+window.triggerHaptic = function(type = 'light') {
+    try {
+        if (navigator.vibrate) {
+            if (type === 'light') navigator.vibrate(12);
+            else if (type === 'medium') navigator.vibrate(25);
+            else if (type === 'success') navigator.vibrate([15, 45, 18]);
+        }
+    } catch(e){}
+};
+
+window.showMobileToast = function(msg, iconName = 'check') {
+    var toast = document.getElementById('mobile-toast');
+    var text = document.getElementById('mobile-toast-text');
+    var icon = document.getElementById('mobile-toast-icon');
+    if (!toast || !text) return;
+    text.innerText = msg;
+    if (icon && iconName) {
+        icon.setAttribute('data-lucide', iconName);
+        if (window.lucide) lucide.createIcons();
+    }
+    toast.classList.add('show');
+    window.triggerHaptic('light');
+    clearTimeout(window.__toastTimeout);
+    window.__toastTimeout = setTimeout(function() {
+        toast.classList.remove('show');
+    }, 2800);
+};
 </script>
 
 <div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; width: 100%; display: flex; flex-direction: column;">
+
+  <!-- Native Mobile Toast -->
+  <div id="mobile-toast" class="mobile-toast">
+    <i data-lucide="check" id="mobile-toast-icon" style="width: 15px; height: 15px; color: #00bfa5;"></i>
+    <span id="mobile-toast-text">Updated!</span>
+  </div>
 
   <!-- Native Mobile Pull-to-Refresh Indicator -->
   <div id="pull-refresh-indicator" style="position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; z-index: 9999; pointer-events: none; transform: translateY(-100%); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
@@ -118,8 +153,8 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
     </div>
   </div>
 
-  <!-- Sticky Header -->
-  <header style="min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding: 0 16px;">
+  <!-- Sticky Header with Safe-Area Inset -->
+  <header style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding-left: 16px; padding-right: 16px;">
     
     <!-- Left: Desktop Brand & Mobile Header Selector -->
     <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
@@ -285,48 +320,48 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
     </footer>
   </main>
 
-  <!-- Fixed Native Mobile Bottom Navigation Bar —— Icon stacked above label, native-app style -->
-  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(62px + env(safe-area-inset-bottom, 14px)); padding: 6px 8px env(safe-area-inset-bottom, 14px); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+  <!-- Fixed Native Mobile Bottom Navigation Bar —— Safe area compliant & haptic response -->
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
 
     <!-- Overview -->
-    <a href="?page=overview" data-bottom-nav="overview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="home" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'overview' ? 'color: #00bfa5;' : '' ?>"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
     </a>
 
     <!-- Live Feed -->
-    <a href="?page=live" data-bottom-nav="live" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'live' ? 'color: #00bfa5;' : '' ?>"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
     </a>
 
     <!-- Analytics -->
-    <a href="?page=historical" data-bottom-nav="historical" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'historical' ? 'color: #00bfa5;' : '' ?>"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
     </a>
 
     <!-- Forecast -->
-    <a href="?page=predictive" data-bottom-nav="predictive" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="line-chart" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
     </a>
 
     <!-- Admin / Auth -->
     <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
-      <a href="?page=admin" data-bottom-nav="admin" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <a href="?page=admin" data-bottom-nav="admin" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
         <i data-lucide="shield-check" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'admin' ? 'color: #00bfa5;' : '' ?>"></i>
         <span style="font-size: 10px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Admin</span>
       </a>
     <?php elseif ($is_logged_in): ?>
-      <a href="?logout=true" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
+      <a href="?logout=true" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
         <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0;">
           <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
         </div>
         <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign Out</span>
       </a>
     <?php else: ?>
-      <button onclick="openAuthModal()" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
+      <button onclick="window.triggerHaptic('light'); openAuthModal();" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
         <i data-lucide="user" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0;"></i>
         <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign In</span>
       </button>
@@ -467,9 +502,7 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
                 icon.classList.add('animate-spin');
             }
             if (text) text.innerText = 'Refreshing telemetry...';
-            if (navigator.vibrate) {
-                try { navigator.vibrate(18); } catch(e){}
-            }
+            if (window.triggerHaptic) window.triggerHaptic('medium');
 
             try {
                 await window.refreshCurrentPageData();
@@ -478,6 +511,8 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
             }
 
             if (text) text.innerText = 'Updated!';
+            if (window.triggerHaptic) window.triggerHaptic('success');
+            if (window.showMobileToast) window.showMobileToast('Telemetry synchronized!', 'check-circle');
             if (icon) {
                 icon.classList.remove('animate-spin');
                 icon.setAttribute('data-lucide', 'check');

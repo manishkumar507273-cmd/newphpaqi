@@ -99,28 +99,28 @@
 
 </div>
 
-<!-- Premium Confirmation Modal -->
-<div id="admin-confirm-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 16px; background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
-  <div id="admin-confirm-backdrop" onclick="closeConfirmModal()" style="position: absolute; inset: 0;"></div>
+<!-- Premium Confirmation Modal (Bottom Sheet on Mobile) -->
+<div id="admin-confirm-modal" class="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/70 backdrop-blur-md" style="display: none;">
+  <div id="admin-confirm-backdrop" onclick="closeConfirmModal()" class="absolute inset-0"></div>
   
-  <div style="position: relative; z-index: 10; width: 100%; max-width: 440px; background-color: #ffffff; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(226, 232, 240, 0.5); overflow: hidden; font-family: var(--font-sans); color: #0f172a; animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
-    
-    <div style="padding: 32px 32px 24px; text-align: center;">
-      <div style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 16px rgba(34, 197, 94, 0.15); transform: rotate(-5deg);">
-        <i data-lucide="send" style="width: 28px; height: 28px; color: #16a34a; transform: rotate(5deg); margin-left: -2px;"></i>
+  <div class="relative z-10 w-full sm:max-w-[440px] bg-white rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden font-sans text-slate-900 pb-safe animate-modal-pop">
+    <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-3 block sm:hidden"></div>
+    <div style="padding: 16px 28px 24px sm:padding: 32px 32px 24px; text-align: center;">
+      <div style="width: 58px; height: 58px; border-radius: 20px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 16px rgba(34, 197, 94, 0.15); transform: rotate(-5deg);">
+        <i data-lucide="send" style="width: 26px; height: 26px; color: #16a34a; transform: rotate(5deg); margin-left: -2px;"></i>
       </div>
-      <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 12px; letter-spacing: -0.02em;">Authorize Data Release</h3>
-      <p style="font-size: 15px; color: #64748b; line-height: 1.6; margin: 0 0 20px;">
+      <h3 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 10px; letter-spacing: -0.02em;">Authorize Data Release</h3>
+      <p style="font-size: 14px; color: #64748b; line-height: 1.55; margin: 0 0 20px;">
         By approving this request, the system will securely compile the requested dataset as a CSV and dispatch it to the user's email.
       </p>
 
-      <div id="confirm-requester-info" style="display: none; margin-bottom: 24px;"></div>
+      <div id="confirm-requester-info" style="display: none; margin-bottom: 20px;"></div>
       
-      <div style="display: flex; gap: 12px;">
-        <button type="button" onclick="closeConfirmModal()" style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; background-color: #ffffff; color: #64748b; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;" onmouseenter="this.style.backgroundColor='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseleave="this.style.backgroundColor='#ffffff'; this.style.borderColor='#e2e8f0';">
+      <div style="display: flex; gap: 10px;">
+        <button type="button" onclick="closeConfirmModal()" style="flex: 1; padding: 13px 16px; min-height: 48px; border-radius: 14px; border: 1px solid #e2e8f0; background-color: #ffffff; color: #64748b; font-size: 14.5px; font-weight: 700; cursor: pointer;">
           Cancel
         </button>
-        <button id="confirm-approve-btn" style="flex: 1; padding: 12px 16px; border-radius: 12px; border: none; background: linear-gradient(135deg, #00bfa5 0%, #009984 100%); color: white; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(0, 191, 165, 0.3);" onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(0, 191, 165, 0.4)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0, 191, 165, 0.3)';">
+        <button id="confirm-approve-btn" style="flex: 1; padding: 13px 16px; min-height: 48px; border-radius: 14px; border: none; background: linear-gradient(135deg, #00bfa5 0%, #009984 100%); color: white; font-size: 14.5px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 191, 165, 0.3);">
           Confirm Approval
         </button>
       </div>
@@ -128,26 +128,26 @@
   </div>
 </div>
 
-<!-- Premium Delete Confirmation Modal -->
-<div id="admin-delete-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 16px; background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
-  <div id="admin-delete-backdrop" onclick="closeDeleteModal()" style="position: absolute; inset: 0;"></div>
+<!-- Premium Delete Confirmation Modal (Native Bottom Sheet on Mobile) -->
+<div id="admin-delete-modal" class="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/70 backdrop-blur-md" style="display: none;">
+  <div id="admin-delete-backdrop" onclick="closeDeleteModal()" class="absolute inset-0"></div>
   
-  <div style="position: relative; z-index: 10; width: 100%; max-width: 440px; background-color: #ffffff; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(226, 232, 240, 0.5); overflow: hidden; font-family: var(--font-sans); color: #0f172a; animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
-    
-    <div style="padding: 32px 32px 24px; text-align: center;">
-      <div style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.15); transform: rotate(-5deg);">
-        <i data-lucide="trash-2" style="width: 28px; height: 28px; color: #ef4444; transform: rotate(5deg);"></i>
+  <div class="relative z-10 w-full sm:max-w-[440px] bg-white rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden font-sans text-slate-900 pb-safe animate-modal-pop">
+    <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-3 block sm:hidden"></div>
+    <div style="padding: 16px 28px 24px sm:padding: 32px 32px 24px; text-align: center;">
+      <div style="width: 58px; height: 58px; border-radius: 20px; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.15); transform: rotate(-5deg);">
+        <i data-lucide="trash-2" style="width: 26px; height: 26px; color: #ef4444; transform: rotate(5deg);"></i>
       </div>
-      <h3 id="delete-modal-title" style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 12px; letter-spacing: -0.02em;">Delete Data Request</h3>
-      <p id="delete-modal-desc" style="font-size: 14.5px; color: #64748b; line-height: 1.6; margin: 0 0 28px;">
+      <h3 id="delete-modal-title" style="font-size: 21px; font-weight: 800; color: #0f172a; margin: 0 0 10px; letter-spacing: -0.02em;">Delete Data Request</h3>
+      <p id="delete-modal-desc" style="font-size: 14px; color: #64748b; line-height: 1.55; margin: 0 0 22px;">
         Are you sure you want to permanently delete this request? This record will be removed from both the local database and real-time cloud storage.
       </p>
       
-      <div style="display: flex; gap: 12px;">
-        <button type="button" onclick="closeDeleteModal()" style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; background-color: #ffffff; color: #64748b; font-size: 14.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;" onmouseenter="this.style.backgroundColor='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseleave="this.style.backgroundColor='#ffffff'; this.style.borderColor='#e2e8f0';">
+      <div style="display: flex; gap: 10px;">
+        <button type="button" onclick="closeDeleteModal()" style="flex: 1; padding: 13px 16px; min-height: 48px; border-radius: 14px; border: 1px solid #e2e8f0; background-color: #ffffff; color: #64748b; font-size: 14.5px; font-weight: 700; cursor: pointer;">
           Cancel
         </button>
-        <button id="confirm-delete-btn" type="button" style="flex: 1; padding: 12px 16px; border-radius: 12px; border: none; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; font-size: 14.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);" onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(239, 68, 68, 0.4)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)';">
+        <button id="confirm-delete-btn" type="button" style="flex: 1; padding: 13px 16px; min-height: 48px; border-radius: 14px; border: none; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; font-size: 14.5px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
           Confirm Delete
         </button>
       </div>
@@ -155,11 +155,12 @@
   </div>
 </div>
 
-<!-- Native Quick Proof & Description Viewer Modal (Optimized for Mobile & Desktop) -->
-<div id="admin-proof-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 12px; background-color: rgba(15, 23, 42, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-  <div id="admin-proof-backdrop" onclick="closeProofQuickView()" style="position: absolute; inset: 0;"></div>
+<!-- Native Quick Proof & Description Viewer Modal (Optimized for Mobile Bottom Sheet & Desktop) -->
+<div id="admin-proof-modal" class="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-3 bg-slate-900/75 backdrop-blur-md" style="display: none;">
+  <div id="admin-proof-backdrop" onclick="closeProofQuickView()" class="absolute inset-0"></div>
   
-  <div style="position: relative; z-index: 10; width: 100%; max-width: 620px; max-height: 90vh; background-color: #ffffff; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(226, 232, 240, 0.5); display: flex; flex-direction: column; overflow: hidden; font-family: var(--font-sans); color: #0f172a; animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+  <div class="relative z-10 w-full sm:max-w-[620px] max-h-[92vh] bg-white rounded-t-[28px] sm:rounded-[20px] shadow-2xl flex flex-col overflow-hidden font-sans text-slate-900 pb-safe animate-modal-pop">
+    <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-3 block sm:hidden shrink-0"></div>
     
     <!-- Modal Header -->
     <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #ffffff;">
@@ -648,6 +649,7 @@ function showDeleteModalForItems(items) {
     
     if (modal) {
         modal.style.display = 'flex';
+        if (window.triggerHaptic) window.triggerHaptic('warning');
         lucide.createIcons();
     } else {
         if (confirm(`Are you sure you want to permanently delete ${count} request(s)?`)) {
@@ -818,6 +820,7 @@ function approveRequest(id) {
         }
     }
     document.getElementById('admin-confirm-modal').style.display = 'flex';
+    if (window.triggerHaptic) window.triggerHaptic('light');
     lucide.createIcons();
 }
 
@@ -873,11 +876,13 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
                   });
               }
               
+              if (window.triggerHaptic) window.triggerHaptic('success');
               closeConfirmModal();
               setTimeout(loadRequests, 800);
               const msg = data.message || "Request approved! The dataset (last 24h) has been successfully emailed via SMTP.";
               showToast(msg, msg.includes('failed') ? "error" : "success");
           } else {
+              if (window.triggerHaptic) window.triggerHaptic('warning');
               showToast("Error: " + (data ? data.error || data.message || "Failed to send email" : "Unknown Error"), "error");
           }
       })

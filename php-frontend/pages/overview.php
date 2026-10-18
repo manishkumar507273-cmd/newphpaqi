@@ -107,38 +107,37 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
     <!-- Core Telemetry Cards Grid (5 Cards: AQI, Temp, Humidity, Wind, Rain) -->
     <div class="overview-grid">
       
-      <!-- CARD 1: AIR QUALITY INDEX -->
-      <div class="overview-core-card" id="card-aqi" style="border-color: <?= $init_aqi_border ?>;">
+      <!-- CARD 1: AIR QUALITY INDEX (HERO ON MOBILE) -->
+      <div class="overview-core-card overview-card-hero" id="card-aqi" style="border-color: <?= $init_aqi_border ?>;">
         <div id="aqi-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, <?= $init_aqi_color ?>, #06b6d4);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 7px;">
             <div id="aqi-icon-bg" class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: <?= $init_aqi_bg ?>; display: flex; align-items: center; justify-content: center; color: <?= $init_aqi_color ?>; border: 1px solid <?= $init_aqi_border ?>;">
               <i data-lucide="gauge" style="width: 15px; height: 15px;"></i>
             </div>
-            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Air Quality</h4>
+            <h4 class="overview-card-title" style="margin: 0; font-size: 13.5px; font-weight: 700; color: #0f172a; line-height: 1.15;">Air Quality Index</h4>
           </div>
-          <span id="aqi-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= $init_aqi_bg ?>; color: <?= $init_aqi_text ?>; border: 1px solid <?= $init_aqi_border ?>; display: inline-flex; align-items: center; gap: 4px;">
-            <span id="aqi-badge-dot" style="width: 5px; height: 5px; border-radius: 50%; background-color: <?= $init_aqi_color ?>;"></span>
+          <span id="aqi-badge" class="overview-card-badge" style="padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: <?= $init_aqi_bg ?>; color: <?= $init_aqi_text ?>; border: 1px solid <?= $init_aqi_border ?>; display: inline-flex; align-items: center; gap: 5px;">
+            <span id="aqi-badge-dot" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $init_aqi_color ?>;"></span>
             <span id="aqi-badge-text"><?= $init_aqi_label ?></span>
           </span>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
-          <div>
-            <div style="display: flex; align-items: baseline; gap: 3px;">
-              <span id="aqi-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: <?= $init_aqi_color ?>; font-family: var(--font-mono);"><?= $init_aqi !== null ? $init_aqi : '--' ?></span>
-              <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">/ 500</span>
-            </div>
-            <div style="margin-top: 3px; font-size: 10px; color: #64748b;">
-              Dominant: <strong id="aqi-dom" style="color: #0f172a;"><?= $init_aqi_dom ?></strong>
-            </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin: 6px 0; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <span id="aqi-val" class="overview-card-val" style="font-size: 34px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: <?= $init_aqi_color ?>; font-family: var(--font-mono);"><?= $init_aqi !== null ? $init_aqi : '--' ?></span>
+            <span style="font-size: 12px; font-weight: 700; color: #94a3b8;">/ 500</span>
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+            <span>Dominant:</span>
+            <strong id="aqi-dom" style="color: #0f172a; font-family: var(--font-mono); font-weight: 800;"><?= $init_aqi_dom ?></strong>
           </div>
         </div>
         <div style="margin-top: auto; padding-top: 8px;">
-          <div style="height: 5px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
-            <div id="aqi-bar" style="height: 100%; width: <?= $init_aqi_bar_width ?>; background: linear-gradient(90deg, #10b981 0%, <?= $init_aqi_color ?> 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
+          <div style="height: 6px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
+            <div id="aqi-bar" style="height: 100%; width: <?= $init_aqi_bar_width ?>; background: linear-gradient(90deg, #10b981 0%, #eab308 40%, <?= $init_aqi_color ?> 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
           </div>
-          <div class="overview-bar-scale">
-            <span>0</span><span style="color: #cbd5e1;">•</span><span>100</span><span style="color: #cbd5e1;">•</span><span>500</span>
+          <div class="overview-bar-scale" style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #64748b; font-family: var(--font-mono); margin-top: 4px;">
+            <span>0 Good</span><span style="color: #cbd5e1;">•</span><span>100 Moderate</span><span style="color: #cbd5e1;">•</span><span>500 Hazardous</span>
           </div>
         </div>
       </div>
@@ -433,6 +432,17 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
 
       </div>
 
+      <!-- Carousel Dot Pagination Indicators -->
+      <div id="overview-chart-dots" style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px;">
+        <button type="button" onclick="scrollChartTo(0)" class="chart-dot-item" id="chart-dot-0" title="AQI Chart" style="width: 22px; height: 6px; border-radius: 999px; background: #00bfa5; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);"></button>
+        <button type="button" onclick="scrollChartTo(1)" class="chart-dot-item" id="chart-dot-1" title="Temperature Chart" style="width: 6px; height: 6px; border-radius: 999px; background: #cbd5e1; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);"></button>
+        <button type="button" onclick="scrollChartTo(2)" class="chart-dot-item" id="chart-dot-2" title="Humidity Chart" style="width: 6px; height: 6px; border-radius: 999px; background: #cbd5e1; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);"></button>
+        <button type="button" onclick="scrollChartTo(3)" class="chart-dot-item" id="chart-dot-3" title="Wind Speed Chart" style="width: 6px; height: 6px; border-radius: 999px; background: #cbd5e1; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);"></button>
+        <button type="button" onclick="scrollChartTo(4)" class="chart-dot-item" id="chart-dot-4" title="Rainfall Chart" style="width: 6px; height: 6px; border-radius: 999px; background: #cbd5e1; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);"></button>
+      </div>
+
+    </div>
+
   </div>
 </div>
   <style>
@@ -461,8 +471,13 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 10px !important;
       }
-      .overview-grid > *:nth-child(5) {
+      /* Card 1: Air Quality is the full-width dominant hero card on mobile */
+      .overview-grid > *:nth-child(1) {
         grid-column: span 2 !important;
+      }
+      /* Secondary weather cards sit in clean 2x2 grid */
+      .overview-grid > *:nth-child(5) {
+        grid-column: span 1 !important;
       }
       .overview-card-title {
         font-size: 12.5px !important;
@@ -471,10 +486,18 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       }
       .overview-core-card {
         padding: 12px 10px 10px !important;
-        min-height: 130px !important;
+        min-height: 120px !important;
+      }
+      .overview-card-hero {
+        padding: 14px 14px 12px !important;
+        min-height: auto !important;
       }
       .overview-card-val {
         font-size: 28px !important;
+      }
+      /* Clean uncluttered gauges on mobile secondary cards */
+      .overview-core-card:not(.overview-card-hero) .overview-bar-scale {
+        display: none !important;
       }
     }
     .overview-chart-carousel::-webkit-scrollbar {
@@ -723,6 +746,19 @@ function updateChartCarouselIndicators(activeIdx) {
     currentChartSlideIndex = activeIdx;
     const counter = document.getElementById('chart-slide-counter');
     if (counter) counter.innerText = `${activeIdx + 1} / ${totalChartSlides}`;
+    for (let i = 0; i < totalChartSlides; i++) {
+        const dot = document.getElementById(`chart-dot-${i}`);
+        if (dot) {
+            if (i === activeIdx) {
+                dot.style.width = '22px';
+                dot.style.backgroundColor = '#00bfa5';
+            } else {
+                dot.style.width = '6px';
+                dot.style.backgroundColor = '#cbd5e1';
+            }
+        }
+    }
+    if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
 function setupCarouselScrollListener() {
@@ -1232,10 +1268,12 @@ window.__cleanupCurrentPage = function() {
 
 if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", () => {
+        setupCarouselScrollListener();
         refreshData(false);
         startAutoRefreshOverview();
     });
 } else {
+    setupCarouselScrollListener();
     refreshData(false);
     startAutoRefreshOverview();
 }

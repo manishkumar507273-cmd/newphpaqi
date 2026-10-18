@@ -1,0 +1,46 @@
+{
+  "name": "Smart WeatherNet",
+  "short_name": "WeatherNet",
+  "description": "Real-time atmospheric and microclimate telemetry monitoring network for SMVITM Campus",
+  "start_url": "./?utm_source=pwa",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#00bfa5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/logo-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Overview",
+      "url": "./?page=overview",
+      "description": "View live atmospheric overview"
+    },
+    {
+      "name": "Live Telemetry",
+      "url": "./?page=live",
+      "description": "Live sensor telemetry feed"
+    },
+    {
+      "name": "Forecast",
+      "url": "./?page=predictive",
+      "description": "Predictive weather & AQI forecast"
+    }
+  ]
+}

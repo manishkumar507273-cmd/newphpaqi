@@ -187,22 +187,6 @@
       </div>
     </div>
 
-    <!-- Mobile Headline Stats — 3 chips above chart for quick answer without reading plot -->
-    <div class="flex sm:hidden gap-2 overflow-x-auto mb-3" style="scrollbar-width:none;-webkit-overflow-scrolling:touch;">
-      <div id="mob-stat-aqi" style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 14px;border-radius:14px;background:#f0fdf4;border:1px solid #a7f3d0;flex-shrink:0;">
-        <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Peak AQI</span>
-        <span id="mob-peak-aqi" style="font-size:20px;font-weight:800;color:#15803d;font-family:var(--font-mono);line-height:1.1;">--</span>
-      </div>
-      <div id="mob-stat-temp" style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 14px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;flex-shrink:0;">
-        <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Avg Temp</span>
-        <span id="mob-avg-temp" style="font-size:20px;font-weight:800;color:#ea580c;font-family:var(--font-mono);line-height:1.1;">--</span>
-      </div>
-      <div id="mob-stat-rain" style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 14px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;flex-shrink:0;">
-        <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Total Rain</span>
-        <span id="mob-total-rain" style="font-size:20px;font-weight:800;color:#2563eb;font-family:var(--font-mono);line-height:1.1;">--</span>
-      </div>
-    </div>
-
     <!-- Chart Canvas Container -->
     <div style="width: 100%; height: 300px; position: relative;">
       <canvas id="historical-chart"></canvas>
@@ -436,55 +420,8 @@ var chartInstance = null;
 var filteredDayData = [];
 
 
-/* ── Mobile Headline Stat Chips Update (Peak AQI, Avg Temp, Total Rain) ── */
 function updateMobileStatChips() {
-    const peakEl = document.getElementById('mob-peak-aqi');
-    const tempEl = document.getElementById('mob-avg-temp');
-    const rainEl = document.getElementById('mob-total-rain');
-    const aqiCard = document.getElementById('mob-stat-aqi');
-
-    // 1. Peak AQI
-    let peakAqi = -1;
-    const aqiSource = (currentSubTab === 'aqi' && filteredDayData.length > 0) ? filteredDayData : historicalDataAqi;
-    aqiSource.forEach(d => {
-        const v = Number(d.cpcb_aqi);
-        if (!isNaN(v) && v > peakAqi) peakAqi = v;
-    });
-
-    if (peakEl) {
-        if (peakAqi >= 0) {
-            peakEl.innerText = Math.round(peakAqi);
-            const cat = getAqiCategory(peakAqi);
-            peakEl.style.color = cat.color;
-            if (aqiCard) {
-                aqiCard.style.background = cat.bg;
-                aqiCard.style.borderColor = cat.border;
-            }
-        } else {
-            peakEl.innerText = '--';
-        }
-    }
-
-    // 2. Avg Temp
-    let sumTemp = 0, countTemp = 0;
-    const weatherSource = (currentSubTab === 'weather' && filteredDayData.length > 0) ? filteredDayData : historicalDataWeather;
-    weatherSource.forEach(d => {
-        const t = d.temperature != null ? Number(d.temperature) : null;
-        if (t !== null && !isNaN(t)) { sumTemp += t; countTemp++; }
-    });
-    if (tempEl) {
-        tempEl.innerText = countTemp > 0 ? (sumTemp / countTemp).toFixed(1) + '°C' : '--';
-    }
-
-    // 3. Total Rain
-    let sumRain = 0;
-    weatherSource.forEach(d => {
-        const r = d.rain_gauge != null ? Number(d.rain_gauge) : null;
-        if (r !== null && !isNaN(r) && r > 0) { sumRain += r; }
-    });
-    if (rainEl) {
-        rainEl.innerText = sumRain.toFixed(1) + ' mm';
-    }
+    // Stat chips removed per user request
 }
 
 

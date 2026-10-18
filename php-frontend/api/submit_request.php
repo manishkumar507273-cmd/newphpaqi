@@ -183,7 +183,7 @@ if (!$bg_spawned) {
         if (empty($smtp_user)) $smtp_user = getenv('SMTP_USER') ?: '';
         if (empty($smtp_pass)) $smtp_pass = getenv('SMTP_PASSWORD') ?: '';
         if (empty($smtp_host)) $smtp_host = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
-        $admin_email = getenv('ADMIN_EMAIL') ?: ($smtp_user ?: 'mb507273@gmail.com');
+        $admin_email = getenv('ADMIN_EMAIL') ?: ($smtp_user ?: 'weathernet@sode-edu.in');
 
         if (!empty($smtp_user) && !empty($smtp_pass) && !empty($admin_email)) {
             require_once __DIR__ . '/../libs/PHPMailer/Exception.php';
@@ -193,11 +193,11 @@ if (!$bg_spawned) {
             $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
             $mail->isSMTP();
             $mail->Host       = $smtp_host;
-            $mail->Port       = 465;
+            $mail->Port       = $smtp_port ?: 587;
             $mail->Username   = $smtp_user;
             $mail->Password   = $smtp_pass;
             $mail->SMTPAuth   = true;
-            $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            $mail->SMTPSecure = ($mail->Port == 465) ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Timeout    = 5;
             $mail->SMTPOptions = [
                 'ssl' => [

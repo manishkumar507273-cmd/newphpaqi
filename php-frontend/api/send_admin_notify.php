@@ -71,7 +71,7 @@ foreach ($env_paths as $env_path) {
 if (empty($smtp_user)) $smtp_user = getenv('SMTP_USER') ?: '';
 if (empty($smtp_pass)) $smtp_pass = getenv('SMTP_PASSWORD') ?: '';
 if (empty($smtp_host)) $smtp_host = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
-$admin_email = getenv('ADMIN_EMAIL') ?: ($smtp_user ?: 'mb507273@gmail.com');
+$admin_email = getenv('ADMIN_EMAIL') ?: ($smtp_user ?: 'weathernet@sode-edu.in');
 
 if (empty($smtp_user) || empty($smtp_pass)) {
     exit("SMTP credentials not configured.\n");
@@ -88,11 +88,11 @@ try {
     $mail = new PHPMailer(true);
     $mail->isSMTP();
     $mail->Host       = $smtp_host;
-    $mail->Port       = 465;
+    $mail->Port       = $smtp_port ?: 587;
     $mail->Username   = $smtp_user;
     $mail->Password   = $smtp_pass;
     $mail->SMTPAuth   = true;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    $mail->SMTPSecure = ($mail->Port == 465) ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Timeout    = 6;
     $mail->SMTPOptions = [
         'ssl' => [

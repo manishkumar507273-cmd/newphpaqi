@@ -205,11 +205,11 @@ try {
     $mail = new PHPMailer(true);
     $mail->isSMTP();
     $mail->Host       = $smtp_host ?: 'smtp.gmail.com';
-    $mail->Port       = 465;
+    $mail->Port       = $smtp_port ?: 587;
     $mail->Username   = $smtp_user;
     $mail->Password   = $smtp_pass;
     $mail->SMTPAuth   = true;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    $mail->SMTPSecure = ($mail->Port == 465) ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Timeout    = 6;
     $mail->SMTPOptions = [
         'ssl' => [
@@ -219,7 +219,7 @@ try {
         ]
     ];
 
-    $mail->setFrom($smtp_user ?: 'mb507273@gmail.com', $sender_name);
+    $mail->setFrom($smtp_user ?: 'weathernet@sode-edu.in', $sender_name);
     $mail->addAddress($target_email, $req_name);
 
     $attachment_name = "{$telemetry_type}_telemetry_{$target_date}_previous_day.csv";

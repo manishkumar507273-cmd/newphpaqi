@@ -16,6 +16,11 @@ $env_paths = [
 $supabaseUrl = '';
 $supabaseKey = '';
 
+$TABLE_AQI_LIVE        = 'AQI_LIVE_NODE1';
+$TABLE_AQI_HISTORICAL  = 'AQI_NODE1';
+$TABLE_WEATHER_LIVE    = 'WEATHER_LIVE_NODE1';
+$TABLE_WEATHER_HIST    = 'WEATHER_NODE1';
+
 foreach ($env_paths as $env_path) {
     if (file_exists($env_path)) {
         $lines = file($env_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -27,6 +32,10 @@ foreach ($env_paths as $env_path) {
                 $value = trim($value);
                 if (($name === 'VITE_SUPABASE_URL'      || $name === 'SUPABASE_URL')      && empty($supabaseUrl)) $supabaseUrl = $value;
                 if (($name === 'VITE_SUPABASE_ANON_KEY' || $name === 'SUPABASE_KEY')      && empty($supabaseKey)) $supabaseKey = $value;
+                if ($name === 'TABLE_AQI_LIVE') $TABLE_AQI_LIVE = $value;
+                if ($name === 'TABLE_AQI_HISTORICAL' || $name === 'SOURCE_AQI_TABLE') $TABLE_AQI_HISTORICAL = $value;
+                if ($name === 'TABLE_WEATHER_LIVE') $TABLE_WEATHER_LIVE = $value;
+                if ($name === 'TABLE_WEATHER_HISTORICAL') $TABLE_WEATHER_HIST = $value;
             }
         }
         if ($supabaseUrl && $supabaseKey) break;
@@ -36,6 +45,10 @@ foreach ($env_paths as $env_path) {
 // Fallback to system environment variables (Vercel / hosting)
 if (empty($supabaseUrl)) $supabaseUrl = getenv('VITE_SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: '';
 if (empty($supabaseKey)) $supabaseKey = getenv('VITE_SUPABASE_ANON_KEY') ?: getenv('SUPABASE_KEY') ?: '';
+$TABLE_AQI_LIVE        = getenv('TABLE_AQI_LIVE') ?: $TABLE_AQI_LIVE;
+$TABLE_AQI_HISTORICAL  = getenv('TABLE_AQI_HISTORICAL') ?: (getenv('SOURCE_AQI_TABLE') ?: $TABLE_AQI_HISTORICAL);
+$TABLE_WEATHER_LIVE    = getenv('TABLE_WEATHER_LIVE') ?: $TABLE_WEATHER_LIVE;
+$TABLE_WEATHER_HIST    = getenv('TABLE_WEATHER_HISTORICAL') ?: $TABLE_WEATHER_HIST;
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $limit  = isset($_GET['limit'])  ? intval($_GET['limit'])  : 50;
@@ -44,12 +57,6 @@ if (!$supabaseUrl || !$supabaseKey) {
     echo json_encode(['error' => 'Supabase credentials not configured.']);
     exit;
 }
-
-// ── Table names ───────────────────────────────────────────────────────────────
-$TABLE_AQI_LIVE        = 'AQI_LIVE_NODE1';
-$TABLE_AQI_HISTORICAL  = 'AQI_NODE1';
-$TABLE_WEATHER_LIVE    = 'WEATHER_LIVE_NODE1';
-$TABLE_WEATHER_HIST    = 'WEATHER_NODE1';
 
 // ── Server-side file cache ────────────────────────────────────────────────────
 // Stores Supabase responses on disk to avoid redundant network round-trips.

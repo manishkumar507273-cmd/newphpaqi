@@ -8,7 +8,7 @@ async function testApprove() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             id: 'req_6ad386042fccc',
-            email: 'mb507273@gmail.com',
+            email: 'weathernet@sode-edu.in',
             name: 'Manish B'
         })
     });
@@ -27,7 +27,7 @@ async function testSubmit() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             name: 'Speed Benchmark User',
-            email: 'mb507273@gmail.com',
+            email: 'weathernet@sode-edu.in',
             org: 'Benchmarking Unit',
             industry: 'Research',
             id_number: 'TEST-999',
@@ -58,7 +58,7 @@ async function run() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 id: newId,
-                email: 'mb507273@gmail.com',
+                email: 'weathernet@sode-edu.in',
                 name: 'Speed Benchmark User'
             })
         });

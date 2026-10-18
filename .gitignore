@@ -27,8 +27,11 @@ dist/
 
 # Environment variables
 .env
+.env*
 .env.local
 .env.*.local
+env*
+env (*)
 backend/.env
 backend/.env.local
 php-backend/.env

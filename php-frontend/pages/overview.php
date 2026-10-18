@@ -427,17 +427,6 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
 
       </div>
 
-    <!-- Overview In-Card Footer Note -->
-    <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid rgba(226, 232, 240, 0.7); flex-wrap: wrap; gap: 10px; font-size: 12px; color: #64748b; margin-top: 4px;">
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <span class="live-dot-pulse"></span>
-        <span style="font-weight: 600;">Campus Telemetry Network &bull; Live Synchronization Active</span>
-      </div>
-      <button type="button" onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 12px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 0;">
-        Contact Us
-      </button>
-    </div>
-
   </div>
 </div>
   <style>

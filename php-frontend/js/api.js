@@ -59,7 +59,7 @@ function parseToIstIso(tsRaw) {
 
 function formatRawReading(raw) {
   if (!raw) return null;
-  if (raw.cpcb_aqi != null) return { ...raw };
+  if (raw.is_calibrated && raw.cpcb_aqi != null) return { ...raw };
 
   const tempVal = raw.temperature != null ? Number(raw.temperature) : 27.0;
   const humVal = raw.humidity != null ? Number(raw.humidity) : 60.0;

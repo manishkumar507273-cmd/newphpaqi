@@ -33,7 +33,6 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <span id="weather-hero-label" class="px-3 py-1.5 rounded-full bg-sky-50 text-sky-600 text-[11px] sm:text-[13px] font-bold">--</span>
         <span id="weather-hero-aqi-label" class="px-3 py-1.5 rounded-full bg-green-50 text-green-700 border border-green-200 text-[11px] sm:text-[13px] font-bold">AQI -- · --</span>
       </div>
     </div>
@@ -89,7 +88,7 @@
       </div>
       <div class="flex items-end justify-between w-full mt-3 gap-1.5 flex-wrap">
         <div id="card-hum" class="font-mono text-[20px] sm:text-[26px] font-extrabold text-sky-600 leading-none tracking-tight">--</div>
-        <span id="weather-hum-badge" style="padding: 2.5px 7px; border-radius: 6px; font-size: 10px; sm:font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; border: 1px solid #cbd5e1; background-color: #f1f5f9; color: #475569; white-space: nowrap; margin-bottom: 1px; flex-shrink: 0;">
+        <span id="weather-hum-badge" style="padding: 2.5px 7px; border-radius: 6px; font-size: 10px; sm:font-size: 11px; font-weight: 700; display: none; align-items: center; gap: 3px; border: 1px solid #cbd5e1; background-color: #f1f5f9; color: #475569; white-space: nowrap; margin-bottom: 1px; flex-shrink: 0;">
           ☁️ Cloudy
         </span>
       </div>

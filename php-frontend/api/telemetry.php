@@ -175,73 +175,75 @@ function parseToIstIso($tsRaw): string {
 
 function adjustTemperature($temp, $tsRaw) {
     if ($temp === null) return null;
-    $temp  = (float)$temp;
-    $tsStr = parseToIstIso($tsRaw);
-    $hour  = null;
-    try { if ($tsStr) { $dt = new DateTime($tsStr); $hour = (int)$dt->format('H'); } }
-    catch (Exception $e) { return $temp; }
-    $adj = 0.0;
-    if ($temp > 29.9) {
-        if ($hour === 8)                       $adj = -0.5;
-        elseif ($hour === 9)                   $adj = -1.0;
-        elseif ($hour === 10)                  $adj = -1.5;
-        elseif ($hour >= 11 && $hour <= 17)    $adj = -2.0;
-        elseif ($hour === 18)                  $adj = -1.5;
-        elseif ($hour === 19)                  $adj = -1.0;
-        elseif ($hour === 20)                  $adj = -0.5;
-    }
-    return round($temp + $adj, 2);
+    return round((float)$temp, 2);
 }
 
 function formatWeatherReading($row) {
     if (!$row) return null;
     $tsRaw = $row['timestamp_hour'] ?? $row['created_at'] ?? $row['timestamp'] ?? null;
     $row['timestamp'] = parseToIstIso($tsRaw);
-    if (isset($row['temperature'])) $row['temperature'] = adjustTemperature($row['temperature'], $tsRaw);
+    if (isset($row['temperature'])) $row['temperature'] = round((float)$row['temperature'], 2);
+    if (isset($row['humidity']))    $row['humidity']    = round((float)$row['humidity'], 2);
+    if (isset($row['wind_speed']))  $row['wind_speed']  = round((float)$row['wind_speed'], 2);
+    if (isset($row['wind_gust']))   $row['wind_gust']   = round((float)$row['wind_gust'], 2);
+    if (isset($row['rain_gauge']))  $row['rain_gauge']  = round((float)$row['rain_gauge'], 2);
     return $row;
 }
 
 function formatRawReading($raw) {
     if (!$raw) return null;
     $tsRaw   = $raw['timestamp_hour'] ?? $raw['created_at'] ?? $raw['timestamp'] ?? null;
-    $origTemp = isset($raw['temperature']) ? (float)$raw['temperature'] : 27.0;
-    if (isset($raw['temperature'])) $raw['temperature'] = adjustTemperature($raw['temperature'], $tsRaw);
-
-    if (isset($raw['is_calibrated']) && $raw['is_calibrated'] && isset($raw['cpcb_aqi'])) return $raw;
-
-    $tempVal = $origTemp;
-    $humVal  = isset($raw['humidity']) ? (float)$raw['humidity'] : 60.0;
 
     $rawPm25 = (isset($raw['pm25']) && $raw['pm25'] !== null && $raw['pm25'] !== '') ? (float)$raw['pm25'] : ((isset($raw['pm2.5']) && $raw['pm2.5'] !== null && $raw['pm2.5'] !== '') ? (float)$raw['pm2.5'] : null);
     $rawPm10 = (isset($raw['pm10']) && $raw['pm10'] !== null && $raw['pm10'] !== '') ? (float)$raw['pm10'] : null;
-
-    // If Supabase states 0, show 0 everywhere. Do not treat 0 as null.
     $rawCoRaw = (isset($raw['co']) && $raw['co'] !== null && $raw['co'] !== '') ? (float)$raw['co'] : null;
     $rawCo    = $rawCoRaw !== null ? $rawCoRaw : 0.0;
-
     $rawO3   = (isset($raw['o3']) && $raw['o3'] !== null && $raw['o3'] !== '') ? (float)$raw['o3'] : null;
     $rawNo2  = (isset($raw['no2']) && $raw['no2'] !== null && $raw['no2'] !== '') ? (float)$raw['no2'] : null;
 
-    $calPm25 = $rawPm25 !== null ? ($rawPm25 == 0.0 ? 0.0 : max(0.0, round(0.12532894*$rawPm25 - 0.7801631*$tempVal - 0.15188749*$humVal + 41.495258, 3))) : 0.0;
-    $calPm10 = $rawPm10 !== null ? ($rawPm10 == 0.0 ? 0.0 : max(0.0, round(0.10855827*$rawPm10 - 0.6390711*$tempVal - 0.11117823*$humVal + 34.034309, 3))) : 0.0;
-    $calCo   = $rawCo   !== null ? ($rawCo   == 0.0 ? 0.0 : max(0.0, round(0.24370718*$rawCo   + 0.02763672*$tempVal + 0.00444147*$humVal - 0.96570843, 3))) : 0.0;
-    $calNo2  = $rawNo2  !== null ? ($rawNo2  == 0.0 ? 0.0 : max(0.0, round(0.00920961*$rawNo2  + 0.06749354*$tempVal + 0.00777269*$humVal + 2.903467, 3)))  : 0.0;
-    $calO3   = $rawO3   !== null ? ($rawO3   == 0.0 ? 0.0 : max(0.0, round(0.05187092*$rawO3   - 1.4830095*$tempVal  - 0.23912878*$humVal + 91.72351, 3))) : 0.0;
+    // When cpcb_aqi is already provided directly in Supabase table (AQI_LIVE_NODE1 or AQI_NODE1)
+    if (isset($raw['cpcb_aqi']) && $raw['cpcb_aqi'] !== null && $raw['cpcb_aqi'] !== '') {
+        $cpcb_aqi = (int)round((float)$raw['cpcb_aqi']);
+        $calPm25  = $rawPm25 !== null ? round($rawPm25, 2) : 0.0;
+        $calPm10  = $rawPm10 !== null ? round($rawPm10, 2) : 0.0;
+        $calCo    = round($rawCo, 3);
+        $calO3    = $rawO3 !== null ? round($rawO3, 2) : 0.0;
+        $calNo2   = $rawNo2 !== null ? round($rawNo2, 2) : 0.0;
 
-    $subIndices = [
-        'pm25' => calcSubindex('pm25', $calPm25),
-        'pm10' => calcSubindex('pm10', $calPm10),
-        'co'   => calcSubindex('co',   $calCo),
-        'no2'  => calcSubindex('no2',  $calNo2),
-        'o3'   => calcSubindex('o3',   $calO3),
-    ];
+        $dom = $raw['dominant_pollutant'] ?? 'PM2.5';
+        $domUpper = strtoupper(trim((string)$dom));
+        if ($domUpper === 'PM25' || $domUpper === 'PM2.5') $dom = 'PM2.5';
+        elseif ($domUpper === 'PM10') $dom = 'PM10';
+        elseif ($domUpper === 'CO') $dom = 'CO';
+        elseif ($domUpper === 'NO2') $dom = 'NO₂';
+        elseif ($domUpper === 'O3') $dom = 'O₃';
+    } else {
+        // Fallback formula only if cpcb_aqi is missing from table
+        $origTemp = isset($raw['temperature']) ? (float)$raw['temperature'] : 27.0;
+        $tempVal  = $origTemp;
+        $humVal   = isset($raw['humidity']) ? (float)$raw['humidity'] : 60.0;
 
-    $domKey = array_keys($subIndices)[0];
-    $maxVal = $subIndices[$domKey];
-    foreach ($subIndices as $k => $v) { if ($v >= $maxVal) { $maxVal = $v; $domKey = $k; } }
+        $calPm25 = $rawPm25 !== null ? ($rawPm25 == 0.0 ? 0.0 : max(0.0, round(0.12532894*$rawPm25 - 0.7801631*$tempVal - 0.15188749*$humVal + 41.495258, 3))) : 0.0;
+        $calPm10 = $rawPm10 !== null ? ($rawPm10 == 0.0 ? 0.0 : max(0.0, round(0.10855827*$rawPm10 - 0.6390711*$tempVal - 0.11117823*$humVal + 34.034309, 3))) : 0.0;
+        $calCo   = $rawCo   !== null ? ($rawCo   == 0.0 ? 0.0 : max(0.0, round(0.24370718*$rawCo   + 0.02763672*$tempVal + 0.00444147*$humVal - 0.96570843, 3))) : 0.0;
+        $calNo2  = $rawNo2  !== null ? ($rawNo2  == 0.0 ? 0.0 : max(0.0, round(0.00920961*$rawNo2  + 0.06749354*$tempVal + 0.00777269*$humVal + 2.903467, 3)))  : 0.0;
+        $calO3   = $rawO3   !== null ? ($rawO3   == 0.0 ? 0.0 : max(0.0, round(0.05187092*$rawO3   - 1.4830095*$tempVal  - 0.23912878*$humVal + 91.72351, 3))) : 0.0;
 
-    $domNames = ['pm25'=>'PM2.5','pm10'=>'PM10','co'=>'CO','no2'=>'NO₂','o3'=>'O₃'];
-    $cpcb_aqi = round($subIndices[$domKey] ?? 0);
+        $subIndices = [
+            'pm25' => calcSubindex('pm25', $calPm25),
+            'pm10' => calcSubindex('pm10', $calPm10),
+            'co'   => calcSubindex('co',   $calCo),
+            'no2'  => calcSubindex('no2',  $calNo2),
+            'o3'   => calcSubindex('o3',   $calO3),
+        ];
+
+        $domKey = array_keys($subIndices)[0];
+        $maxVal = $subIndices[$domKey];
+        foreach ($subIndices as $k => $v) { if ($v >= $maxVal) { $maxVal = $v; $domKey = $k; } }
+        $domNames = ['pm25'=>'PM2.5','pm10'=>'PM10','co'=>'CO','no2'=>'NO₂','o3'=>'O₃'];
+        $cpcb_aqi = round($subIndices[$domKey] ?? 0);
+        $dom = $domNames[$domKey] ?? 'N/A';
+    }
 
     $label = 'Good'; $color = '#65ff50';
     if ($cpcb_aqi > 50  && $cpcb_aqi <= 100) { $label = 'Satisfactory'; $color = '#a3e635'; }
@@ -250,25 +252,23 @@ function formatRawReading($raw) {
     elseif ($cpcb_aqi > 300 && $cpcb_aqi <= 400) { $label = 'Very Poor';    $color = '#f87171'; }
     elseif ($cpcb_aqi > 400)                      { $label = 'Severe';       $color = '#c084fc'; }
 
-    $ts = $raw['timestamp_hour'] ?? $raw['created_at'] ?? $raw['timestamp'] ?? null;
-
     return [
         'id'                => $raw['id'] ?? null,
-        'timestamp'         => parseToIstIso($ts),
-        'temperature'       => $raw['temperature'] ?? null,
-        'humidity'          => $raw['humidity']    ?? null,
-        'pm25'              => $calPm25 ?? $rawPm25,
-        'pm10'              => $calPm10 ?? $rawPm10,
-        'co'                => $calCo   ?? $rawCo,
-        'o3'                => $calO3   ?? $rawO3,
-        'no2'               => $calNo2  ?? $rawNo2,
+        'timestamp'         => parseToIstIso($tsRaw),
+        'temperature'       => isset($raw['temperature']) ? round((float)$raw['temperature'], 2) : null,
+        'humidity'          => isset($raw['humidity']) ? round((float)$raw['humidity'], 2) : null,
+        'pm25'              => $calPm25,
+        'pm10'              => $calPm10,
+        'co'                => $calCo,
+        'o3'                => $calO3,
+        'no2'               => $calNo2,
         'cpcb_aqi'          => $cpcb_aqi,
-        'dominant_pollutant'=> $domNames[$domKey] ?? 'N/A',
+        'dominant_pollutant'=> $dom,
         'aqi_info'          => ['value'=>$cpcb_aqi,'label'=>$label,'color'=>$color,'standard'=>'CPCB (India)'],
-        'wind_speed'        => $raw['wind_speed']    ?? null,
-        'wind_gust'         => $raw['wind_gust']     ?? $raw['gust'] ?? null,
+        'wind_speed'        => isset($raw['wind_speed']) ? round((float)$raw['wind_speed'], 2) : null,
+        'wind_gust'         => isset($raw['wind_gust']) ? round((float)$raw['wind_gust'], 2) : (isset($raw['gust']) ? round((float)$raw['gust'], 2) : null),
         'wind_direction'    => $raw['wind_direction'] ?? null,
-        'rain_gauge'        => $raw['rain_gauge']    ?? $raw['rain'] ?? null,
+        'rain_gauge'        => isset($raw['rain_gauge']) ? round((float)$raw['rain_gauge'], 2) : (isset($raw['rain']) ? round((float)$raw['rain'], 2) : null),
     ];
 }
 

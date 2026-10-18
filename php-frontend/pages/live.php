@@ -736,10 +736,15 @@ async function refreshDashboard() {
 
             const wHumBadge = document.getElementById('weather-hum-badge');
             if (wHumBadge) {
-                wHumBadge.innerHTML = isCloudy ? '☁️ Cloudy' : '☀️ Sunny';
-                wHumBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
-                wHumBadge.style.color = isCloudy ? '#475569' : '#854d0e';
-                wHumBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
+                if (humVal != null) {
+                    wHumBadge.style.display = 'inline-flex';
+                    wHumBadge.innerHTML = isCloudy ? '☁️ Cloudy' : '☀️ Sunny';
+                    wHumBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
+                    wHumBadge.style.color = isCloudy ? '#475569' : '#854d0e';
+                    wHumBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
+                } else {
+                    wHumBadge.style.display = 'none';
+                }
             }
             
             const getCompassDir = (val) => {
@@ -752,19 +757,13 @@ async function refreshDashboard() {
             const dir = getCompassDir(w.wind_direction);
             document.getElementById('card-dir').innerText = dir;
 
-            let tLabel = 'Pleasant';
-            if (w.temperature < 20) tLabel = 'Cool';
-            if (w.temperature > 30) tLabel = 'Warm';
-            if (w.temperature > 35) tLabel = 'Hot';
-
-            const conditionText = isRaining ? 'Rainy' : (isCloudy ? 'Cloudy' : 'Sunny');
             const weatherIcon = isRaining ? '🌧️' : (isCloudy ? '☁️' : '☀️');
 
             const tempIconEl = document.getElementById('weather-temp-icon');
             if (tempIconEl) tempIconEl.innerText = weatherIcon;
 
             const heroLabelEl = document.getElementById('weather-hero-label');
-            if (heroLabelEl) heroLabelEl.innerText = `${conditionText} · ${tLabel}`;
+            if (heroLabelEl) heroLabelEl.remove();
             
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });

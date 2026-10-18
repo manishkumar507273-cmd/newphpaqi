@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/brand-assets.php';
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
 $is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : false;
 $is_logged_in = isset($_SESSION['user_id']);
@@ -127,7 +128,7 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
       <div class="hidden md:flex items-center gap-2.5">
         <a href="?page=overview" style="display: flex; align-items: center; gap: 11px; cursor: pointer; text-decoration: none;">
           <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 3px;">
-            <img src="assets/logo-mark.png" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
+            <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
           <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden; padding-top: 2px;">
             <div style="font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; line-height: 1.1;">
@@ -147,7 +148,7 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
         <!-- Overview Mobile Brand -->
         <a href="?page=overview" id="mobile-brand-overview" style="display: <?= $current_page === 'overview' ? 'flex' : 'none' ?>; align-items: center; gap: 10px; text-decoration: none; min-width: 0;">
           <div style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
-            <img src="assets/logo-mark.png" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
+            <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
           <div style="display: flex; flex-direction: column; overflow: hidden;">
             <span style="font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
@@ -238,68 +239,16 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
           <span class="live-dot-pulse" style="background-color: #16a34a;"></span>
           <span>LIVE</span>
         </div>
-
-        <button onclick="toggleMobileMenu()" id="mobile-menu-btn" aria-label="Open Menu" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background-color: #f8fafc; border: 1.5px solid #e2e8f0; color: #475569; cursor: pointer; transition: all 0.15s ease;">
-          <i data-lucide="menu" id="mobile-menu-icon" style="width: 18px; height: 18px;"></i>
-        </button>
       </div>
     </div>
   </header>
 
-  <!-- Mobile Menu Dropdown -->
-  <div id="mobile-menu" style="display: none; position: absolute; top: 70px; left: 12px; right: 12px; background: white; border-radius: 20px; padding: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; z-index: 40; flex-direction: column; gap: 8px;">
-    <?php if ($is_logged_in): ?>
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 4px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #c084fc; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
-            <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
-          </div>
-          <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 15px; font-weight: 700; color: #0f172a;"><?= $_SESSION['user_name'] ?></span>
-            <span style="font-size: 12px; font-weight: 500; color: #64748b;"><?= isset($_SESSION['user_email']) ? $_SESSION['user_email'] : 'user@example.com' ?></span>
-          </div>
-        </div>
-        <a href="?logout=true" style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; border: 1.5px solid #fecdd3; background-color: #fff1f2; color: #e11d48; font-size: 13px; font-weight: 700; text-decoration: none;">
-          <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> Sign Out
-        </a>
-      </div>
-    <?php else: ?>
-      <button onclick="openAuthModal(); toggleMobileMenu();" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 12px; border: none; background-color: #0f172a; color: #ffffff; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 4px;">
-        <i data-lucide="user" style="width: 16px; height: 16px;"></i> Sign In
-      </button>
-    <?php endif; ?>
-
-    <a href="?page=live" data-mobile-nav-link="live" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : '#ffffff' ?>; transition: all 0.2s ease;">
-      <i data-lucide="radio" style="width: 18px; height: 18px;"></i> Live Data Stream
-    </a>
-    <a href="?page=historical" data-mobile-nav-link="historical" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : '#ffffff' ?>; transition: all 0.2s ease;">
-      <i data-lucide="database" style="width: 18px; height: 18px;"></i> Analytics Archive
-    </a>
-    <a href="?page=predictive" data-mobile-nav-link="predictive" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : '#ffffff' ?>; transition: all 0.2s ease;">
-      <i data-lucide="line-chart" style="width: 18px; height: 18px;"></i> Predictive Forecast
-    </a>
-  </div>
-
   <script>
-    function toggleMobileMenu(forceState = null) {
-      const menu = document.getElementById('mobile-menu');
-      const icon = document.getElementById('mobile-menu-icon');
-      if (!menu || !icon) return;
-      const isOpen = menu.style.display === 'flex';
-      const shouldOpen = forceState === null ? !isOpen : Boolean(forceState);
-      if (shouldOpen) {
-        menu.style.display = 'flex';
-        icon.setAttribute('data-lucide', 'x');
-      } else {
-        menu.style.display = 'none';
-        icon.setAttribute('data-lucide', 'more-vertical');
-      }
-      lucide.createIcons();
-    }
+    function toggleMobileMenu(forceState = null) {}
   </script>
 
   <!-- Main Content Area -->
-  <main style="flex: 1; display: flex; flex-direction: column; position: relative;" class="pb-[76px] md:pb-0">
+  <main style="flex: 1; display: flex; flex-direction: column; position: relative;">
     <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 1;">
       <?php
         $page_file = __DIR__ . '/../pages/' . $current_page . '.php';
@@ -311,20 +260,29 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
       ?>
     </div>
     
-    <!-- Global Footer (Contact Us) -->
-    <div style="margin-top: auto; padding: 20px 0; text-align: center; position: relative; z-index: 2; font-size: 13px; background-color: #0f172a; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; width: 100%;">
+    <!-- Global Footer (Contact Us & Campus Credits) -->
+    <footer id="global-footer" style="margin-top: auto; padding: 22px 16px; text-align: center; position: relative; z-index: 10; font-size: 13px; background: #ffffff; color: #64748b; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; width: 100%; box-sizing: border-box; box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.02);" class="mb-[84px] md:mb-0">
       
-      <button onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 13px; font-weight: 600; color: #cbd5e1; cursor: pointer; text-decoration: underline; text-decoration-color: #475569; text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#00bfa5'; this.style.textDecorationColor='#00bfa5';" onmouseout="this.style.color='#cbd5e1'; this.style.textDecorationColor='#475569';">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Logo" style="width: 22px; height: 22px; object-fit: contain;">
+        <span style="font-weight: 700; color: #0f172a;">Smart WeatherNet</span>
+        <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">&bull; SMVITM Campus</span>
+      </div>
+
+      <span style="color: #cbd5e1; font-weight: 300;" class="hidden sm:inline">|</span>
+
+      <button type="button" onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 13px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,191,165,0.4); text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#0d9488';" onmouseout="this.style.color='#00bfa5';">
         Contact Us
       </button>
 
-      <span style="color: #334155; font-weight: 300;">|</span>
+      <span style="color: #cbd5e1; font-weight: 300;" class="hidden sm:inline">|</span>
 
-      <a href="mailto:weathernet@sode-edu.in" style="font-weight: 600; color: #00bfa5; text-decoration: none; display: flex; align-items: center; gap: 4px; transition: color 0.2s;" onmouseover="this.style.color='#047857'" onmouseout="this.style.color='#00bfa5'">
-        <i data-lucide="mail" style="width: 14px; height: 14px;"></i> weathernet@sode-edu.in
+      <a href="mailto:weathernet@sode-edu.in" style="font-weight: 600; color: #475569; text-decoration: none; display: flex; align-items: center; gap: 5px; transition: color 0.2s;" onmouseover="this.style.color='#00bfa5'" onmouseout="this.style.color='#475569'">
+        <i data-lucide="mail" style="width: 14px; height: 14px; color: #00bfa5;"></i>
+        <span>weathernet@sode-edu.in</span>
       </a>
       
-    </div>
+    </footer>
   </main>
 
   <!-- Fixed Native Mobile Bottom Navigation Bar —— Icon stacked above label, native-app style -->
@@ -389,8 +347,8 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
         <i data-lucide="x" style="width: 16px; height: 16px;"></i>
       </button>
       
-      <div style="width: 60px; height: 60px; border-radius: 18px; background: #ffffff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; padding: 6px;">
-        <img src="assets/logo-mark.png" alt="Smart WeatherNet" style="width: 100%; height: 100%; object-fit: contain;" />
+      <div style="width: 64px; height: 64px; border-radius: 18px; background: #ffffff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; padding: 6px;">
+        <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet" style="width: 100%; height: 100%; object-fit: contain;" />
       </div>
 
       <p style="margin: 0; font-size: 14px; font-weight: 600; color: #475569; line-height: 1.8;">

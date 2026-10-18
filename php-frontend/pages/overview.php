@@ -44,11 +44,10 @@ if (!empty($init_bulk['aqi'])) {
 
 // Weather pre-calculated fields
 $init_temp = '--';
-$init_temp_badge = 'Pleasant';
 $init_temp_bar_width = '0%';
 
 $init_hum = '--';
-$init_hum_badge = 'Comfort';
+$init_hum_badge = '';
 $init_hum_bar_width = '0%';
 
 $init_wind = '--';
@@ -63,7 +62,6 @@ if (!empty($init_bulk['weather'])) {
     $w = $init_bulk['weather'];
     if (isset($w['temperature']) && $w['temperature'] !== null) {
         $init_temp = number_format((float)$w['temperature'], 1, '.', '');
-        $init_temp_badge = ((float)$w['temperature'] > 30) ? 'Warm' : (((float)$w['temperature'] < 22) ? 'Cool' : 'Pleasant');
         $init_temp_bar_width = min(100, max(5, round((((float)$w['temperature'] - 10) / 35) * 100))) . '%';
     }
     if (isset($w['humidity']) && $w['humidity'] !== null) {
@@ -162,9 +160,6 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Temperature</h4>
           </div>
-          <span id="temp-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;">
-            <?= $init_temp_badge ?>
-          </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
           <div style="display: flex; align-items: baseline; gap: 2px;">
@@ -192,7 +187,7 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Humidity</h4>
           </div>
-          <span id="hum-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#f1f5f9' : '#fef9c3' ?>; color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#475569' : '#854d0e' ?>; border: 1px solid <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#cbd5e1' : '#fde047' ?>;">
+          <span id="hum-badge" class="overview-card-badge" style="display: <?= !empty($init_hum_badge) ? 'inline-flex' : 'none' ?>; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#f1f5f9' : '#fef9c3' ?>; color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#475569' : '#854d0e' ?>; border: 1px solid <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#cbd5e1' : '#fde047' ?>;">
             <?= $init_hum_badge ?>
           </span>
         </div>
@@ -432,6 +427,15 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
 
       </div>
 
+    <!-- Overview In-Card Footer Note -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid rgba(226, 232, 240, 0.7); flex-wrap: wrap; gap: 10px; font-size: 12px; color: #64748b; margin-top: 4px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span class="live-dot-pulse"></span>
+        <span style="font-weight: 600;">Campus Telemetry Network &bull; Live Synchronization Active</span>
+      </div>
+      <button type="button" onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 12px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 0;">
+        Contact Us
+      </button>
     </div>
 
   </div>
@@ -609,9 +613,6 @@ function updateTempDisplay() {
     const pct = Math.min(100, Math.max(5, ((Number(rawTemp) - 10) / 35) * 100));
     const tBar = document.getElementById('temp-bar');
     if (tBar) tBar.style.width = pct + '%';
-    
-    const badge = document.getElementById('temp-badge');
-    if (badge) badge.innerText = val > (tempUnit==='C'?30:86) ? 'Warm' : (val < (tempUnit==='C'?22:71.6) ? 'Cool' : 'Pleasant');
 }
 
 function updateWindDisplay() {
@@ -764,10 +765,15 @@ async function refreshData(isSilent = false) {
             const isCloudy = hum != null && Number(hum) >= 60;
             const humBadge = document.getElementById('hum-badge');
             if (humBadge) {
-                humBadge.innerHTML = isCloudy ? '☁️ Cloudy' : '☀️ Sunny';
-                humBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
-                humBadge.style.color = isCloudy ? '#475569' : '#854d0e';
-                humBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
+                if (hum != null && !isNaN(Number(hum))) {
+                    humBadge.style.display = 'inline-flex';
+                    humBadge.innerHTML = isCloudy ? '☁️ Cloudy' : '☀️ Sunny';
+                    humBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
+                    humBadge.style.color = isCloudy ? '#475569' : '#854d0e';
+                    humBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
+                } else {
+                    humBadge.style.display = 'none';
+                }
             }
             
             // Wind EQ

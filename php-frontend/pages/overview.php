@@ -147,21 +147,21 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       <div class="overview-core-card" id="card-temp" style="border-color: #fed7aa;">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #ea580c, #facc15);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 7px;">
-            <div class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: #fff7ed; display: flex; align-items: center; justify-content: center; color: #ea580c; border: 1px solid #fed7aa;">
-              <i data-lucide="thermometer" style="width: 15px; height: 15px;"></i>
+          <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+            <div class="overview-card-icon" style="width: 26px; height: 26px; border-radius: 8px; background-color: #fff7ed; display: flex; align-items: center; justify-content: center; color: #ea580c; border: 1px solid #fed7aa; flex-shrink: 0;">
+              <i data-lucide="thermometer" style="width: 14px; height: 14px;"></i>
             </div>
-            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Temperature</h4>
+            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15; white-space: nowrap;">Temperature</h4>
           </div>
-          <button id="btn-temp" onclick="toggleTemp()" title="Switch unit: °C / °F" class="param-unit-btn" style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 800; background-color: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; cursor: pointer; transition: all 0.15s ease;">
-            <span id="btn-temp-val">°C</span>
-            <span id="btn-temp-alt" style="font-size: 8.5px; opacity: 0.65; font-weight: 600;">⇄ °F</span>
+          <button type="button" id="btn-temp" onclick="toggleTemp()" title="Switch temperature unit: °C / °F" class="segmented-unit-btn" style="background-color: #fff7ed; border-color: #fed7aa; color: #c2410c;">
+            <span class="unit-opt active" id="unit-opt-c">°C</span>
+            <span class="unit-opt" id="unit-opt-f">°F</span>
           </button>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
-          <div style="display: flex; align-items: baseline; gap: 2px;">
+          <div style="display: flex; align-items: baseline; gap: 3px;">
             <span id="temp-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #ea580c; font-family: var(--font-mono);"><?= $init_temp ?></span>
-            <span id="temp-unit-display" onclick="toggleTemp()" title="Click to switch °C / °F" style="font-size: 14px; font-weight: 700; color: #94a3b8; cursor: pointer;">°C</span>
+            <span id="temp-unit-display" style="font-size: 13px; font-weight: 700; color: #fdba74;">°C</span>
           </div>
         </div>
         <div style="margin-top: auto; padding-top: 8px;">
@@ -178,13 +178,13 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       <div class="overview-core-card" id="card-hum" style="border-color: #bae6fd;">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #0284c7, #38bdf8);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 7px;">
-            <div class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: #f0f9ff; display: flex; align-items: center; justify-content: center; color: #0284c7; border: 1px solid #bae6fd;">
-              <i data-lucide="droplets" style="width: 15px; height: 15px;"></i>
+          <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+            <div class="overview-card-icon" style="width: 26px; height: 26px; border-radius: 8px; background-color: #f0f9ff; display: flex; align-items: center; justify-content: center; color: #0284c7; border: 1px solid #bae6fd; flex-shrink: 0;">
+              <i data-lucide="droplets" style="width: 14px; height: 14px;"></i>
             </div>
-            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Humidity</h4>
+            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15; white-space: nowrap;">Humidity</h4>
           </div>
-          <span id="hum-badge" class="overview-card-badge" style="display: <?= !empty($init_hum_badge) ? 'inline-flex' : 'none' ?>; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#f1f5f9' : '#fef9c3' ?>; color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#475569' : '#854d0e' ?>; border: 1px solid <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#cbd5e1' : '#fde047' ?>;">
+          <span id="hum-badge" class="overview-card-badge" style="display: <?= !empty($init_hum_badge) ? 'inline-flex' : 'none' ?>; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#f1f5f9' : '#fef9c3' ?>; color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#475569' : '#854d0e' ?>; border: 1px solid <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#cbd5e1' : '#fde047' ?>; flex-shrink: 0;">
             <?= $init_hum_badge ?>
           </span>
         </div>
@@ -208,26 +208,23 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       <div class="overview-core-card" id="card-wind" style="border-color: #a7f3d0;">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #059669, #10b981);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 7px;">
-            <div class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: #ecfdf5; display: flex; align-items: center; justify-content: center; color: #059669; border: 1px solid #a7f3d0;">
-              <i data-lucide="wind" style="width: 15px; height: 15px;"></i>
+          <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+            <div class="overview-card-icon" style="width: 26px; height: 26px; border-radius: 8px; background-color: #ecfdf5; display: flex; align-items: center; justify-content: center; color: #059669; border: 1px solid #a7f3d0; flex-shrink: 0;">
+              <i data-lucide="wind" style="width: 14px; height: 14px;"></i>
             </div>
-            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Wind Speed</h4>
+            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15; white-space: nowrap;">Wind Speed</h4>
           </div>
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <button id="btn-wind" onclick="toggleWind()" title="Switch unit: km/h / m/s" class="param-unit-btn" style="display: inline-flex; align-items: center; gap: 2px; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; cursor: pointer; transition: all 0.15s ease;">
-              <span id="btn-wind-val">km/h</span>
-              <span id="btn-wind-alt" style="font-size: 8px; opacity: 0.65; font-weight: 600;">⇄ m/s</span>
-            </button>
-            <span id="wind-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">
-              <?= $init_wind_badge ?>
-            </span>
-          </div>
+          <span id="wind-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; flex-shrink: 0;">
+            <?= $init_wind_badge ?>
+          </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
-          <div style="display: flex; align-items: baseline; gap: 2px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
             <span id="wind-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #059669; font-family: var(--font-mono);"><?= $init_wind ?></span>
-            <span id="wind-unit-display" onclick="toggleWind()" title="Click to switch km/h / m/s" style="font-size: 12px; font-weight: 700; color: #94a3b8; cursor: pointer;">km/h</span>
+            <button type="button" id="btn-wind" onclick="toggleWind()" title="Switch wind unit: km/h / m/s" class="segmented-unit-btn" style="background-color: #ecfdf5; border-color: #a7f3d0; color: #047857;">
+              <span class="unit-opt active" id="unit-opt-kmh">km/h</span>
+              <span class="unit-opt" id="unit-opt-ms">m/s</span>
+            </button>
           </div>
           <div class="overview-wind-equalizer" style="display: flex; align-items: flex-end; gap: 3px; height: 16px;">
             <div id="eq-1" style="width: 3.5px; height: 8px; border-radius: 2px; background-color: <?= $init_wind_kmh >= 2.5 ? '#059669' : '#e2e8f0' ?>; transition: background-color 0.3s ease;"></div>
@@ -250,18 +247,18 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       <div class="overview-core-card" id="card-rain" style="border-color: #c7d2fe;">
         <div id="rain-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #6366f1, #0284c7);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 7px;">
-            <div id="rain-icon-bg" class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: #eef2ff; display: flex; align-items: center; justify-content: center; color: #4f46e5; border: 1px solid #c7d2fe;">
-              <i data-lucide="cloud-rain" style="width: 15px; height: 15px;"></i>
+          <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+            <div id="rain-icon-bg" class="overview-card-icon" style="width: 26px; height: 26px; border-radius: 8px; background-color: #eef2ff; display: flex; align-items: center; justify-content: center; color: #4f46e5; border: 1px solid #c7d2fe; flex-shrink: 0;">
+              <i data-lucide="cloud-rain" style="width: 14px; height: 14px;"></i>
             </div>
-            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Rainfall</h4>
+            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15; white-space: nowrap;">Rainfall</h4>
           </div>
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <button id="btn-rain" onclick="toggleRain()" title="Switch unit: mm / cm" class="param-unit-btn" style="display: inline-flex; align-items: center; gap: 2px; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; background-color: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; cursor: pointer; transition: all 0.15s ease;">
-              <span id="btn-rain-val">mm</span>
-              <span id="btn-rain-alt" style="font-size: 8px; opacity: 0.65; font-weight: 600;">⇄ cm</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" id="btn-rain" onclick="toggleRain()" title="Switch rainfall unit: mm / cm" class="segmented-unit-btn" style="background-color: #eef2ff; border-color: #c7d2fe; color: #4338ca;">
+              <span class="unit-opt active" id="unit-opt-mm">mm</span>
+              <span class="unit-opt" id="unit-opt-cm">cm</span>
             </button>
-            <span id="rain-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= $is_raining_initial ? '#e0f2fe' : '#eef2ff' ?>; color: <?= $is_raining_initial ? '#0369a1' : '#4338ca' ?>; border: 1px solid <?= $is_raining_initial ? '#bae6fd' : '#c7d2fe' ?>;">
+            <span id="rain-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= $is_raining_initial ? '#e0f2fe' : '#eef2ff' ?>; color: <?= $is_raining_initial ? '#0369a1' : '#4338ca' ?>; border: 1px solid <?= $is_raining_initial ? '#bae6fd' : '#c7d2fe' ?>; flex-shrink: 0;">
               <?= $is_raining_initial ? '🌧️ Rain' : 'Live' ?>
             </span>
           </div>
@@ -269,17 +266,17 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; margin-bottom: auto; padding: 6px 0;">
           <div>
             <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Live</div>
-            <div style="display: flex; align-items: baseline; gap: 2px;">
+            <div style="display: flex; align-items: baseline; gap: 3px;">
               <span id="rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #4f46e5; font-family: var(--font-mono);"><?= $init_live_rain ?></span>
-              <span id="rain-unit-live" onclick="toggleRain()" title="Click to toggle mm / cm" style="font-size: 11px; font-weight: 700; color: #94a3b8; cursor: pointer; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,0.03); transition: all 0.15s ease;">mm</span>
+              <span id="rain-unit-live" style="font-size: 12px; font-weight: 700; color: #818cf8;">mm</span>
             </div>
           </div>
           <div style="width: 1px; height: 36px; background: #e2e8f0; margin: 0 4px;"></div>
           <div style="text-align: right;">
             <div style="font-size: 10.5px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Today's Rain</div>
-            <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 2px;">
+            <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 3px;">
               <span id="total-rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);"><?= $init_today_rain ?></span>
-              <span id="rain-unit-total" onclick="toggleRain()" title="Click to toggle mm / cm" style="font-size: 11px; font-weight: 700; color: #0284c7; cursor: pointer; padding: 1px 4px; border-radius: 4px; background: rgba(2, 132, 199, 0.08); transition: all 0.15s ease;">mm</span>
+              <span id="rain-unit-total" style="font-size: 12px; font-weight: 700; color: #38bdf8;">mm</span>
             </div>
           </div>
         </div>
@@ -467,6 +464,18 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       .overview-grid > *:nth-child(5) {
         grid-column: span 2 !important;
       }
+      .overview-card-title {
+        font-size: 12.5px !important;
+        white-space: nowrap !important;
+        letter-spacing: -0.01em !important;
+      }
+      .overview-core-card {
+        padding: 12px 10px 10px !important;
+        min-height: 130px !important;
+      }
+      .overview-card-val {
+        font-size: 28px !important;
+      }
     }
     .overview-chart-carousel::-webkit-scrollbar {
       display: none;
@@ -490,19 +499,44 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       transform: translateY(-3px);
       box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07) !important;
     }
-    .param-unit-btn {
+    .segmented-unit-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 1.5px;
+      border-radius: 999px;
+      cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
       transition: all 0.15s ease;
+      line-height: 1;
+      flex-shrink: 0;
+      border: 1px solid transparent;
+      outline: none;
+      background: transparent;
     }
-    .param-unit-btn:hover {
+    .segmented-unit-btn .unit-opt {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 6.5px;
+      border-radius: 999px;
+      font-size: 9.5px;
+      font-weight: 700;
+      transition: all 0.15s ease;
+      color: inherit;
+      opacity: 0.6;
+    }
+    .segmented-unit-btn .unit-opt.active {
+      background: #ffffff;
+      opacity: 1;
+      font-weight: 800;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    .segmented-unit-btn:hover {
       transform: translateY(-1px);
-      filter: brightness(0.96);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
-    .param-unit-btn:active {
+    .segmented-unit-btn:active {
       transform: translateY(0);
-      filter: brightness(0.92);
     }
     .overview-bar-scale {
       display: flex;
@@ -557,15 +591,6 @@ var getAqiCategory = function(val) {
 
 function toggleTemp() {
     tempUnit = tempUnit === 'C' ? 'F' : 'C';
-    const vEl = document.getElementById('btn-temp-val');
-    const aEl = document.getElementById('btn-temp-alt');
-    if (vEl && aEl) {
-        vEl.innerText = '°' + tempUnit;
-        aEl.innerText = tempUnit === 'C' ? '⇄ °F' : '⇄ °C';
-    } else {
-        const btn = document.getElementById('btn-temp');
-        if (btn) btn.innerText = '°' + tempUnit;
-    }
     updateTempDisplay();
     if (typeof updateMobileHero === 'function') updateMobileHero();
     if (cachedWeatherHistory) {
@@ -575,15 +600,6 @@ function toggleTemp() {
 
 function toggleWind() {
     windUnit = windUnit === 'kmh' ? 'ms' : 'kmh';
-    const vEl = document.getElementById('btn-wind-val');
-    const aEl = document.getElementById('btn-wind-alt');
-    if (vEl && aEl) {
-        vEl.innerText = windUnit === 'kmh' ? 'km/h' : 'm/s';
-        aEl.innerText = windUnit === 'kmh' ? '⇄ m/s' : '⇄ km/h';
-    } else {
-        const btn = document.getElementById('btn-wind');
-        if (btn) btn.innerText = windUnit === 'kmh' ? 'km/h' : 'm/s';
-    }
     updateWindDisplay();
     if (typeof updateMobileHero === 'function') updateMobileHero();
     if (cachedWeatherHistory) {
@@ -605,15 +621,12 @@ function updateRainDisplay() {
     const totalEl = document.getElementById('total-rain-val');
     const unitLiveEl = document.getElementById('rain-unit-live');
     const unitTotalEl = document.getElementById('rain-unit-total');
-    const vEl = document.getElementById('btn-rain-val');
-    const aEl = document.getElementById('btn-rain-alt');
+    const optMm = document.getElementById('unit-opt-mm');
+    const optCm = document.getElementById('unit-opt-cm');
 
-    if (vEl && aEl) {
-        vEl.innerText = rainUnit;
-        aEl.innerText = rainUnit === 'mm' ? '⇄ cm' : '⇄ mm';
-    } else {
-        const btn = document.getElementById('btn-rain');
-        if (btn) btn.innerText = rainUnit;
+    if (optMm && optCm) {
+        optMm.classList.toggle('active', rainUnit === 'mm');
+        optCm.classList.toggle('active', rainUnit === 'cm');
     }
     if (unitLiveEl) unitLiveEl.innerText = rainUnit;
     if (unitTotalEl) unitTotalEl.innerText = rainUnit;
@@ -629,6 +642,12 @@ function updateRainDisplay() {
 }
 
 function updateTempDisplay() {
+    const optC = document.getElementById('unit-opt-c');
+    const optF = document.getElementById('unit-opt-f');
+    if (optC && optF) {
+        optC.classList.toggle('active', tempUnit === 'C');
+        optF.classList.toggle('active', tempUnit === 'F');
+    }
     if (rawTemp == null) return;
     const val = tempUnit === 'C' ? Number(rawTemp).toFixed(1) : ((Number(rawTemp) * 9/5) + 32).toFixed(1);
     const tempValEl = document.getElementById('temp-val');
@@ -649,6 +668,12 @@ function updateTempDisplay() {
 }
 
 function updateWindDisplay() {
+    const optKmh = document.getElementById('unit-opt-kmh');
+    const optMs = document.getElementById('unit-opt-ms');
+    if (optKmh && optMs) {
+        optKmh.classList.toggle('active', windUnit === 'kmh');
+        optMs.classList.toggle('active', windUnit === 'ms');
+    }
     if (rawWind == null) return;
     const val = windUnit === 'kmh' ? Number(rawWind).toFixed(1) : (Number(rawWind) / 3.6).toFixed(1);
     const windValEl = document.getElementById('wind-val');

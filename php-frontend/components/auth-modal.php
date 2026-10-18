@@ -17,6 +17,7 @@
     <div style="padding: 26px 28px 24px;">
       <!-- Header info -->
       <div style="text-align: center; margin-bottom: 20px;">
+        <img src="assets/logo-full.png" alt="Smart WeatherNet" style="height: 54px; max-width: 220px; margin: 0 auto 12px auto; display: block; object-fit: contain;" />
         <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em; margin-bottom: 10px;">
           <i data-lucide="sparkles" style="width: 13px; height: 13px; color: #16a34a;"></i>
           <span>Dashboard Access</span>

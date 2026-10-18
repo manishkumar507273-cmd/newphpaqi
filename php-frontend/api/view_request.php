@@ -364,8 +364,8 @@ $proof_url = !empty($proof_filename) ? "view_proof.php?file=" . urlencode($proof
   <!-- Top Bar -->
   <div class="top-bar">
     <div class="brand">
-      <div class="brand-icon">
-        <i data-lucide="shield-check" style="width: 22px; height: 22px;"></i>
+      <div class="brand-icon" style="background: transparent; border: none; padding: 0; width: 44px; height: 44px;">
+        <img src="../assets/logo-mark.png" alt="Smart WeatherNet" style="width: 100%; height: 100%; object-fit: contain;">
       </div>
       <div>
         <div class="brand-title">Smart WeatherNet Access Portal</div>

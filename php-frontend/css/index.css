@@ -5,9 +5,7 @@
    Space Grotesk + JetBrains Mono | Emerald/Teal Accent (#00BFA5)
  ═══════════════════════════════════════════════════════════════ */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
 
 /* ── Design Tokens ── */
 :root {
@@ -848,11 +846,9 @@ img, svg, video, canvas {
   .mobile-only-inline {
     display: inline !important;
   }
+  #header-dashboard-btn,
   .header-dashboard-btn {
-    padding: 6px 11px !important;
-    font-size: 12px !important;
-    border-radius: 8px !important;
-    gap: 5px !important;
+    display: none !important;
   }
 }
 
@@ -1210,7 +1206,8 @@ img, svg, video, canvas {
   }
 
   /* Hide "View Dashboard" button on mobile — moved to bottom-nav */
-  #header-dashboard-btn {
+  #header-dashboard-btn,
+  .header-dashboard-btn {
     display: none !important;
   }
 

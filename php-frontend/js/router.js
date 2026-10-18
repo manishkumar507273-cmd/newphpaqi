@@ -99,10 +99,15 @@
             backBtn.style.display = targetPage !== 'overview' ? 'inline-flex' : 'none';
         }
 
-        // View Dashboard CTA Button
+        // View Dashboard CTA Button (Desktop only on overview page)
         const dashBtn = document.getElementById('header-dashboard-btn');
         if (dashBtn) {
-            dashBtn.style.display = targetPage === 'overview' ? 'inline-flex' : 'none';
+            dashBtn.style.removeProperty('display');
+            if (targetPage === 'overview') {
+                dashBtn.className = 'hidden md:inline-flex header-dashboard-btn';
+            } else {
+                dashBtn.className = 'hidden header-dashboard-btn';
+            }
         }
 
         // Desktop Nav container

@@ -99,67 +99,21 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
   <!-- Content Container -->
   <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 20px;">
     
-    <!-- Compact Toolbar -->
+    <!-- Overview Toolbar (Units & Refresh) -->
     <div class="overview-toolbar" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <div style="display: flex; background-color: #ffffff; border-radius: 999px; padding: 3px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); gap: 2px;">
-          <button id="btn-temp" onclick="toggleTemp()" style="min-height: 38px; min-width: 44px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">°C</button>
-          <button id="btn-wind" onclick="toggleWind()" style="min-height: 38px; min-width: 52px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">km/h</button>
-          <button id="btn-rain" onclick="toggleRain()" title="Toggle rain unit: mm or cm" style="min-height: 38px; min-width: 48px; padding: 6px 14px; border-radius: 999px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">mm</button>
+          <button id="btn-temp" onclick="toggleTemp()" style="min-height: 36px; min-width: 42px; padding: 5px 12px; border-radius: 999px; border: none; font-size: 12.5px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">°C</button>
+          <button id="btn-wind" onclick="toggleWind()" style="min-height: 36px; min-width: 50px; padding: 5px 12px; border-radius: 999px; border: none; font-size: 12.5px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">km/h</button>
+          <button id="btn-rain" onclick="toggleRain()" title="Toggle rain unit: mm or cm" style="min-height: 36px; min-width: 44px; padding: 5px 12px; border-radius: 999px; border: none; font-size: 12.5px; font-weight: 700; cursor: pointer; background-color: #f1f5f9; color: #475569; transition: all 0.15s ease;">mm</button>
         </div>
-        <button id="btn-refresh" onclick="refreshData(false)" class="overview-refresh-btn" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); transition: all 0.2s ease;">
-          <i data-lucide="refresh-cw" id="icon-refresh" style="width: 17px; height: 17px; color: #00bfa5;"></i>
+        <button id="btn-refresh" onclick="refreshData(false)" class="overview-refresh-btn" style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); transition: all 0.2s ease;">
+          <i data-lucide="refresh-cw" id="icon-refresh" style="width: 16px; height: 16px; color: #00bfa5;"></i>
         </button>
       </div>
     </div>
 
-    <!-- Mobile-only Hero Card & Unit Bar -->
-    <!-- Hero shows big temp + weather emoji + AQI badge -->
-    <div class="block sm:hidden">
-      <!-- Hero Card -->
-      <div class="mobile-hero-card" id="mobile-hero-card">
-        <div>
-          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Campus Conditions</div>
-          <div style="display: flex; align-items: baseline; gap: 3px;">
-            <span id="mobile-hero-temp-val" class="mobile-hero-temp"><?= $init_temp !== '--' ? $init_temp : '--' ?></span>
-            <span id="mobile-hero-temp-unit" style="font-size: 20px; font-weight: 700; color: #94a3b8; font-family: var(--font-mono);">°C</span>
-          </div>
-          <div class="mobile-hero-condition">
-            <span id="mobile-hero-icon" style="font-size: 18px; line-height: 1;">☁️</span>
-            <span id="mobile-hero-label"><?= $init_hum !== '--' && (float)$init_hum >= 60 ? 'Cloudy & Humid' : 'Clear & Pleasant' ?></span>
-          </div>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-          <div id="mobile-aqi-pill" class="mobile-aqi-badge" style="background-color: <?= $init_aqi_bg ?>; color: <?= $init_aqi_text ?>; border: 1.5px solid <?= $init_aqi_border ?>;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $init_aqi_color ?>; display: inline-block; flex-shrink: 0;"></span>
-            AQI <?= $init_aqi !== null ? $init_aqi : '--' ?> · <?= $init_aqi_label ?>
-          </div>
-          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-align: right;">Dominant<br><span id="mobile-hero-dom" style="color: #0f172a; font-size: 13px;"><?= $init_aqi_dom ?></span></div>
-        </div>
-      </div>
-
-      <!-- Mobile Unit Controls Bar -->
-      <div class="mobile-unit-bar" style="margin-top: 10px;">
-        <button id="mb-btn-temp" class="mobile-unit-btn" onclick="toggleTemp(); updateMobileHero();" style="">
-          <i data-lucide="thermometer" style="width: 12px; height: 12px;"></i>
-          <span id="mb-temp-label">°C</span>
-        </button>
-        <button id="mb-btn-wind" class="mobile-unit-btn" onclick="toggleWind();">
-          <i data-lucide="wind" style="width: 12px; height: 12px;"></i>
-          <span id="mb-wind-label">km/h</span>
-        </button>
-        <button id="mb-btn-rain" class="mobile-unit-btn" onclick="toggleRain();">
-          <i data-lucide="cloud-rain" style="width: 12px; height: 12px;"></i>
-          <span id="mb-rain-label">mm</span>
-        </button>
-        <button onclick="refreshData(false)" class="mobile-unit-btn" style="margin-left: auto;">
-          <i data-lucide="refresh-cw" id="mobile-icon-refresh" style="width: 12px; height: 12px; color: #00bfa5;"></i>
-          <span>Refresh</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 5 Core Telemetry Cards -->
+    <!-- Core Telemetry Cards Grid (5 Cards: AQI, Temp, Humidity, Wind, Rain) -->
     <div class="overview-grid">
       
       <!-- CARD 1: AIR QUALITY INDEX -->
@@ -199,7 +153,7 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       </div>
 
       <!-- CARD 2: AMBIENT TEMPERATURE -->
-      <div class="overview-core-card" style="border-color: #fed7aa;">
+      <div class="overview-core-card" id="card-temp" style="border-color: #fed7aa;">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #ea580c, #facc15);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 7px;">
@@ -229,7 +183,7 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       </div>
 
       <!-- CARD 3: HUMIDITY -->
-      <div class="overview-core-card" style="border-color: #bae6fd;">
+      <div class="overview-core-card" id="card-hum" style="border-color: #bae6fd;">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #0284c7, #38bdf8);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 7px;">
@@ -259,7 +213,7 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       </div>
 
       <!-- CARD 4: WIND SPEED -->
-      <div class="overview-core-card" style="border-color: #a7f3d0;">
+      <div class="overview-core-card" id="card-wind" style="border-color: #a7f3d0;">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #059669, #10b981);"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 7px;">
@@ -304,6 +258,9 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Rainfall</h4>
           </div>
+          <span id="rain-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= $is_raining_initial ? '#e0f2fe' : '#eef2ff' ?>; color: <?= $is_raining_initial ? '#0369a1' : '#4338ca' ?>; border: 1px solid <?= $is_raining_initial ? '#bae6fd' : '#c7d2fe' ?>;">
+            <?= $is_raining_initial ? '🌧️ Rain' : 'Live' ?>
+          </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; margin-bottom: auto; padding: 6px 0;">
           <div>
@@ -326,182 +283,159 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
 
     </div>
 
-    <!-- ── Chart Section ── -->
-    <!-- Desktop: horizontal swipe carousel (unchanged) -->
-    <div class="hidden sm:flex overflow-x-auto snap-x snap-mandatory gap-4 pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
-      <!-- CSS to hide scrollbar for webkit is below in style block -->
+    <!-- ── Chart Carousel Section with Swipe & Arrow Controls ── -->
+    <div class="overview-chart-carousel-section" style="margin-top: 10px;">
       
-      <!-- AQI Line Plot Card -->
-      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="activity" style="width: 16px; height: 16px; color: #00bfa5;"></i>
-              AQI Line Plot
-            </div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-              Real-time Air Quality progression
-            </div>
-          </div>
-          <div style="background-color: rgba(0, 191, 165, 0.1); border: 1px solid rgba(0, 191, 165, 0.25); padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #00bfa5; font-family: var(--font-mono);">
-            Current: <span id="overview-chart-current">--</span>
-          </div>
+      <!-- Carousel Header Controls: Title, Indicators & Small Arrows -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 4px; gap: 10px; flex-wrap: wrap;">
+        
+        <!-- Left: Carousel Title -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 800; color: #0f172a;">
+          <i data-lucide="line-chart" style="width: 16px; height: 16px; color: #00bfa5;"></i>
+          <span>Microclimate Trends</span>
         </div>
 
-        <div style="width: 100%; height: 250px; position: relative;">
-          <canvas id="overview-aqi-chart"></canvas>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;" id="overview-chart-stats">
-          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background-color: #ecfdf5; border: 1px solid #a7f3d0; font-size: 11.5px; font-weight: 700; color: #047857; font-family: var(--font-mono);">
-            <i data-lucide="arrow-down-right" style="width: 14px; height: 14px;"></i>
-            <span id="overview-chart-lowest">Lowest: --</span>
-          </div>
-          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background-color: #fff7ed; border: 1px solid #fed7aa; font-size: 11.5px; font-weight: 700; color: #c2410c; font-family: var(--font-mono);">
-            <i data-lucide="arrow-up-right" style="width: 14px; height: 14px;"></i>
-            <span id="overview-chart-highest">Highest: --</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Temperature Plot Card -->
-      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="thermometer" style="width: 16px; height: 16px; color: #f97316;"></i>
-              Temperature Plot
-            </div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-              Real-time Temperature progression
-            </div>
-          </div>
-        </div>
-        <div style="width: 100%; height: 250px; position: relative;">
-          <canvas id="overview-temp-chart"></canvas>
-        </div>
-      </div>
-
-      <!-- Humidity Plot Card -->
-      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="droplets" style="width: 16px; height: 16px; color: #0ea5e9;"></i>
-              Humidity Plot
-            </div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-              Real-time Humidity progression
-            </div>
-          </div>
-        </div>
-        <div style="width: 100%; height: 250px; position: relative;">
-          <canvas id="overview-hum-chart"></canvas>
-        </div>
-      </div>
-
-      <!-- Wind Speed Plot Card -->
-      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="wind" style="width: 16px; height: 16px; color: #10b981;"></i>
-              Wind Speed Plot
-            </div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-              Real-time Wind Speed progression
-            </div>
-          </div>
-        </div>
-        <div style="width: 100%; height: 250px; position: relative;">
-          <canvas id="overview-wind-chart"></canvas>
-        </div>
-      </div>
-
-      <!-- Rainfall Plot Card -->
-      <div class="w-full shrink-0 snap-center" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="cloud-rain" style="width: 16px; height: 16px; color: #6366f1;"></i>
-              Rainfall Plot
-            </div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-              Real-time Rainfall progression
-            </div>
-          </div>
-        </div>
-        <div style="width: 100%; height: 250px; position: relative;">
-          <canvas id="overview-rain-chart"></canvas>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Mobile: Single Chart + Tab Switcher -->
-    <div class="block sm:hidden chart-section-mobile">
-      <div style="background: #ffffff; border-radius: 20px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15,23,42,0.05);">
-        <!-- Tab bar -->
-        <div class="chart-tab-bar" id="chart-tab-bar" style="margin-bottom: 14px;">
-          <button class="chart-tab-btn active" id="ctab-aqi" onclick="switchChartTab('aqi')">
-            <i data-lucide="gauge" style="width: 13px; height: 13px;"></i> AQI
+        <!-- Right: Small Arrow Buttons & Slide Counter -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+          <span id="chart-slide-counter" style="font-size: 11px; font-weight: 700; color: #64748b; font-family: var(--font-mono); padding: 3px 8px; border-radius: 999px; background: #ffffff; border: 1px solid #e2e8f0;">
+            1 / 5
+          </span>
+          <button type="button" id="btn-chart-prev" onclick="navChartPrev()" title="Previous Graph" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 6px rgba(15,23,42,0.06); transition: all 0.15s ease;">
+            <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
           </button>
-          <button class="chart-tab-btn" id="ctab-temp" onclick="switchChartTab('temp')">
-            <i data-lucide="thermometer" style="width: 13px; height: 13px;"></i> Temp
-          </button>
-          <button class="chart-tab-btn" id="ctab-hum" onclick="switchChartTab('hum')">
-            <i data-lucide="droplets" style="width: 13px; height: 13px;"></i> Humidity
-          </button>
-          <button class="chart-tab-btn" id="ctab-wind" onclick="switchChartTab('wind')">
-            <i data-lucide="wind" style="width: 13px; height: 13px;"></i> Wind
-          </button>
-          <button class="chart-tab-btn" id="ctab-rain" onclick="switchChartTab('rain')">
-            <i data-lucide="cloud-rain" style="width: 13px; height: 13px;"></i> Rain
+          <button type="button" id="btn-chart-next" onclick="navChartNext()" title="Next Graph" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 6px rgba(15,23,42,0.06); transition: all 0.15s ease;">
+            <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
           </button>
         </div>
 
-        <!-- Chart panels (only one visible at a time) -->
-        <div class="chart-panel active" id="cpanel-aqi">
-          <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-            <span>Air Quality Index</span>
-            <span style="font-family: var(--font-mono); color: #00bfa5;">Current: <span id="overview-chart-current">--</span></span>
+      </div>
+
+      <!-- Horizontal Swipeable Carousel (One graph visible at a time on mobile/tablet/desktop) -->
+      <div id="overview-chart-carousel" class="overview-chart-carousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; gap: 16px; padding-bottom: 6px; scrollbar-width: none;">
+        
+        <!-- SLIDE 0: AQI Line Plot Card -->
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="activity" style="width: 16px; height: 16px; color: #00bfa5;"></i>
+                AQI Line Plot
+              </div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                Real-time Air Quality progression
+              </div>
+            </div>
+            <div style="background-color: rgba(0, 191, 165, 0.1); border: 1px solid rgba(0, 191, 165, 0.25); padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #00bfa5; font-family: var(--font-mono);">
+              Current: <span id="overview-chart-current">--</span>
+            </div>
           </div>
-          <div style="height: 180px; position: relative;"><canvas id="overview-aqi-chart"></canvas></div>
-          <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
-            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #ecfdf5; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 700; color: #047857; font-family: var(--font-mono);">
-              <i data-lucide="arrow-down-right" style="width: 12px; height: 12px;"></i>
+
+          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+            <canvas id="overview-aqi-chart"></canvas>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="overview-chart-stats">
+            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background-color: #ecfdf5; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 700; color: #047857; font-family: var(--font-mono);">
+              <i data-lucide="arrow-down-right" style="width: 13px; height: 13px;"></i>
               <span id="overview-chart-lowest">Lowest: --</span>
             </div>
-            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #fff7ed; border: 1px solid #fed7aa; font-size: 11px; font-weight: 700; color: #c2410c; font-family: var(--font-mono);">
-              <i data-lucide="arrow-up-right" style="width: 12px; height: 12px;"></i>
+            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background-color: #fff7ed; border: 1px solid #fed7aa; font-size: 11px; font-weight: 700; color: #c2410c; font-family: var(--font-mono);">
+              <i data-lucide="arrow-up-right" style="width: 13px; height: 13px;"></i>
               <span id="overview-chart-highest">Highest: --</span>
             </div>
           </div>
         </div>
 
-        <div class="chart-panel" id="cpanel-temp">
-          <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px;">Temperature</div>
-          <div style="height: 180px; position: relative;"><canvas id="overview-temp-chart"></canvas></div>
+        <!-- SLIDE 1: Temperature Plot Card -->
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="thermometer" style="width: 16px; height: 16px; color: #f97316;"></i>
+                Temperature Plot
+              </div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                Real-time Temperature progression
+              </div>
+            </div>
+            <div id="overview-temp-current-badge" style="background-color: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.25); padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #f97316; font-family: var(--font-mono);">
+              Current: <span id="overview-temp-current">--</span>
+            </div>
+          </div>
+          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+            <canvas id="overview-temp-chart"></canvas>
+          </div>
         </div>
 
-        <div class="chart-panel" id="cpanel-hum">
-          <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px;">Humidity</div>
-          <div style="height: 180px; position: relative;"><canvas id="overview-hum-chart"></canvas></div>
+        <!-- SLIDE 2: Humidity Plot Card -->
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="droplets" style="width: 16px; height: 16px; color: #0ea5e9;"></i>
+                Humidity Plot
+              </div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                Real-time Humidity progression
+              </div>
+            </div>
+            <div id="overview-hum-current-badge" style="background-color: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25); padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #0ea5e9; font-family: var(--font-mono);">
+              Current: <span id="overview-hum-current">--</span>
+            </div>
+          </div>
+          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+            <canvas id="overview-hum-chart"></canvas>
+          </div>
         </div>
 
-        <div class="chart-panel" id="cpanel-wind">
-          <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px;">Wind Speed</div>
-          <div style="height: 180px; position: relative;"><canvas id="overview-wind-chart"></canvas></div>
+        <!-- SLIDE 3: Wind Speed Plot Card -->
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="wind" style="width: 16px; height: 16px; color: #10b981;"></i>
+                Wind Speed Plot
+              </div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                Real-time Wind Speed progression
+              </div>
+            </div>
+            <div id="overview-wind-current-badge" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #10b981; font-family: var(--font-mono);">
+              Current: <span id="overview-wind-current">--</span>
+            </div>
+          </div>
+          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+            <canvas id="overview-wind-chart"></canvas>
+          </div>
         </div>
 
-        <div class="chart-panel" id="cpanel-rain">
-          <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px;">Rainfall</div>
-          <div style="height: 180px; position: relative;"><canvas id="overview-rain-chart"></canvas></div>
+        <!-- SLIDE 4: Rainfall Plot Card -->
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="cloud-rain" style="width: 16px; height: 16px; color: #6366f1;"></i>
+                Rainfall Plot
+              </div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                Real-time Rainfall progression
+              </div>
+            </div>
+            <div id="overview-rain-current-badge" style="background-color: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #6366f1; font-family: var(--font-mono);">
+              Current: <span id="overview-rain-current">--</span>
+            </div>
+          </div>
+          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+            <canvas id="overview-rain-chart"></canvas>
+          </div>
         </div>
+
       </div>
+
     </div>
 
   </div>
+</div>
   <style>
     @keyframes spin {
       from { transform: rotate(0deg); }
@@ -526,12 +460,16 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
     @media (max-width: 640px) {
       .overview-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+        gap: 10px !important;
       }
       .overview-grid > *:nth-child(5) {
         grid-column: span 2 !important;
       }
     }
+    .overview-chart-carousel::-webkit-scrollbar {
+      display: none;
+    }
+
     .overview-core-card {
       background: #ffffff;
       border-radius: 16px;
@@ -603,19 +541,30 @@ var getAqiCategory = function(val) {
 
 function toggleTemp() {
     tempUnit = tempUnit === 'C' ? 'F' : 'C';
-    document.getElementById('btn-temp').innerText = '°' + tempUnit;
+    const btn = document.getElementById('btn-temp');
+    if (btn) btn.innerText = '°' + tempUnit;
     updateTempDisplay();
+    updateMobileHero();
+    if (cachedWeatherHistory) {
+        renderWeatherHistoryCharts(cachedWeatherHistory);
+    }
 }
 
 function toggleWind() {
     windUnit = windUnit === 'kmh' ? 'ms' : 'kmh';
-    document.getElementById('btn-wind').innerText = windUnit === 'kmh' ? 'km/h' : 'm/s';
+    const btn = document.getElementById('btn-wind');
+    if (btn) btn.innerText = windUnit === 'kmh' ? 'km/h' : 'm/s';
     updateWindDisplay();
+    updateMobileHero();
+    if (cachedWeatherHistory) {
+        renderWeatherHistoryCharts(cachedWeatherHistory);
+    }
 }
 
 function toggleRain() {
     rainUnit = rainUnit === 'mm' ? 'cm' : 'mm';
     updateRainDisplay();
+    updateMobileHero();
     if (cachedWeatherHistory) {
         renderWeatherHistoryCharts(cachedWeatherHistory);
     }
@@ -645,82 +594,107 @@ function updateRainDisplay() {
 function updateTempDisplay() {
     if (rawTemp == null) return;
     const val = tempUnit === 'C' ? Number(rawTemp).toFixed(1) : ((Number(rawTemp) * 9/5) + 32).toFixed(1);
-    document.getElementById('temp-val').innerText = val;
-    document.getElementById('temp-unit-display').innerText = '°' + tempUnit;
+    const tempValEl = document.getElementById('temp-val');
+    if (tempValEl) tempValEl.innerText = val;
+    const unitEl = document.getElementById('temp-unit-display');
+    if (unitEl) unitEl.innerText = '°' + tempUnit;
     
-    document.getElementById('temp-scale-0').innerText = tempUnit === 'C' ? '15°' : '59°';
-    document.getElementById('temp-scale-50').innerText = tempUnit === 'C' ? '28°' : '82°';
-    document.getElementById('temp-scale-100').innerText = tempUnit === 'C' ? '40°' : '104°';
+    const s0 = document.getElementById('temp-scale-0');
+    const s50 = document.getElementById('temp-scale-50');
+    const s100 = document.getElementById('temp-scale-100');
+    if (s0) s0.innerText = tempUnit === 'C' ? '15°' : '59°';
+    if (s50) s50.innerText = tempUnit === 'C' ? '28°' : '82°';
+    if (s100) s100.innerText = tempUnit === 'C' ? '40°' : '104°';
     
     const pct = Math.min(100, Math.max(5, ((Number(rawTemp) - 10) / 35) * 100));
-    document.getElementById('temp-bar').style.width = pct + '%';
+    const tBar = document.getElementById('temp-bar');
+    if (tBar) tBar.style.width = pct + '%';
     
     const badge = document.getElementById('temp-badge');
-    badge.innerText = val > (tempUnit==='C'?30:86) ? 'Warm' : (val < (tempUnit==='C'?22:71.6) ? 'Cool' : 'Pleasant');
+    if (badge) badge.innerText = val > (tempUnit==='C'?30:86) ? 'Warm' : (val < (tempUnit==='C'?22:71.6) ? 'Cool' : 'Pleasant');
 }
 
 function updateWindDisplay() {
     if (rawWind == null) return;
     const val = windUnit === 'kmh' ? Number(rawWind).toFixed(1) : (Number(rawWind) / 3.6).toFixed(1);
-    document.getElementById('wind-val').innerText = val;
-    document.getElementById('wind-unit-display').innerText = windUnit === 'kmh' ? 'km/h' : 'm/s';
+    const windValEl = document.getElementById('wind-val');
+    if (windValEl) windValEl.innerText = val;
+    const unitEl = document.getElementById('wind-unit-display');
+    if (unitEl) unitEl.innerText = windUnit === 'kmh' ? 'km/h' : 'm/s';
     
-    document.getElementById('wind-scale-50').innerText = windUnit === 'kmh' ? '15' : '4.2';
-    document.getElementById('wind-scale-100').innerText = windUnit === 'kmh' ? '30 km/h' : '8.3 m/s';
+    const s50 = document.getElementById('wind-scale-50');
+    const s100 = document.getElementById('wind-scale-100');
+    if (s50) s50.innerText = windUnit === 'kmh' ? '15' : '4.2';
+    if (s100) s100.innerText = windUnit === 'kmh' ? '30 km/h' : '8.3 m/s';
     
     const pct = Math.min(100, Math.max(4, (Number(val) / (windUnit === 'ms' ? 8.3 : 30)) * 100));
-    document.getElementById('wind-bar').style.width = pct + '%';
+    const wBar = document.getElementById('wind-bar');
+    if (wBar) wBar.style.width = pct + '%';
 }
 
-var overviewChartInstance = null;
+/* ── Chart Carousel Navigation (Swipe & Arrows) ── */
+var currentChartSlideIndex = 0;
+const totalChartSlides = 5;
 
-/* ── Mobile Chart Tab Switcher ── */
-var activeChartTab = 'aqi';
-function switchChartTab(tab) {
-    // Deactivate all tabs and panels
-    ['aqi', 'temp', 'hum', 'wind', 'rain'].forEach(t => {
-        const btn = document.getElementById('ctab-' + t);
-        const panel = document.getElementById('cpanel-' + t);
-        if (btn) btn.classList.remove('active');
-        if (panel) panel.classList.remove('active');
-    });
-    // Activate selected
-    const activeBtn = document.getElementById('ctab-' + tab);
-    const activePanel = document.getElementById('cpanel-' + tab);
-    if (activeBtn) activeBtn.classList.add('active');
-    if (activePanel) activePanel.classList.add('active');
-    activeChartTab = tab;
-    // Trigger chart resize so it renders correctly inside the now-visible panel
-    setTimeout(() => {
-        const canvasMap = { aqi: 'overview-aqi-chart', temp: 'overview-temp-chart', hum: 'overview-hum-chart', wind: 'overview-wind-chart', rain: 'overview-rain-chart' };
-        const cid = canvasMap[tab];
-        if (cid && window.__chartInstances && window.__chartInstances[cid]) {
-            window.__chartInstances[cid].resize();
-        }
-    }, 50);
-    if (window.lucide) lucide.createIcons();
-}
-
-/* ── Mobile Hero Card Sync ── */
-function updateMobileHero() {
-    // Temp
-    const heroTemp = document.getElementById('mobile-hero-temp-val');
-    const heroUnit = document.getElementById('mobile-hero-temp-unit');
-    const mbLabel = document.getElementById('mb-temp-label');
-    if (heroTemp && rawTemp != null) {
-        const v = tempUnit === 'C' ? Number(rawTemp).toFixed(1) : ((Number(rawTemp) * 9/5) + 32).toFixed(1);
-        heroTemp.innerText = v;
+function scrollChartTo(index) {
+    const carousel = document.getElementById('overview-chart-carousel');
+    if (!carousel) return;
+    const slides = carousel.querySelectorAll('.chart-slide-card');
+    if (slides && slides[index]) {
+        currentChartSlideIndex = index;
+        slides[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        updateChartCarouselIndicators(index);
+        setTimeout(resizeActiveChart, 150);
     }
-    if (heroUnit) heroUnit.innerText = '\u00b0' + tempUnit;
-    if (mbLabel) mbLabel.innerText = '\u00b0' + tempUnit;
+}
 
-    // Wind label sync
-    const mbWind = document.getElementById('mb-wind-label');
-    if (mbWind) mbWind.innerText = windUnit === 'kmh' ? 'km/h' : 'm/s';
+function navChartPrev() {
+    let nextIdx = currentChartSlideIndex - 1;
+    if (nextIdx < 0) nextIdx = totalChartSlides - 1;
+    scrollChartTo(nextIdx);
+}
 
-    // Rain label sync
-    const mbRain = document.getElementById('mb-rain-label');
-    if (mbRain) mbRain.innerText = rainUnit;
+function navChartNext() {
+    let nextIdx = currentChartSlideIndex + 1;
+    if (nextIdx >= totalChartSlides) nextIdx = 0;
+    scrollChartTo(nextIdx);
+}
+
+function updateChartCarouselIndicators(activeIdx) {
+    currentChartSlideIndex = activeIdx;
+    const counter = document.getElementById('chart-slide-counter');
+    if (counter) counter.innerText = `${activeIdx + 1} / ${totalChartSlides}`;
+}
+
+function setupCarouselScrollListener() {
+    const carousel = document.getElementById('overview-chart-carousel');
+    if (!carousel || carousel.dataset.listenerAttached) return;
+    carousel.dataset.listenerAttached = 'true';
+    let scrollTimeout = null;
+    carousel.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            const width = carousel.offsetWidth || 1;
+            const scrollLeft = carousel.scrollLeft;
+            const newIndex = Math.round(scrollLeft / width);
+            if (newIndex !== currentChartSlideIndex && newIndex >= 0 && newIndex < totalChartSlides) {
+                updateChartCarouselIndicators(newIndex);
+                resizeActiveChart();
+            }
+        }, 80);
+    }, { passive: true });
+}
+
+function resizeActiveChart() {
+    const canvasIds = ['overview-aqi-chart', 'overview-temp-chart', 'overview-hum-chart', 'overview-wind-chart', 'overview-rain-chart'];
+    const activeCid = canvasIds[currentChartSlideIndex];
+    if (activeCid && window.__chartInstances && window.__chartInstances[activeCid]) {
+        window.__chartInstances[activeCid].resize();
+    }
+}
+
+function updateMobileHero() {
+    // Standby no-op (mobile hero removed per user request)
 }
 
 async function refreshData(isSilent = false) {
@@ -769,27 +743,8 @@ async function refreshData(isSilent = false) {
             
             document.getElementById('aura-top').style.background = `radial-gradient(circle, ${cat.color}15 0%, rgba(241, 245, 249, 0) 70%)`;
             
-            document.getElementById('overview-chart-current').innerText = aqi;
-
-            // Mobile hero AQI pill sync
-            const mobilePill = document.getElementById('mobile-aqi-pill');
-            if (mobilePill) {
-                mobilePill.style.backgroundColor = cat.bg;
-                mobilePill.style.color = cat.text;
-                mobilePill.style.borderColor = cat.border;
-                const dot = mobilePill.querySelector('span');
-                if (dot) dot.style.backgroundColor = cat.color;
-                // Update pill text (keep dot, replace text)
-                const domSpan = mobilePill.querySelectorAll('span')[1];
-                if (!domSpan) {
-                    // Rebuild inner html cleanly
-                    mobilePill.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background-color:${cat.color};display:inline-block;flex-shrink:0;"></span> AQI ${aqi} \u00b7 ${cat.label}`;
-                } else {
-                    mobilePill.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background-color:${cat.color};display:inline-block;flex-shrink:0;"></span> AQI ${aqi} \u00b7 ${cat.label}`;
-                }
-            }
-            const mobileHeroDom = document.getElementById('mobile-hero-dom');
-            if (mobileHeroDom) mobileHeroDom.innerText = aqiRes.data.dominant_pollutant || 'O\u2083';
+            const deskChartCur = document.getElementById('overview-chart-current');
+            if (deskChartCur) deskChartCur.innerText = aqi;
         }
 
         // Weather
@@ -802,13 +757,6 @@ async function refreshData(isSilent = false) {
             
             updateTempDisplay();
             updateWindDisplay();
-            updateMobileHero();
-
-            // Mobile hero temperature display
-            const mobileHeroTempEl = document.getElementById('mobile-hero-temp-val');
-            if (mobileHeroTempEl && rawTemp != null) {
-                mobileHeroTempEl.innerText = tempUnit === 'C' ? Number(rawTemp).toFixed(1) : ((Number(rawTemp) * 9/5) + 32).toFixed(1);
-            }
             
             // Hum
             document.getElementById('hum-val').innerText = hum != null ? Number(hum).toFixed(1) : '--';
@@ -820,23 +768,6 @@ async function refreshData(isSilent = false) {
                 humBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
                 humBadge.style.color = isCloudy ? '#475569' : '#854d0e';
                 humBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
-            }
-
-            // Mobile hero condition icon + label
-            const mhIcon = document.getElementById('mobile-hero-icon');
-            const mhLabel = document.getElementById('mobile-hero-label');
-            if (mhIcon && mhLabel) {
-                const wkmhNow = Number(rawWind || 0);
-                if (wkmhNow > 15) {
-                    mhIcon.innerText = '🌬️';
-                    mhLabel.innerText = 'Windy';
-                } else if (isCloudy) {
-                    mhIcon.innerText = '☁️';
-                    mhLabel.innerText = 'Cloudy & Humid';
-                } else {
-                    mhIcon.innerText = '☀️';
-                    mhLabel.innerText = 'Clear & Pleasant';
-                }
             }
             
             // Wind EQ
@@ -891,13 +822,18 @@ async function refreshData(isSilent = false) {
                 data.push(aqi);
             });
 
+            let minStr = '--', maxStr = '--';
             if (minAqi !== 9999) {
                 const minDt = new Date(minTime).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase();
-                document.getElementById('overview-chart-lowest').innerText = `Lowest: ${minAqi} @ ${minDt}`;
+                minStr = `Lowest: ${minAqi} @ ${minDt}`;
+                const lowEl = document.getElementById('overview-chart-lowest');
+                if (lowEl) lowEl.innerText = minStr;
             }
             if (maxAqi !== -1) {
                 const maxDt = new Date(maxTime).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase();
-                document.getElementById('overview-chart-highest').innerText = `Highest: ${maxAqi} @ ${maxDt}`;
+                maxStr = `Highest: ${maxAqi} @ ${maxDt}`;
+                const highEl = document.getElementById('overview-chart-highest');
+                if (highEl) highEl.innerText = maxStr;
             }
 
             renderGenericChart('overview-aqi-chart', labels, data, 'AQI', '#00bfa5');
@@ -910,7 +846,7 @@ async function refreshData(isSilent = false) {
             renderWeatherHistoryCharts(weatherHistoryRes);
         }
 
-        // Telemetry rendered cleanly from initial payload
+        setupCarouselScrollListener();
         
     } catch(e) {
         console.error(e);
@@ -931,20 +867,59 @@ function renderWeatherHistoryCharts(weatherHistoryRes) {
     const wLabels = [];
     const tempData = [], humData = [], windData = [], rainData = [];
 
+    let minTemp = 999, maxTemp = -999;
+    let minHum = 999, maxHum = -999;
+    let minWind = 999, maxWind = -999;
+    let minRain = 999, maxRain = -999;
+
     wHistory.forEach(row => {
         const dt = new Date(row.timestamp || row.created_at || new Date());
         wLabels.push(dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase());
-        tempData.push(row.temperature || 0);
-        humData.push(row.humidity || 0);
-        windData.push(row.wind_speed || 0);
-        const rVal = row.rain_gauge || 0;
-        rainData.push(rainUnit === 'cm' ? Number((rVal / 10).toFixed(2)) : rVal);
+        
+        let tVal = row.temperature != null ? Number(row.temperature) : 0;
+        if (tempUnit === 'F') tVal = Number(((tVal * 9/5) + 32).toFixed(1));
+        else tVal = Number(tVal.toFixed(1));
+
+        const hVal = row.humidity != null ? Number(Number(row.humidity).toFixed(1)) : 0;
+        
+        let wVal = row.wind_speed != null ? Number(row.wind_speed) : 0;
+        if (windUnit === 'ms') wVal = Number((wVal / 3.6).toFixed(1));
+        else wVal = Number(wVal.toFixed(1));
+
+        const rawR = row.rain_gauge != null ? Number(row.rain_gauge) : 0;
+        const rVal = rainUnit === 'cm' ? Number((rawR / 10).toFixed(2)) : Number(rawR.toFixed(1));
+
+        tempData.push(tVal);
+        humData.push(hVal);
+        windData.push(wVal);
+        rainData.push(rVal);
+
+        if (tVal < minTemp) minTemp = tVal;
+        if (tVal > maxTemp) maxTemp = tVal;
+        if (hVal < minHum) minHum = hVal;
+        if (hVal > maxHum) maxHum = hVal;
+        if (wVal < minWind) minWind = wVal;
+        if (wVal > maxWind) maxWind = wVal;
+        if (rVal < minRain) minRain = rVal;
+        if (rVal > maxRain) maxRain = rVal;
     });
 
-    renderGenericChart('overview-temp-chart', wLabels, tempData, 'Temperature (°C)', '#f97316');
+    // Update Current Value Badges on Chart Slides
+    const tCur = document.getElementById('overview-temp-current');
+    if (tCur) tCur.innerText = tempData.length ? `${tempData[tempData.length - 1]} °${tempUnit}` : '--';
+    const hCur = document.getElementById('overview-hum-current');
+    if (hCur) hCur.innerText = humData.length ? `${humData[humData.length - 1]}%` : '--';
+    const wCur = document.getElementById('overview-wind-current');
+    if (wCur) wCur.innerText = windData.length ? `${windData[windData.length - 1]} ${windUnit === 'kmh' ? 'km/h' : 'm/s'}` : '--';
+    const rCur = document.getElementById('overview-rain-current');
+    if (rCur) rCur.innerText = rainData.length ? `${rainData[rainData.length - 1]} ${rainUnit}` : '--';
+
+    renderGenericChart('overview-temp-chart', wLabels, tempData, `Temperature (°${tempUnit})`, '#f97316');
     renderGenericChart('overview-hum-chart', wLabels, humData, 'Humidity (%)', '#0ea5e9');
-    renderGenericChart('overview-wind-chart', wLabels, windData, 'Wind Speed (km/h)', '#10b981');
+    renderGenericChart('overview-wind-chart', wLabels, windData, `Wind Speed (${windUnit === 'kmh' ? 'km/h' : 'm/s'})`, '#10b981');
     renderGenericChart('overview-rain-chart', wLabels, rainData, `Rainfall (${rainUnit})`, '#6366f1');
+
+    setupCarouselScrollListener();
 }
 
 var chartInstances = window.__chartInstances || {};
@@ -1178,6 +1153,10 @@ window.__cleanupCurrentPage = function() {
     if (autoRefreshOverviewTimer) {
         clearInterval(autoRefreshOverviewTimer);
         autoRefreshOverviewTimer = null;
+    }
+    if (mobileChartInstance) {
+        try { mobileChartInstance.destroy(); } catch(e) {}
+        mobileChartInstance = null;
     }
     Object.keys(chartInstances).forEach(k => {
         if (chartInstances[k]) {

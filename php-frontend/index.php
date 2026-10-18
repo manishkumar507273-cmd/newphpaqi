@@ -220,7 +220,10 @@ if ($is_ajax) {
     <meta name="mobile-web-app-capable" content="yes">
     <title>Smart WeatherNet | Real-Time Air Quality & Weather Monitor</title>
     
-    <!-- Google Fonts -->
+    <!-- Official Smart WeatherNet Favicon & App Icons -->
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -253,7 +256,7 @@ if ($is_ajax) {
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/index.css?v=<?= file_exists(__DIR__ . '/css/index.css') ? filemtime(__DIR__ . '/css/index.css') : '1.1' ?>">
 
     <?php
     $initial_overview_json = 'null';

@@ -99,26 +99,17 @@
             backBtn.style.display = targetPage !== 'overview' ? 'inline-flex' : 'none';
         }
 
-        // View Dashboard CTA Button (Desktop only on overview page)
+        // View Dashboard CTA Button
         const dashBtn = document.getElementById('header-dashboard-btn');
         if (dashBtn) {
-            dashBtn.style.removeProperty('display');
-            if (targetPage === 'overview') {
-                dashBtn.className = 'hidden md:inline-flex header-dashboard-btn';
-            } else {
-                dashBtn.className = 'hidden header-dashboard-btn';
-            }
+            dashBtn.className = 'hidden';
         }
 
-        // Desktop Nav container
+        // Desktop Nav container (Always visible on desktop screens)
         const desktopNav = document.getElementById('desktop-nav');
         if (desktopNav) {
             desktopNav.style.removeProperty('display');
-            if (targetPage === 'overview') {
-                desktopNav.className = 'hidden';
-            } else {
-                desktopNav.className = 'inline-flex';
-            }
+            desktopNav.className = 'hidden md:inline-flex';
         }
 
         // Mobile live dot (hidden in desktop view)
@@ -279,15 +270,19 @@
                 wrapper.classList.remove('page-fade-leave');
                 wrapper.innerHTML = data.content;
 
-                // Re-execute scripts inside swapped content
+                // Re-execute scripts inside swapped content safely
                 const scripts = wrapper.querySelectorAll('script');
                 scripts.forEach(oldScript => {
-                    const newScript = document.createElement('script');
-                    Array.from(oldScript.attributes).forEach(attr => {
-                        newScript.setAttribute(attr.name, attr.value);
-                    });
-                    newScript.textContent = oldScript.textContent;
-                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                    try {
+                        const newScript = document.createElement('script');
+                        Array.from(oldScript.attributes).forEach(attr => {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        newScript.textContent = oldScript.textContent;
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    } catch(err) {
+                        console.warn("Script execution warning:", err);
+                    }
                 });
 
                 // Scroll to top instantly

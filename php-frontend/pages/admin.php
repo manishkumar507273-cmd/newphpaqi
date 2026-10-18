@@ -12,6 +12,12 @@
         Review, verify, and approve incoming enterprise data access requests. Approved requests will automatically transmit secure data payloads via email.
       </p>
     </div>
+    <div>
+      <a href="?page=overview" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition-all shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4 text-[#00bfa5]"></i>
+        <span>Back to Overview</span>
+      </a>
+    </div>
   </div>
 
   <!-- Table Card -->

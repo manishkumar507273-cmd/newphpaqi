@@ -715,38 +715,39 @@ function updateWindDisplay() {
 }
 
 /* ── Chart Carousel Navigation (Swipe & Arrows) ── */
-var currentChartSlideIndex = 0;
-const totalChartSlides = 5;
+window.currentChartSlideIndex = 0;
+window.TOTAL_CHART_SLIDES = 5;
 
 function scrollChartTo(index) {
     const carousel = document.getElementById('overview-chart-carousel');
     if (!carousel) return;
     const slides = carousel.querySelectorAll('.chart-slide-card');
     if (slides && slides[index]) {
-        currentChartSlideIndex = index;
-        slides[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
         updateChartCarouselIndicators(index);
+        const slideLeft = slides[index].offsetLeft - (slides[0] ? slides[0].offsetLeft : 0);
+        carousel.scrollTo({ left: slideLeft, behavior: 'smooth' });
         setTimeout(resizeActiveChart, 150);
     }
 }
 
 function navChartPrev() {
-    let nextIdx = currentChartSlideIndex - 1;
-    if (nextIdx < 0) nextIdx = totalChartSlides - 1;
+    let nextIdx = (window.currentChartSlideIndex || 0) - 1;
+    if (nextIdx < 0) nextIdx = window.TOTAL_CHART_SLIDES - 1;
     scrollChartTo(nextIdx);
 }
 
 function navChartNext() {
-    let nextIdx = currentChartSlideIndex + 1;
-    if (nextIdx >= totalChartSlides) nextIdx = 0;
+    let nextIdx = (window.currentChartSlideIndex || 0) + 1;
+    if (nextIdx >= window.TOTAL_CHART_SLIDES) nextIdx = 0;
     scrollChartTo(nextIdx);
 }
 
 function updateChartCarouselIndicators(activeIdx) {
-    currentChartSlideIndex = activeIdx;
+    if (activeIdx < 0 || activeIdx >= window.TOTAL_CHART_SLIDES) return;
+    window.currentChartSlideIndex = activeIdx;
     const counter = document.getElementById('chart-slide-counter');
-    if (counter) counter.innerText = `${activeIdx + 1} / ${totalChartSlides}`;
-    for (let i = 0; i < totalChartSlides; i++) {
+    if (counter) counter.innerText = `${activeIdx + 1} / ${window.TOTAL_CHART_SLIDES}`;
+    for (let i = 0; i < window.TOTAL_CHART_SLIDES; i++) {
         const dot = document.getElementById(`chart-dot-${i}`);
         if (dot) {
             if (i === activeIdx) {
@@ -761,30 +762,54 @@ function updateChartCarouselIndicators(activeIdx) {
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
+function updateCarouselOnScroll() {
+    const carousel = document.getElementById('overview-chart-carousel');
+    if (!carousel) return;
+    const slides = carousel.querySelectorAll('.chart-slide-card');
+    if (!slides || !slides.length) return;
+
+    const scrollLeft = carousel.scrollLeft;
+    let step = carousel.offsetWidth;
+    if (slides.length > 1) {
+        const measuredStep = slides[1].offsetLeft - slides[0].offsetLeft;
+        if (measuredStep > 0) step = measuredStep;
+    }
+    const activeIdx = Math.max(0, Math.min(window.TOTAL_CHART_SLIDES - 1, Math.round(scrollLeft / step)));
+    if (activeIdx !== window.currentChartSlideIndex) {
+        updateChartCarouselIndicators(activeIdx);
+        resizeActiveChart();
+    }
+}
+
 function setupCarouselScrollListener() {
     const carousel = document.getElementById('overview-chart-carousel');
     if (!carousel || carousel.dataset.listenerAttached) return;
     carousel.dataset.listenerAttached = 'true';
-    let scrollTimeout = null;
+
+    let isScrolling = false;
     carousel.addEventListener('scroll', () => {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-            const width = carousel.offsetWidth || 1;
-            const scrollLeft = carousel.scrollLeft;
-            const newIndex = Math.round(scrollLeft / width);
-            if (newIndex !== currentChartSlideIndex && newIndex >= 0 && newIndex < totalChartSlides) {
-                updateChartCarouselIndicators(newIndex);
-                resizeActiveChart();
-            }
-        }, 80);
+        if (!isScrolling) {
+            window.requestAnimationFrame(() => {
+                updateCarouselOnScroll();
+                isScrolling = false;
+            });
+            isScrolling = true;
+        }
+    }, { passive: true });
+
+    carousel.addEventListener('touchmove', () => {
+        updateCarouselOnScroll();
     }, { passive: true });
 }
 
 function resizeActiveChart() {
     const canvasIds = ['overview-aqi-chart', 'overview-temp-chart', 'overview-hum-chart', 'overview-wind-chart', 'overview-rain-chart'];
-    const activeCid = canvasIds[currentChartSlideIndex];
+    const activeIdx = window.currentChartSlideIndex || 0;
+    const activeCid = canvasIds[activeIdx];
     if (activeCid && window.__chartInstances && window.__chartInstances[activeCid]) {
-        window.__chartInstances[activeCid].resize();
+        try {
+            window.__chartInstances[activeCid].resize();
+        } catch(e) {}
     }
 }
 
@@ -1026,19 +1051,30 @@ var chartInstances = window.__chartInstances || {};
 window.__chartInstances = chartInstances;
 
 function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
+    if (typeof Chart === 'undefined') {
+        setTimeout(() => renderGenericChart(canvasId, labels, data, labelName, colorHex), 100);
+        return;
+    }
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
     // In-place silent update without destroying or flickering
     if (chartInstances[canvasId]) {
-        const existingChart = chartInstances[canvasId];
-        existingChart.data.labels = labels;
-        if (existingChart.data.datasets && existingChart.data.datasets[0]) {
-            existingChart.data.datasets[0].data = data;
+        try {
+            const existingChart = chartInstances[canvasId];
+            if (existingChart && existingChart.ctx) {
+                existingChart.data.labels = labels;
+                if (existingChart.data.datasets && existingChart.data.datasets[0]) {
+                    existingChart.data.datasets[0].data = data;
+                }
+                existingChart.update('none');
+                return;
+            }
+        } catch(e) {
+            try { chartInstances[canvasId].destroy(); } catch(err) {}
+            delete chartInstances[canvasId];
         }
-        existingChart.update('none');
-        return;
     }
     
     // Create gradient
@@ -1254,15 +1290,18 @@ window.__cleanupCurrentPage = function() {
         clearInterval(autoRefreshOverviewTimer);
         autoRefreshOverviewTimer = null;
     }
-    if (mobileChartInstance) {
+    if (typeof mobileChartInstance !== 'undefined' && mobileChartInstance) {
         try { mobileChartInstance.destroy(); } catch(e) {}
         mobileChartInstance = null;
     }
-    Object.keys(chartInstances).forEach(k => {
-        if (chartInstances[k]) {
-            try { chartInstances[k].destroy(); } catch(e) {}
-        }
-    });
+    if (window.__chartInstances) {
+        Object.keys(window.__chartInstances).forEach(k => {
+            if (window.__chartInstances[k]) {
+                try { window.__chartInstances[k].destroy(); } catch(e) {}
+            }
+        });
+        window.__chartInstances = {};
+    }
     chartInstances = {};
 };
 

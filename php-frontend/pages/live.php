@@ -324,13 +324,13 @@
     </div>
 
     <div style="background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);">
-      <!-- Mobile Feed Cards List (< 768px) -->
-      <div id="live-card-list" class="block md:hidden" style="padding: 12px; display: flex; flex-direction: column; gap: 10px; max-height: 480px; overflow-y: auto; -webkit-overflow-scrolling: touch;">
-        <div style="padding: 24px; text-align: center; color: #64748b; font-size: 13px;">Loading stream...</div>
+      <!-- Mobile swipe indicator -->
+      <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
+        <span>👈 Swipe horizontally to view all live parameters</span>
+        <span class="font-mono text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">STREAM</span>
       </div>
 
-      <!-- Desktop Table (>= 768px) -->
-      <div class="hidden md:block" style="overflow-x: auto; max-height: 420px;">
+      <div style="overflow-x: auto; max-height: 420px;">
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 800px;">
           <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <tr>
@@ -600,67 +600,26 @@ function renderComparisonChart() {
 
 function renderLiveTable() {
     const tbody = document.getElementById('live-table-body');
-    const cardList = document.getElementById('live-card-list');
+    if (!tbody) return;
     
     if (liveDataStream.length === 0) {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No telemetry stream data.</td></tr>`;
-        if (cardList) cardList.innerHTML = `<div style="padding: 32px; text-align: center; color: #64748b; font-size: 13px;">No telemetry stream data.</div>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No telemetry stream data.</td></tr>`;
         return;
     }
 
-    if (tbody) {
-        tbody.innerHTML = liveDataStream.map((d, i) => {
-            const dt = new Date(d.created_at || d.timestamp || new Date());
-            const timeStr = dt.toLocaleDateString('en-GB') + ', ' + dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase();
-            return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #64748b; white-space: nowrap;">${timeStr}</td>
-                <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${Math.round(d.cpcb_aqi || 0)}</td>
-                <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.pm25 || 0).toFixed(3)}</td>
-                <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.pm10 || 0).toFixed(3)}</td>
-                <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.co || 0).toFixed(3)}</td>
-                <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.no2 || 0).toFixed(3)}</td>
-                <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.o3 || 0).toFixed(3)}</td>
-            </tr>`;
-        }).join('');
-    }
-
-    if (cardList) {
-        cardList.innerHTML = liveDataStream.map((d) => {
-            const dt = new Date(d.created_at || d.timestamp || new Date());
-            const timeStr = dt.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', hour12: true});
-            const aqiVal = Math.round(d.cpcb_aqi || 0);
-            const cat = typeof getAqiCategory === 'function' ? getAqiCategory(aqiVal) : { label: 'Active', color: '#10b981', bg: '#f0fdf4', border: '#bbf7d0' };
-            return `<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 11px 13px; box-shadow: 0 2px 8px rgba(15,23,42,0.03);">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span class="live-dot-pulse" style="width: 6px; height: 6px;"></span>
-                        <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #475569;">${timeStr}</span>
-                    </div>
-                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: ${cat.bg}; color: ${cat.color}; border: 1px solid ${cat.border}; font-family: var(--font-mono);">
-                        AQI ${aqiVal} · ${cat.label}
-                    </span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; text-align: center;">
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 5px 3px; border: 1px solid #f1f5f9;">
-                        <div style="font-size: 9px; font-weight: 700; color: #64748b;">PM2.5</div>
-                        <div style="font-size: 12px; font-weight: 800; color: #0f172a; font-family: var(--font-mono);">${Number(d.pm25 || 0).toFixed(1)}</div>
-                    </div>
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 5px 3px; border: 1px solid #f1f5f9;">
-                        <div style="font-size: 9px; font-weight: 700; color: #64748b;">PM10</div>
-                        <div style="font-size: 12px; font-weight: 800; color: #0f172a; font-family: var(--font-mono);">${Number(d.pm10 || 0).toFixed(1)}</div>
-                    </div>
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 5px 3px; border: 1px solid #f1f5f9;">
-                        <div style="font-size: 9px; font-weight: 700; color: #64748b;">CO</div>
-                        <div style="font-size: 12px; font-weight: 800; color: #0f172a; font-family: var(--font-mono);">${Number(d.co || 0).toFixed(1)}</div>
-                    </div>
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 5px 3px; border: 1px solid #f1f5f9;">
-                        <div style="font-size: 9px; font-weight: 700; color: #64748b;">O₃</div>
-                        <div style="font-size: 12px; font-weight: 800; color: #0f172a; font-family: var(--font-mono);">${Number(d.o3 || 0).toFixed(1)}</div>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-    }
+    tbody.innerHTML = liveDataStream.map((d, i) => {
+        const dt = new Date(d.created_at || d.timestamp || new Date());
+        const timeStr = dt.toLocaleDateString('en-GB') + ', ' + dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase();
+        return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #64748b; white-space: nowrap;">${timeStr}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${Math.round(d.cpcb_aqi || 0)}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.pm25 || 0).toFixed(3)}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.pm10 || 0).toFixed(3)}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.co || 0).toFixed(3)}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.no2 || 0).toFixed(3)}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.o3 || 0).toFixed(3)}</td>
+        </tr>`;
+    }).join('');
 }
 
 async function refreshDashboard() {
@@ -821,61 +780,29 @@ async function refreshDashboard() {
         
         // WEATHER HISTORY TABLE & TODAY'S TEMP RANGE
         const tbody = document.getElementById('weather-tbody');
-        const wCardList = document.getElementById('weather-card-list');
         if (weatherHistory && weatherHistory.length > 0) {
-            if (tbody) tbody.innerHTML = '';
-            if (wCardList) wCardList.innerHTML = '';
+            tbody.innerHTML = '';
             let temps = [];
             
             weatherHistory.forEach((row, i) => {
                 const tsStr = row.timestamp || row.created_at;
                 const tsDate = tsStr ? new Date(tsStr) : null;
                 const formattedTime = tsDate ? tsDate.toLocaleDateString('en-GB') + ', ' + tsDate.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase() : 'N/A';
-                const shortTime = tsDate ? tsDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', hour12: true}) : 'N/A';
                 
                 if (row.temperature != null) temps.push(Number(row.temperature));
                 
-                if (tbody) {
-                    const tr = document.createElement('tr');
-                    tr.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    tr.style.borderBottom = '1px solid #f1f5f9';
-                    tr.innerHTML = `
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #64748b; white-space: nowrap;">${formattedTime}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${row.temperature != null ? Number(row.temperature).toFixed(1) : 'N/A'}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.humidity != null ? Number(row.humidity).toFixed(1) : 'N/A'}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.wind_speed != null ? Number(row.wind_speed).toFixed(2) : 'N/A'}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.rain_gauge != null ? Number(row.rain_gauge).toFixed(2) : 'N/A'}</td>
-                    `;
-                    tbody.appendChild(tr);
-                }
-
-                if (wCardList) {
-                    const card = document.createElement('div');
-                    card.style.cssText = 'background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 11px 13px; box-shadow: 0 2px 8px rgba(15,23,42,0.03);';
-                    card.innerHTML = `
-                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #64748b;">${shortTime}</span>
-                        <span style="font-size: 11px; font-weight: 800; color: #0284c7; background: #f0f9ff; padding: 2px 8px; border-radius: 999px; border: 1px solid #bae6fd; font-family: var(--font-mono);">
-                          ${row.temperature != null ? Number(row.temperature).toFixed(1) + '°C' : '--'}
-                        </span>
-                      </div>
-                      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; text-align: center;">
-                        <div style="background: #f0f9ff; border-radius: 8px; padding: 5px 3px; border: 1px solid #bae6fd;">
-                          <div style="font-size: 9px; font-weight: 700; color: #0369a1;">Humidity</div>
-                          <div style="font-size: 12px; font-weight: 800; color: #0284c7; font-family: var(--font-mono);">${row.humidity != null ? Number(row.humidity).toFixed(0) + '%' : '--'}</div>
-                        </div>
-                        <div style="background: #ecfdf5; border-radius: 8px; padding: 5px 3px; border: 1px solid #a7f3d0;">
-                          <div style="font-size: 9px; font-weight: 700; color: #047857;">Wind</div>
-                          <div style="font-size: 12px; font-weight: 800; color: #059669; font-family: var(--font-mono);">${row.wind_speed != null ? Number(row.wind_speed).toFixed(1) + ' km/h' : '--'}</div>
-                        </div>
-                        <div style="background: #eef2ff; border-radius: 8px; padding: 5px 3px; border: 1px solid #c7d2fe;">
-                          <div style="font-size: 9px; font-weight: 700; color: #4338ca;">Rain</div>
-                          <div style="font-size: 12px; font-weight: 800; color: #4f46e5; font-family: var(--font-mono);">${row.rain_gauge != null ? Number(row.rain_gauge).toFixed(1) + ' mm' : '--'}</div>
-                        </div>
-                      </div>
-                    `;
-                    wCardList.appendChild(card);
-                }
+                const tr = document.createElement('tr');
+                tr.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+                tr.style.borderBottom = '1px solid #f1f5f9';
+                
+                tr.innerHTML = `
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #64748b; white-space: nowrap;">${formattedTime}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${row.temperature != null ? Number(row.temperature).toFixed(1) : 'N/A'}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.humidity != null ? Number(row.humidity).toFixed(1) : 'N/A'}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.wind_speed != null ? Number(row.wind_speed).toFixed(2) : 'N/A'}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.rain_gauge != null ? Number(row.rain_gauge).toFixed(2) : 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
             });
             
             if (temps.length > 0) {
@@ -887,8 +814,7 @@ async function refreshDashboard() {
                 document.getElementById('weather-high-temp').innerText = max + '°';
             }
         } else {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
-            if (wCardList) wCardList.innerHTML = '<div style="padding: 32px; text-align: center; color: #64748b; font-size: 13px;">No live weather telemetry found.</div>';
+            tbody.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
         }
 
         // LIVE AQI HISTORY (for chart and table)

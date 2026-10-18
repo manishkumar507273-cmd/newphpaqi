@@ -118,40 +118,10 @@ window.triggerHaptic = function(type = 'light') {
     } catch(e){}
 };
 
-window.showMobileToast = function(msg, iconName = 'check') {
-    var toast = document.getElementById('mobile-toast');
-    var text = document.getElementById('mobile-toast-text');
-    var icon = document.getElementById('mobile-toast-icon');
-    if (!toast || !text) return;
-    text.innerText = msg;
-    if (icon && iconName) {
-        icon.setAttribute('data-lucide', iconName);
-        if (window.lucide) lucide.createIcons();
-    }
-    toast.classList.add('show');
-    window.triggerHaptic('light');
-    clearTimeout(window.__toastTimeout);
-    window.__toastTimeout = setTimeout(function() {
-        toast.classList.remove('show');
-    }, 2800);
-};
+window.showMobileToast = function() {};
 </script>
 
 <div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; width: 100%; display: flex; flex-direction: column;">
-
-  <!-- Native Mobile Toast -->
-  <div id="mobile-toast" class="mobile-toast">
-    <i data-lucide="check" id="mobile-toast-icon" style="width: 15px; height: 15px; color: #00bfa5;"></i>
-    <span id="mobile-toast-text">Updated!</span>
-  </div>
-
-  <!-- Native Mobile Pull-to-Refresh Indicator -->
-  <div id="pull-refresh-indicator" style="position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; z-index: 9999; pointer-events: none; transform: translateY(-100%); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
-    <div id="pull-refresh-bubble" style="display: flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.98); box-shadow: 0 8px 24px rgba(0, 191, 165, 0.2), 0 2px 8px rgba(15, 23, 42, 0.1); border: 1.5px solid rgba(0, 191, 165, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
-      <i data-lucide="refresh-cw" id="pull-refresh-icon" style="width: 15px; height: 15px; color: #00bfa5; transition: transform 0.1s linear;"></i>
-      <span id="pull-refresh-text" style="font-size: 11.5px; font-weight: 700; color: #0f172a; font-family: var(--font-sans);">Pull to refresh</span>
-    </div>
-  </div>
 
   <!-- Sticky Header with Safe-Area Inset -->
   <header style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding-left: 16px; padding-right: 16px;">
@@ -214,7 +184,10 @@ window.showMobileToast = function(msg, iconName = 'check') {
     </div>
 
     <!-- Center: Desktop Nav -->
-    <nav id="desktop-nav" style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="<?= $current_page !== 'overview' ? 'hidden md:inline-flex' : 'hidden' ?>">
+    <nav id="desktop-nav" style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="hidden md:inline-flex">
+      <a href="?page=overview" data-nav-link="overview" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'overview' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'overview' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
+        <i data-lucide="layout-dashboard" style="width: 15px; height: 15px; opacity: <?= $current_page === 'overview' ? '1' : '0.75' ?>;"></i> Overview
+      </a>
       <a href="?page=live" data-nav-link="live" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'live' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
         <i data-lucide="radio" style="width: 15px; height: 15px; opacity: <?= $current_page === 'live' ? '1' : '0.75' ?>;"></i> Live Data Stream
       </a>
@@ -228,11 +201,6 @@ window.showMobileToast = function(msg, iconName = 'check') {
 
     <!-- Right: Auth & Admin & Mobile Trigger -->
     <div style="display: flex; align-items: center; gap: 8px;">
-      <a href="?page=live" id="header-dashboard-btn" class="<?= $current_page === 'overview' ? 'hidden md:inline-flex' : 'hidden' ?> header-dashboard-btn" style="align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25); border: 1px solid rgba(0, 191, 165, 0.4); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
-        <i data-lucide="layout-dashboard" style="width: 14px; height: 14px; stroke-width: 2.2;"></i>
-        <span>View Dashboard</span>
-        <i data-lucide="arrow-right" style="width: 13px; height: 13px; stroke-width: 2.5; opacity: 0.9;"></i>
-      </a>
 
       <!-- Desktop Auth & Admin -->
       <div class="hidden md:flex items-center gap-2.5">
@@ -432,111 +400,3 @@ window.showMobileToast = function(msg, iconName = 'check') {
 </script>
 <?php endif; ?>
 
-<!-- ── Native Touch Pull-to-Refresh Controller ── -->
-<script>
-(function initPullToRefresh() {
-    let startY = 0;
-    let currentY = 0;
-    let isPulling = false;
-    let isRefreshing = false;
-    const threshold = 65;
-    const maxPull = 105;
-
-    const indicator = document.getElementById('pull-refresh-indicator');
-    const bubble = document.getElementById('pull-refresh-bubble');
-    const icon = document.getElementById('pull-refresh-icon');
-    const text = document.getElementById('pull-refresh-text');
-
-    if (!indicator) return;
-
-    window.refreshCurrentPageData = async function() {
-        if (typeof refreshData === 'function') return refreshData();
-        if (typeof refreshDashboard === 'function') return refreshDashboard();
-        if (typeof fetchAllHistory === 'function') return fetchAllHistory();
-        if (typeof refreshForecast === 'function') return refreshForecast();
-        return new Promise(r => setTimeout(r, 600));
-    };
-
-    window.addEventListener('touchstart', (e) => {
-        if (window.scrollY <= 2 && !isRefreshing && e.touches.length === 1) {
-            startY = e.touches[0].clientY;
-            isPulling = true;
-        }
-    }, { passive: true });
-
-    window.addEventListener('touchmove', (e) => {
-        if (!isPulling || isRefreshing) return;
-        currentY = e.touches[0].clientY;
-        const diff = currentY - startY;
-
-        if (diff > 0 && window.scrollY <= 2) {
-            const pullDistance = Math.min(maxPull, diff * 0.42);
-            indicator.style.transition = 'none';
-            indicator.style.transform = `translateY(${pullDistance}px)`;
-
-            const rotation = Math.min(360, (pullDistance / threshold) * 270);
-            if (icon) icon.style.transform = `rotate(${rotation}deg)`;
-
-            if (pullDistance >= threshold) {
-                if (text) text.innerText = 'Release to refresh';
-                if (bubble) bubble.style.borderColor = '#00bfa5';
-            } else {
-                if (text) text.innerText = 'Pull to refresh';
-                if (bubble) bubble.style.borderColor = 'rgba(0, 191, 165, 0.4)';
-            }
-        }
-    }, { passive: true });
-
-    window.addEventListener('touchend', async () => {
-        if (!isPulling || isRefreshing) return;
-        isPulling = false;
-        const diff = currentY - startY;
-        const pullDistance = Math.min(maxPull, diff * 0.42);
-
-        if (diff > 0 && pullDistance >= threshold && window.scrollY <= 2) {
-            isRefreshing = true;
-            indicator.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
-            indicator.style.transform = 'translateY(65px)';
-            if (icon) {
-                icon.style.transform = 'rotate(0deg)';
-                icon.classList.add('animate-spin');
-            }
-            if (text) text.innerText = 'Refreshing telemetry...';
-            if (window.triggerHaptic) window.triggerHaptic('medium');
-
-            try {
-                await window.refreshCurrentPageData();
-            } catch(e) {
-                console.error("Pull-to-refresh error", e);
-            }
-
-            if (text) text.innerText = 'Updated!';
-            if (window.triggerHaptic) window.triggerHaptic('success');
-            if (window.showMobileToast) window.showMobileToast('Telemetry synchronized!', 'check-circle');
-            if (icon) {
-                icon.classList.remove('animate-spin');
-                icon.setAttribute('data-lucide', 'check');
-                if (window.lucide) lucide.createIcons();
-            }
-
-            setTimeout(() => {
-                indicator.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
-                indicator.style.transform = 'translateY(-100%)';
-                setTimeout(() => {
-                    isRefreshing = false;
-                    if (text) text.innerText = 'Pull to refresh';
-                    if (icon) {
-                        icon.setAttribute('data-lucide', 'refresh-cw');
-                        icon.style.transform = 'rotate(0deg)';
-                        if (window.lucide) lucide.createIcons();
-                    }
-                }, 300);
-            }, 400);
-
-        } else {
-            indicator.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)';
-            indicator.style.transform = 'translateY(-100%)';
-        }
-    }, { passive: true });
-})();
-</script>

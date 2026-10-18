@@ -154,6 +154,79 @@
     </div>
   </div>
 </div>
+
+<!-- Native Quick Proof & Description Viewer Modal (Optimized for Mobile & Desktop) -->
+<div id="admin-proof-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 12px; background-color: rgba(15, 23, 42, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+  <div id="admin-proof-backdrop" onclick="closeProofQuickView()" style="position: absolute; inset: 0;"></div>
+  
+  <div style="position: relative; z-index: 10; width: 100%; max-width: 620px; max-height: 90vh; background-color: #ffffff; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(226, 232, 240, 0.5); display: flex; flex-direction: column; overflow: hidden; font-family: var(--font-sans); color: #0f172a; animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+    
+    <!-- Modal Header -->
+    <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #ffffff;">
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <i data-lucide="badge-check" style="width: 20px; height: 20px; color: #2563eb;"></i>
+        </div>
+        <div style="min-width: 0;">
+          <h3 id="proof-modal-name" style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.2; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Requester Proof &amp; Details</h3>
+          <p id="proof-modal-email" style="font-size: 12px; color: #64748b; margin: 2px 0 0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Verification Dossier</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeProofQuickView()" style="width: 34px; height: 34px; border-radius: 50%; background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s;" onmouseenter="this.style.backgroundColor='#fee2e2'; this.style.color='#ef4444';" onmouseleave="this.style.backgroundColor='#f8fafc'; this.style.color='#64748b';" title="Close">
+        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+      </button>
+    </div>
+
+    <!-- Modal Scrollable Body -->
+    <div style="padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+      
+      <!-- Requester Summary Badges -->
+      <div id="proof-modal-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px;"></div>
+
+      <!-- Intended Use Case Box -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #00bfa5; border-radius: 10px; padding: 12px 14px;">
+        <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Intended Use Case &amp; Description</div>
+        <div id="proof-modal-description" style="font-size: 13.5px; color: #1e293b; line-height: 1.5; white-space: pre-wrap; word-break: break-word;"></div>
+      </div>
+
+      <!-- ID Proof Image Section -->
+      <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="font-size: 12px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="image" style="width: 14px; height: 14px; color: #2563eb;"></i>
+            <span>Identification Proof Document</span>
+          </div>
+          <span id="proof-modal-filename" style="font-size: 11px; font-family: var(--font-mono); color: #64748b; max-width: 200px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"></span>
+        </div>
+        
+        <div id="proof-modal-media-container" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center; min-height: 180px; display: flex; align-items: center; justify-content: center;">
+          <!-- Injected dynamically via JavaScript -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div style="padding: 12px 20px; border-top: 1px solid #f1f5f9; background: #ffffff; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+      <a id="proof-modal-full-link" href="#" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #2563eb; text-decoration: none; padding: 8px 12px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe;">
+        <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+        <span>Open Dedicated Page</span>
+      </a>
+      
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button type="button" onclick="closeProofQuickView()" style="padding: 8px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer;">
+          Close
+        </button>
+        <button id="proof-modal-auth-btn" type="button" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; border: none; background: linear-gradient(135deg, #00bfa5 0%, #00a693 100%); color: white; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 191, 165, 0.25);">
+          <i data-lucide="send" style="width: 14px; height: 14px;"></i>
+          <span>Authorize</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- Toast Notification Container -->
 <div id="admin-toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 12px; pointer-events: none;"></div>
 
@@ -354,7 +427,7 @@ function loadRequests(isSilent = false) {
                         <span style="display: inline-block; padding: 2px 7px; border-radius: 6px; background-color: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(req.industry || 'General')}</span>
                       </div>
                       <div style="margin-top: 8px;">
-                        <a href="api/view_request.php?id=${encodeURIComponent(reqId)}" target="_blank" onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; background-color: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; font-size: 12px; font-weight: 700; text-decoration: none; transition: all 0.15s; box-shadow: 0 1px 3px rgba(37,99,235,0.08);" onmouseenter="this.style.backgroundColor='#dbeafe'; this.style.borderColor='#93c5fd';" onmouseleave="this.style.backgroundColor='#eff6ff'; this.style.borderColor='#bfdbfe';" title="Open application details, full description, and official ID proof in another window">
+                        <a href="api/view_request.php?id=${encodeURIComponent(reqId)}" target="_blank" onclick="event.stopPropagation(); openProofQuickView('${reqId}'); return false;" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; background-color: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; font-size: 12px; font-weight: 700; text-decoration: none; transition: all 0.15s; box-shadow: 0 1px 3px rgba(37,99,235,0.08);" onmouseenter="this.style.backgroundColor='#dbeafe'; this.style.borderColor='#93c5fd';" onmouseleave="this.style.backgroundColor='#eff6ff'; this.style.borderColor='#bfdbfe';" title="Open application details, full description, and official ID proof">
                           <i data-lucide="external-link" style="width: 14px; height: 14px; color: #2563eb;"></i>
                           <span>View ID Proof &amp; Description</span>
                         </a>
@@ -411,7 +484,7 @@ function loadRequests(isSilent = false) {
                         <span style="padding: 2px 7px; border-radius: 6px; background-color: #ffffff; border: 1px solid #e2e8f0; color: #475569; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">${escapeHtml(req.industry || 'General')}</span>
                       </div>
                       <div>
-                        <a href="api/view_request.php?id=${encodeURIComponent(reqId)}" target="_blank" onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; background-color: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; font-size: 12px; font-weight: 700; text-decoration: none;">
+                        <a href="api/view_request.php?id=${encodeURIComponent(reqId)}" target="_blank" onclick="event.stopPropagation(); openProofQuickView('${reqId}'); return false;" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; background-color: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; font-size: 12px; font-weight: 700; text-decoration: none;">
                           <i data-lucide="external-link" style="width: 14px; height: 14px; color: #2563eb;"></i>
                           <span>View ID Proof &amp; Description &rarr;</span>
                         </a>
@@ -817,6 +890,94 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
         btn.style.opacity = '1';
     });
 });
+
+function openProofQuickView(reqId) {
+    const list = window.__lastLoadedRequests || [];
+    const req = list.find(r => (r.id === reqId || r._fbKey === reqId)) || {};
+    
+    const modal = document.getElementById('admin-proof-modal');
+    if (!modal) return;
+    
+    const nameEl = document.getElementById('proof-modal-name');
+    if (nameEl) nameEl.innerText = req.name || 'Anonymous Requester';
+    
+    const emailEl = document.getElementById('proof-modal-email');
+    if (emailEl) emailEl.innerText = (req.email || '') + (req.org ? ` • ${req.org}` : '');
+    
+    const metaContainer = document.getElementById('proof-modal-meta');
+    if (metaContainer) {
+        metaContainer.innerHTML = `
+          <span style="padding: 3px 9px; border-radius: 6px; background: #f1f5f9; color: #334155; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em;">${escapeHtml(req.industry || 'General')}</span>
+          <span style="color: #64748b; font-size: 12.5px; font-weight: 500;">${escapeHtml(req.scope || 'Telemetry Data')}</span>
+        `;
+    }
+    
+    const descEl = document.getElementById('proof-modal-description');
+    if (descEl) {
+        descEl.innerText = (req.use_case || req.description || 'No operational description was provided.').trim();
+    }
+    
+    const proofFile = req.proof_file || '';
+    const proofName = req.proof_name || (proofFile ? proofFile.split('/').pop() : 'Proof Document');
+    const filenameEl = document.getElementById('proof-modal-filename');
+    if (filenameEl) filenameEl.innerText = proofName;
+    
+    const fullLink = document.getElementById('proof-modal-full-link');
+    if (fullLink) {
+        fullLink.href = `api/view_request.php?id=${encodeURIComponent(reqId)}`;
+    }
+    
+    const authBtn = document.getElementById('proof-modal-auth-btn');
+    if (authBtn) {
+        if (req.status === 'approved') {
+            authBtn.style.display = 'none';
+        } else {
+            authBtn.style.display = 'inline-flex';
+            authBtn.onclick = () => {
+                closeProofQuickView();
+                approveRequest(reqId);
+            };
+        }
+    }
+    
+    const mediaContainer = document.getElementById('proof-modal-media-container');
+    if (mediaContainer) {
+        const ext = proofName.split('.').pop().toLowerCase();
+        const isPdf = (ext === 'pdf');
+        
+        let proofSrc = '';
+        if (req.proof_data) {
+            proofSrc = req.proof_data;
+        } else {
+            proofSrc = `api/view_proof.php?id=${encodeURIComponent(reqId)}&file=${encodeURIComponent(proofName)}`;
+        }
+        
+        if (isPdf) {
+            mediaContainer.innerHTML = `
+              <iframe src="${proofSrc}" style="width: 100%; height: 360px; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff;"></iframe>
+            `;
+        } else {
+            mediaContainer.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;">
+                <img src="${proofSrc}" alt="Official ID Proof" style="max-width: 100%; max-height: 380px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.08); cursor: zoom-in;" onclick="window.open('api/view_proof.php?id=${encodeURIComponent(reqId)}&file=${encodeURIComponent(proofName)}', '_blank')" title="Tap or click to view full resolution" onerror="this.onerror=null; this.src='api/view_proof.php?id=${encodeURIComponent(reqId)}&file=${encodeURIComponent(proofName)}';">
+                <span style="font-size: 11.5px; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="zoom-in" style="width: 13px; height: 13px; color: #2563eb;"></i> Tap image to inspect full size
+                </span>
+              </div>
+            `;
+        }
+    }
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+}
+
+function closeProofQuickView() {
+    const modal = document.getElementById('admin-proof-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
 
 function triggerManualSync() {
     const icon = document.getElementById('sync-icon');

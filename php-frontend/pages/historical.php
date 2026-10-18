@@ -1196,13 +1196,52 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-function readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
+function compressImageIfNeeded(file) {
+    return new Promise((resolve) => {
+        // If not an image (e.g. PDF), read directly
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+            return;
+        }
+
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const maxDim = 1600;
+                let width = img.width;
+                let height = img.height;
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                // 0.85 quality JPEG keeps crisp text clarity while compressing 8MB to ~200KB
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+                resolve(compressedBase64);
+            };
+            img.onerror = () => resolve(e.target.result);
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(null);
         reader.readAsDataURL(file);
     });
+}
+
+function readFileAsBase64(file) {
+    return compressImageIfNeeded(file);
 }
 
 function renderModalScopeHtml(scopeLabel, targetDate, timeFrame) {
@@ -1329,6 +1368,7 @@ async function submitDatasetRequest(e) {
                 industry: formData.industry,
                 proof_file: data.proof_file || '',
                 proof_name: proofFileName || '',
+                proof_data: proofBase64 || '',
                 use_case: formData.use_case,
                 description: formData.use_case,
                 scope: formData.scope,

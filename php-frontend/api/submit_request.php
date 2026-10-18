@@ -95,6 +95,7 @@ $new_request = [
     'id_number'      => $id_number,
     'proof_file'     => $proof_file_path,
     'proof_name'     => $clean_name ?: $proof_name,
+    'proof_data'     => $proof_data,
     'use_case'       => $use_case,
     'description'    => $use_case,
     'scope'          => $input['scope'],

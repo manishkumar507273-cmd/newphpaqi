@@ -78,6 +78,7 @@ if (!empty($created_at_raw)) {
 }
 $proof_file = $target_request['proof_file'] ?? '';
 $proof_name = htmlspecialchars($target_request['proof_name'] ?? basename($proof_file) ?: 'Proof Document');
+$proof_data = $target_request['proof_data'] ?? '';
 
 $proof_filename = '';
 if (!empty($proof_file)) {
@@ -87,10 +88,43 @@ if (!empty($proof_file)) {
 }
 
 $ext = strtolower(pathinfo($proof_filename, PATHINFO_EXTENSION));
+if (empty($ext) && !empty($proof_data)) {
+    if (strpos($proof_data, 'data:image/png') !== false) $ext = 'png';
+    elseif (strpos($proof_data, 'data:application/pdf') !== false) $ext = 'pdf';
+    else $ext = 'jpg';
+}
 $is_image = in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'gif']);
 $is_pdf = ($ext === 'pdf');
 
-$proof_url = !empty($proof_filename) ? "view_proof.php?file=" . urlencode($proof_filename) : "";
+// Ensure proof directory exists
+$proofs_dir = __DIR__ . '/../data/proofs';
+if (!is_dir($proofs_dir)) {
+    @mkdir($proofs_dir, 0777, true);
+}
+
+// Auto-restore file on disk from proof_data if missing
+if (!empty($proof_data) && !empty($proof_filename) && !file_exists($proofs_dir . '/' . $proof_filename)) {
+    $clean_b64 = (strpos($proof_data, ';base64,') !== false) ? explode(';base64,', $proof_data)[1] : $proof_data;
+    $binary = @base64_decode($clean_b64);
+    if ($binary !== false) {
+        @file_put_contents($proofs_dir . '/' . $proof_filename, $binary);
+    }
+}
+
+$proof_url = "view_proof.php?id=" . urlencode($req_id) . (!empty($proof_filename) ? "&file=" . urlencode($proof_filename) : "");
+
+// Prioritize direct data URI if available for zero-latency, cross-platform rendering
+$preview_src = "";
+if (!empty($proof_data)) {
+    if (strpos($proof_data, 'data:') === 0) {
+        $preview_src = $proof_data;
+    } else {
+        $mime = ($ext === 'png') ? 'image/png' : (($ext === 'pdf') ? 'application/pdf' : 'image/jpeg');
+        $preview_src = "data:{$mime};base64," . $proof_data;
+    }
+} else {
+    $preview_src = $proof_url;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -307,6 +341,12 @@ $proof_url = !empty($proof_filename) ? "view_proof.php?file=" . urlencode($proof
       border: 1px solid #e2e8f0;
       background: #ffffff;
       object-fit: contain;
+      cursor: zoom-in;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      touch-action: pan-y pinch-zoom;
+    }
+    .proof-img:hover {
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
     }
     .proof-iframe {
       width: 100%;
@@ -341,6 +381,106 @@ $proof_url = !empty($proof_filename) ? "view_proof.php?file=" . urlencode($proof
       justify-content: space-between;
       gap: 12px;
       z-index: 100;
+    }
+
+    /* Mobile responsive optimizations */
+    @media (max-width: 640px) {
+      body {
+        padding: 12px 10px 120px;
+      }
+      .card {
+        padding: 16px;
+        border-radius: 14px;
+        margin-bottom: 14px;
+      }
+      .brand-title {
+        font-size: 15px;
+      }
+      .brand-sub {
+        font-size: 11px;
+      }
+      .proof-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .proof-meta > div:last-child {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .fixed-footer {
+        padding: 10px 14px;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .fixed-footer > div {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .fixed-footer .btn-primary {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    /* Lightbox Modal */
+    #image-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    #image-lightbox.active {
+      display: flex;
+    }
+    .lightbox-content {
+      position: relative;
+      max-width: 95vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .lightbox-content img {
+      max-width: 100%;
+      max-height: 85vh;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      object-fit: contain;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      touch-action: pan-x pan-y pinch-zoom;
+    }
+    .lightbox-bar {
+      position: absolute;
+      top: -46px;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lightbox-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .lightbox-btn:hover {
+      background: rgba(255,255,255,0.35);
     }
     @media print {
       .top-actions, .fixed-footer {
@@ -483,9 +623,17 @@ $proof_url = !empty($proof_filename) ? "view_proof.php?file=" . urlencode($proof
         </div>
 
         <?php if ($is_image): ?>
-          <img src="<?= $proof_url ?>" alt="Requester Official ID Card Proof" class="proof-img" id="preview-image" onerror="this.style.display='none'; document.getElementById('preview-fallback').style.display='block';">
-          <div id="preview-fallback" style="display: none; padding: 30px; color: #64748b;">
-            <p>Could not preview image directly. Click <strong>Open Raw File</strong> above to inspect.</p>
+          <div style="position: relative; width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div style="margin-bottom: 8px; font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="zoom-in" style="width: 14px; height: 14px; color: #0284c7;"></i>
+              <span>Tap photo to zoom &amp; inspect document</span>
+            </div>
+            <img src="<?= $preview_src ?>" alt="Requester Official ID Card Proof" class="proof-img" id="preview-image" onclick="openLightbox(this.src)" onerror="handlePreviewError(this)">
+            <div id="preview-fallback" style="display: none; padding: 24px 16px; text-align: center; color: #64748b;">
+              <i data-lucide="info" style="width: 28px; height: 28px; color: #0284c7; margin-bottom: 6px;"></i>
+              <p style="font-weight: 700; color: #1e293b; font-size: 14px;">Official Proof Attached with Notification Email</p>
+              <p style="font-size: 12.5px; margin-top: 4px;">Click <strong>Open Raw File</strong> above or download to inspect the document.</p>
+            </div>
           </div>
         <?php elseif ($is_pdf): ?>
           <iframe src="<?= $proof_url ?>" class="proof-iframe" title="PDF ID Proof Document"></iframe>
@@ -535,8 +683,77 @@ $proof_url = !empty($proof_filename) ? "view_proof.php?file=" . urlencode($proof
   </div>
 </div>
 
+<!-- Lightbox Zoom Modal for Mobile & Desktop -->
+<div id="image-lightbox" onclick="closeLightbox(event)">
+  <div class="lightbox-content" onclick="event.stopPropagation()">
+    <div class="lightbox-bar">
+      <button type="button" class="lightbox-btn" onclick="zoomLightbox(0.25)" title="Zoom In" aria-label="Zoom In">
+        <i data-lucide="zoom-in" style="width: 18px; height: 18px;"></i>
+      </button>
+      <button type="button" class="lightbox-btn" onclick="zoomLightbox(-0.25)" title="Zoom Out" aria-label="Zoom Out">
+        <i data-lucide="zoom-out" style="width: 18px; height: 18px;"></i>
+      </button>
+      <button type="button" class="lightbox-btn" onclick="resetLightboxZoom()" title="Reset Size" aria-label="Reset Size">
+        <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
+      </button>
+      <button type="button" class="lightbox-btn" onclick="closeLightbox()" title="Close" aria-label="Close" style="background: rgba(239, 68, 68, 0.7); border-color: rgba(239, 68, 68, 0.8);">
+        <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+    <img id="lightbox-img" src="" alt="Enlarged ID Proof Document">
+  </div>
+</div>
+
 <script>
   lucide.createIcons();
+
+  let currentZoom = 1;
+  function openLightbox(src) {
+    const lb = document.getElementById('image-lightbox');
+    const img = document.getElementById('lightbox-img');
+    if (!lb || !img) return;
+    img.src = src;
+    currentZoom = 1;
+    img.style.transform = `scale(${currentZoom})`;
+    lb.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+  }
+
+  function closeLightbox() {
+    const lb = document.getElementById('image-lightbox');
+    if (lb) lb.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function zoomLightbox(delta) {
+    const img = document.getElementById('lightbox-img');
+    if (!img) return;
+    currentZoom = Math.max(0.6, Math.min(3.5, currentZoom + delta));
+    img.style.transform = `scale(${currentZoom})`;
+  }
+
+  function resetLightboxZoom() {
+    const img = document.getElementById('lightbox-img');
+    if (!img) return;
+    currentZoom = 1;
+    img.style.transform = `scale(1)`;
+  }
+
+  function handlePreviewError(imgEl) {
+    if (!imgEl.getAttribute('data-retried')) {
+      imgEl.setAttribute('data-retried', '1');
+      imgEl.src = '<?= $proof_url ?>';
+      return;
+    }
+    imgEl.style.display = 'none';
+    const fb = document.getElementById('preview-fallback');
+    if (fb) fb.style.display = 'block';
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox();
+  });
 
   async function authorizeFromWindow(id, email, name) {
     const btn = document.getElementById('authorize-btn');

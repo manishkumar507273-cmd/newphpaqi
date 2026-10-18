@@ -22,9 +22,27 @@
     </div>
   </div>
 
-  <!-- UNIFIED DATE SELECTOR & 24-HOUR SUMMARY CARD -->
+  <!-- ── Analytics Date Picker Card ── -->
   <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
-    
+
+    <!-- Mobile & Desktop Segmented Quick-Range Pills -->
+    <div class="flex gap-2 mb-3 overflow-x-auto items-center" style="scrollbar-width:none; -webkit-overflow-scrolling:touch; padding-bottom:2px;">
+      <button onclick="setQuickRange('24h')" id="qr-24h" class="quick-range-pill active" style="display:inline-flex;align-items:center;gap:4px;padding:7px 15px;border-radius:999px;border:1.5px solid #00bfa5;background:#00bfa5;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:var(--font-sans);-webkit-tap-highlight-color:transparent;transition:all 0.15s ease;">
+        <i data-lucide="clock" style="width:12px;height:12px;"></i> 24H
+      </button>
+      <button onclick="setQuickRange('7d')" id="qr-7d" class="quick-range-pill" style="display:inline-flex;align-items:center;gap:4px;padding:7px 15px;border-radius:999px;border:1.5px solid #cbd5e1;background:#f8fafc;color:#64748b;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:var(--font-sans);-webkit-tap-highlight-color:transparent;transition:all 0.15s ease;">
+        <i data-lucide="calendar" style="width:12px;height:12px;"></i> 7D
+      </button>
+      <button onclick="setQuickRange('30d')" id="qr-30d" class="quick-range-pill" style="display:inline-flex;align-items:center;gap:4px;padding:7px 15px;border-radius:999px;border:1.5px solid #cbd5e1;background:#f8fafc;color:#64748b;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:var(--font-sans);-webkit-tap-highlight-color:transparent;transition:all 0.15s ease;">
+        <i data-lucide="calendar-range" style="width:12px;height:12px;"></i> 30D
+      </button>
+      <button onclick="setQuickRange('custom')" id="qr-custom" class="quick-range-pill" style="display:inline-flex;align-items:center;gap:4px;padding:7px 15px;border-radius:999px;border:1.5px solid #cbd5e1;background:#f8fafc;color:#64748b;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:var(--font-sans);-webkit-tap-highlight-color:transparent;transition:all 0.15s ease;">
+        <i data-lucide="sliders" style="width:12px;height:12px;"></i> Custom Date
+      </button>
+    </div>
+
+    <!-- Custom date picker row (shown on desktop always; shown on mobile only when Custom is selected) -->
+    <div id="custom-date-row">
     <!-- Top Header Row: Date Selector & Controls -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
       
@@ -51,6 +69,7 @@
         </div>
       </div>
     </div>
+    </div><!-- /custom-date-row -->
 
     <!-- Bottom Integrated Section: 24-Hour Dynamic Metrics -->
     <div id="summary-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
@@ -184,6 +203,22 @@
           <button onclick="setParam('wind_gust')" id="btn-wind_gust" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Wind Gust</button>
           <button onclick="setParam('rain_gauge')" id="btn-rain_gauge" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Rain</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Mobile Headline Stats — 3 chips above chart for quick answer without reading plot -->
+    <div class="flex sm:hidden gap-2 overflow-x-auto mb-3" style="scrollbar-width:none;-webkit-overflow-scrolling:touch;">
+      <div id="mob-stat-aqi" style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 14px;border-radius:14px;background:#f0fdf4;border:1px solid #a7f3d0;flex-shrink:0;">
+        <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Peak AQI</span>
+        <span id="mob-peak-aqi" style="font-size:20px;font-weight:800;color:#15803d;font-family:var(--font-mono);line-height:1.1;">--</span>
+      </div>
+      <div id="mob-stat-temp" style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 14px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;flex-shrink:0;">
+        <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Avg Temp</span>
+        <span id="mob-avg-temp" style="font-size:20px;font-weight:800;color:#ea580c;font-family:var(--font-mono);line-height:1.1;">--</span>
+      </div>
+      <div id="mob-stat-rain" style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 14px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;flex-shrink:0;">
+        <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Total Rain</span>
+        <span id="mob-total-rain" style="font-size:20px;font-weight:800;color:#2563eb;font-family:var(--font-mono);line-height:1.1;">--</span>
       </div>
     </div>
 
@@ -419,6 +454,151 @@ var historicalDataWeather = [];
 var chartInstance = null;
 var filteredDayData = [];
 
+/* ── Segmented Range Pills & Multi-Day Analytics ── */
+var activeRangeMode = '24h';
+
+function setQuickRange(range) {
+    activeRangeMode = range;
+    const picker = document.getElementById('history-date-picker');
+    const customRow = document.getElementById('custom-date-row');
+
+    // Update pill styles
+    ['24h', '7d', '30d', 'custom'].forEach(r => {
+        const btn = document.getElementById('qr-' + r);
+        if (!btn) return;
+        if (r === range) {
+            btn.style.background = '#00bfa5';
+            btn.style.color = '#ffffff';
+            btn.style.borderColor = '#00bfa5';
+            btn.style.boxShadow = '0 2px 8px rgba(0, 191, 165, 0.28)';
+        } else {
+            btn.style.background = '#f8fafc';
+            btn.style.color = '#64748b';
+            btn.style.borderColor = '#cbd5e1';
+            btn.style.boxShadow = 'none';
+        }
+    });
+
+    if (range === 'custom') {
+        if (customRow) customRow.style.display = '';
+        if (picker) picker.focus();
+        return;
+    } else {
+        if (customRow) customRow.style.display = 'none';
+    }
+
+    if (range === '24h') {
+        const todayStr = getLocalDateStr();
+        if (picker) picker.value = todayStr;
+        fetchAllHistory(todayStr);
+    } else if (range === '7d') {
+        fetchMultiDayHistory(7);
+    } else if (range === '30d') {
+        fetchMultiDayHistory(30);
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+async function fetchMultiDayHistory(days) {
+    try {
+        const lim = days === 7 ? 220 : 800;
+        const res = await fetch(`api/telemetry.php?action=history_bulk&limit=${lim}`);
+        const data = await res.json();
+        historicalDataAqi = data.aqi || [];
+        historicalDataWeather = data.weather || [];
+        
+        const now = Date.now();
+        const cutoff = now - (days * 24 * 60 * 60 * 1000);
+        
+        const parseIsoLocal = (str) => {
+            if (!str) return 0;
+            const parts = str.split('T');
+            if (parts.length !== 2) return new Date(str).getTime();
+            const [yr, mo, da] = parts[0].split('-').map(Number);
+            const [hr, mn, sc] = parts[1].split(':').map(Number);
+            return new Date(yr, mo - 1, da, hr, mn || 0, sc || 0).getTime();
+        };
+
+        const sourceData = currentSubTab === 'aqi' ? historicalDataAqi : historicalDataWeather;
+        filteredDayData = sourceData.filter(item => {
+            if (!item.timestamp) return false;
+            return parseIsoLocal(item.timestamp) >= cutoff;
+        });
+
+        // Sort ascending
+        filteredDayData.sort((a,b) => parseIsoLocal(a.timestamp) - parseIsoLocal(b.timestamp));
+
+        const rangeLabel = `Past ${days} Days (${days === 7 ? '7-Day' : '30-Day'} Trend)`;
+        const subtitleEl = document.getElementById('date-subtitle-desktop');
+        if (subtitleEl) subtitleEl.innerText = `Showing ${filteredDayData.length} records (${rangeLabel})`;
+        const summaryDate = document.getElementById('summary-date-display');
+        if (summaryDate) summaryDate.innerText = rangeLabel;
+        const logCount = document.getElementById('log-count');
+        if (logCount) logCount.innerText = filteredDayData.length;
+        const chartSub = document.getElementById('chart-sub-title');
+        if (chartSub) chartSub.innerText = `${days}-Day progression · ${filteredDayData.length} data points`;
+        const tblSub = document.getElementById('table-subtitle');
+        if (tblSub) tblSub.innerText = `${days}-Day Historical Telemetry (${filteredDayData.length} rows)`;
+
+        renderChartAndTable();
+        updateMobileStatChips();
+    } catch(e) {
+        console.error("Error fetching multi-day history", e);
+    }
+}
+
+/* ── Mobile Headline Stat Chips Update (Peak AQI, Avg Temp, Total Rain) ── */
+function updateMobileStatChips() {
+    const peakEl = document.getElementById('mob-peak-aqi');
+    const tempEl = document.getElementById('mob-avg-temp');
+    const rainEl = document.getElementById('mob-total-rain');
+    const aqiCard = document.getElementById('mob-stat-aqi');
+
+    // 1. Peak AQI
+    let peakAqi = -1;
+    const aqiSource = (currentSubTab === 'aqi' && filteredDayData.length > 0) ? filteredDayData : historicalDataAqi;
+    aqiSource.forEach(d => {
+        const v = Number(d.cpcb_aqi);
+        if (!isNaN(v) && v > peakAqi) peakAqi = v;
+    });
+
+    if (peakEl) {
+        if (peakAqi >= 0) {
+            peakEl.innerText = Math.round(peakAqi);
+            const cat = getAqiCategory(peakAqi);
+            peakEl.style.color = cat.color;
+            if (aqiCard) {
+                aqiCard.style.background = cat.bg;
+                aqiCard.style.borderColor = cat.border;
+            }
+        } else {
+            peakEl.innerText = '--';
+        }
+    }
+
+    // 2. Avg Temp
+    let sumTemp = 0, countTemp = 0;
+    const weatherSource = (currentSubTab === 'weather' && filteredDayData.length > 0) ? filteredDayData : historicalDataWeather;
+    weatherSource.forEach(d => {
+        const t = d.temperature != null ? Number(d.temperature) : null;
+        if (t !== null && !isNaN(t)) { sumTemp += t; countTemp++; }
+    });
+    if (tempEl) {
+        tempEl.innerText = countTemp > 0 ? (sumTemp / countTemp).toFixed(1) + '°C' : '--';
+    }
+
+    // 3. Total Rain
+    let sumRain = 0;
+    weatherSource.forEach(d => {
+        const r = d.rain_gauge != null ? Number(d.rain_gauge) : null;
+        if (r !== null && !isNaN(r) && r > 0) { sumRain += r; }
+    });
+    if (rainEl) {
+        rainEl.innerText = sumRain.toFixed(1) + ' mm';
+    }
+}
+
+
 var PARAM_COLORS = {
     cpcb_aqi: '#00bfa5', pm25: '#0284c7', pm10: '#6366f1',
     co: '#16a34a', no2: '#9333ea', o3: '#d97706',
@@ -586,13 +766,7 @@ function setParam(param) {
     renderUI();
 }
 
-function renderUI() {
-    const dateInput = document.getElementById('history-date-picker').value;
-    if (!dateInput) return;
-    
-    const sourceData = currentSubTab === 'aqi' ? historicalDataAqi : historicalDataWeather;
-    
-    // Parse ISO string into local timestamp
+function renderUI(skipDayFilter = false) {
     const parseIsoLocal = (str) => {
         if (!str) return 0;
         const parts = str.split('T');
@@ -602,51 +776,59 @@ function renderUI() {
         return new Date(yr, mo - 1, da, hr, mn || 0, sc || 0).getTime();
     };
 
-    // AQI uses 12:00 AM to 12:00 AM (calendar day midnight to midnight), Weather uses 8:00 AM to 8:00 AM
-    const [y, m, d] = dateInput.split('-').map(Number);
-    const startHour = currentSubTab === 'aqi' ? 0 : 8;
-    const startWindow = new Date(y, m - 1, d, startHour, 0, 0, 0).getTime();
-    const endWindow = startWindow + (24 * 60 * 60 * 1000);
-    const nextDateObj = new Date(endWindow);
-    const startDateObj = new Date(y, m - 1, d);
-    
-    // Filter data strictly within [startWindow, endWindow)
-    filteredDayData = sourceData.filter(item => {
-        if (!item.timestamp) return false;
-        const t = parseIsoLocal(item.timestamp);
-        return t >= startWindow && t < endWindow;
-    });
+    let rangeLabel = '';
+    if (!skipDayFilter) {
+        const dateInput = document.getElementById('history-date-picker').value;
+        if (!dateInput) return;
+        
+        const sourceData = currentSubTab === 'aqi' ? historicalDataAqi : historicalDataWeather;
 
-    // Sort ascending by time and deduplicate any points sharing the same hour
-    const hourlyMap = new Map();
-    filteredDayData.forEach(item => {
-        const parts = (item.timestamp || '').split('T');
-        let hrKey = '';
-        if (parts.length === 2) {
-            hrKey = parts[0] + ' ' + parts[1].slice(0, 2);
-        } else {
-            const dt = new Date(item.timestamp);
-            hrKey = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate() + ' ' + dt.getHours();
-        }
-        hourlyMap.set(hrKey, item);
-    });
-    filteredDayData = Array.from(hourlyMap.values());
-    filteredDayData.sort((a,b) => parseIsoLocal(a.timestamp) - parseIsoLocal(b.timestamp));
-    
-    const dateStrLong = startDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-    const nextDateStrLong = nextDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-    const nextDateStrShort = nextDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-    
-    const rangeLabel = currentSubTab === 'aqi'
-        ? `${dateStrLong} (12:00 AM – 12:00 AM)`
-        : `${dateStrLong} 8:00 AM – ${nextDateStrLong} 8:00 AM`;
-    
-    document.getElementById('date-subtitle-desktop').innerText = `Showing ${filteredDayData.length} hourly data points (${rangeLabel})`;
-    document.getElementById('summary-date-display').innerText = currentSubTab === 'aqi' ? dateStrLong : `${dateStrLong} → ${nextDateStrShort}`;
-    document.getElementById('log-count').innerText = filteredDayData.length;
-    
-    document.getElementById('chart-sub-title').innerText = `24-Hour progression: ${rangeLabel}`;
-    document.getElementById('table-subtitle').innerText = `24 Hourly Telemetry Rows (${rangeLabel}) — ${filteredDayData.length} Logged Readings`;
+        // AQI uses 12:00 AM to 12:00 AM (calendar day midnight to midnight), Weather uses 8:00 AM to 8:00 AM
+        const [y, m, d] = dateInput.split('-').map(Number);
+        const startHour = currentSubTab === 'aqi' ? 0 : 8;
+        const startWindow = new Date(y, m - 1, d, startHour, 0, 0, 0).getTime();
+        const endWindow = startWindow + (24 * 60 * 60 * 1000);
+        const nextDateObj = new Date(endWindow);
+        const startDateObj = new Date(y, m - 1, d);
+        
+        // Filter data strictly within [startWindow, endWindow)
+        filteredDayData = sourceData.filter(item => {
+            if (!item.timestamp) return false;
+            const t = parseIsoLocal(item.timestamp);
+            return t >= startWindow && t < endWindow;
+        });
+
+        // Sort ascending by time and deduplicate any points sharing the same hour
+        const hourlyMap = new Map();
+        filteredDayData.forEach(item => {
+            const parts = (item.timestamp || '').split('T');
+            let hrKey = '';
+            if (parts.length === 2) {
+                hrKey = parts[0] + ' ' + parts[1].slice(0, 2);
+            } else {
+                const dt = new Date(item.timestamp);
+                hrKey = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate() + ' ' + dt.getHours();
+            }
+            hourlyMap.set(hrKey, item);
+        });
+        filteredDayData = Array.from(hourlyMap.values());
+        filteredDayData.sort((a,b) => parseIsoLocal(a.timestamp) - parseIsoLocal(b.timestamp));
+        
+        const dateStrLong = startDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        const nextDateStrLong = nextDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        const nextDateStrShort = nextDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        
+        rangeLabel = currentSubTab === 'aqi'
+            ? `${dateStrLong} (12:00 AM – 12:00 AM)`
+            : `${dateStrLong} 8:00 AM – ${nextDateStrLong} 8:00 AM`;
+        
+        document.getElementById('date-subtitle-desktop').innerText = `Showing ${filteredDayData.length} hourly data points (${rangeLabel})`;
+        document.getElementById('summary-date-display').innerText = currentSubTab === 'aqi' ? dateStrLong : `${dateStrLong} → ${nextDateStrShort}`;
+        document.getElementById('log-count').innerText = filteredDayData.length;
+        
+        document.getElementById('chart-sub-title').innerText = `24-Hour progression: ${rangeLabel}`;
+        document.getElementById('table-subtitle').innerText = `24 Hourly Telemetry Rows (${rangeLabel}) — ${filteredDayData.length} Logged Readings`;
+    }
     
     if (filteredDayData.length === 0) {
         document.getElementById('chart-empty').style.display = 'flex';
@@ -781,6 +963,30 @@ function renderUI() {
     gradient.addColorStop(0, color + '66');
     gradient.addColorStop(1, color + '00');
 
+    // Vertical crosshair plugin for silky-smooth touch dragging and crosshair tracking
+    const crosshairPlugin = {
+        id: 'crosshairLine',
+        afterDatasetsDraw(chart) {
+            if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
+                const activePoint = chart.tooltip._active[0];
+                const ctx = chart.ctx;
+                const x = activePoint.element.x;
+                const topY = chart.scales.y.top;
+                const bottomY = chart.scales.y.bottom;
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(x, topY);
+                ctx.lineTo(x, bottomY);
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = color || '#00bfa5';
+                ctx.globalAlpha = 0.55;
+                ctx.setLineDash([4, 4]);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+    };
+
     // In-place silent update without destroying or flickering
     if (chartInstance && chartInstance.config && chartInstance.config.type === currentChartType) {
         if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.x) {
@@ -795,12 +1001,15 @@ function renderUI() {
             chartInstance.data.datasets[0].borderWidth = currentChartType === 'line' ? 2.5 : 0;
             chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? 4 : 0;
             chartInstance.data.datasets[0].pointBackgroundColor = color;
+            chartInstance.data.datasets[0].pointHoverRadius = 6;
+            chartInstance.data.datasets[0].pointHitRadius = 28;
         }
         chartInstance.update('none');
     } else {
         if (chartInstance) { chartInstance.destroy(); }
         chartInstance = new Chart(ctx, {
             type: currentChartType,
+            plugins: [crosshairPlugin],
             data: {
                 labels: labels,
                 datasets: [{
@@ -816,16 +1025,19 @@ function renderUI() {
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
                     pointRadius: 0,
-                    pointHoverRadius: 5,
+                    pointHoverRadius: 6,
+                    pointHitRadius: 28,
                     spanGaps: false
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
                 interaction: {
                     mode: 'index',
                     intersect: false,
+                    axis: 'x'
                 },
                 plugins: {
                     legend: { display: false },
@@ -942,6 +1154,11 @@ function renderUI() {
             </tr>`;
         }).join('');
     }
+    updateMobileStatChips();
+}
+
+function renderChartAndTable() {
+    renderUI(true);
 }
 
 function getPreviousDayDateStr() {

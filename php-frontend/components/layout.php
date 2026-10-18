@@ -3,6 +3,16 @@ $current_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
 $is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : false;
 $is_logged_in = isset($_SESSION['user_id']);
 
+$page_titles = [
+    'overview'   => 'Atmosphere Snapshot',
+    'live'       => 'Live Data Stream',
+    'historical' => 'Analytics Archive',
+    'predictive' => 'Forecast & Advisory',
+    'admin'      => 'Admin Center',
+    'weather'    => 'Weather Conditions'
+];
+$current_title = $page_titles[$current_page] ?? 'Smart WeatherNet';
+
 // Parse credentials from frontend or shared .env
 $env_paths = [
     __DIR__ . '/../.env',
@@ -99,33 +109,72 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
 
 <div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; width: 100%; display: flex; flex-direction: column;">
 
+  <!-- Native Mobile Pull-to-Refresh Indicator -->
+  <div id="pull-refresh-indicator" style="position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; z-index: 9999; pointer-events: none; transform: translateY(-100%); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+    <div id="pull-refresh-bubble" style="display: flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.98); box-shadow: 0 8px 24px rgba(0, 191, 165, 0.2), 0 2px 8px rgba(15, 23, 42, 0.1); border: 1.5px solid rgba(0, 191, 165, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+      <i data-lucide="refresh-cw" id="pull-refresh-icon" style="width: 15px; height: 15px; color: #00bfa5; transition: transform 0.1s linear;"></i>
+      <span id="pull-refresh-text" style="font-size: 11.5px; font-weight: 700; color: #0f172a; font-family: var(--font-sans);">Pull to refresh</span>
+    </div>
+  </div>
+
   <!-- Sticky Header -->
-  <header style="min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding: 0 16px;">
+  <header style="min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding: 0 16px;">
     
-    <!-- Left: Brand -->
-    <div style="display: flex; align-items: center; gap: 20px;">
-      <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-        <a href="?page=overview" id="header-back-btn" title="Back to Atmosphere Snapshot" style="display: <?= $current_page !== 'overview' ? 'flex' : 'none' ?>; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid #e2e8f0; background-color: #f8fafc; color: #475569; cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; text-decoration: none;" onmouseenter="this.style.backgroundColor='#00bfa5'; this.style.color='#ffffff'; this.style.borderColor='#00bfa5';" onmouseleave="this.style.backgroundColor='#f8fafc'; this.style.color='#475569'; this.style.borderColor='#e2e8f0';">
-          <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-        </a>
+    <!-- Left: Desktop Brand & Mobile Header Selector -->
+    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+      
+      <!-- Desktop Brand (Always visible on md+ screens) -->
+      <div class="hidden md:flex items-center gap-2.5">
         <a href="?page=overview" style="display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none;">
           <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35); flex-shrink: 0;">
             <i data-lucide="wind" style="width: 20px; height: 20px;"></i>
           </div>
           <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden; padding-top: 2px;">
-            <div style="font-size: clamp(16px, 3vw, 19px); font-weight: 700; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1;">
+            <div style="font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; line-height: 1.1;">
               Smart <span style="font-weight: 500; color: #00bfa5;">WeatherNet</span>
             </div>
-            <div style="display: flex; flex-direction: column; justify-content: center; margin-top: 2px;">
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <div style="width: 5px; height: 5px; border-radius: 50%; background: #10b981;"></div>
-                <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
-                <span class="hidden sm:inline" style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
-              </div>
+            <div style="display: flex; align-items: center; gap: 5px; margin-top: 2px;">
+              <span class="live-dot-pulse"></span>
+              <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
+              <span style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
             </div>
           </div>
         </a>
       </div>
+
+      <!-- Mobile Top App Bar (Overview vs Secondary Pages) -->
+      <div class="flex md:hidden items-center gap-2 min-w-0" id="mobile-top-bar">
+        <!-- Overview Mobile Brand -->
+        <a href="?page=overview" id="mobile-brand-overview" style="display: <?= $current_page === 'overview' ? 'flex' : 'none' ?>; align-items: center; gap: 10px; text-decoration: none; min-width: 0;">
+          <div style="width: 36px; height: 36px; border-radius: 11px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 12px rgba(0, 191, 165, 0.3); flex-shrink: 0;">
+            <i data-lucide="wind" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div style="display: flex; flex-direction: column; overflow: hidden;">
+            <span style="font-size: 16px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
+              Smart <span style="color: #00bfa5;">WeatherNet</span>
+            </span>
+            <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
+              <span class="live-dot-pulse"></span>
+              <span style="font-size: 10.5px; font-weight: 700; color: #64748b; white-space: nowrap;">SMVITM Campus</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Secondary Page Mobile App Bar: Native Back Chevron + Section Title -->
+        <div id="mobile-secondary-header" style="display: <?= $current_page !== 'overview' ? 'flex' : 'none' ?>; align-items: center; gap: 8px; min-width: 0;">
+          <a href="?page=overview" id="header-back-btn" title="Back to Overview" style="display: inline-flex; align-items: center; gap: 3px; padding: 6px 10px 6px 6px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #ffffff; color: #475569; text-decoration: none; font-size: 12px; font-weight: 700; -webkit-tap-highlight-color: transparent; flex-shrink: 0;">
+            <i data-lucide="chevron-left" style="width: 18px; height: 18px; color: #00bfa5;"></i>
+            <span>Back</span>
+          </a>
+          <div style="display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden;">
+            <span id="mobile-page-title" style="font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              <?= htmlspecialchars($current_title) ?>
+            </span>
+            <span class="live-dot-pulse" style="flex-shrink: 0;"></span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Center: Desktop Nav -->
@@ -137,7 +186,7 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
         <i data-lucide="database" style="width: 15px; height: 15px; opacity: <?= $current_page === 'historical' ? '1' : '0.75' ?>;"></i> Analytics Archive
       </a>
       <a href="?page=predictive" data-nav-link="predictive" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
-        <i data-lucide="line-chart" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Predictive Forecast (Under Dev)
+        <i data-lucide="line-chart" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Predictive Forecast
       </a>
     </nav>
 
@@ -184,13 +233,14 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
 
       <!-- Mobile Right Items (Visible on mobile screens) -->
       <div class="flex md:hidden items-center gap-2">
-        <div style="display: flex; padding: 5px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; align-items: center; gap: 5px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #16a34a;"></span>
+        <!-- Animated LIVE badge -->
+        <div style="display: flex; padding: 5px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; align-items: center; gap: 6px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;">
+          <span class="live-dot-pulse" style="background-color: #16a34a;"></span>
           <span>LIVE</span>
         </div>
 
-        <button onclick="toggleMobileMenu()" id="mobile-menu-btn" aria-label="Toggle Menu" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background-color: #ffffff; border: 1.5px solid #e2e8f0; color: #0f172a; cursor: pointer;">
-          <i data-lucide="menu" id="mobile-menu-icon" style="width: 20px; height: 20px;"></i>
+        <button onclick="toggleMobileMenu()" id="mobile-menu-btn" aria-label="Open Menu" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background-color: #f8fafc; border: 1.5px solid #e2e8f0; color: #475569; cursor: pointer; transition: all 0.15s ease;">
+          <i data-lucide="menu" id="mobile-menu-icon" style="width: 18px; height: 18px;"></i>
         </button>
       </div>
     </div>
@@ -226,7 +276,7 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
       <i data-lucide="database" style="width: 18px; height: 18px;"></i> Analytics Archive
     </a>
     <a href="?page=predictive" data-mobile-nav-link="predictive" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : '#ffffff' ?>; transition: all 0.2s ease;">
-      <i data-lucide="line-chart" style="width: 18px; height: 18px;"></i> Predictive Forecast (Under Dev)
+      <i data-lucide="line-chart" style="width: 18px; height: 18px;"></i> Predictive Forecast
     </a>
   </div>
 
@@ -277,44 +327,51 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
     </div>
   </main>
 
-  <!-- Fixed Native Mobile Bottom Navigation Bar -->
-  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: center; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid #e2e8f0; height: calc(52px + env(safe-area-inset-bottom, 12px)); padding: 4px 6px env(safe-area-inset-bottom, 12px); box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
-    
+  <!-- Fixed Native Mobile Bottom Navigation Bar —— Icon stacked above label, native-app style -->
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(62px + env(safe-area-inset-bottom, 14px)); padding: 6px 8px env(safe-area-inset-bottom, 14px); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
 
-    <a href="?page=live" data-bottom-nav="live" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-      <i data-lucide="radio" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'live' ? 'color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 11px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
+    <!-- Overview -->
+    <a href="?page=overview" data-bottom-nav="overview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <i data-lucide="home" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'overview' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
     </a>
 
-    <a href="?page=historical" data-bottom-nav="historical" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-      <i data-lucide="database" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'historical' ? 'color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 11px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
+    <!-- Live Feed -->
+    <a href="?page=live" data-bottom-nav="live" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'live' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
     </a>
 
-    <a href="?page=predictive" data-bottom-nav="predictive" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-      <i data-lucide="line-chart" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 11px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
+    <!-- Analytics -->
+    <a href="?page=historical" data-bottom-nav="historical" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'historical' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
     </a>
 
+    <!-- Forecast -->
+    <a href="?page=predictive" data-bottom-nav="predictive" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <i data-lucide="line-chart" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
+    </a>
+
+    <!-- Admin / Auth -->
     <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
-      <a href="?page=admin" data-bottom-nav="admin" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; transition: all 0.15s ease; color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-        <i data-lucide="shield-check" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'admin' ? 'color: #00bfa5;' : '' ?>"></i>
-        <span style="font-size: 11px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Admin</span>
+      <a href="?page=admin" data-bottom-nav="admin" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+        <i data-lucide="shield-check" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'admin' ? 'color: #00bfa5;' : '' ?>"></i>
+        <span style="font-size: 10px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Admin</span>
+      </a>
+    <?php elseif ($is_logged_in): ?>
+      <a href="?logout=true" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
+        <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0;">
+          <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
+        </div>
+        <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign Out</span>
       </a>
     <?php else: ?>
-      <?php if ($is_logged_in): ?>
-        <a href="?logout=true" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; text-decoration: none; color: #64748b; transition: all 0.15s ease;">
-          <div style="width: 18px; height: 18px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0;">
-            <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
-          </div>
-          <span style="font-size: 11px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign Out</span>
-        </a>
-      <?php else: ?>
-        <button onclick="openAuthModal()" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content; padding: 7px 8px; border-radius: 8px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.15s ease;">
-          <i data-lucide="user" style="width: 16px; height: 16px; stroke-width: 2.2; flex-shrink: 0;"></i>
-          <span style="font-size: 11px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign In</span>
-        </button>
-      <?php endif; ?>
+      <button onclick="openAuthModal()" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
+        <i data-lucide="user" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0;"></i>
+        <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign In</span>
+      </button>
     <?php endif; ?>
 
   </nav>
@@ -381,3 +438,112 @@ window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_ema
   });
 </script>
 <?php endif; ?>
+
+<!-- ── Native Touch Pull-to-Refresh Controller ── -->
+<script>
+(function initPullToRefresh() {
+    let startY = 0;
+    let currentY = 0;
+    let isPulling = false;
+    let isRefreshing = false;
+    const threshold = 65;
+    const maxPull = 105;
+
+    const indicator = document.getElementById('pull-refresh-indicator');
+    const bubble = document.getElementById('pull-refresh-bubble');
+    const icon = document.getElementById('pull-refresh-icon');
+    const text = document.getElementById('pull-refresh-text');
+
+    if (!indicator) return;
+
+    window.refreshCurrentPageData = async function() {
+        if (typeof refreshData === 'function') return refreshData();
+        if (typeof refreshDashboard === 'function') return refreshDashboard();
+        if (typeof fetchAllHistory === 'function') return fetchAllHistory();
+        if (typeof refreshForecast === 'function') return refreshForecast();
+        return new Promise(r => setTimeout(r, 600));
+    };
+
+    window.addEventListener('touchstart', (e) => {
+        if (window.scrollY <= 2 && !isRefreshing && e.touches.length === 1) {
+            startY = e.touches[0].clientY;
+            isPulling = true;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isPulling || isRefreshing) return;
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        if (diff > 0 && window.scrollY <= 2) {
+            const pullDistance = Math.min(maxPull, diff * 0.42);
+            indicator.style.transition = 'none';
+            indicator.style.transform = `translateY(${pullDistance}px)`;
+
+            const rotation = Math.min(360, (pullDistance / threshold) * 270);
+            if (icon) icon.style.transform = `rotate(${rotation}deg)`;
+
+            if (pullDistance >= threshold) {
+                if (text) text.innerText = 'Release to refresh';
+                if (bubble) bubble.style.borderColor = '#00bfa5';
+            } else {
+                if (text) text.innerText = 'Pull to refresh';
+                if (bubble) bubble.style.borderColor = 'rgba(0, 191, 165, 0.4)';
+            }
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', async () => {
+        if (!isPulling || isRefreshing) return;
+        isPulling = false;
+        const diff = currentY - startY;
+        const pullDistance = Math.min(maxPull, diff * 0.42);
+
+        if (diff > 0 && pullDistance >= threshold && window.scrollY <= 2) {
+            isRefreshing = true;
+            indicator.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+            indicator.style.transform = 'translateY(65px)';
+            if (icon) {
+                icon.style.transform = 'rotate(0deg)';
+                icon.classList.add('animate-spin');
+            }
+            if (text) text.innerText = 'Refreshing telemetry...';
+            if (navigator.vibrate) {
+                try { navigator.vibrate(18); } catch(e){}
+            }
+
+            try {
+                await window.refreshCurrentPageData();
+            } catch(e) {
+                console.error("Pull-to-refresh error", e);
+            }
+
+            if (text) text.innerText = 'Updated!';
+            if (icon) {
+                icon.classList.remove('animate-spin');
+                icon.setAttribute('data-lucide', 'check');
+                if (window.lucide) lucide.createIcons();
+            }
+
+            setTimeout(() => {
+                indicator.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+                indicator.style.transform = 'translateY(-100%)';
+                setTimeout(() => {
+                    isRefreshing = false;
+                    if (text) text.innerText = 'Pull to refresh';
+                    if (icon) {
+                        icon.setAttribute('data-lucide', 'refresh-cw');
+                        icon.style.transform = 'rotate(0deg)';
+                        if (window.lucide) lucide.createIcons();
+                    }
+                }, 300);
+            }, 400);
+
+        } else {
+            indicator.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)';
+            indicator.style.transform = 'translateY(-100%)';
+        }
+    }, { passive: true });
+})();
+</script>

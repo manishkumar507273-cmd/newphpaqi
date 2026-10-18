@@ -66,10 +66,37 @@
 
     // Update Header Navigation elements to match target page
     function updateHeaderUI(targetPage) {
+        const PAGE_TITLES = {
+            overview: 'Atmosphere Snapshot',
+            live: 'Live Data Stream',
+            historical: 'Analytics Archive',
+            predictive: 'Forecast & Advisory',
+            admin: 'Admin Center',
+            weather: 'Weather Conditions'
+        };
+
+        // Mobile Top App Bar (Overview Brand vs Secondary Page Title)
+        const mobileBrand = document.getElementById('mobile-brand-overview');
+        const mobileSecondary = document.getElementById('mobile-secondary-header');
+        const mobilePageTitle = document.getElementById('mobile-page-title');
+
+        if (mobileBrand && mobileSecondary) {
+            if (targetPage === 'overview') {
+                mobileBrand.style.display = 'flex';
+                mobileSecondary.style.display = 'none';
+            } else {
+                mobileBrand.style.display = 'none';
+                mobileSecondary.style.display = 'flex';
+                if (mobilePageTitle) {
+                    mobilePageTitle.innerText = PAGE_TITLES[targetPage] || 'Smart WeatherNet';
+                }
+            }
+        }
+
         // Back Button
         const backBtn = document.getElementById('header-back-btn');
         if (backBtn) {
-            backBtn.style.display = targetPage !== 'overview' ? 'flex' : 'none';
+            backBtn.style.display = targetPage !== 'overview' ? 'inline-flex' : 'none';
         }
 
         // View Dashboard CTA Button

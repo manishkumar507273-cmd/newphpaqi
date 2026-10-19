@@ -206,14 +206,14 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
       <!-- CARD 4: WIND SPEED -->
       <div class="overview-core-card" id="card-wind" style="border-color: #a7f3d0;">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #059669, #10b981);"></div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 6px;">
           <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
             <div class="overview-card-icon" style="width: 26px; height: 26px; border-radius: 8px; background-color: #ecfdf5; display: flex; align-items: center; justify-content: center; color: #059669; border: 1px solid #a7f3d0; flex-shrink: 0;">
               <i data-lucide="wind" style="width: 14px; height: 14px;"></i>
             </div>
-            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15; white-space: nowrap;">Wind Speed</h4>
+            <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15;">Wind Speed</h4>
           </div>
-          <button type="button" id="btn-wind" onclick="toggleWind()" title="Switch wind unit: km/h / m/s" class="segmented-unit-btn" style="background-color: #ecfdf5; border-color: #a7f3d0; color: #047857;">
+          <button type="button" id="btn-wind" onclick="toggleWind()" title="Switch wind unit: km/h / m/s" class="segmented-unit-btn" style="background-color: #ecfdf5; border-color: #a7f3d0; color: #047857; flex-shrink: 0;">
             <span class="unit-opt active" id="unit-opt-kmh">km/h</span>
             <span class="unit-opt" id="unit-opt-ms">m/s</span>
           </button>
@@ -326,17 +326,6 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
 
           <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
             <canvas id="overview-aqi-chart"></canvas>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="overview-chart-stats">
-            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background-color: #ecfdf5; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 700; color: #047857; font-family: var(--font-mono);">
-              <i data-lucide="arrow-down-right" style="width: 13px; height: 13px;"></i>
-              <span id="overview-chart-lowest">Lowest: --</span>
-            </div>
-            <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background-color: #fff7ed; border: 1px solid #fed7aa; font-size: 11px; font-weight: 700; color: #c2410c; font-family: var(--font-mono);">
-              <i data-lucide="arrow-up-right" style="width: 13px; height: 13px;"></i>
-              <span id="overview-chart-highest">Highest: --</span>
-            </div>
           </div>
         </div>
 
@@ -474,9 +463,35 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
         grid-column: span 1 !important;
       }
       .overview-card-title {
-        font-size: 12.5px !important;
-        white-space: nowrap !important;
+        font-size: 12px !important;
         letter-spacing: -0.01em !important;
+      }
+      #card-wind .overview-card-title {
+        font-size: 11px !important;
+        white-space: normal !important;
+        line-height: 1.15 !important;
+        max-width: 58px;
+      }
+      .overview-card-icon {
+        width: 22px !important;
+        height: 22px !important;
+        border-radius: 6px !important;
+      }
+      .overview-card-icon svg {
+        width: 12px !important;
+        height: 12px !important;
+      }
+      .segmented-unit-btn {
+        padding: 1px !important;
+        flex-shrink: 0 !important;
+      }
+      .segmented-unit-btn .unit-opt {
+        padding: 1.5px 4.5px !important;
+        font-size: 8.5px !important;
+      }
+      #btn-wind .unit-opt {
+        padding: 1.5px 3.5px !important;
+        font-size: 8px !important;
       }
       .overview-core-card {
         padding: 12px 10px 10px !important;
@@ -934,20 +949,6 @@ async function refreshData(isSilent = false) {
                 labels.push(timeStr);
                 data.push(aqi);
             });
-
-            let minStr = '--', maxStr = '--';
-            if (minAqi !== 9999) {
-                const minDt = new Date(minTime).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase();
-                minStr = `Lowest: ${minAqi} @ ${minDt}`;
-                const lowEl = document.getElementById('overview-chart-lowest');
-                if (lowEl) lowEl.innerText = minStr;
-            }
-            if (maxAqi !== -1) {
-                const maxDt = new Date(maxTime).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase();
-                maxStr = `Highest: ${maxAqi} @ ${maxDt}`;
-                const highEl = document.getElementById('overview-chart-highest');
-                if (highEl) highEl.innerText = maxStr;
-            }
 
             renderGenericChart('overview-aqi-chart', labels, data, 'AQI', '#00bfa5');
         }

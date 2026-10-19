@@ -825,6 +825,33 @@ async function refreshDashboard() {
         renderLiveTable();
 
         const now = new Date();
+
+        function formatOfflineDuration(mins) {
+            const minutes = Math.max(0, Math.floor(Number(mins) || 0));
+            if (minutes < 60) {
+                return {
+                    badge: `${minutes}M AGO`,
+                    pill: `${minutes}m ago`,
+                    timeAgo: `${minutes}m ago`
+                };
+            } else if (minutes < 1440) { // Between 1 hour and 24 hours: show in hours
+                const hours = Math.floor(minutes / 60);
+                const remMins = minutes % 60;
+                return {
+                    badge: `${hours}H AGO`,
+                    pill: `${hours}h ago`,
+                    timeAgo: remMins > 0 ? `${hours}h ${remMins}m ago` : `${hours}h ago`
+                };
+            } else { // 24 hours or more: show in days
+                const days = Math.floor(minutes / 1440);
+                const remHours = Math.floor((minutes % 1440) / 60);
+                return {
+                    badge: `${days}D AGO`,
+                    pill: `${days}d ago`,
+                    timeAgo: remHours > 0 ? `${days}d ${remHours}h ago` : `${days}d ago`
+                };
+            }
+        }
         
         // --- AQI Offline Check ---
         let isAqiOffline = true;
@@ -836,14 +863,18 @@ async function refreshDashboard() {
             const diffMs = now - lastUpdate;
             aqiOfflineMinutes = Math.floor(diffMs / 60000);
             isAqiOffline = aqiOfflineMinutes > 15;
-            aqiLastUpdateTimeStr = lastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const timePart = lastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            aqiLastUpdateTimeStr = aqiOfflineMinutes >= 1440
+                ? lastUpdate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + ', ' + timePart
+                : timePart;
         }
 
         const aqiBanner = document.getElementById('aqi-offline-banner');
         if (isAqiOffline) {
+            const aqiDuration = formatOfflineDuration(aqiOfflineMinutes);
             if (aqiBanner) {
-                document.getElementById('aqi-offline-last-update').innerText = aqiLastUpdateTimeStr + ' • ' + aqiOfflineMinutes + 'm ago';
-                document.getElementById('aqi-offline-badge-text').innerText = 'OFFLINE (' + aqiOfflineMinutes + 'M AGO)';
+                document.getElementById('aqi-offline-last-update').innerText = aqiLastUpdateTimeStr + ' • ' + aqiDuration.timeAgo;
+                document.getElementById('aqi-offline-badge-text').innerText = 'OFFLINE (' + aqiDuration.badge + ')';
                 aqiBanner.style.display = 'flex';
             }
             const aqiLiveBadge = document.getElementById('aqi-live-badge');
@@ -851,7 +882,7 @@ async function refreshDashboard() {
                 aqiLiveBadge.style.backgroundColor = '#fff7ed';
                 aqiLiveBadge.style.color = '#ea580c';
                 aqiLiveBadge.style.borderColor = '#fed7aa';
-                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE (${aqiOfflineMinutes}m ago)`;
+                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE (${aqiDuration.pill})`;
             }
             document.getElementById('latest-time').innerText = aqiLastUpdateTimeStr;
         } else {
@@ -876,16 +907,20 @@ async function refreshDashboard() {
             const wDiffMs = now - wLastUpdate;
             weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
             isWeatherOffline = weatherOfflineMinutes > 15;
-            weatherLastUpdateTimeStr = wLastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            weatherLastUpdateTimeStr = weatherOfflineMinutes >= 1440
+                ? wLastUpdate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + ', ' + wTimePart
+                : wTimePart;
         }
 
         const weatherBanner = document.getElementById('weather-offline-banner');
         const weatherLatestTime = document.getElementById('weather-latest-time');
         
         if (isWeatherOffline) {
+            const weatherDuration = formatOfflineDuration(weatherOfflineMinutes);
             if (weatherBanner) {
-                document.getElementById('weather-offline-last-update').innerText = weatherLastUpdateTimeStr + ' • ' + weatherOfflineMinutes + 'm ago';
-                document.getElementById('weather-offline-badge-text').innerText = 'OFFLINE (' + weatherOfflineMinutes + 'M AGO)';
+                document.getElementById('weather-offline-last-update').innerText = weatherLastUpdateTimeStr + ' • ' + weatherDuration.timeAgo;
+                document.getElementById('weather-offline-badge-text').innerText = 'OFFLINE (' + weatherDuration.badge + ')';
                 weatherBanner.style.display = 'flex';
             }
             const weatherLiveBadge = document.getElementById('weather-live-badge');
@@ -893,7 +928,7 @@ async function refreshDashboard() {
                 weatherLiveBadge.style.backgroundColor = '#fff7ed';
                 weatherLiveBadge.style.color = '#ea580c';
                 weatherLiveBadge.style.borderColor = '#fed7aa';
-                weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE (${weatherOfflineMinutes}m ago)`;
+                weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE (${weatherDuration.pill})`;
             }
             if(weatherLatestTime) weatherLatestTime.innerText = weatherLastUpdateTimeStr;
         } else {

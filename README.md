@@ -1,4 +1,4 @@
-# Smart AirNet — Real-Time AQI & Weather Telemetry Monitor
+
 
 A modern intelligence platform for real-time air quality index (AQI) telemetry and meteorological monitoring, powered by **PHP**, **JavaScript**, and **Supabase Cloud**.
 

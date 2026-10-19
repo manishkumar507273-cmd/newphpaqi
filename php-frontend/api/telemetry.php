@@ -42,9 +42,9 @@ foreach ($env_paths as $env_path) {
     }
 }
 
-// Fallback to system environment variables (Vercel / hosting)
-if (empty($supabaseUrl)) $supabaseUrl = getenv('VITE_SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: '';
-if (empty($supabaseKey)) $supabaseKey = getenv('VITE_SUPABASE_ANON_KEY') ?: getenv('SUPABASE_KEY') ?: '';
+// Fallback to system environment variables (Vercel / hosting) or project default
+if (empty($supabaseUrl)) $supabaseUrl = getenv('VITE_SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: 'https://sgkdpliqlhgiqsabxzxe.supabase.co';
+if (empty($supabaseKey)) $supabaseKey = getenv('VITE_SUPABASE_ANON_KEY') ?: getenv('SUPABASE_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30';
 $TABLE_AQI_LIVE        = getenv('TABLE_AQI_LIVE') ?: $TABLE_AQI_LIVE;
 $TABLE_AQI_HISTORICAL  = getenv('TABLE_AQI_HISTORICAL') ?: (getenv('SOURCE_AQI_TABLE') ?: $TABLE_AQI_HISTORICAL);
 $TABLE_WEATHER_LIVE    = getenv('TABLE_WEATHER_LIVE') ?: $TABLE_WEATHER_LIVE;
@@ -276,6 +276,216 @@ function formatRawReading($raw) {
         'wind_gust'         => $raw['wind_gust']     ?? $raw['gust'] ?? null,
         'wind_direction'    => $raw['wind_direction'] ?? null,
         'rain_gauge'        => $raw['rain_gauge']    ?? $raw['rain'] ?? null,
+    ];
+}
+
+function getForecastWeatherIcon(int $hour, float $temp, float $humidity, int $aqi): string {
+    $is_night = ($hour >= 19 || $hour < 6);
+    if ($humidity > 85) return $humidity > 90 ? '🌧️' : '🌦️';
+    if ($aqi > 100) return '🌫️';
+    if ($is_night) return $humidity < 75 ? '🌙' : '☁️';
+    if ($temp > 32) return '☀️';
+    if ($humidity > 70) return '⛅';
+    return '🌤️';
+}
+
+function buildForecastPayloadFromDbRows(array $rows): ?array {
+    if (empty($rows)) return null;
+
+    // Discard any rows that have already elapsed in the past
+    $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
+    $currentHourPrefix = $now->format('Y-m-d H');
+
+    $futureOrCurrentRows = [];
+    foreach ($rows as $r) {
+        $tsStr = $r['forecast_for_time'] ?? '';
+        try {
+            $dt = new DateTime($tsStr);
+            $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+            if ($dt->format('Y-m-d H') >= $currentHourPrefix) {
+                $futureOrCurrentRows[] = $r;
+            }
+        } catch (Exception $e) {
+            $futureOrCurrentRows[] = $r;
+        }
+    }
+    if (!empty($futureOrCurrentRows)) {
+        $rows = array_values($futureOrCurrentRows);
+    }
+
+    $domNames = ['pm25' => 'PM2.5', 'pm10' => 'PM10', 'no2' => 'NO₂', 'co' => 'CO', 'o3' => 'O₃'];
+    $hourlyList = [];
+    $allTemps = [];
+    $pm25Vals = []; $pm10Vals = []; $no2Vals = []; $coVals = []; $o3Vals = []; $tempVals = []; $humVals = [];
+    $tierUsed = 168;
+
+    foreach ($rows as $i => $r) {
+        $tsStr = $r['forecast_for_time'] ?? '';
+        try {
+            $dt = new DateTime($tsStr);
+            $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+        } catch (Exception $e) {
+            $dt = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
+        }
+
+        $p_pm25 = max(0.5, round((float)($r['pm2_5_ug_m3'] ?? 15), 2));
+        $p_pm10 = max(1.0, round((float)($r['pm10_ug_m3'] ?? 25), 2));
+        $p_no2  = max(0.1, round((float)($r['no2_ug_m3'] ?? 5), 2));
+        $p_co   = max(0.01, round((float)($r['co_mg_m3'] ?? 0.2), 3));
+        $p_o3   = max(1.0, round((float)($r['ozone_ug_m3'] ?? 30), 2));
+        $p_temp = round((float)($r['temperature_c'] ?? 28), 1);
+        $p_hum  = min(100.0, max(20.0, round((float)($r['humidity_pct'] ?? 70), 1)));
+
+        if (isset($r['tier_used']) && !empty($r['tier_used'])) $tierUsed = (int)$r['tier_used'];
+
+        $pm25Vals[] = $p_pm25; $pm10Vals[] = $p_pm10; $no2Vals[] = $p_no2;
+        $coVals[] = $p_co; $o3Vals[] = $p_o3; $tempVals[] = $p_temp; $humVals[] = $p_hum;
+
+        $sub = [
+            'pm25' => calcSubindex('pm25', $p_pm25),
+            'pm10' => calcSubindex('pm10', $p_pm10),
+            'no2'  => calcSubindex('no2',  $p_no2),
+            'co'   => calcSubindex('co',   $p_co),
+            'o3'   => calcSubindex('o3',   $p_o3),
+        ];
+
+        $domKey = 'pm25'; $maxSub = $sub['pm25'];
+        foreach ($sub as $k => $v) {
+            if ($v >= $maxSub) { $maxSub = $v; $domKey = $k; }
+        }
+        $aqiVal = (int)round($maxSub);
+        $allTemps[] = $p_temp;
+
+        $cat = 'Good'; $sev = 'GOOD'; $col = '#00bfa5';
+        if ($aqiVal > 50 && $aqiVal <= 100) { $cat = 'Satisfactory'; $sev = 'SATISFACTORY'; $col = '#84cc16'; }
+        elseif ($aqiVal > 100 && $aqiVal <= 200) { $cat = 'Moderate'; $sev = 'MODERATE'; $col = '#f59e0b'; }
+        elseif ($aqiVal > 200 && $aqiVal <= 300) { $cat = 'Poor'; $sev = 'POOR'; $col = '#f97316'; }
+        elseif ($aqiVal > 300 && $aqiVal <= 400) { $cat = 'Very Poor'; $sev = 'VERY_POOR'; $col = '#ef4444'; }
+        elseif ($aqiVal > 400) { $cat = 'Severe'; $sev = 'SEVERE'; $col = '#7f1d1d'; }
+
+        $hour = (int)$dt->format('G');
+        $label = ($i === 0) ? 'Now' : $dt->format('g A');
+        $icon = getForecastWeatherIcon($hour, $p_temp, $p_hum, $aqiVal);
+
+        $hourlyList[] = [
+            'index' => $i,
+            'hour' => $hour,
+            'label' => $label,
+            'iso' => $dt->format('c'),
+            'aqi' => $aqiVal,
+            'dominant' => $domNames[$domKey] ?? 'PM2.5',
+            'category' => $cat,
+            'severity' => $sev,
+            'color' => $col,
+            'sub_indices' => [
+                'PM2.5' => $sub['pm25'],
+                'PM10'  => $sub['pm10'],
+                'NO₂'   => $sub['no2'],
+                'CO'    => $sub['co'],
+                'O₃'    => $sub['o3'],
+            ],
+            'pm25' => $p_pm25,
+            'pm10' => $p_pm10,
+            'no2'  => $p_no2,
+            'co'   => $p_co,
+            'o3'   => $p_o3,
+            'temp' => $p_temp,
+            'humidity' => $p_hum,
+            'icon' => $icon,
+            'isNow' => ($i === 0)
+        ];
+    }
+
+    if (empty($hourlyList)) return null;
+
+    $h0 = $hourlyList[0];
+    $curAqi = $h0['aqi'];
+    $curDom = $h0['dominant'];
+
+    $calcStats = function(array $arr, float $limit, float $curSub) {
+        $c = count($arr);
+        $mean = $c > 0 ? round(array_sum($arr) / $c, 2) : 0;
+        return [
+            'current' => $arr[0] ?? 0,
+            'min' => !empty($arr) ? min($arr) : 0,
+            'max' => !empty($arr) ? max($arr) : 0,
+            'mean' => $mean,
+            'safe_limit' => $limit,
+            'current_subindex' => $curSub
+        ];
+    };
+
+    $parameters = [
+        'pm25'     => $calcStats($pm25Vals, 60.0, $h0['sub_indices']['PM2.5']),
+        'pm10'     => $calcStats($pm10Vals, 100.0, $h0['sub_indices']['PM10']),
+        'no2'      => $calcStats($no2Vals,  80.0, $h0['sub_indices']['NO₂']),
+        'co'       => $calcStats($coVals,   2.0,  $h0['sub_indices']['CO']),
+        'o3'       => $calcStats($o3Vals,   100.0,$h0['sub_indices']['O₃']),
+        'temp'     => $calcStats($tempVals, 0.0, 0.0),
+        'humidity' => $calcStats($humVals,  0.0, 0.0),
+    ];
+
+    if ($curAqi <= 50) {
+        $advTitle = 'Air Quality Ideal (Good) · Minimal Health Impact';
+        $advDesc = "Predicted ambient AQI is {$curAqi} (Dominant: {$curDom}). All criteria pollutant concentrations are within safe limits.";
+        $sevLabel = 'GOOD';
+        $sportsAdv = 'Optimal for athletic training and sports';
+        $ventAdv = 'Full campus natural cross-ventilation advised';
+        $hydrAdv = 'Standard hydration (2.5L/day recommended)';
+    } elseif ($curAqi <= 100) {
+        $advTitle = 'Air Quality Satisfactory · Minor Sensitive Group Impact';
+        $advDesc = "Predicted ambient AQI is {$curAqi} (Dominant: {$curDom}). Minimal impact on healthy individuals.";
+        $sevLabel = 'SATISFACTORY';
+        $sportsAdv = 'Standard outdoor sports and exercise permitted';
+        $ventAdv = 'Normal classroom and lab ventilation';
+        $hydrAdv = 'Keep hydrated during warm afternoon peaks';
+    } else {
+        $advTitle = 'Air Quality Moderate · Sensitive Group Advisory';
+        $advDesc = "Predicted ambient AQI is {$curAqi} dominated by {$curDom}. Moderate prolonged outdoor exposure if sensitive.";
+        $sevLabel = 'MODERATE';
+        $sportsAdv = 'Consider scheduling strenuous sports in early morning';
+        $ventAdv = 'Use filtered ventilation during peak hours';
+        $hydrAdv = 'Adequate fluid intake recommended';
+    }
+
+    return [
+        'status' => 'success',
+        'type' => 'aqi_forecast',
+        'source' => 'supabase_aqi_forecasts_24h',
+        'model_name' => "model_tier_{$tierUsed}h.keras",
+        'tier_hours' => $tierUsed,
+        'standard' => 'National Air Quality Index (NAQI)',
+        'generated_at' => date('Y-m-d H:i:s T'),
+        'hero' => [
+            'aqi' => $curAqi,
+            'dominant' => $curDom,
+            'category' => $h0['category'],
+            'severity' => $h0['severity'],
+            'color' => $h0['color'],
+            'health_impact' => ($curAqi <= 50 ? 'Minimal Impact' : ($curAqi <= 100 ? 'Minor breathing discomfort to sensitive people' : 'Breathing discomfort to people with lungs, asthma and heart diseases')),
+            'sub_indices' => $h0['sub_indices'],
+            'temp' => $h0['temp'],
+            'humidity' => $h0['humidity'],
+            'dayLow' => !empty($allTemps) ? min($allTemps) : 0,
+            'dayHigh' => !empty($allTemps) ? max($allTemps) : 0,
+            'pm25' => $h0['pm25'],
+            'pm10' => $h0['pm10'],
+            'no2' => $h0['no2'],
+            'co' => $h0['co'],
+            'o3' => $h0['o3'],
+            'confidence' => ($tierUsed == 168 ? 'High (Full 168h History)' : "Standard ({$tierUsed}h History)")
+        ],
+        'parameters' => $parameters,
+        'advisory' => [
+            'title' => $advTitle,
+            'severity' => $sevLabel,
+            'desc' => $advDesc,
+            'sports' => $sportsAdv,
+            'ventilation' => $ventAdv,
+            'hydration' => $hydrAdv
+        ],
+        'hourly' => $hourlyList,
+        'phases' => []
     ];
 }
 
@@ -555,6 +765,62 @@ switch ($action) {
 
         cacheSet($ckey, $res);
         echo json_encode($res);
+        break;
+    }
+
+    case 'forecast': {
+        @set_time_limit(180);
+        $force = isset($_GET['force']) && $_GET['force'] === '1';
+        $jsonFile = __DIR__ . '/forecast_data.json';
+
+        // 1. Primary: Read 24h predictions directly from Supabase table aqi_forecasts_24h
+        if (!$force) {
+            $sbForecastUrl = "{$supabaseUrl}/rest/v1/aqi_forecasts_24h?node_id=eq.node_1&order=forecast_for_time.asc&limit=24";
+            $sbRows = fetchSupabase($sbForecastUrl, $supabaseKey);
+
+            $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
+            $currentHourPrefix = $now->format('Y-m-d H');
+            $hasCurrentOrFuture = false;
+            if (!empty($sbRows)) {
+                foreach ($sbRows as $r) {
+                    try {
+                        $dt = new DateTime($r['forecast_for_time'] ?? '');
+                        $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+                        if ($dt->format('Y-m-d H') >= $currentHourPrefix) {
+                            $hasCurrentOrFuture = true;
+                            break;
+                        }
+                    } catch (Exception $e) {}
+                }
+            }
+
+            if ($hasCurrentOrFuture) {
+                $payload = buildForecastPayloadFromDbRows($sbRows);
+                if ($payload) {
+                    @file_put_contents($jsonFile, json_encode($payload));
+                    echo json_encode($payload);
+                    break;
+                }
+            }
+        }
+
+        // 2. Fallback to local python generation if Supabase table is empty or local force requested
+        $needsRun = $force || !file_exists($jsonFile) || (time() - filemtime($jsonFile)) > 300;
+        if ($needsRun) {
+            $pyScript = realpath(__DIR__ . '/../../php-backend/generate_forecast.py');
+            if ($pyScript && file_exists($pyScript)) {
+                $pyExe = 'C:\\Users\\deeks\\AppData\\Local\\Programs\\Python\\Python312\\python.exe';
+                $pyCmd = file_exists($pyExe) ? escapeshellarg($pyExe) : 'python';
+                @exec($pyCmd . " " . escapeshellarg($pyScript) . " 2>&1");
+            }
+        }
+
+        if (file_exists($jsonFile)) {
+            $raw = file_get_contents($jsonFile);
+            echo $raw ?: json_encode(['error' => 'Empty forecast data']);
+        } else {
+            echo json_encode(['error' => 'Forecast data not available']);
+        }
         break;
     }
 

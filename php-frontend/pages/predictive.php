@@ -4,34 +4,24 @@
  * Edge-to-edge hourly reel, 7-day accordion with min/max slider bars,
  * and high-visibility AQI advisory alerts.
  */
+if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    header("Location: /?page=predictive");
+    exit;
+}
 ?>
 
-<div class="forecast-page-container p-3.5 sm:p-6 flex flex-col gap-5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
+<div class="forecast-page-container p-3 sm:p-6 flex flex-col gap-4 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
 
-  <!-- ── 1. Top Section Header ── -->
-  <div class="flex justify-between items-end mb-1 sm:mb-2">
-    <div>
-      <div class="flex items-center gap-2 mb-1">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
-          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> MODEL STANDBY
-        </span>
-        <span class="text-xs text-slate-400 font-medium">SMVITM Campus Model · Training Pending</span>
-      </div>
-      <h1 class="text-2xl sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Weather &amp; AQI Forecast</h1>
-      <p class="m-0 text-slate-500 text-xs sm:text-sm font-medium mt-0.5">High-resolution predictive microclimate modeling for Bantakal region.</p>
-    </div>
-    
-    <button onclick="refreshForecast()" id="forecast-refresh-btn" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 font-bold text-xs shadow-sm hover:shadow transition-all">
-      <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#00bfa5]" id="forecast-refresh-icon"></i>
-      <span>Refresh Model</span>
-    </button>
+  <div class="mb-0.5 sm:mb-2">
+    <h1 class="text-xl sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Air Quality Index (AQI) Forecast</h1>
+    <p class="m-0 text-slate-500 text-xs sm:text-sm font-medium mt-0.5">Atmospheric pollutant and AQI predictive forecasting for SMVITM Campus.</p>
   </div>
 
   <!-- ── 2. High-Visibility AQI Advisory Banner ── -->
-  <div id="forecast-advisory-banner" class="bg-gradient-to-r from-slate-500/10 via-slate-400/10 to-slate-500/10 border-[1.5px] border-slate-300 rounded-[20px] p-4 sm:p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative overflow-hidden transition-all">
-    <div class="flex items-start gap-3.5">
-      <div class="w-10 h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-slate-700/20 mt-0.5">
-        <i data-lucide="clock" class="w-5 h-5"></i>
+  <div id="forecast-advisory-banner" class="bg-gradient-to-r from-slate-500/10 via-slate-400/10 to-slate-500/10 border-[1.5px] border-slate-300 rounded-[18px] sm:rounded-[20px] p-3.5 sm:p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative overflow-hidden transition-all">
+    <div class="flex items-start gap-3 sm:gap-3.5">
+      <div id="advisory-icon-box" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-slate-700/20 mt-0.5">
+        <i data-lucide="clock" class="w-4 h-4 sm:w-5 sm:h-5"></i>
       </div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap mb-1">
@@ -45,85 +35,100 @@
         </p>
 
         <!-- Collapsible Action Guide -->
-        <div id="advisory-expand-section" class="mt-3 pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs text-slate-600" style="display: none;">
-          <div class="flex items-center gap-2 bg-white/80 p-2.5 rounded-xl border border-slate-200">
+        <div id="advisory-expand-section" class="mt-3 pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 text-xs text-slate-600" style="display: none;">
+          <div class="flex items-center gap-2 bg-white/80 p-2 sm:p-2.5 rounded-xl border border-slate-200">
             <span class="text-base">🏃</span>
-            <span><strong>Outdoor Sports:</strong> Awaiting model prediction</span>
+            <span><strong>Outdoor Sports:</strong> <span id="advisory-sports-val">Awaiting model prediction</span></span>
           </div>
-          <div class="flex items-center gap-2 bg-white/80 p-2.5 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-2 bg-white/80 p-2 sm:p-2.5 rounded-xl border border-slate-200">
             <span class="text-base">🪟</span>
-            <span><strong>Campus Ventilation:</strong> Awaiting model prediction</span>
+            <span><strong>Campus Ventilation:</strong> <span id="advisory-vent-val">Awaiting model prediction</span></span>
           </div>
-          <div class="flex items-center gap-2 bg-white/80 p-2.5 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-2 bg-white/80 p-2 sm:p-2.5 rounded-xl border border-slate-200">
             <span class="text-base">💧</span>
-            <span><strong>Hydration / Advisory:</strong> Awaiting model prediction</span>
+            <span><strong>Hydration / Advisory:</strong> <span id="advisory-hydr-val">Awaiting model prediction</span></span>
           </div>
         </div>
 
         <button onclick="toggleAdvisoryDetails()" id="btn-toggle-advisory" class="mt-2.5 text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer bg-transparent border-none p-0">
-          <span id="toggle-advisory-text">View Model Parameters</span>
+          <span id="toggle-advisory-text">View Action Guidance</span>
           <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" id="toggle-advisory-icon"></i>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ── 3. Forecast Hero Summary Card ── -->
-  <div class="bg-white rounded-[24px] p-5 sm:p-7 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] relative overflow-hidden">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
+  <!-- ── 3. Forecast Hero Summary Card: Predicted AQI ── -->
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-7 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] relative overflow-hidden">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
       
-      <!-- Left Hero Info -->
+      <!-- Left Hero Info: Big AQI & Category -->
       <div class="flex-1">
-        <div class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-          <span>Today's Forecast Summary</span>
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 sm:mb-2">
+          <span>Predicted Air Quality Index</span>
           <span>•</span>
           <span class="text-slate-600 font-semibold" id="forecast-date-str">Loading...</span>
         </div>
 
-        <div class="flex items-baseline gap-3 mb-2">
-          <span id="forecast-hero-temp" class="text-5xl sm:text-6xl font-extrabold text-slate-400 font-mono tracking-tight">--</span>
+        <div class="flex items-baseline gap-3 mb-2 sm:mb-2.5">
+          <span id="forecast-hero-aqi" class="text-5xl sm:text-6xl font-extrabold text-slate-400 font-mono tracking-tight">--</span>
           <div class="flex flex-col">
-            <span class="text-xl sm:text-2xl font-bold text-slate-400 font-mono">°C</span>
-            <span id="forecast-condition-text" class="text-sm font-bold text-slate-500">Awaiting Model</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">AQI</span>
+              <span id="forecast-hero-category-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200 font-mono">Standby</span>
+            </div>
+            <span id="forecast-hero-dominant" class="text-xs sm:text-[13px] font-semibold text-slate-600 mt-0.5 sm:mt-1">Awaiting Model Inference</span>
           </div>
         </div>
 
-        <div class="flex items-center gap-2 flex-wrap">
-          <span id="forecast-hero-aqi-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-slate-100 text-slate-600 border border-slate-200">
-            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-            <span id="forecast-hero-aqi-text">AQI -- · Standby</span>
+        <!-- 5 Criteria Pollutant Sub-Indices Badges -->
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-2 sm:mb-2.5">
+          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for PM2.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PM2.5: <strong id="sub-pm25-val" class="font-mono font-extrabold">--</strong>
           </span>
-          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
-            <i data-lucide="droplets" class="w-3 h-3 text-slate-400"></i>
-            <span id="forecast-rain-prob">Rain Chance: --%</span>
+          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for PM10">
+            <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span> PM10: <strong id="sub-pm10-val" class="font-mono font-extrabold">--</strong>
           </span>
-          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
-            <i data-lucide="wind" class="w-3 h-3 text-slate-400"></i>
-            <span id="forecast-wind-summary">Wind: -- km/h</span>
+          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for NO2">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> NO₂: <strong id="sub-no2-val" class="font-mono font-extrabold">--</strong>
           </span>
+          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for CO">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> CO: <strong id="sub-co-val" class="font-mono font-extrabold">--</strong>
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for O3">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> O₃: <strong id="sub-o3-val" class="font-mono font-extrabold">--</strong>
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
+          <i data-lucide="thermometer" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span>Ambient: <strong id="forecast-hero-temp" class="text-slate-600 font-mono">--°C</strong>, <strong id="forecast-hero-humidity" class="text-slate-600 font-mono">--%</strong> Humidity</span>
         </div>
       </div>
 
-      <!-- Right: Min/Max & Atmospheric Indicators -->
-      <div class="flex sm:flex-row md:flex-col gap-3 justify-between md:justify-center md:items-end border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
-        <div class="flex items-center gap-4 text-center">
-          <div class="bg-slate-50 px-3.5 py-2.5 rounded-2xl border border-slate-200">
-            <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Day Low</div>
-            <div class="text-xl sm:text-2xl font-extrabold text-slate-500 font-mono" id="forecast-day-low">--°</div>
-          </div>
-          <div class="bg-slate-50 px-3.5 py-2.5 rounded-2xl border border-slate-200">
-            <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Day High</div>
-            <div class="text-xl sm:text-2xl font-extrabold text-slate-500 font-mono" id="forecast-day-high">--°</div>
-          </div>
+
+
+    </div>
+  </div>
+
+  <!-- ── 3.5. 7 Predicted Model Parameters (Outputs) Grid ── -->
+  <div class="bg-white rounded-[24px] p-4 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)]">
+    <div class="flex items-center justify-between mb-4 px-1">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-[#e6fcf9] text-[#00bfa5] flex items-center justify-center">
+          <i data-lucide="activity" class="w-4 h-4"></i>
         </div>
-        <div class="flex items-center gap-2 justify-end">
-          <span class="text-xs font-semibold text-slate-400">Confidence:</span>
-          <span id="forecast-confidence-chip" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Med
-          </span>
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Predicted Parameters (Next 24 Hours)</h2>
+          <p id="forecast-model-subtitle" class="text-xs text-slate-400 m-0">Direct multi-target outputs from trained LSTM model</p>
         </div>
       </div>
+      <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">7 Targets + AQI</span>
+    </div>
 
+    <!-- Grid of the 7 predicted parameters -->
+    <div id="predicted-parameters-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
+      <div class="text-xs text-slate-400 py-6 text-center col-span-full">Loading predicted parameters...</div>
     </div>
   </div>
 
@@ -137,7 +142,7 @@
         </div>
         <div>
           <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Hourly Forecast (Next 24 Hours)</h2>
-          <p class="text-xs text-slate-400 m-0">Swipe horizontally to track temperature and AQI trends</p>
+          <p class="text-xs text-slate-400 m-0">Swipe horizontally to track predicted temperature, humidity, and AQI</p>
         </div>
       </div>
       <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 font-medium">
@@ -153,29 +158,7 @@
 
   </div>
 
-  <!-- ── 5. 7-Day Forecast: Vertical Accordion with Min/Max Range Slider ── -->
-  <div class="bg-white rounded-[24px] p-4 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)]">
-    
-    <div class="flex items-center justify-between mb-4 px-1">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-[#e6fcf9] text-[#00bfa5] flex items-center justify-center">
-          <i data-lucide="calendar" class="w-4 h-4"></i>
-        </div>
-        <div>
-          <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">7-Day Extended Outlook</h2>
-          <p class="text-xs text-slate-400 m-0">Tap any day row for detailed wind, rain, and health advisory</p>
-        </div>
-      </div>
-      <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">Bantakal Station</span>
-    </div>
 
-    <!-- Accordion List Container -->
-    <div id="seven-day-accordion" class="flex flex-col gap-2.5">
-      <!-- Populated dynamically by JS with smooth accordion cards -->
-      <div class="text-xs text-slate-400 py-6 text-center">Loading 7-day outlook...</div>
-    </div>
-
-  </div>
 
   <!-- ── 6. Model Footnote & Campus Station Attribution ── -->
   <div class="bg-slate-50 border border-slate-200 rounded-[20px] p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
@@ -189,8 +172,8 @@
       </div>
     </div>
     <div class="flex items-center gap-2 font-mono text-[11px]">
-      <span class="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
-      <span>Sync Status: <strong class="text-slate-700" id="forecast-sync-time">Model Standby</strong></span>
+      <span class="inline-block w-2 h-2 rounded-full bg-amber-400" id="forecast-sync-dot"></span>
+      <span>Sync Status: <strong class="text-slate-700" id="forecast-sync-time">Active</strong></span>
     </div>
   </div>
 
@@ -198,23 +181,40 @@
 
 <!-- ── Custom Styles for Forecast Page ── -->
 <style>
-/* Horizontal Reel Custom Styling */
+/* Horizontal Reel Custom Styling (Mobile & Desktop) */
+.hourly-forecast-reel {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scroll-snap-type: x mandatory !important;
+  scrollbar-width: none !important;
+  gap: 10px !important;
+  padding: 8px 4px 12px 4px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
 .hourly-forecast-reel::-webkit-scrollbar {
-  display: none;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 .hourly-card {
-  scroll-snap-align: start;
-  flex: 0 0 84px;
-  min-width: 84px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 8px;
-  border-radius: 18px;
+  scroll-snap-align: start !important;
+  flex: 0 0 82px !important;
+  min-width: 82px !important;
+  max-width: 82px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 10px 6px !important;
+  border-radius: 16px !important;
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+  box-sizing: border-box !important;
 }
 .hourly-card:hover {
   transform: translateY(-2px);
@@ -223,13 +223,13 @@
   box-shadow: 0 6px 18px rgba(0, 191, 165, 0.12);
 }
 .hourly-card.active-hour {
-  background: #ffffff;
-  border-color: #00bfa5;
-  box-shadow: 0 6px 20px rgba(0, 191, 165, 0.18);
+  background: #ffffff !important;
+  border-color: #00bfa5 !important;
+  box-shadow: 0 6px 20px rgba(0, 191, 165, 0.18) !important;
 }
 .hourly-card.active-hour .hour-label {
-  color: #00bfa5;
-  font-weight: 800;
+  color: #00bfa5 !important;
+  font-weight: 800 !important;
 }
 
 /* Accordion Row Styling */
@@ -296,7 +296,7 @@
 (function() {
     let trainedModelData = null; // Will hold user's model once trained and connected
 
-    // CPCB Colors and Categories
+    // AQI Colors and Categories
     function getAqiBadge(aqi) {
         if (aqi === null || aqi === undefined || aqi === '--' || isNaN(Number(aqi))) {
             return { label: 'Standby', bg: '#f8fafc', text: '#64748b', border: '#cbd5e1', dot: '#94a3b8' };
@@ -320,11 +320,11 @@
         if (isHidden) {
             sec.style.display = 'grid';
             icon.style.transform = 'rotate(180deg)';
-            text.innerText = 'Hide Parameters';
+            text.innerText = 'Hide Action Guidance';
         } else {
             sec.style.display = 'none';
             icon.style.transform = 'rotate(0deg)';
-            text.innerText = 'View Model Parameters';
+            text.innerText = 'View Action Guidance';
         }
     };
 
@@ -344,7 +344,6 @@
             row.classList.add('open');
             if (icon) icon.style.transform = 'rotate(180deg)';
         }
-        if (window.triggerHaptic) window.triggerHaptic('light');
         if (window.lucide) lucide.createIcons();
     };
 
@@ -369,7 +368,12 @@
                 label: timeLabel,
                 temp: '--',
                 aqi: '--',
-                rain: '--',
+                humidity: '--',
+                pm25: '--',
+                pm10: '--',
+                co: '--',
+                no2: '--',
+                o3: '--',
                 icon: '⏳',
                 isNow: i === 0
             });
@@ -377,43 +381,45 @@
         return hours;
     }
 
-    // Generate upcoming 7 days structure with awaiting-model placeholders
-    function generate7DayData() {
-        if (trainedModelData && trainedModelData.sevenDays) {
-            return trainedModelData.sevenDays;
+    // Generate upcoming 24-hour day phases structure
+    function generateTimelinePhases() {
+        if (trainedModelData && trainedModelData.phases) {
+            return trainedModelData.phases;
         }
 
-        const days = [];
-        const now = new Date();
+        const defaultPhases = [
+            { name: 'Late Afternoon / Evening', hours: '4 PM – 9 PM', icon: '🌅' },
+            { name: 'Night to Midnight', hours: '10 PM – 3 AM', icon: '🌙' },
+            { name: 'Early Morning Transition', hours: '4 AM – 9 AM', icon: '🌤️' },
+            { name: 'Daytime Afternoon Peak', hours: '10 AM – 3 PM', icon: '☀️' }
+        ];
 
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(now.getTime() + (i * 86400000));
-            const dayName = i === 0 ? 'Today' : (i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
-
-            days.push({
-                index: i,
-                dayName: dayName,
-                minTemp: '--',
-                maxTemp: '--',
-                leftPct: '0',
-                widthPct: '0',
-                condition: 'Awaiting Model',
-                icon: '⏳',
-                rain: '--',
-                aqi: '--',
-                gust: '-- km/h',
-                uv: '--',
-                dominant: '--',
-                advice: 'Projections and health recommendations will be generated once your predictive model is trained and linked.'
-            });
-        }
-        return days;
+        return defaultPhases.map((p, idx) => ({
+            index: idx,
+            phaseName: p.name,
+            hoursSpan: p.hours,
+            minTemp: '--',
+            maxTemp: '--',
+            leftPct: '0',
+            widthPct: '0',
+            condition: 'Awaiting Model',
+            icon: p.icon,
+            aqi: '--',
+            dominant: '--',
+            humidity: '--',
+            pm25: '--',
+            pm10: '--',
+            co: '--',
+            no2: '--',
+            o3: '--',
+            advice: 'Predicted chemical and atmospheric parameters will generate once the forecast model finishes inference.'
+        }));
     }
 
     // Render Function
     function renderForecastUI() {
         const hourly = generateHourlyData();
-        const sevenDays = generate7DayData();
+        const phases = generateTimelinePhases();
 
         // 1. Date and Sync time
         const now = new Date();
@@ -423,19 +429,188 @@
         const syncEl = document.getElementById('forecast-sync-time');
         if (syncEl) syncEl.innerText = trainedModelData ? 'Model Active' : 'Model Standby';
 
-        // 2. Hero values
+        // 2. Hero values & Model Status
         if (!trainedModelData) {
+            const heroAqi = document.getElementById('forecast-hero-aqi');
+            if (heroAqi) heroAqi.innerText = '--';
+            const aqiLow = document.getElementById('forecast-aqi-low');
+            if (aqiLow) aqiLow.innerText = '--';
+            const aqiHigh = document.getElementById('forecast-aqi-high');
+            if (aqiHigh) aqiHigh.innerText = '--';
+        } else if (trainedModelData.hero) {
+            const h = trainedModelData.hero;
+            const b = getAqiBadge(h.aqi);
+
+            const heroAqi = document.getElementById('forecast-hero-aqi');
+            if (heroAqi) {
+                heroAqi.innerText = h.aqi !== undefined ? h.aqi : '--';
+                heroAqi.style.color = b.color || b.text;
+            }
+
+            const catBadge = document.getElementById('forecast-hero-category-badge');
+            if (catBadge) {
+                catBadge.innerText = (h.category || b.label).toUpperCase();
+                catBadge.style.backgroundColor = b.bg;
+                catBadge.style.borderColor = b.border;
+                catBadge.style.color = b.text;
+            }
+
+            const domEl = document.getElementById('forecast-hero-dominant');
+            if (domEl) {
+                domEl.innerHTML = `Dominant Pollutant: <strong class="text-slate-900 font-mono">${h.dominant || '--'}</strong> · Max Sub-Index Rule`;
+            }
+
+            if (h.sub_indices) {
+                const s = h.sub_indices;
+                const setVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = val !== undefined ? val : '--';
+                };
+                setVal('sub-pm25-val', s['PM2.5']);
+                setVal('sub-pm10-val', s['PM10']);
+                setVal('sub-no2-val', s['NO₂']);
+                setVal('sub-co-val', s['CO']);
+                setVal('sub-o3-val', s['O₃']);
+            }
+
+
+
             const heroTemp = document.getElementById('forecast-hero-temp');
-            if (heroTemp) heroTemp.innerText = '--';
-            const dayLow = document.getElementById('forecast-day-low');
-            if (dayLow) dayLow.innerText = '--°';
-            const dayHigh = document.getElementById('forecast-day-high');
-            if (dayHigh) dayHigh.innerText = '--°';
-            const condText = document.getElementById('forecast-condition-text');
-            if (condText) condText.innerText = 'Awaiting Model';
+            if (heroTemp) heroTemp.innerText = (h.temp !== undefined ? Math.round(h.temp) : '--') + '°C';
+
+            const heroHum = document.getElementById('forecast-hero-humidity');
+            if (heroHum) heroHum.innerText = (h.humidity !== undefined ? h.humidity : '--') + '%';
+
+            // Top Status Chip
+            const topChip = document.getElementById('forecast-model-status-chip');
+            const tierHours = trainedModelData.tier_hours || 168;
+            const tierSel = trainedModelData.tier_selection;
+            const aqiTable = (tierSel && tierSel.aqi_table) || 'AQI_NODE1';
+
+            if (topChip) {
+                topChip.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono";
+                topChip.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> MODEL ACTIVE · ${tierHours}H TIER`;
+            }
+            const topSubtext = document.getElementById('forecast-model-subtext');
+            if (topSubtext) {
+                topSubtext.innerText = `Ingest: ${aqiTable} · ${tierHours}h Input Data Window`;
+            }
+
+            // Ingest Status Bar
+            const tableChip = document.getElementById('tier-input-table-chip');
+            if (tableChip) tableChip.innerText = aqiTable;
+
+            const availChip = document.getElementById('tier-available-hours-chip');
+            if (availChip) {
+                const count = tierSel ? tierSel.available_hours : tierHours;
+                availChip.innerText = `${count}h Available in ${aqiTable}`;
+            }
+
+            const expText = document.getElementById('tier-explanation-text');
+            if (expText && tierSel && tierSel.explanation) {
+                const cleanExp = (tierSel.explanation || '')
+                    .replace(/\s*\([^)]*\.keras\)/gi, '')
+                    .replace(/\s*\(model_tier_[^)]+\)/gi, '')
+                    .replace(/\.keras/gi, '');
+                expText.innerText = cleanExp;
+            }
+
+            // Update active tier button state
+            document.querySelectorAll('.tier-selector-btn').forEach(btn => {
+                btn.className = "tier-selector-btn px-2 py-1 rounded-lg text-[10.5px] font-mono font-semibold bg-white text-slate-700 border border-slate-200 hover:border-teal-400 cursor-pointer transition-all";
+            });
+            const activeTierBtn = document.getElementById('tier-btn-' + tierHours) || document.getElementById('tier-btn-auto');
+            if (activeTierBtn) {
+                activeTierBtn.className = "tier-selector-btn px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-extrabold bg-[#00bfa5] text-white border border-teal-500 shadow-xs cursor-pointer transition-all";
+            }
+            const subtitleEl = document.getElementById('forecast-model-subtitle');
+            if (subtitleEl) {
+                subtitleEl.innerText = `Direct multi-target outputs from trained model`;
+            }
+
+            // Advisory Banner
+            if (trainedModelData.advisory) {
+                const adv = trainedModelData.advisory;
+                const advTitle = document.getElementById('advisory-title');
+                if (advTitle) advTitle.innerText = adv.title;
+
+                const advBadge = document.getElementById('advisory-severity-badge');
+                if (advBadge) {
+                    advBadge.innerText = adv.severity;
+                    if (adv.severity === 'GOOD') {
+                        advBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 tracking-wider uppercase font-mono";
+                    } else if (adv.severity === 'SATISFACTORY') {
+                        advBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-lime-100 text-lime-800 border border-lime-300 tracking-wider uppercase font-mono";
+                    } else {
+                        advBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 tracking-wider uppercase font-mono";
+                    }
+                }
+
+                const advDesc = document.getElementById('advisory-desc');
+                if (advDesc) advDesc.innerText = adv.desc;
+
+                const sportsVal = document.getElementById('advisory-sports-val');
+                if (sportsVal) sportsVal.innerText = adv.sports;
+                const ventVal = document.getElementById('advisory-vent-val');
+                if (ventVal) ventVal.innerText = adv.ventilation;
+                const hydrVal = document.getElementById('advisory-hydr-val');
+                if (hydrVal) hydrVal.innerText = adv.hydration;
+
+                const banner = document.getElementById('forecast-advisory-banner');
+                if (banner) {
+                    banner.className = "bg-gradient-to-r from-teal-500/10 via-emerald-400/10 to-teal-500/10 border-[1.5px] border-emerald-200 rounded-[20px] p-4 sm:p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative overflow-hidden transition-all";
+                }
+                const iconBox = document.getElementById('advisory-icon-box');
+                if (iconBox) {
+                    iconBox.className = "w-10 h-10 rounded-xl bg-[#00bfa5] text-white flex items-center justify-center shrink-0 shadow-md shadow-teal-500/20 mt-0.5";
+                }
+            }
+
+            const syncEl = document.getElementById('forecast-sync-time');
+            if (syncEl) syncEl.innerText = `Active`;
+            const syncDot = document.getElementById('forecast-sync-dot');
+            if (syncDot) syncDot.className = "inline-block w-2 h-2 rounded-full bg-emerald-500";
         }
 
-        // 3. Render Hourly Horizontal Reel
+        // 3. Render 7 Predicted Model Parameters Grid
+        const paramsGrid = document.getElementById('predicted-parameters-grid');
+        if (paramsGrid && trainedModelData && trainedModelData.parameters) {
+            const p = trainedModelData.parameters;
+            const items = [
+                { key: 'pm25', name: 'PM2.5', icon: '💨', current: p.pm25.current, subindex: p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: p.pm25.safe_limit },
+                { key: 'pm10', name: 'PM10', icon: '🌫️', current: p.pm10.current, subindex: p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: p.pm10.safe_limit },
+                { key: 'no2', name: 'NO₂', icon: '🚦', current: p.no2.current, subindex: p.no2.current_subindex, unit: 'µg/m³', range: `${p.no2.min} - ${p.no2.max}`, mean: p.no2.mean, limit: p.no2.safe_limit },
+                { key: 'co', name: 'CO', icon: '🏭', current: p.co.current, subindex: p.co.current_subindex, unit: 'mg/m³', range: `${p.co.min} - ${p.co.max}`, mean: p.co.mean, limit: p.co.safe_limit },
+                { key: 'o3', name: 'O₃', icon: '☀️', current: p.o3.current, subindex: p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: p.o3.safe_limit },
+                { key: 'temp', name: 'Temp', icon: '🌡️', current: p.temp.current, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
+                { key: 'humidity', name: 'Humidity', icon: '💧', current: p.humidity.current, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' }
+            ];
+
+            paramsGrid.innerHTML = items.map((it, idx) => `
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-teal-500/40 transition-all shadow-xs ${idx === 6 ? 'col-span-2 sm:col-span-1' : ''}">
+                  <div class="flex items-center justify-between mb-1 sm:mb-1.5">
+                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <span>${it.icon}</span> <span>${it.name}</span>
+                    </span>
+                    ${it.subindex !== null && it.subindex !== undefined ? `
+                      <span class="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Sub: ${it.subindex}
+                      </span>
+                    ` : `
+                      <span class="text-[9.5px] font-mono font-bold text-slate-400">${it.unit}</span>
+                    `}
+                  </div>
+                  <div class="my-0.5 sm:my-1">
+                    <div class="text-base sm:text-xl font-extrabold font-mono text-slate-900 leading-none">${it.current} <span class="text-[11px] sm:text-xs font-normal text-slate-400">${it.unit}</span></div>
+                    <div class="text-[9.5px] sm:text-[10px] text-slate-400 mt-1 truncate">
+                      <span>Safe: <strong class="text-slate-500 font-mono">${it.limit}</strong></span>
+                    </div>
+                  </div>
+                </div>
+            `).join('');
+        }
+
+        // 4. Render Hourly Horizontal Reel (Strictly Predicted Parameters)
         const reel = document.getElementById('hourly-forecast-reel');
         if (reel) {
             reel.innerHTML = hourly.map(item => {
@@ -444,8 +619,8 @@
                     <div class="hourly-card ${item.isNow ? 'active-hour' : ''}">
                       <div class="hour-label text-[11px] font-bold text-slate-500 mb-1.5 whitespace-nowrap">${item.label}</div>
                       <div class="text-2xl my-1 leading-none text-slate-400 font-sans">${item.icon}</div>
-                      <div class="font-mono text-base font-extrabold text-slate-400 leading-tight">${item.temp}°</div>
-                      <div class="text-[9.5px] font-medium text-slate-400 mt-1 flex items-center gap-0.5"><span>💧</span>${item.rain === '--' ? '--%' : item.rain + '%'}</div>
+                      <div class="font-mono text-base font-extrabold text-slate-800 leading-tight">${item.temp}°C</div>
+                      <div class="text-[9.5px] font-semibold text-blue-600 mt-1 flex items-center gap-0.5"><span>💧</span>${item.humidity}%</div>
                       <div class="mt-2 px-2 py-0.5 rounded-full text-[9px] font-extrabold font-mono" style="background:${b.bg}; color:${b.text}; border:1px solid ${b.border}; white-space:nowrap;">
                         AQI ${item.aqi}
                       </div>
@@ -454,22 +629,22 @@
             }).join('');
         }
 
-        // 4. Render 7-Day Accordion
+        // 5. Render 24-Hour Timeline Phases (Strictly Predicted Parameters)
         const acc = document.getElementById('seven-day-accordion');
         if (acc) {
-            acc.innerHTML = sevenDays.map((d, idx) => {
+            acc.innerHTML = phases.map((d, idx) => {
                 const b = getAqiBadge(d.aqi);
-                const isOpenDefault = idx === 0; // open Today by default
+                const isOpenDefault = idx === 0;
                 return `
                     <div class="day-row-container ${isOpenDefault ? 'open' : ''}" id="day-row-${idx}">
                       <!-- Clickable Header Row -->
                       <div class="day-row-header" onclick="toggleDayAccordion(${idx})">
-                        <!-- Left: Day & Icon -->
-                        <div class="flex items-center gap-3 min-w-[110px] sm:min-w-[130px]">
+                        <!-- Left: Phase Name & Icon -->
+                        <div class="flex items-center gap-3 min-w-[130px] sm:min-w-[160px]">
                           <span class="text-xl sm:text-2xl shrink-0 text-slate-400 font-sans">${d.icon}</span>
                           <div>
-                            <div class="text-xs sm:text-[13px] font-bold text-slate-900 leading-tight">${d.dayName}</div>
-                            <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate max-w-[90px] sm:max-w-[120px]">${d.condition}</div>
+                            <div class="text-xs sm:text-[13px] font-bold text-slate-900 leading-tight">${d.phaseName}</div>
+                            <div class="text-[10.5px] text-teal-600 font-semibold font-mono mt-0.5">${d.hoursSpan}</div>
                           </div>
                         </div>
 
@@ -491,7 +666,7 @@
                         </div>
                       </div>
 
-                      <!-- Expandable Accordion Drawer -->
+                      <!-- Expandable Accordion Drawer displaying ONLY predicted parameters -->
                       <div class="day-row-drawer">
                         <!-- Hourly Day Breakdown (Morning, Afternoon, Evening, Night) -->
                         <div class="mb-3">
@@ -513,7 +688,7 @@
                             <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
                               <div class="text-[10px] text-slate-400 font-bold">Evening</div>
                               <div class="text-base my-0.5">🌆</div>
-                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.maxTemp !== '--' ? Math.round(Number(d.maxTemp) - 2) + '°' : '--'}</div>
+                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.maxTemp !== '--' ? Math.round(Number(d.maxTemp) - 1) + '°' : '--'}</div>
                             </div>
                             <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
                               <div class="text-[10px] text-slate-400 font-bold">Night</div>
@@ -523,30 +698,31 @@
                           </div>
                         </div>
 
+                        <!-- 4 Metric Cards: STRICTLY PREDICTED PARAMETERS -->
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs">
                           <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">Air Quality</div>
-                            <div class="font-extrabold mt-0.5 font-mono" style="color: ${b.text};">AQI ${d.aqi} · ${b.label}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">Dominant: <strong>${d.dominant}</strong></div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">PM2.5 (Predicted)</div>
+                            <div class="font-extrabold text-slate-800 mt-0.5 font-mono">${d.pm25 !== undefined ? d.pm25 + ' µg/m³' : '--'}</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Safe Threshold: 60</div>
                           </div>
                           <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">Rain Probability</div>
-                            <div class="font-extrabold text-slate-600 mt-0.5 font-mono">${d.rain === '--' ? '--%' : d.rain + '%'} Chance</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">Awaiting model</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">PM10 (Predicted)</div>
+                            <div class="font-extrabold text-slate-800 mt-0.5 font-mono">${d.pm10 !== undefined ? d.pm10 + ' µg/m³' : '--'}</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Safe Threshold: 100</div>
                           </div>
                           <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">Wind Gusts</div>
-                            <div class="font-extrabold text-slate-600 mt-0.5 font-mono">${d.gust}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">Awaiting model</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">CO &amp; NO₂ (Predicted)</div>
+                            <div class="font-extrabold text-slate-800 mt-0.5 font-mono">CO: ${d.co || '--'} · NO₂: ${d.no2 || '--'}</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Concentrations</div>
                           </div>
                           <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">UV Radiation</div>
-                            <div class="font-extrabold text-slate-600 mt-0.5 font-mono">${d.uv}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">Awaiting model</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">O₃ &amp; Humidity (Predicted)</div>
+                            <div class="font-extrabold text-slate-800 mt-0.5 font-mono">O₃: ${d.o3 || '--'} · ${d.humidity || '--'}%</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Atmosphere</div>
                           </div>
                         </div>
 
-                        <!-- Activity Guidance -->
+                        <!-- Activity Guidance based on predicted air quality -->
                         <div class="p-2.5 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-2 text-xs text-slate-600 font-medium">
                           <i data-lucide="info" class="w-4 h-4 text-slate-500 shrink-0"></i>
                           <span><strong>Health Guidance:</strong> ${d.advice}</span>
@@ -561,36 +737,65 @@
         if (window.lucide) lucide.createIcons();
     }
 
-    // Refresh Forecast
-    function refreshForecast() {
-        const icon = document.getElementById('forecast-refresh-icon');
-        if (icon) icon.classList.add('animate-spin');
-        setTimeout(() => {
-            if (icon) icon.classList.remove('animate-spin');
-            renderForecastUI();
-        }, 300);
+    let autoRefreshForecastTimer = null;
+
+    // Fetch and load forecast data from backend
+    async function loadForecastData(force = false) {
+        try {
+            const resp = await fetch(`/api/telemetry.php?action=forecast${force ? '&force=1' : ''}`);
+            if (!resp.ok) throw new Error('Network error loading forecast');
+            const data = await resp.json();
+            if (data && data.status === 'success' && data.hourly && data.hourly.length > 0) {
+                window.loadTrainedForecastModel(data);
+                const syncStatusEl = document.getElementById('forecast-auto-sync-status');
+                if (syncStatusEl) {
+                    const now = new Date();
+                    syncStatusEl.innerText = 'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                }
+            }
+        } catch (err) {
+            console.warn('Could not load dynamic model forecast:', err);
+        }
     }
 
-    window.refreshForecast = refreshForecast;
+    // Auto-refresh interval (every 15 seconds)
+    function startAutoRefreshForecast() {
+        if (autoRefreshForecastTimer) clearInterval(autoRefreshForecastTimer);
+        autoRefreshForecastTimer = setInterval(() => {
+            if (!document.hidden) {
+                loadForecastData(false);
+            }
+        }, 15000);
+    }
+
+    // Clean up timer on SPA navigation
+    window.__cleanupCurrentPage = function() {
+        if (autoRefreshForecastTimer) {
+            clearInterval(autoRefreshForecastTimer);
+            autoRefreshForecastTimer = null;
+        }
+    };
 
     /**
-     * Public Hook to inject your trained machine learning model predictions later:
-     * window.loadTrainedForecastModel({
-     *   hero: { temp: 28.5, dayLow: 23.4, dayHigh: 31.8, condition: 'Partly Cloudy', rain: 20, wind: '12 km/h' },
-     *   hourly: [...],
-     *   sevenDays: [...]
-     * });
+     * Public Hook to inject your trained machine learning model predictions:
+     * window.loadTrainedForecastModel(payload);
      */
     window.loadTrainedForecastModel = function(data) {
         trainedModelData = data;
         renderForecastUI();
     };
 
-    // Initial render
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', renderForecastUI);
-    } else {
+    // Initial render and data fetch
+    function initForecastPage() {
         renderForecastUI();
+        loadForecastData(false);
+        startAutoRefreshForecast();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initForecastPage);
+    } else {
+        initForecastPage();
     }
 })();
 </script>

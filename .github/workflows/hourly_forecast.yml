@@ -1,0 +1,40 @@
+name: Hourly AQI Forecast Engine
+
+on:
+  schedule:
+    # Triggers every hour sharp in Indian Standard Time (IST = UTC + 5:30)
+    # Minute 30 UTC corresponds exactly to minute 00 IST (e.g. 8:00 PM, 9:00 PM, 10:00 PM IST)
+    # Running at :30 UTC also avoids GitHub's heavy minute-0 runner queue congestion.
+    - cron: '30 * * * *'
+  workflow_dispatch:
+    # Allows manual trigger anytime from the GitHub Actions tab
+
+jobs:
+  run-forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install ML & Math Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install keras torch numpy joblib scikit-learn
+
+      - name: Run 168h Forecast Engine & Sync Supabase
+        env:
+          KERAS_BACKEND: torch
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://sgkdpliqlhgiqsabxzxe.supabase.co' }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30' }}
+          SOURCE_AQI_TABLE: AQI_NODE1
+          TABLE_WEATHER_HISTORICAL: WEATHER_NODE1
+        run: |
+          python php-backend/generate_forecast.py

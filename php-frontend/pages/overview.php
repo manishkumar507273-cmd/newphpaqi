@@ -213,17 +213,14 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15; white-space: nowrap;">Wind Speed</h4>
           </div>
-          <span id="wind-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; flex-shrink: 0;">
-            <?= $init_wind_badge ?>
-          </span>
+          <button type="button" id="btn-wind" onclick="toggleWind()" title="Switch wind unit: km/h / m/s" class="segmented-unit-btn" style="background-color: #ecfdf5; border-color: #a7f3d0; color: #047857;">
+            <span class="unit-opt active" id="unit-opt-kmh">km/h</span>
+            <span class="unit-opt" id="unit-opt-ms">m/s</span>
+          </button>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span id="wind-val" class="overview-card-val" style="font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #059669; font-family: var(--font-mono);"><?= $init_wind ?></span>
-            <button type="button" id="btn-wind" onclick="toggleWind()" title="Switch wind unit: km/h / m/s" class="segmented-unit-btn" style="background-color: #ecfdf5; border-color: #a7f3d0; color: #047857;">
-              <span class="unit-opt active" id="unit-opt-kmh">km/h</span>
-              <span class="unit-opt" id="unit-opt-ms">m/s</span>
-            </button>
           </div>
           <div class="overview-wind-equalizer" style="display: flex; align-items: flex-end; gap: 3px; height: 16px;">
             <div id="eq-1" style="width: 3.5px; height: 8px; border-radius: 2px; background-color: <?= $init_wind_kmh >= 2.5 ? '#059669' : '#e2e8f0' ?>; transition: background-color 0.3s ease;"></div>
@@ -257,14 +254,11 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
               <span class="unit-opt active" id="unit-opt-mm">mm</span>
               <span class="unit-opt" id="unit-opt-cm">cm</span>
             </button>
-            <span id="rain-badge" class="overview-card-badge" style="padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= $is_raining_initial ? '#e0f2fe' : '#eef2ff' ?>; color: <?= $is_raining_initial ? '#0369a1' : '#4338ca' ?>; border: 1px solid <?= $is_raining_initial ? '#bae6fd' : '#c7d2fe' ?>; flex-shrink: 0;">
-              <?= $is_raining_initial ? '🌧️ Rain' : 'Live' ?>
-            </span>
           </div>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; margin-bottom: auto; padding: 6px 0;">
           <div>
-            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Live</div>
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Rain Now</div>
             <div style="display: flex; align-items: baseline; gap: 3px;">
               <span id="rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #4f46e5; font-family: var(--font-mono);"><?= $init_live_rain ?></span>
               <span id="rain-unit-live" style="font-size: 12px; font-weight: 700; color: #818cf8;">mm</span>
@@ -897,7 +891,7 @@ async function refreshData(isSilent = false) {
             
             // Wind EQ
             const wkmh = Number(rawWind || 0);
-            document.getElementById('wind-badge').innerText = wkmh > 15 ? 'Breezy' : (wkmh > 2 ? 'Gentle' : 'Light');
+
             for(let i=1; i<=4; i++) {
                 document.getElementById('eq-'+i).style.backgroundColor = wkmh >= (i*2.5) ? '#059669' : '#e2e8f0';
             }
@@ -915,13 +909,7 @@ async function refreshData(isSilent = false) {
             document.getElementById('rain-icon-bg').style.backgroundColor = isRaining ? '#f0f9ff' : '#eef2ff';
             document.getElementById('rain-icon-bg').style.color = isRaining ? '#0284c7' : '#4f46e5';
             document.getElementById('rain-icon-bg').style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
-            const rainBadgeEl = document.getElementById('rain-badge');
-            if (rainBadgeEl) {
-                rainBadgeEl.innerText = isRaining ? '🌧️ Rain' : 'Live';
-                rainBadgeEl.style.backgroundColor = isRaining ? '#e0f2fe' : '#eef2ff';
-                rainBadgeEl.style.color = isRaining ? '#0369a1' : '#4338ca';
-                rainBadgeEl.style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
-            }
+
         }
 
         // Live History Chart

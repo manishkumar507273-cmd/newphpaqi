@@ -162,6 +162,7 @@ window.showMobileToast = function() {};
             <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
               <span class="live-dot-pulse"></span>
               <span style="font-size: 10.5px; font-weight: 700; color: #64748b; white-space: nowrap;">SMVITM Campus</span>
+              <span style="font-size: 9.5px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 5px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
             </div>
           </div>
         </a>

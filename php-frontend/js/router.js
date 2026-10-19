@@ -75,28 +75,21 @@
             weather: 'Weather Conditions'
         };
 
-        // Mobile Top App Bar (Overview Brand vs Secondary Page Title)
+        // Mobile Top App Bar (Always keep brand visible across all pages)
         const mobileBrand = document.getElementById('mobile-brand-overview');
         const mobileSecondary = document.getElementById('mobile-secondary-header');
-        const mobilePageTitle = document.getElementById('mobile-page-title');
 
-        if (mobileBrand && mobileSecondary) {
-            if (targetPage === 'overview') {
-                mobileBrand.style.display = 'flex';
-                mobileSecondary.style.display = 'none';
-            } else {
-                mobileBrand.style.display = 'none';
-                mobileSecondary.style.display = 'flex';
-                if (mobilePageTitle) {
-                    mobilePageTitle.innerText = PAGE_TITLES[targetPage] || 'Smart WeatherNet';
-                }
-            }
+        if (mobileBrand) {
+            mobileBrand.style.display = 'flex';
+        }
+        if (mobileSecondary) {
+            mobileSecondary.style.display = 'none';
         }
 
         // Back Button
         const backBtn = document.getElementById('header-back-btn');
         if (backBtn) {
-            backBtn.style.display = targetPage !== 'overview' ? 'inline-flex' : 'none';
+            backBtn.style.display = 'none';
         }
 
         // View Dashboard CTA Button

@@ -148,10 +148,10 @@ window.showMobileToast = function() {};
         </a>
       </div>
 
-      <!-- Mobile Top App Bar (Overview vs Secondary Pages) -->
+      <!-- Mobile Top App Bar (Brand always visible across all pages) -->
       <div class="flex md:hidden items-center gap-2 min-w-0" id="mobile-top-bar">
-        <!-- Overview Mobile Brand -->
-        <a href="?page=overview" id="mobile-brand-overview" style="display: <?= $current_page === 'overview' ? 'flex' : 'none' ?>; align-items: center; gap: 10px; text-decoration: none; min-width: 0;">
+        <!-- Mobile Brand (Always visible on all pages) -->
+        <a href="?page=overview" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0;">
           <div style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
             <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
@@ -167,9 +167,9 @@ window.showMobileToast = function() {};
           </div>
         </a>
 
-        <!-- Secondary Page Mobile App Bar: Native Back Chevron + Section Title -->
-        <div id="mobile-secondary-header" style="display: <?= $current_page !== 'overview' ? 'flex' : 'none' ?>; align-items: center; gap: 8px; min-width: 0;">
-          <a href="?page=overview" id="header-back-btn" title="Back to Overview" style="display: inline-flex; align-items: center; gap: 3px; padding: 6px 10px 6px 6px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #ffffff; color: #475569; text-decoration: none; font-size: 12px; font-weight: 700; -webkit-tap-highlight-color: transparent; flex-shrink: 0;">
+        <!-- Secondary Page Mobile App Bar: hidden so brand is always shown -->
+        <div id="mobile-secondary-header" style="display: none; align-items: center; gap: 8px; min-width: 0;">
+          <a href="?page=overview" id="header-back-btn" title="Back to Overview" style="display: none; align-items: center; gap: 3px; padding: 6px 10px 6px 6px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #ffffff; color: #475569; text-decoration: none; font-size: 12px; font-weight: 700; -webkit-tap-highlight-color: transparent; flex-shrink: 0;">
             <i data-lucide="chevron-left" style="width: 18px; height: 18px; color: #00bfa5;"></i>
             <span>Back</span>
           </a>

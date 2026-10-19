@@ -96,13 +96,6 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
 
   <!-- Content Container -->
   <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 20px;">
-    
-    <!-- Overview Toolbar (Refresh Only) -->
-    <div class="overview-toolbar" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 6px;">
-      <button id="btn-refresh" onclick="refreshData(false)" class="overview-refresh-btn" title="Refresh Live Telemetry" style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); transition: all 0.2s ease;">
-        <i data-lucide="refresh-cw" id="icon-refresh" style="width: 16px; height: 16px; color: #00bfa5;"></i>
-      </button>
-    </div>
 
     <!-- Core Telemetry Cards Grid (5 Cards: AQI, Temp, Humidity, Wind, Rain) -->
     <div class="overview-grid">

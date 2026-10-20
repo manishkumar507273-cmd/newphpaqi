@@ -22,8 +22,8 @@ if BASE_DIR not in sys.path:
 from cpcb_calculator import calculate_aqi, calculate_sub_index, get_cpcb_category, CPCB_BREAKPOINTS
 
 def load_env_file():
-    """Load key-value pairs from .env files."""
-    env_vars = {}
+    """Load key-value pairs from system environment and candidate .env files."""
+    env_vars = dict(os.environ)
     candidate_paths = [
         os.path.join(PROJECT_DIR, ".env"),
         os.path.join(BASE_DIR, ".env"),
@@ -51,8 +51,8 @@ def load_env_file():
 ENV = load_env_file()
 
 # Supabase configuration (with fallback to default)
-SUPABASE_URL = ENV.get("VITE_SUPABASE_URL") or ENV.get("SUPABASE_URL") or "https://sgkdpliqlhgiqsabxzxe.supabase.co"
-SUPABASE_KEY = ENV.get("VITE_SUPABASE_ANON_KEY") or ENV.get("SUPABASE_KEY") or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30"
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or ENV.get("VITE_SUPABASE_URL") or ENV.get("SUPABASE_URL") or "https://sgkdpliqlhgiqsabxzxe.supabase.co"
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or ENV.get("VITE_SUPABASE_ANON_KEY") or ENV.get("SUPABASE_KEY") or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30"
 
 # Search candidate paths for the forecast model directory
 POSSIBLE_FORCAST_DIRS = [

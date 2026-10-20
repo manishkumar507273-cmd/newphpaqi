@@ -1,0 +1,5 @@
+# Machine Learning and Forecast Dependencies
+keras>=3.0.0
+numpy
+joblib
+scikit-learn

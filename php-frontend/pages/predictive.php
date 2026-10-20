@@ -141,7 +141,7 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
           <i data-lucide="clock" class="w-4 h-4"></i>
         </div>
         <div>
-          <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Hourly Forecast (Next 24 Hours)</h2>
+          <h2 id="hourly-forecast-heading" class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Hourly Forecast (Next 24 Hours)</h2>
           <p class="text-xs text-slate-400 m-0">Swipe horizontally to track predicted temperature, humidity, and AQI</p>
         </div>
       </div>
@@ -347,10 +347,62 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         if (window.lucide) lucide.createIcons();
     };
 
-    // Generate upcoming 24 hours structure with awaiting-model placeholders
+    // Filter out past hours and ensure current active hour is 'Now'
+    function filterAndNormalizeHourly(rawList) {
+        if (!rawList || !Array.isArray(rawList) || rawList.length === 0) return [];
+
+        const now = new Date();
+        // Start of current clock hour in epoch milliseconds
+        const currentHourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0).getTime();
+
+        // Remove any hour that has already passed
+        const unelapsed = rawList.filter(item => {
+            if (item.iso) {
+                const itemTime = new Date(item.iso).getTime();
+                return itemTime >= currentHourStart;
+            }
+            if (typeof item.hour === 'number') {
+                return item.hour >= now.getHours();
+            }
+            return true;
+        });
+
+        // Fallback: if all 24 hours elapsed (e.g. stale model file from days ago), keep rawList so UI doesn't crash
+        const activeList = unelapsed.length > 0 ? unelapsed : rawList;
+
+        return activeList.map((item, idx) => {
+            const isFirst = (idx === 0);
+            let timeLabel = item.label;
+
+            if (isFirst) {
+                timeLabel = 'Now';
+            } else if (timeLabel === 'Now' || !timeLabel) {
+                // If this item was previously tagged 'Now' but the previous hour has passed,
+                // re-label it to its standard clock time
+                if (item.iso) {
+                    const dt = new Date(item.iso);
+                    timeLabel = dt.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+                } else if (typeof item.hour === 'number') {
+                    const h = item.hour % 24;
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const h12 = h % 12 || 12;
+                    timeLabel = `${h12} ${ampm}`;
+                }
+            }
+
+            return {
+                ...item,
+                index: idx,
+                isNow: isFirst,
+                label: timeLabel
+            };
+        });
+    }
+
+    // Generate upcoming hours structure, filtering out any hours that have passed
     function generateHourlyData() {
         if (trainedModelData && trainedModelData.hourly) {
-            return trainedModelData.hourly;
+            return filterAndNormalizeHourly(trainedModelData.hourly);
         }
 
         const now = new Date();
@@ -421,6 +473,12 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         const hourly = generateHourlyData();
         const phases = generateTimelinePhases();
 
+        // Update heading with active remaining hour count
+        const headingEl = document.getElementById('hourly-forecast-heading');
+        if (headingEl && hourly && hourly.length > 0) {
+            headingEl.innerText = `Hourly Forecast (Next ${hourly.length} Hours)`;
+        }
+
         // 1. Date and Sync time
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
@@ -438,7 +496,9 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             const aqiHigh = document.getElementById('forecast-aqi-high');
             if (aqiHigh) aqiHigh.innerText = '--';
         } else if (trainedModelData.hero) {
-            const h = trainedModelData.hero;
+            // Synchronize hero with the current active (unelapsed) hour
+            const curHour = (hourly && hourly.length > 0) ? hourly[0] : null;
+            const h = curHour || trainedModelData.hero;
             const b = getAqiBadge(h.aqi);
 
             const heroAqi = document.getElementById('forecast-hero-aqi');
@@ -460,20 +520,16 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 domEl.innerHTML = `Dominant Pollutant: <strong class="text-slate-900 font-mono">${h.dominant || '--'}</strong> · Max Sub-Index Rule`;
             }
 
-            if (h.sub_indices) {
-                const s = h.sub_indices;
-                const setVal = (id, val) => {
-                    const el = document.getElementById(id);
-                    if (el) el.innerText = val !== undefined ? val : '--';
-                };
-                setVal('sub-pm25-val', s['PM2.5']);
-                setVal('sub-pm10-val', s['PM10']);
-                setVal('sub-no2-val', s['NO₂']);
-                setVal('sub-co-val', s['CO']);
-                setVal('sub-o3-val', s['O₃']);
-            }
-
-
+            const s = (curHour && curHour.sub_indices) ? curHour.sub_indices : (trainedModelData.hero.sub_indices || {});
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val !== undefined ? val : '--';
+            };
+            setVal('sub-pm25-val', s['PM2.5'] !== undefined ? s['PM2.5'] : s['pm25']);
+            setVal('sub-pm10-val', s['PM10'] !== undefined ? s['PM10'] : s['pm10']);
+            setVal('sub-no2-val', s['NO₂'] !== undefined ? s['NO₂'] : (s['no2'] !== undefined ? s['no2'] : s['NO2']));
+            setVal('sub-co-val', s['CO'] !== undefined ? s['CO'] : s['co']);
+            setVal('sub-o3-val', s['O₃'] !== undefined ? s['O₃'] : (s['o3'] !== undefined ? s['o3'] : s['O3']));
 
             const heroTemp = document.getElementById('forecast-hero-temp');
             if (heroTemp) heroTemp.innerText = (h.temp !== undefined ? Math.round(h.temp) : '--') + '°C';
@@ -576,14 +632,16 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         const paramsGrid = document.getElementById('predicted-parameters-grid');
         if (paramsGrid && trainedModelData && trainedModelData.parameters) {
             const p = trainedModelData.parameters;
+            const curItem = (hourly && hourly.length > 0) ? hourly[0] : null;
+            const curSub = (curItem && curItem.sub_indices) ? curItem.sub_indices : {};
             const items = [
-                { key: 'pm25', name: 'PM2.5', icon: '💨', current: p.pm25.current, subindex: p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: p.pm25.safe_limit },
-                { key: 'pm10', name: 'PM10', icon: '🌫️', current: p.pm10.current, subindex: p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: p.pm10.safe_limit },
-                { key: 'no2', name: 'NO₂', icon: '🚦', current: p.no2.current, subindex: p.no2.current_subindex, unit: 'µg/m³', range: `${p.no2.min} - ${p.no2.max}`, mean: p.no2.mean, limit: p.no2.safe_limit },
-                { key: 'co', name: 'CO', icon: '🏭', current: p.co.current, subindex: p.co.current_subindex, unit: 'mg/m³', range: `${p.co.min} - ${p.co.max}`, mean: p.co.mean, limit: p.co.safe_limit },
-                { key: 'o3', name: 'O₃', icon: '☀️', current: p.o3.current, subindex: p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: p.o3.safe_limit },
-                { key: 'temp', name: 'Temp', icon: '🌡️', current: p.temp.current, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
-                { key: 'humidity', name: 'Humidity', icon: '💧', current: p.humidity.current, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' }
+                { key: 'pm25', name: 'PM2.5', icon: '💨', current: curItem ? curItem.pm25 : p.pm25.current, subindex: curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: p.pm25.safe_limit },
+                { key: 'pm10', name: 'PM10', icon: '🌫️', current: curItem ? curItem.pm10 : p.pm10.current, subindex: curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: p.pm10.safe_limit },
+                { key: 'no2', name: 'NO₂', icon: '🚦', current: curItem ? curItem.no2 : p.no2.current, subindex: curSub['NO₂'] ?? curSub['no2'] ?? curSub['NO2'] ?? p.no2.current_subindex, unit: 'µg/m³', range: `${p.no2.min} - ${p.no2.max}`, mean: p.no2.mean, limit: p.no2.safe_limit },
+                { key: 'co', name: 'CO', icon: '🏭', current: curItem ? curItem.co : p.co.current, subindex: curSub['CO'] ?? curSub['co'] ?? p.co.current_subindex, unit: 'mg/m³', range: `${p.co.min} - ${p.co.max}`, mean: p.co.mean, limit: p.co.safe_limit },
+                { key: 'o3', name: 'O₃', icon: '☀️', current: curItem ? curItem.o3 : p.o3.current, subindex: curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: p.o3.safe_limit },
+                { key: 'temp', name: 'Temp', icon: '🌡️', current: curItem ? curItem.temp : p.temp.current, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
+                { key: 'humidity', name: 'Humidity', icon: '💧', current: curItem ? curItem.humidity : p.humidity.current, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' }
             ];
 
             paramsGrid.innerHTML = items.map((it, idx) => `
@@ -758,10 +816,20 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         }
     }
 
-    // Auto-refresh interval (every 15 seconds)
+    // Auto-refresh interval (every 15 seconds) + real-time hour change checker
     function startAutoRefreshForecast() {
         if (autoRefreshForecastTimer) clearInterval(autoRefreshForecastTimer);
+        let lastRenderHour = new Date().getHours();
+
         autoRefreshForecastTimer = setInterval(() => {
+            const currentHour = new Date().getHours();
+            // If the clock hour has rolled over (e.g. 10 -> 11), re-render immediately to drop the passed hour
+            if (currentHour !== lastRenderHour) {
+                lastRenderHour = currentHour;
+                renderForecastUI();
+                loadForecastData(true);
+                return;
+            }
             if (!document.hidden) {
                 loadForecastData(false);
             }

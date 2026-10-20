@@ -817,6 +817,66 @@ switch ($action) {
 
         if (file_exists($jsonFile)) {
             $raw = file_get_contents($jsonFile);
+            $payload = json_decode($raw, true);
+            if (is_array($payload) && !empty($payload['hourly'])) {
+                $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
+                $currentHourPrefix = $now->format('Y-m-d H');
+                $filteredHourly = [];
+
+                foreach ($payload['hourly'] as $item) {
+                    $itemIso = $item['iso'] ?? '';
+                    try {
+                        $dt = new DateTime($itemIso);
+                        $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+                        if ($dt->format('Y-m-d H') >= $currentHourPrefix) {
+                            $filteredHourly[] = $item;
+                        }
+                    } catch (Exception $e) {
+                        $filteredHourly[] = $item;
+                    }
+                }
+
+                // If some hours remained, re-index and return the filtered list
+                if (!empty($filteredHourly)) {
+                    foreach ($filteredHourly as $idx => &$item) {
+                        $item['index'] = $idx;
+                        $item['isNow'] = ($idx === 0);
+                        if ($idx === 0) {
+                            $item['label'] = 'Now';
+                        } elseif ($item['label'] === 'Now' && !empty($item['iso'])) {
+                            try {
+                                $dt = new DateTime($item['iso']);
+                                $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+                                $item['label'] = $dt->format('g A');
+                            } catch (Exception $e) {}
+                        }
+                    }
+                    unset($item);
+                    $payload['hourly'] = $filteredHourly;
+
+                    // Synchronize hero with the current active (unelapsed) hour
+                    $h0 = $filteredHourly[0];
+                    if (!isset($payload['hero']) || !is_array($payload['hero'])) {
+                        $payload['hero'] = [];
+                    }
+                    $payload['hero']['aqi'] = $h0['aqi'];
+                    $payload['hero']['dominant'] = $h0['dominant'];
+                    $payload['hero']['category'] = $h0['category'];
+                    $payload['hero']['severity'] = $h0['severity'];
+                    $payload['hero']['color'] = $h0['color'];
+                    $payload['hero']['sub_indices'] = $h0['sub_indices'] ?? [];
+                    $payload['hero']['temp'] = $h0['temp'];
+                    $payload['hero']['humidity'] = $h0['humidity'];
+                    $payload['hero']['pm25'] = $h0['pm25'];
+                    $payload['hero']['pm10'] = $h0['pm10'];
+                    $payload['hero']['no2'] = $h0['no2'];
+                    $payload['hero']['co'] = $h0['co'];
+                    $payload['hero']['o3'] = $h0['o3'];
+
+                    echo json_encode($payload);
+                    break;
+                }
+            }
             echo $raw ?: json_encode(['error' => 'Empty forecast data']);
         } else {
             echo json_encode(['error' => 'Forecast data not available']);

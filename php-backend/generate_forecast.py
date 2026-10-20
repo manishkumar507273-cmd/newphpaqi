@@ -343,11 +343,8 @@ def main():
     physical_preds = target_scaler.inverse_transform(preds)
 
     now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30)))
-    # Snap to the sharp clock hour (e.g. 8:00, 9:00, 10:00) even if GitHub runner starts slightly early or late
-    if now_ist.minute >= 45:
-        start_dt = (now_ist + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
-    else:
-        start_dt = now_ist.replace(minute=0, second=0, microsecond=0)
+    # The forecast is strictly for upcoming hours: start from the next sharp clock hour
+    start_dt = (now_ist + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
 
     hourly_list = []
     temps = []
@@ -376,7 +373,7 @@ def main():
         temps.append(p_temp)
         aqis.append(aqi_val)
 
-        time_label = 'Now' if i == 0 else target_dt.strftime('%I %p').lstrip('0')
+        time_label = target_dt.strftime('%I %p').lstrip('0')
         icon = get_weather_icon(target_dt.hour, p_temp, p_hum, aqi_val)
 
         hourly_list.append({

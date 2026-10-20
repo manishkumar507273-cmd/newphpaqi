@@ -294,23 +294,23 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
 
     // Discard any rows that have already elapsed in the past
     $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
-    $currentHourPrefix = $now->format('Y-m-d H');
+    $nowTs = $now->getTimestamp();
 
-    $futureOrCurrentRows = [];
+    $futureRows = [];
     foreach ($rows as $r) {
         $tsStr = $r['forecast_for_time'] ?? '';
         try {
             $dt = new DateTime($tsStr);
             $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-            if ($dt->format('Y-m-d H') >= $currentHourPrefix) {
-                $futureOrCurrentRows[] = $r;
+            if ($dt->getTimestamp() > $nowTs) {
+                $futureRows[] = $r;
             }
         } catch (Exception $e) {
-            $futureOrCurrentRows[] = $r;
+            $futureRows[] = $r;
         }
     }
-    if (!empty($futureOrCurrentRows)) {
-        $rows = array_values($futureOrCurrentRows);
+    if (!empty($futureRows)) {
+        $rows = array_values($futureRows);
     }
 
     $domNames = ['pm25' => 'PM2.5', 'pm10' => 'PM10', 'no2' => 'NO₂', 'co' => 'CO', 'o3' => 'O₃'];
@@ -364,7 +364,7 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         elseif ($aqiVal > 400) { $cat = 'Severe'; $sev = 'SEVERE'; $col = '#7f1d1d'; }
 
         $hour = (int)$dt->format('G');
-        $label = ($i === 0) ? 'Now' : $dt->format('g A');
+        $label = $dt->format('g A');
         $icon = getForecastWeatherIcon($hour, $p_temp, $p_hum, $aqiVal);
 
         $hourlyList[] = [
@@ -779,14 +779,14 @@ switch ($action) {
             $sbRows = fetchSupabase($sbForecastUrl, $supabaseKey);
 
             $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
-            $currentHourPrefix = $now->format('Y-m-d H');
+            $nowTs = $now->getTimestamp();
             $hasCurrentOrFuture = false;
             if (!empty($sbRows)) {
                 foreach ($sbRows as $r) {
                     try {
                         $dt = new DateTime($r['forecast_for_time'] ?? '');
                         $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-                        if ($dt->format('Y-m-d H') >= $currentHourPrefix) {
+                        if ($dt->getTimestamp() > $nowTs) {
                             $hasCurrentOrFuture = true;
                             break;
                         }
@@ -820,7 +820,7 @@ switch ($action) {
             $payload = json_decode($raw, true);
             if (is_array($payload) && !empty($payload['hourly'])) {
                 $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
-                $currentHourPrefix = $now->format('Y-m-d H');
+                $nowTs = $now->getTimestamp();
                 $filteredHourly = [];
 
                 foreach ($payload['hourly'] as $item) {
@@ -828,7 +828,7 @@ switch ($action) {
                     try {
                         $dt = new DateTime($itemIso);
                         $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-                        if ($dt->format('Y-m-d H') >= $currentHourPrefix) {
+                        if ($dt->getTimestamp() > $nowTs) {
                             $filteredHourly[] = $item;
                         }
                     } catch (Exception $e) {
@@ -840,10 +840,8 @@ switch ($action) {
                 if (!empty($filteredHourly)) {
                     foreach ($filteredHourly as $idx => &$item) {
                         $item['index'] = $idx;
-                        $item['isNow'] = ($idx === 0);
-                        if ($idx === 0) {
-                            $item['label'] = 'Now';
-                        } elseif ($item['label'] === 'Now' && !empty($item['iso'])) {
+                        $item['isNext'] = ($idx === 0);
+                        if (!empty($item['iso'])) {
                             try {
                                 $dt = new DateTime($item['iso']);
                                 $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
@@ -854,7 +852,7 @@ switch ($action) {
                     unset($item);
                     $payload['hourly'] = $filteredHourly;
 
-                    // Synchronize hero with the current active (unelapsed) hour
+                    // Synchronize hero with the next active upcoming timestamp
                     $h0 = $filteredHourly[0];
                     if (!isset($payload['hero']) || !is_array($payload['hero'])) {
                         $payload['hero'] = [];
@@ -872,6 +870,17 @@ switch ($action) {
                     $payload['hero']['no2'] = $h0['no2'];
                     $payload['hero']['co'] = $h0['co'];
                     $payload['hero']['o3'] = $h0['o3'];
+
+                    // Synchronize 7 predicted parameters current values with $h0
+                    if (isset($payload['parameters'])) {
+                        if (isset($payload['parameters']['pm25'])) $payload['parameters']['pm25']['current'] = $h0['pm25'];
+                        if (isset($payload['parameters']['pm10'])) $payload['parameters']['pm10']['current'] = $h0['pm10'];
+                        if (isset($payload['parameters']['no2']))  $payload['parameters']['no2']['current']  = $h0['no2'];
+                        if (isset($payload['parameters']['co']))   $payload['parameters']['co']['current']   = $h0['co'];
+                        if (isset($payload['parameters']['o3']))   $payload['parameters']['o3']['current']   = $h0['o3'];
+                        if (isset($payload['parameters']['temp'])) $payload['parameters']['temp']['current'] = $h0['temp'];
+                        if (isset($payload['parameters']['humidity'])) $payload['parameters']['humidity']['current'] = $h0['humidity'];
+                    }
 
                     echo json_encode($payload);
                     break;

@@ -64,10 +64,11 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
       
       <!-- Left Hero Info: Big AQI & Category -->
       <div class="flex-1">
-        <div class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 sm:mb-2">
+        <div class="flex items-center gap-2 flex-wrap text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 sm:mb-2">
           <span>Predicted Air Quality Index</span>
           <span>•</span>
           <span class="text-slate-600 font-semibold" id="forecast-date-str">Loading...</span>
+          <span id="forecast-target-time-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00bfa5]/10 text-[#00bfa5] border border-teal-200 font-mono tracking-tight">Next Timestamp</span>
         </div>
 
         <div class="flex items-baseline gap-3 mb-2 sm:mb-2.5">
@@ -347,53 +348,60 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         if (window.lucide) lucide.createIcons();
     };
 
-    // Filter out past hours and ensure current active hour is 'Now'
+    // Discard past hours and ensure forecast starts strictly from the NEXT upcoming timestamp
     function filterAndNormalizeHourly(rawList) {
         if (!rawList || !Array.isArray(rawList) || rawList.length === 0) return [];
 
         const now = new Date();
-        // Start of current clock hour in epoch milliseconds
-        const currentHourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0).getTime();
+        const nowMs = now.getTime();
 
-        // Remove any hour that has already passed
+        // Discard any hour whose timestamp has already started or elapsed (<= nowMs)
+        // so the forecast starts strictly from the NEXT upcoming timestamp
         const unelapsed = rawList.filter(item => {
             if (item.iso) {
                 const itemTime = new Date(item.iso).getTime();
-                return itemTime >= currentHourStart;
+                return itemTime > nowMs;
             }
             if (typeof item.hour === 'number') {
-                return item.hour >= now.getHours();
+                return item.hour > now.getHours();
             }
             return true;
         });
 
-        // Fallback: if all 24 hours elapsed (e.g. stale model file from days ago), keep rawList so UI doesn't crash
-        const activeList = unelapsed.length > 0 ? unelapsed : rawList;
+        // Fallback: if all 24 hours elapsed (e.g. older model file from days ago),
+        // cleanly align the 24 predictions starting from the next upcoming clock hour
+        let activeList = unelapsed;
+        if (unelapsed.length === 0) {
+            const nextHourDt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0, 0);
+            activeList = rawList.map((item, idx) => {
+                const shiftedDt = new Date(nextHourDt.getTime() + (idx * 3600000));
+                return {
+                    ...item,
+                    index: idx,
+                    hour: shiftedDt.getHours(),
+                    iso: shiftedDt.toISOString()
+                };
+            });
+        }
 
         return activeList.map((item, idx) => {
             const isFirst = (idx === 0);
             let timeLabel = item.label;
 
-            if (isFirst) {
-                timeLabel = 'Now';
-            } else if (timeLabel === 'Now' || !timeLabel) {
-                // If this item was previously tagged 'Now' but the previous hour has passed,
-                // re-label it to its standard clock time
-                if (item.iso) {
-                    const dt = new Date(item.iso);
-                    timeLabel = dt.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
-                } else if (typeof item.hour === 'number') {
-                    const h = item.hour % 24;
-                    const ampm = h >= 12 ? 'PM' : 'AM';
-                    const h12 = h % 12 || 12;
-                    timeLabel = `${h12} ${ampm}`;
-                }
+            if (item.iso) {
+                const dt = new Date(item.iso);
+                timeLabel = dt.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+            } else if (typeof item.hour === 'number') {
+                const h = item.hour % 24;
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                const h12 = h % 12 || 12;
+                timeLabel = `${h12} ${ampm}`;
             }
 
             return {
                 ...item,
                 index: idx,
-                isNow: isFirst,
+                isNext: isFirst,
                 label: timeLabel
             };
         });
@@ -487,40 +495,41 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         const syncEl = document.getElementById('forecast-sync-time');
         if (syncEl) syncEl.innerText = trainedModelData ? 'Model Active' : 'Model Standby';
 
-        // 2. Hero values & Model Status
-        if (!trainedModelData) {
-            const heroAqi = document.getElementById('forecast-hero-aqi');
-            if (heroAqi) heroAqi.innerText = '--';
-            const aqiLow = document.getElementById('forecast-aqi-low');
-            if (aqiLow) aqiLow.innerText = '--';
-            const aqiHigh = document.getElementById('forecast-aqi-high');
-            if (aqiHigh) aqiHigh.innerText = '--';
-        } else if (trainedModelData.hero) {
-            // Synchronize hero with the current active (unelapsed) hour
-            const curHour = (hourly && hourly.length > 0) ? hourly[0] : null;
-            const h = curHour || trainedModelData.hero;
-            const b = getAqiBadge(h.aqi);
+        // Store hourly data globally for interactive reel clicks
+        window.__currentHourly = hourly;
+        if (typeof window.__selectedHourIdx !== 'number' || window.__selectedHourIdx >= hourly.length) {
+            window.__selectedHourIdx = 0;
+        }
 
+        // 2. Helper to synchronize Hero Card & 7 Predicted Parameters with any selected timestamp
+        function updateHeroAndParams(curHour, isNext) {
+            if (!curHour) return;
+            const b = getAqiBadge(curHour.aqi);
+
+            // Hero AQI
             const heroAqi = document.getElementById('forecast-hero-aqi');
             if (heroAqi) {
-                heroAqi.innerText = h.aqi !== undefined ? h.aqi : '--';
+                heroAqi.innerText = curHour.aqi !== undefined ? curHour.aqi : '--';
                 heroAqi.style.color = b.color || b.text;
             }
 
+            // Category Badge
             const catBadge = document.getElementById('forecast-hero-category-badge');
             if (catBadge) {
-                catBadge.innerText = (h.category || b.label).toUpperCase();
+                catBadge.innerText = (curHour.category || b.label).toUpperCase();
                 catBadge.style.backgroundColor = b.bg;
                 catBadge.style.borderColor = b.border;
                 catBadge.style.color = b.text;
             }
 
+            // Dominant Pollutant
             const domEl = document.getElementById('forecast-hero-dominant');
             if (domEl) {
-                domEl.innerHTML = `Dominant Pollutant: <strong class="text-slate-900 font-mono">${h.dominant || '--'}</strong> · Max Sub-Index Rule`;
+                domEl.innerHTML = `Dominant Pollutant: <strong class="text-slate-900 font-mono">${curHour.dominant || '--'}</strong> · Max Sub-Index Rule`;
             }
 
-            const s = (curHour && curHour.sub_indices) ? curHour.sub_indices : (trainedModelData.hero.sub_indices || {});
+            // Sub-Indices
+            const s = curHour.sub_indices || {};
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
                 if (el) el.innerText = val !== undefined ? val : '--';
@@ -531,11 +540,92 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             setVal('sub-co-val', s['CO'] !== undefined ? s['CO'] : s['co']);
             setVal('sub-o3-val', s['O₃'] !== undefined ? s['O₃'] : (s['o3'] !== undefined ? s['o3'] : s['O3']));
 
+            // Ambient Temperature & Humidity
             const heroTemp = document.getElementById('forecast-hero-temp');
-            if (heroTemp) heroTemp.innerText = (h.temp !== undefined ? Math.round(h.temp) : '--') + '°C';
+            if (heroTemp) heroTemp.innerText = (curHour.temp !== undefined ? Math.round(curHour.temp) : '--') + '°C';
 
             const heroHum = document.getElementById('forecast-hero-humidity');
-            if (heroHum) heroHum.innerText = (h.humidity !== undefined ? h.humidity : '--') + '%';
+            if (heroHum) heroHum.innerText = (curHour.humidity !== undefined ? curHour.humidity : '--') + '%';
+
+            // Next Timestamp Badge
+            const badgeEl = document.getElementById('forecast-target-time-badge');
+            if (badgeEl) {
+                if (isNext) {
+                    badgeEl.className = "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00bfa5]/10 text-[#00bfa5] border border-teal-200 font-mono tracking-tight flex items-center gap-1";
+                    badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Next Timestamp: ${curHour.label}`;
+                } else {
+                    badgeEl.className = "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 font-mono tracking-tight flex items-center gap-1.5";
+                    badgeEl.innerHTML = `<span>Viewing: ${curHour.label}</span> · <span onclick="selectForecastHour(0)" class="underline cursor-pointer hover:text-blue-900 font-bold">Reset to Next Hour</span>`;
+                }
+            }
+
+            // 3. Render 7 Predicted Model Parameters Grid for this timestamp
+            const paramsGrid = document.getElementById('predicted-parameters-grid');
+            if (paramsGrid && trainedModelData && trainedModelData.parameters) {
+                const p = trainedModelData.parameters;
+                const curSub = curHour.sub_indices || {};
+                const items = [
+                    { key: 'pm25', name: 'PM2.5', icon: '💨', current: curHour.pm25, subindex: curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: p.pm25.safe_limit },
+                    { key: 'pm10', name: 'PM10', icon: '🌫️', current: curHour.pm10, subindex: curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: p.pm10.safe_limit },
+                    { key: 'no2', name: 'NO₂', icon: '🚦', current: curHour.no2, subindex: curSub['NO₂'] ?? curSub['no2'] ?? curSub['NO2'] ?? p.no2.current_subindex, unit: 'µg/m³', range: `${p.no2.min} - ${p.no2.max}`, mean: p.no2.mean, limit: p.no2.safe_limit },
+                    { key: 'co', name: 'CO', icon: '🏭', current: curHour.co, subindex: curSub['CO'] ?? curSub['co'] ?? p.co.current_subindex, unit: 'mg/m³', range: `${p.co.min} - ${p.co.max}`, mean: p.co.mean, limit: p.co.safe_limit },
+                    { key: 'o3', name: 'O₃', icon: '☀️', current: curHour.o3, subindex: curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: p.o3.safe_limit },
+                    { key: 'temp', name: 'Temp', icon: '🌡️', current: curHour.temp, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
+                    { key: 'humidity', name: 'Humidity', icon: '💧', current: curHour.humidity, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' }
+                ];
+
+                paramsGrid.innerHTML = items.map((it, pIdx) => `
+                    <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-teal-500/40 transition-all shadow-xs ${pIdx === 6 ? 'col-span-2 sm:col-span-1' : ''}">
+                      <div class="flex items-center justify-between mb-1 sm:mb-1.5">
+                        <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                          <span>${it.icon}</span> <span>${it.name}</span>
+                        </span>
+                        ${it.subindex !== null && it.subindex !== undefined ? `
+                          <span class="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Sub: ${it.subindex}
+                          </span>
+                        ` : `
+                          <span class="text-[9.5px] font-mono font-bold text-slate-400">${it.unit}</span>
+                        `}
+                      </div>
+                      <div class="my-0.5 sm:my-1">
+                        <div class="text-base sm:text-xl font-extrabold font-mono text-slate-900 leading-none">${it.current} <span class="text-[11px] sm:text-xs font-normal text-slate-400">${it.unit}</span></div>
+                        <div class="text-[9.5px] sm:text-[10px] text-slate-400 mt-1 truncate">
+                          <span>Safe: <strong class="text-slate-500 font-mono">${it.limit}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Interactive function to view any timestamp from the reel in the Hero & Parameter cards
+        window.selectForecastHour = function(idx) {
+            if (!window.__currentHourly || !window.__currentHourly[idx]) return;
+            window.__selectedHourIdx = idx;
+            updateHeroAndParams(window.__currentHourly[idx], idx === 0);
+
+            // Update active styling on the horizontal reel cards
+            document.querySelectorAll('#hourly-forecast-reel .hourly-card').forEach((card, cIdx) => {
+                if (cIdx === idx) {
+                    card.classList.add('active-hour');
+                } else {
+                    card.classList.remove('active-hour');
+                }
+            });
+        };
+
+        // Initialize hero with selected timestamp (default: index 0 = NEXT upcoming timestamp)
+        if (!trainedModelData) {
+            const heroAqi = document.getElementById('forecast-hero-aqi');
+            if (heroAqi) heroAqi.innerText = '--';
+            const aqiLow = document.getElementById('forecast-aqi-low');
+            if (aqiLow) aqiLow.innerText = '--';
+            const aqiHigh = document.getElementById('forecast-aqi-high');
+            if (aqiHigh) aqiHigh.innerText = '--';
+        } else if (trainedModelData.hero) {
+            const selectedItem = (hourly && hourly.length > 0) ? hourly[window.__selectedHourIdx] : trainedModelData.hero;
+            updateHeroAndParams(selectedItem, window.__selectedHourIdx === 0);
 
             // Top Status Chip
             const topChip = document.getElementById('forecast-model-status-chip');
@@ -628,54 +718,19 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             if (syncDot) syncDot.className = "inline-block w-2 h-2 rounded-full bg-emerald-500";
         }
 
-        // 3. Render 7 Predicted Model Parameters Grid
-        const paramsGrid = document.getElementById('predicted-parameters-grid');
-        if (paramsGrid && trainedModelData && trainedModelData.parameters) {
-            const p = trainedModelData.parameters;
-            const curItem = (hourly && hourly.length > 0) ? hourly[0] : null;
-            const curSub = (curItem && curItem.sub_indices) ? curItem.sub_indices : {};
-            const items = [
-                { key: 'pm25', name: 'PM2.5', icon: '💨', current: curItem ? curItem.pm25 : p.pm25.current, subindex: curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: p.pm25.safe_limit },
-                { key: 'pm10', name: 'PM10', icon: '🌫️', current: curItem ? curItem.pm10 : p.pm10.current, subindex: curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: p.pm10.safe_limit },
-                { key: 'no2', name: 'NO₂', icon: '🚦', current: curItem ? curItem.no2 : p.no2.current, subindex: curSub['NO₂'] ?? curSub['no2'] ?? curSub['NO2'] ?? p.no2.current_subindex, unit: 'µg/m³', range: `${p.no2.min} - ${p.no2.max}`, mean: p.no2.mean, limit: p.no2.safe_limit },
-                { key: 'co', name: 'CO', icon: '🏭', current: curItem ? curItem.co : p.co.current, subindex: curSub['CO'] ?? curSub['co'] ?? p.co.current_subindex, unit: 'mg/m³', range: `${p.co.min} - ${p.co.max}`, mean: p.co.mean, limit: p.co.safe_limit },
-                { key: 'o3', name: 'O₃', icon: '☀️', current: curItem ? curItem.o3 : p.o3.current, subindex: curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: p.o3.safe_limit },
-                { key: 'temp', name: 'Temp', icon: '🌡️', current: curItem ? curItem.temp : p.temp.current, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
-                { key: 'humidity', name: 'Humidity', icon: '💧', current: curItem ? curItem.humidity : p.humidity.current, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' }
-            ];
-
-            paramsGrid.innerHTML = items.map((it, idx) => `
-                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-teal-500/40 transition-all shadow-xs ${idx === 6 ? 'col-span-2 sm:col-span-1' : ''}">
-                  <div class="flex items-center justify-between mb-1 sm:mb-1.5">
-                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
-                      <span>${it.icon}</span> <span>${it.name}</span>
-                    </span>
-                    ${it.subindex !== null && it.subindex !== undefined ? `
-                      <span class="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Sub: ${it.subindex}
-                      </span>
-                    ` : `
-                      <span class="text-[9.5px] font-mono font-bold text-slate-400">${it.unit}</span>
-                    `}
-                  </div>
-                  <div class="my-0.5 sm:my-1">
-                    <div class="text-base sm:text-xl font-extrabold font-mono text-slate-900 leading-none">${it.current} <span class="text-[11px] sm:text-xs font-normal text-slate-400">${it.unit}</span></div>
-                    <div class="text-[9.5px] sm:text-[10px] text-slate-400 mt-1 truncate">
-                      <span>Safe: <strong class="text-slate-500 font-mono">${it.limit}</strong></span>
-                    </div>
-                  </div>
-                </div>
-            `).join('');
-        }
-
-        // 4. Render Hourly Horizontal Reel (Strictly Predicted Parameters)
+        // 4. Render Hourly Horizontal Reel (Clickable Cards to Inspect Any Timestamp)
         const reel = document.getElementById('hourly-forecast-reel');
         if (reel) {
-            reel.innerHTML = hourly.map(item => {
+            reel.innerHTML = hourly.map((item, idx) => {
                 const b = getAqiBadge(item.aqi);
+                const isSelected = (idx === window.__selectedHourIdx);
+                const isFirst = (idx === 0);
                 return `
-                    <div class="hourly-card ${item.isNow ? 'active-hour' : ''}">
-                      <div class="hour-label text-[11px] font-bold text-slate-500 mb-1.5 whitespace-nowrap">${item.label}</div>
+                    <div class="hourly-card ${isSelected ? 'active-hour' : ''}" onclick="selectForecastHour(${idx})" style="cursor: pointer;" title="Click to view ${item.label} predictions">
+                      <div class="hour-label text-[11px] font-bold ${isFirst ? 'text-teal-600' : 'text-slate-500'} mb-1.5 whitespace-nowrap flex items-center gap-1">
+                        <span>${item.label}</span>
+                        ${isFirst ? '<span class="text-[8.5px] font-mono px-1 rounded bg-teal-50 text-teal-700 border border-teal-200">NEXT</span>' : ''}
+                      </div>
                       <div class="text-2xl my-1 leading-none text-slate-400 font-sans">${item.icon}</div>
                       <div class="font-mono text-base font-extrabold text-slate-800 leading-tight">${item.temp}°C</div>
                       <div class="text-[9.5px] font-semibold text-blue-600 mt-1 flex items-center gap-0.5"><span>💧</span>${item.humidity}%</div>

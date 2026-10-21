@@ -59,7 +59,40 @@ function parseToIstIso(tsRaw) {
 
 function formatRawReading(raw) {
   if (!raw) return null;
-  if (raw.is_calibrated && raw.cpcb_aqi != null) return { ...raw };
+  if (raw.cpcb_aqi != null) {
+    const rawPm25 = raw.pm25 != null ? Number(raw.pm25) : (raw['pm2.5'] != null ? Number(raw['pm2.5']) : null);
+    const ts = raw.timestamp_hour || raw.created_at || raw.timestamp;
+    const cpcb_aqi = Math.round(Number(raw.cpcb_aqi));
+    let label = "Good", color = "#65ff50";
+    if (cpcb_aqi > 50 && cpcb_aqi <= 100) { label = "Satisfactory"; color = "#a3e635"; }
+    else if (cpcb_aqi > 100 && cpcb_aqi <= 200) { label = "Moderate"; color = "#facc15"; }
+    else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = "Poor"; color = "#fb923c"; }
+    else if (cpcb_aqi > 300 && cpcb_aqi <= 400) { label = "Very Poor"; color = "#f87171"; }
+    else if (cpcb_aqi > 400) { label = "Severe"; color = "#c084fc"; }
+
+    let dom = raw.dominant_pollutant || 'O₃';
+    if (dom === 'O3') dom = 'O₃';
+    if (dom === 'NO2') dom = 'NO₂';
+
+    return {
+      id: raw.id,
+      timestamp: parseToIstIso(ts),
+      temperature: raw.temperature,
+      humidity: raw.humidity,
+      pm25: rawPm25,
+      pm10: raw.pm10,
+      co: raw.co,
+      o3: raw.o3,
+      no2: raw.no2,
+      cpcb_aqi,
+      dominant_pollutant: dom,
+      aqi_info: { value: cpcb_aqi, label, color, standard: "CPCB (India)" },
+      wind_speed: raw.wind_speed,
+      wind_gust: raw.wind_gust ?? raw.gust,
+      wind_direction: raw.wind_direction,
+      rain_gauge: raw.rain_gauge ?? raw.rain,
+    };
+  }
 
   const tempVal = raw.temperature != null ? Number(raw.temperature) : 27.0;
   const humVal = raw.humidity != null ? Number(raw.humidity) : 60.0;
@@ -118,8 +151,29 @@ function formatRawReading(raw) {
 }
 
 
+function evaluateAndSyncLiveBadge(reading) {
+    if (!window.updateGlobalLiveBadge) return;
+    if (!reading) {
+        window.updateGlobalLiveBadge(false, 'No telemetry data received from cloud');
+        return;
+    }
+    const ts = reading.timestamp || reading.created_at || reading.timestamp_hour;
+    if (!ts) {
+        window.updateGlobalLiveBadge(false, 'No timestamp received from cloud');
+        return;
+    }
+    const diffMins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
+    const isLive = !isNaN(diffMins) && diffMins >= 0 && diffMins <= 5;
+    const tip = isLive 
+        ? 'Live telemetry streaming from cloud' 
+        : `Sensor node offline: Last received ${diffMins >= 1440 ? Math.floor(diffMins/1440) + 'd ago' : (diffMins >= 60 ? Math.floor(diffMins/60) + 'h ago' : diffMins + 'm ago')}`;
+    window.updateGlobalLiveBadge(isLive, tip);
+}
+window.evaluateAndSyncLiveBadge = evaluateAndSyncLiveBadge;
+
 async function getLiveAqi() {
     if (apiCache.aqiLive && (Date.now() - apiCache.lastFetchTime < CACHE_TTL)) {
+        evaluateAndSyncLiveBadge(apiCache.aqiLive.data);
         return apiCache.aqiLive;
     }
     try {
@@ -128,17 +182,21 @@ async function getLiveAqi() {
         const data = await response.json();
         if (data && data.data) {
             apiCache.aqiLive = data;
+            evaluateAndSyncLiveBadge(data.data);
             return data;
         }
+        evaluateAndSyncLiveBadge(null);
         return null;
     } catch (error) {
         console.error('Error fetching live AQI:', error);
+        evaluateAndSyncLiveBadge(null);
         return null;
     }
 }
 
 async function getLiveWeather() {
     if (apiCache.weatherLive && (Date.now() - apiCache.lastFetchTime < CACHE_TTL)) {
+        evaluateAndSyncLiveBadge(apiCache.weatherLive.data);
         return apiCache.weatherLive;
     }
     try {
@@ -147,11 +205,14 @@ async function getLiveWeather() {
         const data = await response.json();
         if (data && data.data) {
             apiCache.weatherLive = data;
+            evaluateAndSyncLiveBadge(data.data);
             return data;
         }
+        evaluateAndSyncLiveBadge(null);
         return null;
     } catch (error) {
         console.error('Error fetching live weather:', error);
+        evaluateAndSyncLiveBadge(null);
         return null;
     }
 }
@@ -222,9 +283,20 @@ async function getHistoricalWeatherData() {
 // Ensure the endpoint in historical.php uses the new function
 window.API_BASE_URL = 'superseded';
 
-// Ensure icons render if called manually
+// Ensure initial sync and icons
 document.addEventListener("DOMContentLoaded", () => {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
+    if (window.INITIAL_DATA) {
+        evaluateAndSyncLiveBadge(window.INITIAL_DATA.aqi || window.INITIAL_DATA.weather);
+    } else {
+        getLiveAqi();
+    }
+    // Background status sync every 30s to keep header status accurate on all pages
+    setInterval(() => {
+        if (!document.hidden && window.__currentPage !== 'overview' && window.__currentPage !== 'live') {
+            getLiveAqi();
+        }
+    }, 30000);
 });

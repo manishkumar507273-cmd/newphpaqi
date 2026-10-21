@@ -151,7 +151,7 @@ img, svg, video, canvas {
 
 .page-fade-active {
   opacity: 1 !important;
-  transform: translateY(0) scale(1) !important;
+  transform: none !important;
   transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -1032,6 +1032,18 @@ img, svg, video, canvas {
   animation: livePulse 2s ease-in-out infinite;
   display: inline-block;
   flex-shrink: 0;
+}
+
+.header-badge-live {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1.5px solid #bbf7d0 !important;
+}
+
+.header-badge-offline {
+  background-color: #fff7ed !important;
+  color: #c2410c !important;
+  border: 1.5px solid #fed7aa !important;
 }
 
 /* ── Modern Metric Card (replaces dated colored top-border) ── */

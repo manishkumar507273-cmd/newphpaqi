@@ -214,11 +214,6 @@ function formatRawReading($raw) {
     $origTemp = isset($raw['temperature']) ? (float)$raw['temperature'] : 27.0;
     if (isset($raw['temperature'])) $raw['temperature'] = adjustTemperature($raw['temperature'], $tsRaw);
 
-    if (isset($raw['is_calibrated']) && $raw['is_calibrated'] && isset($raw['cpcb_aqi'])) return $raw;
-
-    $tempVal = $origTemp;
-    $humVal  = isset($raw['humidity']) ? (float)$raw['humidity'] : 60.0;
-
     $rawPm25 = (isset($raw['pm25']) && $raw['pm25'] !== null && $raw['pm25'] !== '') ? (float)$raw['pm25'] : ((isset($raw['pm2.5']) && $raw['pm2.5'] !== null && $raw['pm2.5'] !== '') ? (float)$raw['pm2.5'] : null);
     $rawPm10 = (isset($raw['pm10']) && $raw['pm10'] !== null && $raw['pm10'] !== '') ? (float)$raw['pm10'] : null;
 
@@ -229,26 +224,46 @@ function formatRawReading($raw) {
     $rawO3   = (isset($raw['o3']) && $raw['o3'] !== null && $raw['o3'] !== '') ? (float)$raw['o3'] : null;
     $rawNo2  = (isset($raw['no2']) && $raw['no2'] !== null && $raw['no2'] !== '') ? (float)$raw['no2'] : null;
 
-    $calPm25 = $rawPm25 !== null ? ($rawPm25 == 0.0 ? 0.0 : max(0.0, round(0.12532894*$rawPm25 - 0.7801631*$tempVal - 0.15188749*$humVal + 41.495258, 3))) : 0.0;
-    $calPm10 = $rawPm10 !== null ? ($rawPm10 == 0.0 ? 0.0 : max(0.0, round(0.10855827*$rawPm10 - 0.6390711*$tempVal - 0.11117823*$humVal + 34.034309, 3))) : 0.0;
-    $calCo   = $rawCo   !== null ? ($rawCo   == 0.0 ? 0.0 : max(0.0, round(0.24370718*$rawCo   + 0.02763672*$tempVal + 0.00444147*$humVal - 0.96570843, 3))) : 0.0;
-    $calNo2  = $rawNo2  !== null ? ($rawNo2  == 0.0 ? 0.0 : max(0.0, round(0.00920961*$rawNo2  + 0.06749354*$tempVal + 0.00777269*$humVal + 2.903467, 3)))  : 0.0;
-    $calO3   = $rawO3   !== null ? ($rawO3   == 0.0 ? 0.0 : max(0.0, round(0.05187092*$rawO3   - 1.4830095*$tempVal  - 0.23912878*$humVal + 91.72351, 3))) : 0.0;
+    // If cpcb_aqi is already provided directly in Supabase table (AQI_LIVE_NODE1 or AQI_NODE1)
+    if (isset($raw['cpcb_aqi']) && $raw['cpcb_aqi'] !== null && $raw['cpcb_aqi'] !== '') {
+        $cpcb_aqi = (int)round((float)$raw['cpcb_aqi']);
+        $calPm25  = $rawPm25;
+        $calPm10  = $rawPm10;
+        $calCo    = $rawCo;
+        $calO3    = $rawO3;
+        $calNo2   = $rawNo2;
+        $dom      = $raw['dominant_pollutant'] ?? 'O3';
+        $domUpper = strtoupper(trim((string)$dom));
+        if ($domUpper === 'PM25' || $domUpper === 'PM2.5') $dom = 'PM2.5';
+        elseif ($domUpper === 'PM10') $dom = 'PM10';
+        elseif ($domUpper === 'CO') $dom = 'CO';
+        elseif ($domUpper === 'NO2' || $domUpper === 'NO₂') $dom = 'NO₂';
+        elseif ($domUpper === 'O3' || $domUpper === 'O₃') $dom = 'O₃';
+    } else {
+        $tempVal = $origTemp;
+        $humVal  = isset($raw['humidity']) ? (float)$raw['humidity'] : 60.0;
 
-    $subIndices = [
-        'pm25' => calcSubindex('pm25', $calPm25),
-        'pm10' => calcSubindex('pm10', $calPm10),
-        'co'   => calcSubindex('co',   $calCo),
-        'no2'  => calcSubindex('no2',  $calNo2),
-        'o3'   => calcSubindex('o3',   $calO3),
-    ];
+        $calPm25 = $rawPm25 !== null ? ($rawPm25 == 0.0 ? 0.0 : max(0.0, round(0.12532894*$rawPm25 - 0.7801631*$tempVal - 0.15188749*$humVal + 41.495258, 3))) : 0.0;
+        $calPm10 = $rawPm10 !== null ? ($rawPm10 == 0.0 ? 0.0 : max(0.0, round(0.10855827*$rawPm10 - 0.6390711*$tempVal - 0.11117823*$humVal + 34.034309, 3))) : 0.0;
+        $calCo   = $rawCo   !== null ? ($rawCo   == 0.0 ? 0.0 : max(0.0, round(0.24370718*$rawCo   + 0.02763672*$tempVal + 0.00444147*$humVal - 0.96570843, 3))) : 0.0;
+        $calNo2  = $rawNo2  !== null ? ($rawNo2  == 0.0 ? 0.0 : max(0.0, round(0.00920961*$rawNo2  + 0.06749354*$tempVal + 0.00777269*$humVal + 2.903467, 3)))  : 0.0;
+        $calO3   = $rawO3   !== null ? ($rawO3   == 0.0 ? 0.0 : max(0.0, round(0.05187092*$rawO3   - 1.4830095*$tempVal  - 0.23912878*$humVal + 91.72351, 3))) : 0.0;
 
-    $domKey = array_keys($subIndices)[0];
-    $maxVal = $subIndices[$domKey];
-    foreach ($subIndices as $k => $v) { if ($v >= $maxVal) { $maxVal = $v; $domKey = $k; } }
+        $subIndices = [
+            'pm25' => calcSubindex('pm25', $calPm25),
+            'pm10' => calcSubindex('pm10', $calPm10),
+            'co'   => calcSubindex('co',   $calCo),
+            'no2'  => calcSubindex('no2',  $calNo2),
+            'o3'   => calcSubindex('o3',   $calO3),
+        ];
 
-    $domNames = ['pm25'=>'PM2.5','pm10'=>'PM10','co'=>'CO','no2'=>'NO₂','o3'=>'O₃'];
-    $cpcb_aqi = round($subIndices[$domKey] ?? 0);
+        $domKey = array_keys($subIndices)[0];
+        $maxVal = $subIndices[$domKey];
+        foreach ($subIndices as $k => $v) { if ($v >= $maxVal) { $maxVal = $v; $domKey = $k; } }
+        $domNames = ['pm25'=>'PM2.5','pm10'=>'PM10','co'=>'CO','no2'=>'NO₂','o3'=>'O₃'];
+        $cpcb_aqi = round($subIndices[$domKey] ?? 0);
+        $dom = $domNames[$domKey] ?? 'N/A';
+    }
 
     $label = 'Good'; $color = '#65ff50';
     if ($cpcb_aqi > 50  && $cpcb_aqi <= 100) { $label = 'Satisfactory'; $color = '#a3e635'; }
@@ -270,7 +285,7 @@ function formatRawReading($raw) {
         'o3'                => $calO3   ?? $rawO3,
         'no2'               => $calNo2  ?? $rawNo2,
         'cpcb_aqi'          => $cpcb_aqi,
-        'dominant_pollutant'=> $domNames[$domKey] ?? 'N/A',
+        'dominant_pollutant'=> $dom,
         'aqi_info'          => ['value'=>$cpcb_aqi,'label'=>$label,'color'=>$color,'standard'=>'CPCB (India)'],
         'wind_speed'        => $raw['wind_speed']    ?? null,
         'wind_gust'         => $raw['wind_gust']     ?? $raw['gust'] ?? null,

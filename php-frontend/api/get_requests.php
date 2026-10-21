@@ -7,8 +7,11 @@ session_start();
 
 $data_dir = __DIR__ . '/../data';
 $requests_file = $data_dir . '/requests.json';
-if (!is_dir($data_dir) || !is_writable($data_dir)) {
-    $requests_file = sys_get_temp_dir() . '/phpAQI_requests.json';
+if (!file_exists($requests_file)) {
+    $temp_file = sys_get_temp_dir() . '/phpAQI_requests.json';
+    if (file_exists($temp_file)) {
+        $requests_file = $temp_file;
+    }
 }
 if (!file_exists($requests_file)) {
     echo json_encode([]);

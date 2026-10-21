@@ -4,7 +4,7 @@
   <div id="weather-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
     <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569;">
       <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f97316; margin-top: 2px; flex-shrink: 0;"></i>
-      <span><strong style="color: #c2410c;">Weather Sensor Node Offline:</strong> No new live telemetry received in cloud for >15 mins (Last update: <strong style="color: #f97316;" id="weather-offline-last-update">--</strong>). Showing last recorded cloud values below.</span>
+      <span><strong style="color: #c2410c;">Weather Sensor Node Offline:</strong> No new live telemetry received in cloud for >5 mins (Last update: <strong style="color: #f97316;" id="weather-offline-last-update">--</strong>). Showing last recorded cloud values below.</span>
     </div>
     <div id="weather-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</div>
   </div>

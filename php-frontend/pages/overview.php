@@ -83,6 +83,19 @@ if (!empty($init_bulk['weather'])) {
 if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null) {
     $init_today_rain = number_format((float)$init_bulk['today_rain_total'], 1, '.', '');
 }
+
+$init_ts = $init_bulk['aqi']['created_at'] ?? ($init_bulk['weather']['created_at'] ?? ($init_bulk['aqi']['timestamp'] ?? ($init_bulk['weather']['timestamp'] ?? null)));
+$is_overview_offline = true;
+$overview_offline_time_str = '--';
+if ($init_ts) {
+    $ts_epoch = strtotime($init_ts);
+    if ($ts_epoch && (time() - $ts_epoch) <= 300 && (time() - $ts_epoch) >= -60) {
+        $is_overview_offline = false;
+    }
+    $diff_mins = max(0, (int)floor((time() - $ts_epoch) / 60));
+    $time_ago = $diff_mins >= 1440 ? floor($diff_mins/1440) . 'd ago' : ($diff_mins >= 60 ? floor($diff_mins/60) . 'h ago' : $diff_mins . 'm ago');
+    $overview_offline_time_str = date('h:i a', $ts_epoch) . ' • ' . $time_ago;
+}
 ?>
 <div class="overview-page-root" style="position: relative; min-height: 85vh; border-radius: 24px; overflow: hidden; padding: clamp(16px, 3vw, 28px); background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
   
@@ -95,7 +108,16 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
   <div style="position: absolute; bottom: -10%; left: -5%; width: 45vw; height: 45vw; max-width: 500px; max-height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, rgba(241, 245, 249, 0) 70%); filter: blur(60px); pointer-events: none; z-index: 0;"></div>
 
   <!-- Content Container -->
-  <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 20px;">
+  <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px;">
+
+    <!-- Overview Telemetry Status Banner (Shown when node is offline >5 mins) -->
+    <div id="overview-offline-banner" style="display: <?= $is_overview_offline ? 'flex' : 'none' ?>; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 14px; padding: 10px 14px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; margin-bottom: 2px;">
+      <div style="display: flex; align-items: center; gap: 8px; color: #475569;">
+        <i data-lucide="alert-triangle" style="width: 15px; height: 15px; color: #f97316; flex-shrink: 0;"></i>
+        <span><strong style="color: #c2410c;">Telemetry Offline:</strong> No new cloud data received for &gt;5 mins (Last update: <strong style="color: #f97316;" id="overview-offline-last-update"><?= htmlspecialchars($overview_offline_time_str) ?></strong>). Showing latest recorded cloud readings.</span>
+      </div>
+      <span style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</span>
+    </div>
 
     <!-- Core Telemetry Cards Grid (5 Cards: AQI, Temp, Humidity, Wind, Rain) -->
     <div class="overview-grid">
@@ -836,6 +858,30 @@ async function refreshData(isSilent = false) {
             const response = await fetch(`api/telemetry.php?action=overview_bulk`);
             bulkData = await response.json();
         }
+
+        if (window.evaluateAndSyncLiveBadge) {
+            window.evaluateAndSyncLiveBadge(bulkData ? (bulkData.aqi || bulkData.weather) : null);
+        }
+
+        const reading = bulkData ? (bulkData.aqi || bulkData.weather) : null;
+        const ovBanner = document.getElementById('overview-offline-banner');
+        if (ovBanner) {
+            const ts = reading ? (reading.created_at || reading.timestamp || reading.timestamp_hour) : null;
+            if (ts) {
+                const diffMins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
+                if (diffMins > 5) {
+                    const timePart = new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const timeAgo = diffMins >= 1440 ? Math.floor(diffMins/1440) + 'd ago' : (diffMins >= 60 ? Math.floor(diffMins/60) + 'h ago' : diffMins + 'm ago');
+                    const lastEl = document.getElementById('overview-offline-last-update');
+                    if (lastEl) lastEl.innerText = timePart + ' • ' + timeAgo;
+                    ovBanner.style.display = 'flex';
+                } else {
+                    ovBanner.style.display = 'none';
+                }
+            } else {
+                ovBanner.style.display = 'flex';
+            }
+        }
         
         const aqiRes = { data: bulkData.aqi };
         const weatherRes = { data: bulkData.weather };
@@ -957,6 +1003,9 @@ async function refreshData(isSilent = false) {
         
     } catch(e) {
         console.error(e);
+        if (window.updateGlobalLiveBadge) {
+            window.updateGlobalLiveBadge(false, 'Unable to connect to cloud telemetry');
+        }
     } finally {
         if (!isSilent && icon) {
             icon.style.animation = 'none';

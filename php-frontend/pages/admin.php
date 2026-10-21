@@ -12,12 +12,7 @@
         Review, verify, and approve incoming enterprise data access requests. Approved requests will automatically transmit secure data payloads via email.
       </p>
     </div>
-    <div>
-      <a href="?page=overview" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition-all shadow-sm">
-        <i data-lucide="arrow-left" class="w-4 h-4 text-[#00bfa5]"></i>
-        <span>Back to Overview</span>
-      </a>
-    </div>
+
   </div>
 
   <!-- Table Card -->
@@ -106,7 +101,7 @@
 </div>
 
 <!-- Premium Confirmation Modal (Bottom Sheet on Mobile) -->
-<div id="admin-confirm-modal" class="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/70 backdrop-blur-md" style="display: none;">
+<div id="admin-confirm-modal" class="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md" style="display: none; z-index: 100000;">
   <div id="admin-confirm-backdrop" onclick="closeConfirmModal()" class="absolute inset-0"></div>
   
   <div class="relative z-10 w-full sm:max-w-[440px] bg-white rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden font-sans text-slate-900 pb-safe animate-modal-pop">
@@ -134,42 +129,99 @@
   </div>
 </div>
 
-<!-- Premium Delete Confirmation Modal (Native Bottom Sheet on Mobile) -->
-<div id="admin-delete-modal" class="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/70 backdrop-blur-md" style="display: none;">
-  <div id="admin-delete-backdrop" onclick="closeDeleteModal()" class="absolute inset-0"></div>
+<!-- Ultra-Premium Delete Confirmation Modal (Native Bottom Sheet on Mobile & Elevated Desktop Dialog) -->
+<div id="admin-delete-modal" class="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-200" style="display: none; z-index: 100000;">
+  <div id="admin-delete-backdrop" onclick="closeDeleteModal()" class="absolute inset-0 bg-transparent"></div>
   
-  <div class="relative z-10 w-full sm:max-w-[440px] bg-white rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden font-sans text-slate-900 pb-safe animate-modal-pop">
-    <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-3 block sm:hidden"></div>
-    <div style="padding: 16px 28px 24px sm:padding: 32px 32px 24px; text-align: center;">
-      <div style="width: 58px; height: 58px; border-radius: 20px; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.15); transform: rotate(-5deg);">
-        <i data-lucide="trash-2" style="width: 26px; height: 26px; color: #ef4444; transform: rotate(5deg);"></i>
+  <div class="relative z-10 w-full sm:max-w-[480px] bg-white rounded-t-[32px] sm:rounded-[28px] shadow-2xl shadow-slate-950/30 overflow-hidden font-sans text-slate-900 pb-safe animate-modal-pop border border-slate-100 sm:border-slate-200/80">
+    
+    <!-- Top Decorative Gradient Accent Bar -->
+    <div class="h-1.5 w-full bg-gradient-to-r from-red-500 via-rose-500 to-orange-400"></div>
+
+    <!-- Mobile Drag Handle -->
+    <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 block sm:hidden"></div>
+    
+    <!-- Floating Close Button -->
+    <button type="button" onclick="closeDeleteModal()" aria-label="Close" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100/80 hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all duration-150 z-20">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+
+    <div class="p-6 sm:p-7 text-center">
+      
+      <!-- Icon Badge with Soft Glow Ring -->
+      <div class="relative w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-2xl bg-red-500/10 animate-ping opacity-25"></div>
+        <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-red-50 to-rose-100 border border-red-200/70 shadow-inner flex items-center justify-center">
+          <i data-lucide="trash-2" class="w-7 h-7 text-red-600"></i>
+        </div>
       </div>
-      <h3 id="delete-modal-title" style="font-size: 21px; font-weight: 800; color: #0f172a; margin: 0 0 10px; letter-spacing: -0.02em;">Delete Data Request</h3>
-      <p id="delete-modal-desc" style="font-size: 14px; color: #64748b; line-height: 1.55; margin: 0 0 22px;">
+
+      <!-- Title & Main Warning -->
+      <h3 id="delete-modal-title" class="text-xl sm:text-[22px] font-black text-slate-900 tracking-tight mb-2">Delete Data Request</h3>
+      <p id="delete-modal-desc" class="text-xs sm:text-[13.5px] text-slate-500 leading-relaxed max-w-[380px] mx-auto mb-4">
         Are you sure you want to permanently delete this request? This record will be removed from both the local database and real-time cloud storage.
       </p>
+
+      <!-- Contextual Requester Preview Card (populated by JS for single delete) -->
+      <div id="delete-single-preview" class="p-3 mb-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-left flex items-center gap-3" style="display: none;">
+        <div id="delete-preview-avatar" class="w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white font-extrabold text-sm flex items-center justify-center shadow-sm shadow-red-500/25 shrink-0">
+          U
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-1.5">
+            <h4 id="delete-preview-name" class="font-bold text-slate-900 text-sm truncate">Requester Name</h4>
+            <span id="delete-preview-scope" class="text-[10px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600 shrink-0">AQI</span>
+          </div>
+          <p id="delete-preview-email" class="text-xs text-slate-500 truncate mt-0.5 font-medium">email@example.com</p>
+          <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-400 font-mono">
+            <span id="delete-preview-id">#req_123</span>
+            <span class="text-slate-300">•</span>
+            <span id="delete-preview-org" class="text-slate-500 font-sans truncate font-medium">SMVITM Campus</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multiple Items Preview (populated by JS for bulk delete) -->
+      <div id="delete-bulk-preview" class="p-3.5 mb-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-left flex items-center gap-3" style="display: none;">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white font-black text-sm flex items-center justify-center shadow-sm shadow-red-500/20 shrink-0">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h4 class="font-bold text-slate-900 text-sm">Batch Requisition Deletion</h4>
+          <p id="delete-bulk-count" class="text-xs text-slate-500 mt-0.5">3 selected requests will be permanently removed</p>
+        </div>
+      </div>
+
+      <!-- Irreversible Callout Notice -->
+      <div class="flex items-start gap-2.5 p-3 mb-5 rounded-xl bg-rose-50/70 border border-rose-200/60 text-left text-[12px] leading-relaxed text-rose-900">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600 shrink-0 mt-0.5"></i>
+        <span><strong>Cannot be undone:</strong> Associated identification documents, proofs, and application history will be permanently erased.</span>
+      </div>
       
-      <div style="display: flex; gap: 10px;">
-        <button type="button" onclick="closeDeleteModal()" style="flex: 1; padding: 13px 16px; min-height: 48px; border-radius: 14px; border: 1px solid #e2e8f0; background-color: #ffffff; color: #64748b; font-size: 14.5px; font-weight: 700; cursor: pointer;">
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2.5">
+        <button type="button" onclick="closeDeleteModal()" class="flex-1 py-3 px-4 min-h-[46px] rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-[0.98] flex items-center justify-center">
           Cancel
         </button>
-        <button id="confirm-delete-btn" type="button" style="flex: 1; padding: 13px 16px; min-height: 48px; border-radius: 14px; border: none; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; font-size: 14.5px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
-          Confirm Delete
+        <button id="confirm-delete-btn" type="button" class="flex-1 py-3 px-4 min-h-[46px] rounded-xl border border-transparent bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-600 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-red-500/25 active:scale-[0.98] flex items-center justify-center gap-2">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span id="confirm-delete-label">Permanently Delete</span>
         </button>
       </div>
+
     </div>
   </div>
 </div>
 
 <!-- Native Quick Proof & Description Viewer Modal (Optimized for Mobile Bottom Sheet & Desktop) -->
-<div id="admin-proof-modal" class="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-3 bg-slate-900/75 backdrop-blur-md" style="display: none;">
+<div id="admin-proof-modal" class="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md" style="display: none; z-index: 100000;">
   <div id="admin-proof-backdrop" onclick="closeProofQuickView()" class="absolute inset-0"></div>
   
-  <div class="relative z-10 w-full sm:max-w-[620px] max-h-[92vh] bg-white rounded-t-[28px] sm:rounded-[20px] shadow-2xl flex flex-col overflow-hidden font-sans text-slate-900 pb-safe animate-modal-pop">
+  <div class="relative z-10 w-full sm:max-w-[620px] max-h-[88vh] sm:max-h-[85vh] bg-white rounded-t-[28px] sm:rounded-[22px] shadow-2xl flex flex-col overflow-hidden font-sans text-slate-900 pb-safe animate-modal-pop border border-slate-100 sm:border-slate-200/80">
     <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-3 block sm:hidden shrink-0"></div>
     
     <!-- Modal Header -->
-    <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #ffffff;">
+    <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #ffffff; flex-shrink: 0;">
       <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
         <div style="width: 38px; height: 38px; border-radius: 10px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
           <i data-lucide="badge-check" style="width: 20px; height: 20px; color: #2563eb;"></i>
@@ -185,7 +237,7 @@
     </div>
 
     <!-- Modal Scrollable Body -->
-    <div style="padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+    <div style="padding: 18px 20px; overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px;">
       
       <!-- Requester Summary Badges -->
       <div id="proof-modal-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px;"></div>
@@ -214,7 +266,7 @@
     </div>
 
     <!-- Modal Footer Actions -->
-    <div style="padding: 12px 20px; border-top: 1px solid #f1f5f9; background: #ffffff; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+    <div style="padding: 14px 20px; border-top: 1px solid #f1f5f9; background: #ffffff; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; flex-shrink: 0;">
       <a id="proof-modal-full-link" href="#" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #2563eb; text-decoration: none; padding: 8px 12px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe;">
         <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
         <span>Open Dedicated Page</span>
@@ -636,21 +688,70 @@ function openBulkDeleteModal() {
     showDeleteModalForItems(pendingDeleteItems);
 }
 
+function elevateAdminModals() {
+    ['admin-proof-modal', 'admin-delete-modal', 'admin-confirm-modal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement !== document.body) {
+            document.body.appendChild(el);
+        }
+    });
+}
+elevateAdminModals();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', elevateAdminModals);
+}
+
 function showDeleteModalForItems(items) {
+    elevateAdminModals();
     const modal = document.getElementById('admin-delete-modal');
+    if (modal) modal.style.zIndex = '100000';
     const titleEl = document.getElementById('delete-modal-title');
     const descEl = document.getElementById('delete-modal-desc');
-    const confirmBtn = document.getElementById('confirm-delete-btn');
+    const confirmLabel = document.getElementById('confirm-delete-label');
+    const singlePreview = document.getElementById('delete-single-preview');
+    const bulkPreview = document.getElementById('delete-bulk-preview');
     
     const count = items.length;
     if (count > 1) {
         if (titleEl) titleEl.innerText = `Delete ${count} Requests`;
-        if (descEl) descEl.innerHTML = `Are you sure you want to permanently delete the <strong>${count} selected requester profiles & requests</strong>? This record will be removed from both the local database and real-time cloud storage.`;
-        if (confirmBtn) confirmBtn.innerHTML = `Delete ${count} Requests`;
+        if (descEl) descEl.innerHTML = `You are about to permanently delete <strong>${count} selected requester profiles</strong>.`;
+        if (confirmLabel) confirmLabel.innerText = `Delete ${count} Requests`;
+        if (singlePreview) singlePreview.style.display = 'none';
+        if (bulkPreview) {
+            bulkPreview.style.display = 'flex';
+            const countEl = document.getElementById('delete-bulk-count');
+            if (countEl) countEl.innerText = `${count} selected requests queued for permanent removal`;
+        }
     } else {
         if (titleEl) titleEl.innerText = "Delete Data Request";
-        if (descEl) descEl.innerHTML = "Are you sure you want to permanently delete this request? This record will be removed from both the local database and real-time cloud storage.";
-        if (confirmBtn) confirmBtn.innerHTML = "Confirm Delete";
+        if (descEl) descEl.innerHTML = "Are you sure you want to permanently delete this requisition record?";
+        if (confirmLabel) confirmLabel.innerText = "Permanently Delete";
+        if (bulkPreview) bulkPreview.style.display = 'none';
+        
+        // Find the request details from window.__lastLoadedRequests
+        const targetId = items[0] ? (items[0].id || items[0].fbKey) : '';
+        const all = window.__lastLoadedRequests || [];
+        const reqData = all.find(r => (r.id === targetId || r._fbKey === targetId));
+        
+        if (reqData && singlePreview) {
+            singlePreview.style.display = 'flex';
+            const nameEl = document.getElementById('delete-preview-name');
+            const emailEl = document.getElementById('delete-preview-email');
+            const scopeEl = document.getElementById('delete-preview-scope');
+            const idEl = document.getElementById('delete-preview-id');
+            const orgEl = document.getElementById('delete-preview-org');
+            const avatarEl = document.getElementById('delete-preview-avatar');
+            
+            const reqName = reqData.name || 'Anonymous';
+            if (nameEl) nameEl.innerText = reqName;
+            if (emailEl) emailEl.innerText = reqData.email || 'N/A';
+            if (scopeEl) scopeEl.innerText = (reqData.telemetry_type || reqData.scope || 'AQI').toUpperCase();
+            if (idEl) idEl.innerText = '#' + (reqData.id || targetId).substring(0, 10);
+            if (orgEl) orgEl.innerText = reqData.org || reqData.industry || 'SMVITM Campus';
+            if (avatarEl) avatarEl.innerText = reqName.charAt(0).toUpperCase();
+        } else if (singlePreview) {
+            singlePreview.style.display = 'none';
+        }
     }
     
     if (modal) {
@@ -792,6 +893,9 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async fu
 var pendingApprovalId = null;
 
 function approveRequest(id) {
+    elevateAdminModals();
+    const modal = document.getElementById('admin-confirm-modal');
+    if (modal) modal.style.zIndex = '100000';
     pendingApprovalId = id;
     const targetReq = window.__lastLoadedRequests ? window.__lastLoadedRequests.find(r => (r.id === id || r._fbKey === id)) : null;
     const infoContainer = document.getElementById('confirm-requester-info');
@@ -825,7 +929,7 @@ function approveRequest(id) {
             infoContainer.style.display = 'none';
         }
     }
-    document.getElementById('admin-confirm-modal').style.display = 'flex';
+    if (modal) modal.style.display = 'flex';
     if (window.triggerHaptic) window.triggerHaptic('light');
     lucide.createIcons();
 }
@@ -903,11 +1007,13 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
 });
 
 function openProofQuickView(reqId) {
+    elevateAdminModals();
     const list = window.__lastLoadedRequests || [];
     const req = list.find(r => (r.id === reqId || r._fbKey === reqId)) || {};
     
     const modal = document.getElementById('admin-proof-modal');
     if (!modal) return;
+    modal.style.zIndex = '100000';
     
     const nameEl = document.getElementById('proof-modal-name');
     if (nameEl) nameEl.innerText = req.name || 'Anonymous Requester';

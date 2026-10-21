@@ -357,16 +357,10 @@
 
         <!-- Intended Use Case -->
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="margin-bottom: 8px;">
             <label style="font-size: 13px; font-weight: 700; color: #334155;">Intended Use Case *</label>
-            <span id="use-case-counter" style="font-size: 11.5px; font-weight: 600; color: #94a3b8; font-family: var(--font-mono); transition: color 0.2s;">
-              0 / 50 letters min
-            </span>
           </div>
-          <textarea name="use_case" id="use-case-textarea" required minlength="50" oninput="handleUseCaseInput(this)" placeholder="Describe your operational or analytical requirements for this telemetry data (minimum 50 letters / words)..." style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 14px; font-weight: 500; color: #0f172a; outline: none; transition: all 0.2s; background-color: #f8fafc; resize: none; min-height: 85px; font-family: var(--font-sans);" onfocus="this.style.borderColor='#00bfa5'; this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 0 0 3px rgba(0, 191, 165, 0.1)';" onblur="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#f8fafc'; this.style.boxShadow='none';"></textarea>
-          <div style="font-size: 11.5px; color: #64748b; margin-top: 5px;">
-            Minimum 50 letters / characters required to describe intended analytical purpose.
-          </div>
+          <textarea name="use_case" id="use-case-textarea" required placeholder="Describe your operational or analytical requirements for this telemetry data..." style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 14px; font-weight: 500; color: #0f172a; outline: none; transition: all 0.2s; background-color: #f8fafc; resize: none; min-height: 85px; font-family: var(--font-sans);" onfocus="this.style.borderColor='#00bfa5'; this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 0 0 3px rgba(0, 191, 165, 0.1)';" onblur="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#f8fafc'; this.style.boxShadow='none';"></textarea>
         </div>
 
         <!-- Agreement -->
@@ -1172,18 +1166,9 @@ function resetIndustryProofSection() {
 
 function handleUseCaseInput(el) {
     if (!el) return;
-    const val = el.value || '';
-    const charCount = val.trim().length;
-    const words = val.trim() ? val.trim().split(/\s+/).filter(Boolean).length : 0;
-    const counter = document.getElementById('use-case-counter');
-    if (!counter) return;
-
-    if (charCount >= 50) {
-        counter.innerHTML = `<span style="color: #16a34a; font-weight: 700;">✓ ${charCount}/50 letters (${words} words)</span>`;
+    if (el.value && el.value.trim().length > 0) {
         el.style.borderColor = '#00bfa5';
     } else {
-        const remaining = 50 - charCount;
-        counter.innerHTML = `<span style="color: #ef4444; font-weight: 600;">${charCount}/50 letters (${remaining} more needed)</span>`;
         el.style.borderColor = '#e2e8f0';
     }
 }
@@ -1298,16 +1283,15 @@ async function submitDatasetRequest(e) {
         }
     }
 
-    // MANDATORY MINIMUM 50 LETTERS / WORDS ENFORCEMENT FOR USE CASE:
+    // USE CASE VALIDATION:
     const formDataObj = new FormData(e.target);
     const useCaseVal = (formDataObj.get('use_case') || '').trim();
-    if (useCaseVal.length < 50) {
-        alert(`Intended Use Case requires a minimum of 50 letters / characters (currently ${useCaseVal.length}). Please provide more details on your operational or research requirements.`);
+    if (!useCaseVal) {
+        alert("Please describe your operational or analytical requirements for this telemetry dataset.");
         const ta = document.getElementById('use-case-textarea');
         if (ta) {
             ta.focus();
             ta.style.borderColor = '#ef4444';
-            handleUseCaseInput(ta);
         }
         return;
     }

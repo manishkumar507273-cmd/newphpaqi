@@ -1,8 +1,25 @@
 <?php
 require_once __DIR__ . '/brand-assets.php';
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
-$is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : false;
 $is_logged_in = isset($_SESSION['user_id']);
+$is_admin = !empty($_SESSION['is_admin']) || ($is_logged_in && !empty($_SESSION['user_name']) && strpos(strtolower($_SESSION['user_name']), 'admin') !== false);
+
+// Check server-side telemetry cache to determine if cloud data is currently live (received <= 5 mins)
+$is_telemetry_live = false;
+$telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
+if (file_exists($telemetry_cache_file)) {
+    $raw_cache = @file_get_contents($telemetry_cache_file);
+    if ($raw_cache && strlen($raw_cache) > 50) {
+        $cached_data = json_decode($raw_cache, true);
+        $cached_ts = $cached_data['aqi']['created_at'] ?? ($cached_data['weather']['created_at'] ?? ($cached_data['aqi']['timestamp'] ?? ($cached_data['weather']['timestamp'] ?? null)));
+        if ($cached_ts) {
+            $ts_epoch = strtotime($cached_ts);
+            if ($ts_epoch && (time() - $ts_epoch) <= 300 && (time() - $ts_epoch) >= -60) {
+                $is_telemetry_live = true;
+            }
+        }
+    }
+}
 
 $page_titles = [
     'overview'   => 'Atmosphere Snapshot',
@@ -81,6 +98,7 @@ window.__currentUser = <?= json_encode([
     'email' => $is_logged_in ? ($_SESSION['user_email'] ?? '') : ''
 ]) ?>;
 window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_email'] ?? '') : '') ?>;
+window.__isTelemetryLive = <?= $is_telemetry_live ? 'true' : 'false' ?>;
 
 // Automatic Persistent Google / User Account Re-entry:
 // When someone signed in using a Google account and comes again on mobile or laptop,
@@ -118,7 +136,85 @@ window.triggerHaptic = function(type = 'light') {
     } catch(e){}
 };
 
-window.showMobileToast = function() {};
+// Floating Mobile Toast Notification
+window.showMobileToast = function(msg, type = 'info') {
+    let toast = document.getElementById('global-mobile-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'global-mobile-toast';
+        toast.style.cssText = 'position: fixed; top: 72px; left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 9999; background: #0f172a; color: #ffffff; padding: 9px 16px; border-radius: 999px; font-size: 12px; font-weight: 700; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25); display: flex; align-items: center; gap: 8px; opacity: 0; pointer-events: none; transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1); max-width: 90vw; text-align: center; border: 1px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(8px);';
+        document.body.appendChild(toast);
+    }
+    const icon = type === 'offline' ? '🟠' : (type === 'live' ? '🟢' : 'ℹ️');
+    toast.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    if (window.__toastTimeout) clearTimeout(window.__toastTimeout);
+    window.__toastTimeout = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-20px)';
+    }, 3200);
+};
+
+window.showLiveStatusInfo = function() {
+    window.triggerHaptic('light');
+    const isLive = window.__isTelemetryLive;
+    if (isLive) {
+        window.showMobileToast('Cloud Online: Real-time telemetry streaming from sensor node', 'live');
+    } else {
+        window.showMobileToast('Sensor Node Offline: No new data received for >5 mins (showing cached values)', 'offline');
+    }
+};
+
+// Dynamic Global Live / Offline Header Status Badge Controller
+window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
+    window.__isTelemetryLive = Boolean(isLive);
+    const desktopBadge = document.getElementById('header-live-badge-desktop');
+    const mobileBadge = document.getElementById('header-live-badge-mobile');
+    
+    [desktopBadge, mobileBadge].forEach(badge => {
+        if (!badge) return;
+        const isMobile = badge.id === 'header-live-badge-mobile';
+        const dot = badge.querySelector('.status-dot');
+        const text = badge.querySelector('.status-text');
+        
+        if (isLive) {
+            badge.style.backgroundColor = '#dcfce7';
+            badge.style.color = '#15803d';
+            badge.style.borderColor = '#bbf7d0';
+            badge.title = tooltip || 'Live telemetry streaming from cloud';
+            if (dot) {
+                dot.className = 'status-dot live-dot-pulse';
+                dot.style.backgroundColor = '#16a34a';
+                dot.style.width = isMobile ? '6px' : '7px';
+                dot.style.height = isMobile ? '6px' : '7px';
+            }
+            if (text) text.innerText = 'LIVE';
+        } else {
+            badge.style.backgroundColor = '#fff7ed';
+            badge.style.color = '#c2410c';
+            badge.style.borderColor = '#fed7aa';
+            badge.title = tooltip || 'Sensor node offline: No live telemetry received in cloud for >5 mins';
+            if (dot) {
+                dot.className = 'status-dot';
+                dot.style.backgroundColor = '#f97316';
+                dot.style.width = isMobile ? '6px' : '7px';
+                dot.style.height = isMobile ? '6px' : '7px';
+            }
+            if (text) text.innerText = 'OFFLINE';
+        }
+    });
+
+    document.querySelectorAll('.campus-status-dot').forEach(el => {
+        if (isLive) {
+            el.className = 'campus-status-dot live-dot-pulse';
+            el.style.backgroundColor = '#10b981';
+        } else {
+            el.className = 'campus-status-dot';
+            el.style.backgroundColor = '#f97316';
+        }
+    });
+};
 </script>
 
 <div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; width: 100%; display: flex; flex-direction: column;">
@@ -140,7 +236,7 @@ window.showMobileToast = function() {};
               Smart <span style="font-weight: 600; color: #00bfa5;">WeatherNet</span>
             </div>
             <div style="display: flex; align-items: center; gap: 5px; margin-top: 2px;">
-              <span class="live-dot-pulse"></span>
+              <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; display: inline-block; flex-shrink: 0;"></span>
               <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
               <span style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
             </div>
@@ -160,9 +256,9 @@ window.showMobileToast = function() {};
               Smart <span style="color: #00bfa5;">WeatherNet</span>
             </span>
             <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
-              <span class="live-dot-pulse"></span>
+              <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; display: inline-block; flex-shrink: 0;"></span>
               <span style="font-size: 10.5px; font-weight: 700; color: #64748b; white-space: nowrap;">SMVITM Campus</span>
-              <span style="font-size: 9.5px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 5px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
+              <span class="hidden sm:inline" style="font-size: 9.5px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 5px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
             </div>
           </div>
         </a>
@@ -205,7 +301,7 @@ window.showMobileToast = function() {};
 
       <!-- Desktop Auth & Admin -->
       <div class="hidden md:flex items-center gap-2.5">
-        <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
+        <?php if ($is_admin): ?>
           <a href="?page=admin" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #e2e8f0; background-color: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
             <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #00bfa5;"></i>
             <span>Admin Center</span>
@@ -229,20 +325,27 @@ window.showMobileToast = function() {};
           </button>
         <?php endif; ?>
         
-        <!-- Live Badge -->
-        <div style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;">
-          <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #16a34a;"></span>
-          <span>LIVE</span>
+        <!-- Live / Offline Badge (Desktop) -->
+        <div id="header-live-badge-desktop" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins' ?>" style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer;">
+          <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#16a34a' : '#f97316' ?>;"></span>
+          <span class="status-text"><?= $is_telemetry_live ? 'LIVE' : 'OFFLINE' ?></span>
         </div>
       </div>
 
       <!-- Mobile Right Items (Visible on mobile screens) -->
-      <div class="flex md:hidden items-center gap-2">
-        <!-- Animated LIVE badge -->
-        <div style="display: flex; padding: 5px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; align-items: center; gap: 6px; background-color: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; font-family: var(--font-mono); white-space: nowrap;">
-          <span class="live-dot-pulse" style="background-color: #16a34a;"></span>
-          <span>LIVE</span>
+      <div class="flex md:hidden items-center gap-2 flex-shrink-0">
+        <!-- Live / Offline Badge (Mobile) -->
+        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins' ?>" style="display: flex; padding: 5px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 5.5px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
+          <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#16a34a' : '#f97316' ?>;"></span>
+          <span class="status-text"><?= $is_telemetry_live ? 'LIVE' : 'OFFLINE' ?></span>
         </div>
+
+        <?php if ($is_logged_in): ?>
+          <a href="?logout=true" title="Sign Out (<?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?>)" onclick="window.triggerHaptic('light')" style="display: inline-flex; align-items: center; gap: 4px; padding: 4.5px 9px; border-radius: 999px; background-color: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; font-size: 11px; font-weight: 700; text-decoration: none; transition: all 0.15s ease; white-space: nowrap;">
+            <i data-lucide="log-out" style="width: 12px; height: 12px;"></i>
+            <span>Sign Out</span>
+          </a>
+        <?php endif; ?>
       </div>
     </div>
   </header>
@@ -290,47 +393,51 @@ window.showMobileToast = function() {};
   </main>
 
   <!-- Fixed Native Mobile Bottom Navigation Bar —— Safe area compliant & haptic response -->
-  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
 
     <!-- Overview -->
-    <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="home" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'overview' ? 'color: #00bfa5;' : '' ?>"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
     </a>
 
     <!-- Live Feed -->
-    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-      <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'live' ? 'color: #00bfa5;' : '' ?>"></i>
+    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+      <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+        <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'live' ? 'color: #00bfa5;' : '' ?>"></i>
+        <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; border: 1px solid #ffffff;"></span>
+      </div>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
     </a>
 
     <!-- Analytics -->
-    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'historical' ? 'color: #00bfa5;' : '' ?>"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
     </a>
 
     <!-- Forecast -->
-    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="line-chart" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
     </a>
 
-    <!-- Admin / Auth -->
-    <?php if ($is_logged_in && strpos(strtolower($_SESSION['user_name']), 'admin') !== false): ?>
-      <a href="?page=admin" data-bottom-nav="admin" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <!-- Admin (Only for Admin users) -->
+    <?php if ($is_admin): ?>
+      <a href="?page=admin" data-bottom-nav="admin" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
         <i data-lucide="shield-check" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'admin' ? 'color: #00bfa5;' : '' ?>"></i>
         <span style="font-size: 10px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Admin</span>
       </a>
-    <?php elseif ($is_logged_in): ?>
-      <a href="?logout=true" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; text-decoration: none; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
-        <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0;">
-          <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
-        </div>
-        <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign Out</span>
+    <?php endif; ?>
+
+    <!-- User Auth / Sign Out -->
+    <?php if ($is_logged_in): ?>
+      <a href="?logout=true" onclick="window.triggerHaptic('light')" title="Sign Out" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; color: #ef4444; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
+        <i data-lucide="log-out" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; color: #ef4444;"></i>
+        <span style="font-size: 10px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: #ef4444;">Sign Out</span>
       </a>
     <?php else: ?>
-      <button onclick="window.triggerHaptic('light'); openAuthModal();" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 52px; padding: 5px 8px; border-radius: 14px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
+      <button onclick="window.triggerHaptic('light'); openAuthModal();" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
         <i data-lucide="user" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0;"></i>
         <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign In</span>
       </button>

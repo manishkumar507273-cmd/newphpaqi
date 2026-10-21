@@ -732,10 +732,6 @@ switch ($action) {
             'aqi'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_HISTORICAL}?order=timestamp_hour.desc&limit={$lim}{$filter}",
             'weather' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_HIST}?order=timestamp_hour.desc&limit={$lim}{$filter}",
         ];
-        if ($is_today) {
-            $urls['aqi_live']     = "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=id.desc&limit=1";
-            $urls['weather_live'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=id.desc&limit=1";
-        }
 
         // Fire requests in parallel
         $raw = fetchParallel($urls, $supabaseKey);
@@ -743,40 +739,6 @@ switch ($action) {
         $res = ['aqi' => [], 'weather' => []];
         if ($raw['aqi'])     { foreach ($raw['aqi']     as $row) { $f = formatRawReading($row);    if ($f) $res['aqi'][]     = $f; } }
         if ($raw['weather']) { foreach ($raw['weather'] as $row) { $f = formatWeatherReading($row); if ($f) $res['weather'][] = $f; } }
-
-        // If today, dynamically inject the latest ongoing live telemetry reading if newer than the latest hourly archived point
-        if ($is_today) {
-            if (!empty($raw['weather_live']) && count($raw['weather_live']) > 0) {
-                $liveW = formatWeatherReading($raw['weather_live'][0]);
-                if ($liveW) {
-                    $liveW['is_live'] = true;
-                    $newestArchivedTime = !empty($res['weather']) ? strtotime($res['weather'][0]['timestamp'] ?? '') : 0;
-                    $newestArchivedHour = !empty($res['weather']) ? substr($res['weather'][0]['timestamp'] ?? '', 0, 13) : '';
-                    $liveTime = strtotime($liveW['timestamp'] ?? '');
-                    $liveHour = substr($liveW['timestamp'] ?? '', 0, 13);
-                    if ($liveHour && $liveHour === $newestArchivedHour) {
-                        $res['weather'][0] = $liveW;
-                    } else if ($liveTime - $newestArchivedTime > 300) {
-                        array_unshift($res['weather'], $liveW);
-                    }
-                }
-            }
-            if (!empty($raw['aqi_live']) && count($raw['aqi_live']) > 0) {
-                $liveA = formatRawReading($raw['aqi_live'][0]);
-                if ($liveA) {
-                    $liveA['is_live'] = true;
-                    $newestArchivedTime = !empty($res['aqi']) ? strtotime($res['aqi'][0]['timestamp'] ?? '') : 0;
-                    $newestArchivedHour = !empty($res['aqi']) ? substr($res['aqi'][0]['timestamp'] ?? '', 0, 13) : '';
-                    $liveTime = strtotime($liveA['timestamp'] ?? '');
-                    $liveHour = substr($liveA['timestamp'] ?? '', 0, 13);
-                    if ($liveHour && $liveHour === $newestArchivedHour) {
-                        $res['aqi'][0] = $liveA;
-                    } else if ($liveTime - $newestArchivedTime > 300) {
-                        array_unshift($res['aqi'], $liveA);
-                    }
-                }
-            }
-        }
 
         cacheSet($ckey, $res);
         echo json_encode($res);

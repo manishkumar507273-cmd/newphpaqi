@@ -29,11 +29,17 @@
         }, 280);
     }
 
+    const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather', 'admin'];
+
     // Prefetch page data on hover/touch or eager pre-cache
     function prefetchPage(url) {
         try {
             const urlObj = new URL(url, window.location.origin);
             const targetPage = urlObj.searchParams.get('page') || 'overview';
+            const isUserLoggedIn = Boolean(window.__currentUser && window.__currentUser.is_logged_in);
+
+            // Skip prefetching protected pages for unauthenticated visitors
+            if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) return;
             if (targetPage === currentPage || pageCache.has(targetPage)) return;
 
             fetch(`?page=${encodeURIComponent(targetPage)}&_t=${Date.now()}`, {
@@ -57,7 +63,9 @@
         window.addEventListener('load', () => setTimeout(initPrecache, 150));
     }
     function initPrecache() {
+        const isUserLoggedIn = Boolean(window.__currentUser && window.__currentUser.is_logged_in);
         CORE_PAGES.forEach((pg, idx) => {
+            if (PROTECTED_PAGES.includes(pg) && !isUserLoggedIn) return;
             if (pg !== currentPage && !pageCache.has(pg)) {
                 setTimeout(() => prefetchPage(`?page=${pg}`), idx * 80);
             }

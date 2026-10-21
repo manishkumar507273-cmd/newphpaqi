@@ -446,13 +446,8 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
       </a>
     <?php endif; ?>
 
-    <!-- User Auth / Sign Out -->
-    <?php if ($is_logged_in): ?>
-      <a href="?logout=true" onclick="window.triggerHaptic('light'); window.signOutUser(); return false;" title="Sign Out" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; color: #ef4444; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
-        <i data-lucide="log-out" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; color: #ef4444;"></i>
-        <span style="font-size: 10px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: #ef4444;">Sign Out</span>
-      </a>
-    <?php else: ?>
+    <!-- User Auth: Only show Sign In button when NOT logged in -->
+    <?php if (!$is_logged_in): ?>
       <button onclick="window.triggerHaptic('light'); openAuthModal();" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
         <i data-lucide="user" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0;"></i>
         <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign In</span>

@@ -1,10 +1,10 @@
 <!-- Auth Modal Backdrop -->
-<div id="auth-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 16px; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+<div id="auth-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 16px; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); will-change: opacity;">
   
   <div id="auth-backdrop-close" onclick="closeAuthModal()" style="position: absolute; inset: 0;"></div>
 
   <!-- Modal Window -->
-  <div style="position: relative; z-index: 10; width: 100%; max-width: 440px; background-color: #ffffff; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8); overflow: hidden; font-family: var(--font-sans); color: #0f172a; animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+  <div style="position: relative; z-index: 10; width: 100%; max-width: 440px; background-color: #ffffff; border-radius: 24px; box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8); overflow: hidden; font-family: var(--font-sans); color: #0f172a; animation: modal-pop 0.15s ease-out; will-change: transform, opacity; transform: translateZ(0);">
     
     <!-- Top Brand Accent Bar -->
     <div style="height: 4px; width: 100%; background: linear-gradient(90deg, #00bfa5 0%, #0284c7 50%, #6366f1 100%);"></div>
@@ -115,7 +115,7 @@
 
 <style>
 @keyframes modal-pop {
-  0% { opacity: 0; transform: scale(0.94) translateY(16px); }
+  0% { opacity: 0; transform: scale(0.97) translateY(8px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 </style>
@@ -227,12 +227,18 @@
 let currentAuthMode = 'login';
 
 function openAuthModal() {
-    document.getElementById('auth-modal').style.display = 'flex';
-    lucide.createIcons();
+    const modal = document.getElementById('auth-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    if (!modal.dataset.iconsInit && typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons({ root: modal });
+        modal.dataset.iconsInit = 'true';
+    }
 }
 
 function closeAuthModal() {
-    document.getElementById('auth-modal').style.display = 'none';
+    const modal = document.getElementById('auth-modal');
+    if (modal) modal.style.display = 'none';
 }
 
 function switchAuthMode(mode) {

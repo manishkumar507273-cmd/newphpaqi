@@ -8,7 +8,7 @@ $user_initial = strtoupper(substr($user_display_name, 0, 1));
 $is_admin = !empty($_SESSION['is_admin']) || ($is_logged_in && !empty($_SESSION['user_name']) && strpos(strtolower($_SESSION['user_name']), 'admin') !== false);
 
 // Check server-side telemetry cache to determine if cloud data is currently live (received <= 6 mins)
-$is_telemetry_live = false;
+$is_telemetry_live = true;
 $telemetry_last_updated_time = '';
 $telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
 if (file_exists($telemetry_cache_file)) {
@@ -22,8 +22,8 @@ if (file_exists($telemetry_cache_file)) {
         $latest_epoch = max($aqi_epoch, $weather_epoch);
         if ($latest_epoch > 0) {
             $telemetry_last_updated_time = date('h:i A', $latest_epoch);
-            if ((time() - $latest_epoch) <= 360 && (time() - $latest_epoch) >= -120) {
-                $is_telemetry_live = true;
+            if ((time() - $latest_epoch) > 360 || (time() - $latest_epoch) < -120) {
+                $is_telemetry_live = false;
             }
         }
     }

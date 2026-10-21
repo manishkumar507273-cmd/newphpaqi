@@ -901,6 +901,9 @@ async function refreshData(isSilent = false) {
             shortTime = timeFormatted;
         }
 
+        if (window.updateGlobalLiveBadge) {
+            window.updateGlobalLiveBadge(isLive, isLive ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins');
+        }
         if (window.evaluateAndSyncLiveBadge) {
             window.evaluateAndSyncLiveBadge(bulkData ? (bulkData.aqi || bulkData.weather) : null);
         }

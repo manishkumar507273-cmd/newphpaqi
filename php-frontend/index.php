@@ -222,8 +222,16 @@ if ($is_ajax) {
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <?php
+    $css_v = file_exists(__DIR__ . '/css/index.css') ? substr(md5_file(__DIR__ . '/css/index.css'), 0, 8) : '1.1';
+    $api_v = file_exists(__DIR__ . '/js/api.js') ? substr(md5_file(__DIR__ . '/js/api.js'), 0, 8) : '1.1';
+    $router_v = file_exists(__DIR__ . '/js/router.js') ? substr(md5_file(__DIR__ . '/js/router.js'), 0, 8) : '1.1';
+    ?>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/index.css?v=<?= file_exists(__DIR__ . '/css/index.css') ? filemtime(__DIR__ . '/css/index.css') : '1.1' ?>">
+    <link rel="stylesheet" href="css/index.css?v=<?= $css_v ?>">
+
+    <!-- Core Telemetry & API Engine (Available before page scripts run) -->
+    <script src="js/api.js?v=<?= $api_v ?>"></script>
 
     <?php
     $initial_overview_json = 'null';
@@ -246,9 +254,8 @@ if ($is_ajax) {
     
     <?php include __DIR__ . '/components/layout.php'; ?>
 
-    <!-- Load custom JavaScript (with automatic cache busting for mobile) -->
-    <script src="js/api.js?v=<?= file_exists(__DIR__ . '/js/api.js') ? filemtime(__DIR__ . '/js/api.js') : time() ?>"></script>
-    <script src="js/router.js?v=<?= file_exists(__DIR__ . '/js/router.js') ? filemtime(__DIR__ . '/js/router.js') : time() ?>"></script>
+    <!-- Load Client Router & Icon Initializer -->
+    <script src="js/router.js?v=<?= $router_v ?>"></script>
     <script>
         // Initialize Lucide icons
         lucide.createIcons();

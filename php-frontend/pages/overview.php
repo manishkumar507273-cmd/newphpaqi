@@ -85,16 +85,16 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
 }
 
 $init_ts = $init_bulk['aqi']['created_at'] ?? ($init_bulk['weather']['created_at'] ?? ($init_bulk['aqi']['timestamp'] ?? ($init_bulk['weather']['timestamp'] ?? null)));
-$is_overview_offline = true;
+$is_overview_offline = false;
 $overview_offline_time_str = '--';
 if ($init_ts) {
     $ts_epoch = strtotime($init_ts);
-    if ($ts_epoch && (time() - $ts_epoch) <= 300 && (time() - $ts_epoch) >= -60) {
-        $is_overview_offline = false;
+    if ($ts_epoch && (time() - $ts_epoch) > 300) {
+        $is_overview_offline = true;
+        $diff_mins = max(0, (int)floor((time() - $ts_epoch) / 60));
+        $time_ago = $diff_mins >= 1440 ? floor($diff_mins/1440) . 'd ago' : ($diff_mins >= 60 ? floor($diff_mins/60) . 'h ago' : $diff_mins . 'm ago');
+        $overview_offline_time_str = date('h:i a', $ts_epoch) . ' • ' . $time_ago;
     }
-    $diff_mins = max(0, (int)floor((time() - $ts_epoch) / 60));
-    $time_ago = $diff_mins >= 1440 ? floor($diff_mins/1440) . 'd ago' : ($diff_mins >= 60 ? floor($diff_mins/60) . 'h ago' : $diff_mins . 'm ago');
-    $overview_offline_time_str = date('h:i a', $ts_epoch) . ' • ' . $time_ago;
 }
 ?>
 <div class="overview-page-root" style="position: relative; min-height: 85vh; border-radius: 24px; overflow: hidden; padding: clamp(16px, 3vw, 28px); background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
@@ -879,7 +879,7 @@ async function refreshData(isSilent = false) {
                     ovBanner.style.display = 'none';
                 }
             } else {
-                ovBanner.style.display = 'flex';
+                ovBanner.style.display = 'none';
             }
         }
         

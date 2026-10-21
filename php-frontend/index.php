@@ -246,9 +246,9 @@ if ($is_ajax) {
     
     <?php include __DIR__ . '/components/layout.php'; ?>
 
-    <!-- Load custom JavaScript -->
-    <script src="js/api.js"></script>
-    <script src="js/router.js"></script>
+    <!-- Load custom JavaScript (with automatic cache busting for mobile) -->
+    <script src="js/api.js?v=<?= file_exists(__DIR__ . '/js/api.js') ? filemtime(__DIR__ . '/js/api.js') : time() ?>"></script>
+    <script src="js/router.js?v=<?= file_exists(__DIR__ . '/js/router.js') ? filemtime(__DIR__ . '/js/router.js') : time() ?>"></script>
     <script>
         // Initialize Lucide icons
         lucide.createIcons();

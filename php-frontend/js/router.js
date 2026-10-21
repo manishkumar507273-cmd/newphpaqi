@@ -176,6 +176,35 @@
             return;
         }
 
+        // Instant client-side auth check for protected pages
+        const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather', 'admin'];
+        const isUserLoggedIn = Boolean(window.__currentUser && window.__currentUser.is_logged_in);
+
+        if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) {
+            window.__pendingTargetPage = targetPage;
+            if (typeof openAuthModal === 'function') {
+                openAuthModal();
+                const errBlock = document.getElementById('auth-error-msg');
+                const errText = document.getElementById('auth-error-text');
+                if (errBlock && errText) {
+                    const pageLabels = {
+                        live: 'Live Data Stream',
+                        historical: 'Analytics Archive',
+                        predictive: 'Predictive Forecast',
+                        weather: 'Weather Telemetry',
+                        admin: 'Admin Center'
+                    };
+                    const label = pageLabels[targetPage] || 'this page';
+                    errText.innerText = `Please sign in to view ${label}.`;
+                    errBlock.style.backgroundColor = "rgba(0, 191, 165, 0.1)";
+                    errBlock.style.color = "#00bfa5";
+                    errBlock.style.border = "1px solid rgba(0, 191, 165, 0.2)";
+                    errBlock.style.display = 'flex';
+                }
+            }
+            return;
+        }
+
         if (isTransitioning) return;
         isTransitioning = true;
 
@@ -217,7 +246,7 @@
                 pageCache.set(targetPage, { data, time: Date.now() });
             }
 
-            // Handle auth requirement
+            // Handle auth requirement from server response
             if (data.require_login) {
                 resetProgressBar();
                 if (wrapper) {
@@ -225,12 +254,22 @@
                     wrapper.classList.add('page-fade-active');
                 }
                 isTransitioning = false;
+                window.__pendingTargetPage = data.target_page || targetPage;
                 if (typeof openAuthModal === 'function') {
                     openAuthModal();
                     const errBlock = document.getElementById('auth-error-msg');
                     const errText = document.getElementById('auth-error-text');
                     if (errBlock && errText) {
-                        errText.innerText = "Please sign in to access this page.";
+                        const pageLabels = {
+                            live: 'Live Data Stream',
+                            historical: 'Analytics Archive',
+                            predictive: 'Predictive Forecast',
+                            weather: 'Weather Telemetry',
+                            admin: 'Admin Center'
+                        };
+                        const targetPg = data.target_page || targetPage;
+                        const label = pageLabels[targetPg] || 'this page';
+                        errText.innerText = `Please sign in to view ${label}.`;
                         errBlock.style.backgroundColor = "rgba(0, 191, 165, 0.1)";
                         errBlock.style.color = "#00bfa5";
                         errBlock.style.border = "1px solid rgba(0, 191, 165, 0.2)";

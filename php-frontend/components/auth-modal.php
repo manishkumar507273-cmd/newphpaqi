@@ -330,7 +330,7 @@ function mockLogin() {
     btn.style.pointerEvents = 'none';
     lucide.createIcons();
     
-    const curPage = window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'overview';
+    const curPage = window.__pendingTargetPage || (new URLSearchParams(window.location.search).get('target')) || window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'live';
 
     function executeGoogleLogin() {
         if (window.firebaseLoginWithGoogle) {
@@ -382,7 +382,7 @@ function handleAuthSubmit(e) {
     const errText = document.getElementById('auth-error-text');
     
     errBlock.style.display = 'none';
-    const curPage = window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'overview';
+    const curPage = window.__pendingTargetPage || (new URLSearchParams(window.location.search).get('target')) || window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'live';
     
     if (currentAuthMode === 'admin') {
         if (pass === '2847') {
@@ -438,7 +438,7 @@ function handleAuthSubmit(e) {
             let name = email.split('@')[0];
             name = name.charAt(0).toUpperCase() + name.slice(1);
             localStorage.setItem('auth_email', email);
-            window.location.href = '?page=live&auth=true&name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(email);
+            window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(email);
         }, 1200);
     }
 }

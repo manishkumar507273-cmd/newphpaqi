@@ -104,7 +104,14 @@ window.__isTelemetryLive = <?= $is_telemetry_live ? 'true' : 'false' ?>;
 // When someone signed in using a Google account and comes again on mobile or laptop,
 // they are let in directly without asking for login again.
 (function() {
-    if (window.location.search.includes('logout=true') || window.location.search.includes('logged_out=true')) return;
+    if (window.location.search.includes('logout=true') || window.location.search.includes('logged_out=true')) {
+        try {
+            localStorage.removeItem('auth_email');
+            localStorage.removeItem('auth_name');
+            localStorage.removeItem('auth_logged_in');
+        } catch (e) {}
+        return;
+    }
     
     if (localStorage.getItem('auth_email') === 'manish@sode-edu.in' || localStorage.getItem('auth_email') === 'manishb@sode-edu.in') {
         localStorage.removeItem('auth_email');
@@ -124,6 +131,15 @@ window.__isTelemetryLive = <?= $is_telemetry_live ? 'true' : 'false' ?>;
         }
     }
 })();
+
+window.signOutUser = function() {
+    try {
+        localStorage.removeItem('auth_email');
+        localStorage.removeItem('auth_name');
+        localStorage.removeItem('auth_logged_in');
+    } catch (e) {}
+    window.location.href = '?logout=true';
+};
 
 // Global Native Mobile App Helpers: Haptic & Toasts
 window.triggerHaptic = function(type = 'light') {
@@ -314,7 +330,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
               <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
             </div>
             <span style="font-size: 12px; font-weight: 700; color: #0f172a;"><?= $_SESSION['user_name'] ?></span>
-            <a href="?logout=true" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
+            <a href="?logout=true" onclick="window.signOutUser(); return false;" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
               <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
             </a>
           </div>
@@ -341,7 +357,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
         </div>
 
         <?php if ($is_logged_in): ?>
-          <a href="?logout=true" title="Sign Out (<?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?>)" onclick="window.triggerHaptic('light')" style="display: inline-flex; align-items: center; gap: 4px; padding: 4.5px 9px; border-radius: 999px; background-color: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; font-size: 11px; font-weight: 700; text-decoration: none; transition: all 0.15s ease; white-space: nowrap;">
+          <a href="?logout=true" title="Sign Out (<?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?>)" onclick="window.triggerHaptic('light'); window.signOutUser(); return false;" style="display: inline-flex; align-items: center; gap: 4px; padding: 4.5px 9px; border-radius: 999px; background-color: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; font-size: 11px; font-weight: 700; text-decoration: none; transition: all 0.15s ease; white-space: nowrap;">
             <i data-lucide="log-out" style="width: 12px; height: 12px;"></i>
             <span>Sign Out</span>
           </a>
@@ -432,7 +448,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
 
     <!-- User Auth / Sign Out -->
     <?php if ($is_logged_in): ?>
-      <a href="?logout=true" onclick="window.triggerHaptic('light')" title="Sign Out" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; color: #ef4444; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
+      <a href="?logout=true" onclick="window.triggerHaptic('light'); window.signOutUser(); return false;" title="Sign Out" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; color: #ef4444; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
         <i data-lucide="log-out" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; color: #ef4444;"></i>
         <span style="font-size: 10px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: #ef4444;">Sign Out</span>
       </a>
@@ -491,12 +507,22 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
   document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => {
           if (typeof openAuthModal === 'function') {
+              const targetPg = (new URLSearchParams(window.location.search).get('target')) || '';
+              if (targetPg) window.__pendingTargetPage = targetPg;
               openAuthModal();
               
               const errBlock = document.getElementById('auth-error-msg');
               const errText = document.getElementById('auth-error-text');
               if (errBlock && errText) {
-                  errText.innerText = "Please sign in to access this page.";
+                  const pageLabels = {
+                      live: 'Live Data Stream',
+                      historical: 'Analytics Archive',
+                      predictive: 'Predictive Forecast',
+                      weather: 'Weather Telemetry',
+                      admin: 'Admin Center'
+                  };
+                  const label = pageLabels[targetPg] || 'this dashboard';
+                  errText.innerText = "Please sign in to view " + label + ".";
                   errBlock.style.backgroundColor = "rgba(0, 191, 165, 0.1)";
                   errBlock.style.color = "#00bfa5";
                   errBlock.style.border = "1px solid rgba(0, 191, 165, 0.2)";

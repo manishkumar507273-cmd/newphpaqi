@@ -135,16 +135,19 @@ if (!in_array($page, $allowed_pages)) {
 $is_logged_in = isset($_SESSION['user_id']);
 $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
 
-if ($page === 'admin' && !$is_logged_in) {
+$protected_pages = ['live', 'historical', 'predictive', 'weather', 'admin'];
+
+if (in_array($page, $protected_pages) && !$is_logged_in) {
     if ($is_ajax) {
         header('Content-Type: application/json');
         echo json_encode([
             'require_login' => true,
-            'redirect' => '?page=overview&require_login=true'
+            'target_page' => $page,
+            'redirect' => '?page=overview&require_login=true&target=' . urlencode($page)
         ]);
         exit;
     }
-    header("Location: ?page=overview&require_login=true");
+    header("Location: ?page=overview&require_login=true&target=" . urlencode($page));
     exit;
 }
 

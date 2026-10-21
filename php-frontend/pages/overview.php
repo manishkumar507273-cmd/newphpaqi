@@ -110,6 +110,22 @@ if ($init_ts) {
   <!-- Content Container -->
   <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px;">
 
+    <!-- Overview Header: Title & Last Updated Status -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 2px;">
+      <div>
+        <h1 style="font-size: clamp(20px, 2.5vw, 26px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
+          Campus Telemetry Overview
+        </h1>
+        <div style="font-size: 12.5px; color: #64748b; margin-top: 5px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span>Last Updated: <span id="overview-latest-time" style="color: #00bfa5; font-weight: 700;"><?= $init_ts ? date('h:i:s A', strtotime($init_ts)) : 'Syncing...' ?></span></span>
+          <span id="overview-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
+            LIVE
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- Overview Telemetry Status Banner (Shown when node is offline >5 mins) -->
     <div id="overview-offline-banner" style="display: <?= $is_overview_offline ? 'flex' : 'none' ?>; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 14px; padding: 10px 14px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; margin-bottom: 2px;">
       <div style="display: flex; align-items: center; gap: 8px; color: #475569;">
@@ -882,7 +898,29 @@ async function refreshData(isSilent = false) {
                 ovBanner.style.display = 'none';
             }
         }
-        
+
+        const ovTimeEl = document.getElementById('overview-latest-time');
+        const ovBadge = document.getElementById('overview-live-badge');
+        const ts = reading ? (reading.created_at || reading.timestamp || reading.timestamp_hour) : null;
+        if (ts && ovTimeEl) {
+            const timeFormatted = new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            ovTimeEl.innerText = timeFormatted;
+            const diffMins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
+            if (ovBadge) {
+                if (diffMins > 5) {
+                    ovBadge.style.backgroundColor = '#fff7ed';
+                    ovBadge.style.borderColor = '#fed7aa';
+                    ovBadge.style.color = '#c2410c';
+                    ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span>OFFLINE';
+                } else {
+                    ovBadge.style.backgroundColor = '#ecfdf5';
+                    ovBadge.style.borderColor = '#a7f3d0';
+                    ovBadge.style.color = '#059669';
+                    ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>LIVE';
+                }
+            }
+        }
+
         const aqiRes = { data: bulkData.aqi };
         const weatherRes = { data: bulkData.weather };
         const liveHistoryRes = bulkData.history;

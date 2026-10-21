@@ -2,19 +2,27 @@
 require_once __DIR__ . '/brand-assets.php';
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
 $is_logged_in = isset($_SESSION['user_id']);
+$user_display_name = !empty($_SESSION['user_name']) ? $_SESSION['user_name'] : (!empty($_SESSION['user_email']) ? explode('@', $_SESSION['user_email'])[0] : 'User');
+$user_email = $_SESSION['user_email'] ?? '';
+$user_initial = strtoupper(substr($user_display_name, 0, 1));
 $is_admin = !empty($_SESSION['is_admin']) || ($is_logged_in && !empty($_SESSION['user_name']) && strpos(strtolower($_SESSION['user_name']), 'admin') !== false);
 
-// Check server-side telemetry cache to determine if cloud data is currently live (received <= 5 mins)
+// Check server-side telemetry cache to determine if cloud data is currently live (received <= 6 mins)
 $is_telemetry_live = false;
+$telemetry_last_updated_time = '';
 $telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
 if (file_exists($telemetry_cache_file)) {
     $raw_cache = @file_get_contents($telemetry_cache_file);
     if ($raw_cache && strlen($raw_cache) > 50) {
         $cached_data = json_decode($raw_cache, true);
-        $cached_ts = $cached_data['aqi']['created_at'] ?? ($cached_data['weather']['created_at'] ?? ($cached_data['aqi']['timestamp'] ?? ($cached_data['weather']['timestamp'] ?? null)));
-        if ($cached_ts) {
-            $ts_epoch = strtotime($cached_ts);
-            if ($ts_epoch && (time() - $ts_epoch) <= 300 && (time() - $ts_epoch) >= -60) {
+        $aqi_ts = $cached_data['aqi']['timestamp'] ?? ($cached_data['aqi']['created_at'] ?? null);
+        $weather_ts = $cached_data['weather']['timestamp'] ?? ($cached_data['weather']['created_at'] ?? null);
+        $aqi_epoch = $aqi_ts ? strtotime($aqi_ts) : 0;
+        $weather_epoch = $weather_ts ? strtotime($weather_ts) : 0;
+        $latest_epoch = max($aqi_epoch, $weather_epoch);
+        if ($latest_epoch > 0) {
+            $telemetry_last_updated_time = date('h:i A', $latest_epoch);
+            if ((time() - $latest_epoch) <= 360 && (time() - $latest_epoch) >= -120) {
                 $is_telemetry_live = true;
             }
         }
@@ -182,8 +190,56 @@ window.showLiveStatusInfo = function() {
     }
 };
 
-// Dynamic Global Live / Offline Header Status Badge Controller
-window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
+window.openAccountModal = function() {
+    window.triggerHaptic('light');
+    const modal = document.getElementById('account-modal');
+    if (modal) modal.style.display = 'flex';
+};
+
+window.closeAccountModal = function() {
+    const modal = document.getElementById('account-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.updateUserAccountUI = function(user) {
+    if (!user) return;
+    const email = user.email || '';
+    const name = user.displayName || (email ? email.split('@')[0] : 'User');
+    const initial = (name || email || 'U')[0].toUpperCase();
+
+    // Mobile top bar
+    const mobBtn = document.getElementById('mobile-user-btn');
+    const mobSignin = document.getElementById('mobile-signin-btn');
+    const mobAvatar = document.getElementById('mobile-user-avatar');
+    const mobTag = document.getElementById('mobile-user-initial-tag');
+    if (mobAvatar) mobAvatar.innerText = initial;
+    if (mobTag) mobTag.innerText = name;
+    if (mobBtn) mobBtn.style.display = 'inline-flex';
+    if (mobSignin) mobSignin.style.display = 'none';
+
+
+    // Desktop header
+    const deskContainer = document.getElementById('desktop-user-badge');
+    const deskSignin = document.getElementById('desktop-signin-btn');
+    const deskAvatar = document.getElementById('desktop-user-avatar');
+    const deskName = document.getElementById('desktop-user-name');
+    const deskEmail = document.getElementById('desktop-user-email');
+    if (deskAvatar) deskAvatar.innerText = initial;
+    if (deskName) deskName.innerText = name;
+    if (deskEmail) deskEmail.innerText = email;
+    if (deskContainer) deskContainer.style.display = 'flex';
+    if (deskSignin) deskSignin.style.display = 'none';
+
+    // Account modal
+    const accModalAvatar = document.getElementById('acc-modal-avatar');
+    const accModalName = document.getElementById('acc-modal-name');
+    const accModalEmail = document.getElementById('acc-modal-email');
+    if (accModalAvatar) accModalAvatar.innerText = initial;
+    if (accModalName) accModalName.innerText = name;
+    if (accModalEmail) accModalEmail.innerText = email || 'Signed in user';
+};
+
+window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) {
     window.__isTelemetryLive = Boolean(isLive);
     const desktopBadge = document.getElementById('header-live-badge-desktop');
     const mobileBadge = document.getElementById('header-live-badge-mobile');
@@ -324,22 +380,23 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
           </a>
         <?php endif; ?>
 
-        <?php if ($is_logged_in): ?>
-          <div style="display: flex; align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #00bfa5; color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.3);">
-              <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
-            </div>
-            <span style="font-size: 12px; font-weight: 700; color: #0f172a;"><?= $_SESSION['user_name'] ?></span>
-            <a href="?logout=true" onclick="window.signOutUser(); return false;" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
-              <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
-            </a>
+        <!-- Desktop Auth Block -->
+        <div id="desktop-user-badge" style="display: <?= $is_logged_in ? 'flex' : 'none' ?>; align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
+          <div id="desktop-user-avatar" style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.35); flex-shrink: 0;">
+            <?= htmlspecialchars($user_initial) ?>
           </div>
-        <?php else: ?>
-          <button onclick="openAuthModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; border: none; background-color: #0f172a; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
-            <i data-lucide="user" style="width: 14px; height: 14px;"></i>
-            <span>Sign In</span>
-          </button>
-        <?php endif; ?>
+          <div style="display: flex; flex-direction: column; line-height: 1.15; max-width: 130px; overflow: hidden;">
+            <span id="desktop-user-name" style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($user_display_name) ?></span>
+            <span id="desktop-user-email" style="font-size: 9.5px; font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($user_email) ?></span>
+          </div>
+          <a href="?logout=true" onclick="window.signOutUser(); return false;" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
+            <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
+          </a>
+        </div>
+        <button id="desktop-signin-btn" onclick="openAuthModal()" style="display: <?= $is_logged_in ? 'none' : 'inline-flex' ?>; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; border: none; background-color: #0f172a; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+          <i data-lucide="user" style="width: 14px; height: 14px;"></i>
+          <span>Sign In</span>
+        </button>
         
         <!-- Live / Offline Badge (Desktop) -->
         <div id="header-live-badge-desktop" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins' ?>" style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer;">
@@ -351,17 +408,25 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
       <!-- Mobile Right Items (Visible on mobile screens) -->
       <div class="flex md:hidden items-center gap-2 flex-shrink-0">
         <!-- Live / Offline Badge (Mobile) -->
-        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins' ?>" style="display: flex; padding: 5px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 5.5px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
-          <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#16a34a' : '#f97316' ?>;"></span>
+        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins' ?>" style="display: flex; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 4px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
+          <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#16a34a' : '#f97316' ?>;"></span>
           <span class="status-text"><?= $is_telemetry_live ? 'LIVE' : 'OFFLINE' ?></span>
         </div>
 
-        <?php if ($is_logged_in): ?>
-          <a href="?logout=true" title="Sign Out (<?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?>)" onclick="window.triggerHaptic('light'); window.signOutUser(); return false;" style="display: inline-flex; align-items: center; gap: 4px; padding: 4.5px 9px; border-radius: 999px; background-color: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; font-size: 11px; font-weight: 700; text-decoration: none; transition: all 0.15s ease; white-space: nowrap;">
-            <i data-lucide="log-out" style="width: 12px; height: 12px;"></i>
-            <span>Sign Out</span>
-          </a>
-        <?php endif; ?>
+        <!-- Mobile User Account Pill (Always displays which account is signed in) -->
+        <div id="mobile-user-container" style="display: flex; align-items: center;">
+          <button type="button" id="mobile-user-btn" onclick="openAccountModal()" title="Logged in as <?= htmlspecialchars($user_display_name) ?>" style="display: <?= $is_logged_in ? 'inline-flex' : 'none' ?>; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 999px; background: #ffffff; border: 1.5px solid #00bfa5; box-shadow: 0 2px 6px rgba(0, 191, 165, 0.15); cursor: pointer; -webkit-tap-highlight-color: transparent;">
+            <div id="mobile-user-avatar" style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.4); flex-shrink: 0;">
+              <?= htmlspecialchars($user_initial) ?>
+            </div>
+            <span id="mobile-user-initial-tag" style="font-size: 11px; font-weight: 700; color: #0f172a; max-width: 55px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= htmlspecialchars($user_display_name) ?></span>
+          </button>
+          
+          <button type="button" id="mobile-signin-btn" onclick="openAuthModal()" style="display: <?= $is_logged_in ? 'none' : 'inline-flex' ?>; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; background-color: #0f172a; border: none; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);">
+            <i data-lucide="user" style="width: 12px; height: 12px;"></i>
+            <span>Sign In</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -446,15 +511,43 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null) {
       </a>
     <?php endif; ?>
 
-    <!-- User Auth: Only show Sign In button when NOT logged in -->
-    <?php if (!$is_logged_in): ?>
-      <button onclick="window.triggerHaptic('light'); openAuthModal();" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; border: none; background: transparent; cursor: pointer; color: #64748b; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);">
-        <i data-lucide="user" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0;"></i>
-        <span style="font-size: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;">Sign In</span>
-      </button>
-    <?php endif; ?>
 
   </nav>
+
+  <!-- User Account Profile Modal (Mobile & Desktop) -->
+  <div id="account-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 16px; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+    <div onclick="closeAccountModal()" style="position: absolute; inset: 0;"></div>
+    <div style="position: relative; z-index: 10; width: 100%; max-width: 360px; background-color: #ffffff; border-radius: 24px; box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.25); overflow: hidden; font-family: var(--font-sans); color: #0f172a; animation: modal-pop 0.18s ease-out;">
+      <div style="height: 4px; width: 100%; background: linear-gradient(90deg, #00bfa5 0%, #0284c7 100%);"></div>
+      <button onclick="closeAccountModal()" style="position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <i data-lucide="x" style="width: 15px; height: 15px;"></i>
+      </button>
+      <div style="padding: 24px 20px 20px; text-align: center;">
+        <div id="acc-modal-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; margin: 0 auto 12px; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
+          <?= htmlspecialchars($user_initial) ?>
+        </div>
+        <h3 id="acc-modal-name" style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
+          <?= htmlspecialchars($user_display_name) ?>
+        </h3>
+        <p id="acc-modal-email" style="margin: 3px 0 14px; font-size: 13px; color: #64748b; word-break: break-all; font-family: var(--font-mono);">
+          <?= htmlspecialchars($user_email ?: 'Signed in user') ?>
+        </p>
+        <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #059669; font-size: 11px; font-weight: 700; margin-bottom: 20px;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
+          <span>Active Authenticated Session</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a href="?logout=true" onclick="window.signOutUser(); return false;" style="display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 11px 16px; border-radius: 12px; background: #fee2e2; border: 1.5px solid #fca5a5; color: #b91c1c; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; transition: all 0.15s ease;">
+            <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
+            <span>Sign Out from this Device</span>
+          </a>
+          <button type="button" onclick="closeAccountModal()" style="width: 100%; padding: 9px 16px; border-radius: 12px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
   
   <?php include __DIR__ . '/auth-modal.php'; ?>
   

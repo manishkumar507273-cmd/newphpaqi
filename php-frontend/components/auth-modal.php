@@ -182,6 +182,10 @@
               nameInput.value = userName;
           }
 
+          if (window.updateUserAccountUI) {
+              window.updateUserAccountUI({ email: userEmail, displayName: userName });
+          }
+
           const isPhpLoggedIn = window.__currentUser && window.__currentUser.is_logged_in;
           const currentPhpEmail = window.__currentUser ? window.__currentUser.email : '';
 
@@ -193,6 +197,15 @@
           }
       }
   });
+
+  // Sync immediately from localStorage if available
+  try {
+      const initEmail = localStorage.getItem('auth_email');
+      const initName = localStorage.getItem('auth_name');
+      if (initEmail && window.updateUserAccountUI) {
+          window.updateUserAccountUI({ email: initEmail, displayName: initName });
+      }
+  } catch(e) {}
 
   window.firebaseLoginWithGoogle = async () => {
       const result = await signInWithPopup(auth, googleProvider);

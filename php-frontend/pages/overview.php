@@ -84,16 +84,20 @@ if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== 
     $init_today_rain = number_format((float)$init_bulk['today_rain_total'], 1, '.', '');
 }
 
-$init_ts = $init_bulk['aqi']['created_at'] ?? ($init_bulk['weather']['created_at'] ?? ($init_bulk['aqi']['timestamp'] ?? ($init_bulk['weather']['timestamp'] ?? null)));
+$aqi_ts = $init_bulk['aqi']['timestamp'] ?? ($init_bulk['aqi']['created_at'] ?? null);
+$weather_ts = $init_bulk['weather']['timestamp'] ?? ($init_bulk['weather']['created_at'] ?? null);
+$aqi_epoch = $aqi_ts ? strtotime($aqi_ts) : 0;
+$weather_epoch = $weather_ts ? strtotime($weather_ts) : 0;
+$latest_epoch = max($aqi_epoch, $weather_epoch);
+$init_ts = $latest_epoch > 0 ? date('Y-m-d\TH:i:sP', $latest_epoch) : null;
 $is_overview_offline = false;
 $overview_offline_time_str = '--';
-if ($init_ts) {
-    $ts_epoch = strtotime($init_ts);
-    if ($ts_epoch && (time() - $ts_epoch) > 300) {
+if ($latest_epoch > 0) {
+    if ((time() - $latest_epoch) > 360) {
         $is_overview_offline = true;
-        $diff_mins = max(0, (int)floor((time() - $ts_epoch) / 60));
+        $diff_mins = max(0, (int)floor((time() - $latest_epoch) / 60));
         $time_ago = $diff_mins >= 1440 ? floor($diff_mins/1440) . 'd ago' : ($diff_mins >= 60 ? floor($diff_mins/60) . 'h ago' : $diff_mins . 'm ago');
-        $overview_offline_time_str = date('h:i a', $ts_epoch) . ' • ' . $time_ago;
+        $overview_offline_time_str = date('h:i a', $latest_epoch) . ' • ' . $time_ago;
     }
 }
 ?>
@@ -112,15 +116,19 @@ if ($init_ts) {
 
     <!-- Overview Header: Title & Last Updated Status -->
     <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 2px;">
-      <div>
+      <div style="width: 100%;">
         <h1 style="font-size: clamp(20px, 2.5vw, 26px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
           Campus Telemetry Overview
         </h1>
-        <div style="font-size: 12.5px; color: #64748b; margin-top: 5px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span>Last Updated: <span id="overview-latest-time" style="color: #00bfa5; font-weight: 700;"><?= $init_ts ? date('h:i:s A', strtotime($init_ts)) : 'Syncing...' ?></span></span>
-          <span id="overview-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
-            LIVE
+        <div style="font-size: 13px; color: #475569; margin-top: 6px; font-family: var(--font-sans); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+            <i data-lucide="clock" style="width: 14px; height: 14px; color: #00bfa5;"></i>
+            <span>Last Updated:</span>
+            <span id="overview-latest-time" style="color: #0f172a; font-weight: 700; font-family: var(--font-mono); background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);"><?= $latest_epoch > 0 ? date('h:i A', $latest_epoch) : 'Syncing...' ?></span>
+          </span>
+          <span id="overview-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2.5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: <?= $is_overview_offline ? '#fff7ed' : '#ecfdf5' ?>; color: <?= $is_overview_offline ? '#c2410c' : '#059669' ?>; border: 1px solid <?= $is_overview_offline ? '#fed7aa' : '#a7f3d0' ?>;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_overview_offline ? '#f97316' : '#10b981' ?>;"></span>
+            <?= $is_overview_offline ? 'OFFLINE' : 'LIVE' ?>
           </span>
         </div>
       </div>
@@ -875,25 +883,35 @@ async function refreshData(isSilent = false) {
             bulkData = await response.json();
         }
 
+        const aqiDate = (bulkData && bulkData.aqi) ? (window.safeParseDate ? window.safeParseDate(bulkData.aqi.timestamp || bulkData.aqi.created_at) : new Date(bulkData.aqi.timestamp || bulkData.aqi.created_at)) : null;
+        const weatherDate = (bulkData && bulkData.weather) ? (window.safeParseDate ? window.safeParseDate(bulkData.weather.timestamp || bulkData.weather.created_at) : new Date(bulkData.weather.timestamp || bulkData.weather.created_at)) : null;
+        const latestDate = (aqiDate && weatherDate) 
+            ? (aqiDate.getTime() >= weatherDate.getTime() ? aqiDate : weatherDate)
+            : (aqiDate || weatherDate);
+
+        let isLive = false;
+        let diffMins = 9999;
+        let timeFormatted = '--';
+        let shortTime = '--';
+
+        if (latestDate && !isNaN(latestDate.getTime())) {
+            diffMins = Math.floor((Date.now() - latestDate.getTime()) / 60000);
+            isLive = !isNaN(diffMins) && diffMins >= -5 && diffMins <= 6;
+            timeFormatted = latestDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            shortTime = timeFormatted;
+        }
+
         if (window.evaluateAndSyncLiveBadge) {
             window.evaluateAndSyncLiveBadge(bulkData ? (bulkData.aqi || bulkData.weather) : null);
         }
 
-        const reading = bulkData ? (bulkData.aqi || bulkData.weather) : null;
         const ovBanner = document.getElementById('overview-offline-banner');
         if (ovBanner) {
-            const ts = reading ? (reading.created_at || reading.timestamp || reading.timestamp_hour) : null;
-            if (ts) {
-                const diffMins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
-                if (diffMins > 5) {
-                    const timePart = new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    const timeAgo = diffMins >= 1440 ? Math.floor(diffMins/1440) + 'd ago' : (diffMins >= 60 ? Math.floor(diffMins/60) + 'h ago' : diffMins + 'm ago');
-                    const lastEl = document.getElementById('overview-offline-last-update');
-                    if (lastEl) lastEl.innerText = timePart + ' • ' + timeAgo;
-                    ovBanner.style.display = 'flex';
-                } else {
-                    ovBanner.style.display = 'none';
-                }
+            if (!isLive && diffMins > 6 && latestDate) {
+                const timeAgo = diffMins >= 1440 ? Math.floor(diffMins/1440) + 'd ago' : (diffMins >= 60 ? Math.floor(diffMins/60) + 'h ago' : diffMins + 'm ago');
+                const lastEl = document.getElementById('overview-offline-last-update');
+                if (lastEl) lastEl.innerText = shortTime + ' • ' + timeAgo;
+                ovBanner.style.display = 'flex';
             } else {
                 ovBanner.style.display = 'none';
             }
@@ -901,23 +919,22 @@ async function refreshData(isSilent = false) {
 
         const ovTimeEl = document.getElementById('overview-latest-time');
         const ovBadge = document.getElementById('overview-live-badge');
-        const ts = reading ? (reading.created_at || reading.timestamp || reading.timestamp_hour) : null;
-        if (ts && ovTimeEl) {
-            const timeFormatted = new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        if (ovTimeEl && timeFormatted !== '--') {
             ovTimeEl.innerText = timeFormatted;
-            const diffMins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
-            if (ovBadge) {
-                if (diffMins > 5) {
-                    ovBadge.style.backgroundColor = '#fff7ed';
-                    ovBadge.style.borderColor = '#fed7aa';
-                    ovBadge.style.color = '#c2410c';
-                    ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span>OFFLINE';
-                } else {
-                    ovBadge.style.backgroundColor = '#ecfdf5';
-                    ovBadge.style.borderColor = '#a7f3d0';
-                    ovBadge.style.color = '#059669';
-                    ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>LIVE';
-                }
+        }
+
+
+        if (ovBadge) {
+            if (!isLive) {
+                ovBadge.style.backgroundColor = '#fff7ed';
+                ovBadge.style.borderColor = '#fed7aa';
+                ovBadge.style.color = '#c2410c';
+                ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span>OFFLINE';
+            } else {
+                ovBadge.style.backgroundColor = '#ecfdf5';
+                ovBadge.style.borderColor = '#a7f3d0';
+                ovBadge.style.color = '#059669';
+                ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>LIVE';
             }
         }
 

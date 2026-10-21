@@ -863,7 +863,7 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 const syncStatusEl = document.getElementById('forecast-auto-sync-status');
                 if (syncStatusEl) {
                     const now = new Date();
-                    syncStatusEl.innerText = 'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    syncStatusEl.innerText = 'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
                 }
             }
         } catch (err) {

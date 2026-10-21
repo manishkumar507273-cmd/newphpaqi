@@ -463,14 +463,8 @@ async function fetchAllHistory(forcedDate = null) {
             datePicker.value = queryDate;
         }
 
-        let data;
-        if (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.aqi) && !forcedDate) {
-            data = window.INITIAL_DATA;
-            window.INITIAL_DATA = null;
-        } else {
-            const response = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}`);
-            data = await response.json();
-        }
+        const response = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}`);
+        const data = await response.json();
         
         historicalDataAqi = data.aqi || [];
         historicalDataWeather = data.weather || [];
@@ -589,11 +583,15 @@ function setParam(param) {
 function renderUI(skipDayFilter = false) {
     const parseIsoLocal = (str) => {
         if (!str) return 0;
-        const parts = str.split('T');
+        const cleanStr = String(str).replace(/[Zz]|[+-]\d{2}(:\d{2})?$/, '');
+        const parts = cleanStr.split('T');
         if (parts.length !== 2) return new Date(str).getTime();
         const [yr, mo, da] = parts[0].split('-').map(Number);
-        const [hr, mn, sc] = parts[1].split(':').map(Number);
-        return new Date(yr, mo - 1, da, hr, mn || 0, sc || 0).getTime();
+        const timeParts = parts[1].split(':');
+        const hr = Number(timeParts[0]) || 0;
+        const mn = Number(timeParts[1]) || 0;
+        const sc = Number(timeParts[2]) || 0;
+        return new Date(yr, mo - 1, da, hr, mn, sc).getTime();
     };
 
     let rangeLabel = '';
@@ -926,8 +924,8 @@ function renderUI(skipDayFilter = false) {
                 timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
             }
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                <td style="padding: 10px 16px; color: #0f172a; font-weight: 600;">${dateStr}</td>
-                <td style="padding: 10px 16px; color: #00bfa5; font-family: var(--font-mono); font-weight: 700;">${timeStr}</td>
+                <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>
+                <td style="padding: 10px 16px; color: #00bfa5; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
                 <td style="padding: 10px 16px; font-weight: 800; color: ${getAqiCategory(d.cpcb_aqi).text};">${d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '--'}</td>
                 <td style="padding: 10px 16px; color: #475569;">${d.pm25 != null ? Number(d.pm25).toFixed(3) : '0.000'}</td>
                 <td style="padding: 10px 16px; color: #475569;">${d.pm10 != null ? Number(d.pm10).toFixed(3) : '0.000'}</td>
@@ -963,8 +961,8 @@ function renderUI(skipDayFilter = false) {
                 timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
             }
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                <td style="padding: 10px 16px; color: #0f172a; font-weight: 600;">${dateStr}</td>
-                <td style="padding: 10px 16px; color: #00bfa5; font-family: var(--font-mono); font-weight: 700;">${timeStr}</td>
+                <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>
+                <td style="padding: 10px 16px; color: #00bfa5; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
                 <td style="padding: 10px 16px; color: #0f172a; font-weight: 600;">${d.temperature != null ? Number(d.temperature).toFixed(1) : '--'}</td>
                 <td style="padding: 10px 16px; color: #475569;">${d.humidity != null ? Number(d.humidity).toFixed(1) : '--'}</td>
                 <td style="padding: 10px 16px; color: #475569;">${d.wind_speed != null ? Number(d.wind_speed).toFixed(3) : '0.000'}</td>
@@ -1063,7 +1061,7 @@ window.__selectedProofFile = null;
 window.__proofRequired = false;
 
 
-const INDUSTRY_PROOFS = {
+window.INDUSTRY_PROOFS = {
     'Student': 'Upload Student ID Card / Proof *',
     'Academic / Research': 'Upload Faculty / Institutional ID Proof *',
     'Government / Public Sector': 'Upload Official Government Photo ID / Letter *',
@@ -1082,7 +1080,7 @@ function handleIndustryProofRequirement(val) {
     }
 
     if (fileLabel) {
-        fileLabel.textContent = INDUSTRY_PROOFS[val] || 'Upload Official ID Card / Proof Document *';
+        fileLabel.textContent = window.INDUSTRY_PROOFS[val] || 'Upload Official ID Card / Proof Document *';
     }
 
     window.__proofRequired = true;

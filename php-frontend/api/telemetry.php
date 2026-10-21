@@ -3,6 +3,7 @@ if (!defined('IS_INCLUDED')) {
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
 }
+date_default_timezone_set('Asia/Kolkata');
 
 // ── .env loader ──────────────────────────────────────────────────────────────
 $env_paths = [
@@ -170,14 +171,21 @@ function calcSubindex(string $paramKey, $cp): float {
 function parseToIstIso($tsRaw): string {
     if (!$tsRaw) return '';
     $tsStr = trim((string)$tsRaw);
-    if (strpos($tsStr, '+00:00') !== false || substr($tsStr,-1) === 'Z') {
+    if (strpos($tsStr, '+00') !== false || substr($tsStr, -1) === 'Z') {
         try {
             $dt = new DateTime($tsStr);
             $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
             return $dt->format('Y-m-d\TH:i:s');
         } catch (Exception $e) {}
     }
-    return $tsStr;
+    if (preg_match('/([+-]\d{2}):?(\d{2})$/', $tsStr)) {
+        try {
+            $dt = new DateTime($tsStr);
+            $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+            return $dt->format('Y-m-d\TH:i:s');
+        } catch (Exception $e) {}
+    }
+    return str_replace(' ', 'T', $tsStr);
 }
 
 function adjustTemperature($temp, $tsRaw) {
@@ -276,6 +284,7 @@ function formatRawReading($raw) {
 
     return [
         'id'                => $raw['id'] ?? null,
+        'created_at'        => $raw['created_at'] ?? ($raw['timestamp'] ?? null),
         'timestamp'         => parseToIstIso($ts),
         'temperature'       => $raw['temperature'] ?? null,
         'humidity'          => $raw['humidity']    ?? null,

@@ -151,6 +151,23 @@ function formatRawReading(raw) {
 }
 
 
+function safeParseDate(ts) {
+    if (!ts) return null;
+    if (ts instanceof Date) return isNaN(ts.getTime()) ? null : ts;
+    let s = String(ts).trim();
+    // Normalize space between date and time to 'T'
+    s = s.replace(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/, '$1T$2');
+    // Normalize timezone like +00 or +05 to +00:00 or +05:00
+    s = s.replace(/([+-]\d{2})$/, '$1:00');
+    // If no timezone offset is specified, treat as IST (+05:30) because sensor telemetry is strictly Indian Standard Time
+    if (!/[Zz+-]\d{2}/.test(s) && /T\d{2}:\d{2}/.test(s)) {
+        s += '+05:30';
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+}
+window.safeParseDate = safeParseDate;
+
 function evaluateAndSyncLiveBadge(reading) {
     if (!window.updateGlobalLiveBadge) return;
     if (!reading) {
@@ -162,12 +179,19 @@ function evaluateAndSyncLiveBadge(reading) {
         window.updateGlobalLiveBadge(false, 'No timestamp received from cloud');
         return;
     }
-    const diffMins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
-    const isLive = !isNaN(diffMins) && diffMins >= 0 && diffMins <= 5;
+    const parsedDate = safeParseDate(ts);
+    if (!parsedDate) {
+        window.updateGlobalLiveBadge(false, 'Invalid timestamp format');
+        return;
+    }
+    const diffMins = Math.floor((Date.now() - parsedDate.getTime()) / 60000);
+    const isLive = !isNaN(diffMins) && diffMins >= -5 && diffMins <= 6;
+    const timeFormatted = parsedDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     const tip = isLive 
-        ? 'Live telemetry streaming from cloud' 
-        : `Sensor node offline: Last received ${diffMins >= 1440 ? Math.floor(diffMins/1440) + 'd ago' : (diffMins >= 60 ? Math.floor(diffMins/60) + 'h ago' : diffMins + 'm ago')}`;
-    window.updateGlobalLiveBadge(isLive, tip);
+        ? `Live telemetry streaming from cloud (Updated: ${timeFormatted})` 
+        : `Sensor node offline: Last received ${diffMins >= 1440 ? Math.floor(diffMins/1440) + 'd ago' : (diffMins >= 60 ? Math.floor(diffMins/60) + 'h ago' : diffMins + 'm ago')} (${timeFormatted})`;
+    
+    window.updateGlobalLiveBadge(isLive, tip, timeFormatted);
 }
 window.evaluateAndSyncLiveBadge = evaluateAndSyncLiveBadge;
 

@@ -716,8 +716,13 @@ img, svg, video, canvas {
     display: none !important;
   }
 
+  .mobile-bottom-nav [style*="display: none"],
+  #mobile-bottom-nav [style*="display: none"] {
+    display: none !important;
+  }
+
   .mobile-bottom-nav a,
-  .mobile-bottom-nav button,
+  .mobile-bottom-nav button:not([style*="display: none"]),
   .mobile-bottom-nav-item {
     display: flex !important;
     flex-direction: row !important;

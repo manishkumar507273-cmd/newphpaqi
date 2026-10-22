@@ -334,10 +334,8 @@
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 800px;">
           <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <tr>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Row ID</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST / UTC)</th>
+              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">AQI</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Dominant</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">PM2.5 (µg/m³)</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">PM10 (µg/m³)</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">CO (mg/m³)</th>
@@ -347,7 +345,7 @@
           </thead>
           <tbody id="live-table-body">
             <tr>
-              <td colspan="9" style="padding: 40px; text-align: center; color: #64748b;">
+              <td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">
                 Loading stream...
               </td>
             </tr>
@@ -615,20 +613,14 @@ function formatSupabaseValue(val, suffix = '', defaultVal = '--') {
 
 function formatStreamTimestamp(row) {
     const rawTs = row.created_at || row.timestamp;
-    if (!rawTs) return { istDate: '--', istTime: '--', utcTime: '--' };
+    if (!rawTs) return '--';
     const dt = new Date(rawTs);
     
-    // IST formatting: "22/10/2026", "05:49:58 PM"
-    const istDate = dt.toLocaleDateString('en-GB');
-    const istTime = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    // Strict IST formatting: "22/10/2026, 06:49:58 pm" regardless of viewer's device timezone
+    const istDate = dt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+    const istTime = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit' }).toLowerCase();
     
-    // UTC formatting matching Supabase Dashboard: "12:19:58 UTC"
-    const utcHours = String(dt.getUTCHours()).padStart(2, '0');
-    const utcMins = String(dt.getUTCMinutes()).padStart(2, '0');
-    const utcSecs = String(dt.getUTCSeconds()).padStart(2, '0');
-    const utcTime = `${utcHours}:${utcMins}:${utcSecs} UTC`;
-
-    return { istDate, istTime, utcTime };
+    return `${istDate}, ${istTime}`;
 }
 
 function renderLiveTable() {
@@ -636,15 +628,13 @@ function renderLiveTable() {
     if (!tbody) return;
     
     if (liveDataStream.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="padding: 40px; text-align: center; color: #64748b;">No telemetry stream data.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No telemetry stream data.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = liveDataStream.map((d, i) => {
-        const ts = formatStreamTimestamp(d);
-        const rowId = d.id != null ? `#${d.id}` : '--';
+        const timeStr = formatStreamTimestamp(d);
         const aqiVal = d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '--';
-        const dom = d.dominant_pollutant || '--';
         const pm25 = formatSupabaseValue(d.pm25 ?? d['pm2.5']);
         const pm10 = formatSupabaseValue(d.pm10);
         const co = formatSupabaseValue(d.co);
@@ -652,13 +642,8 @@ function renderLiveTable() {
         const o3 = formatSupabaseValue(d.o3);
 
         return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 700; color: #0284c7; font-size: 12px; white-space: nowrap;">${rowId}</td>
-            <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap;">
-                <div style="font-weight: 700;">${ts.istDate}, ${ts.istTime}</div>
-                <div style="font-size: 10.5px; color: #64748b;">${ts.utcTime}</div>
-            </td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
             <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${aqiVal}</td>
-            <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #475569;"><span style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 7px; border-radius: 6px; font-weight: 700;">${dom}</span></td>
             <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${pm25}</td>
             <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${pm10}</td>
             <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: ${co === '--' ? '#94a3b8' : '#334155'};">${co}</td>
@@ -821,9 +806,8 @@ async function refreshDashboard() {
             if (heroLabelEl) heroLabelEl.remove();
             
             const now = new Date();
-            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' });
             document.getElementById('weather-date-str').innerText = dateStr;
-            document.getElementById('weather-latest-time').innerText = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         }
         
         // WEATHER HISTORY TABLE & TODAY'S TEMP RANGE
@@ -833,8 +817,7 @@ async function refreshDashboard() {
             let temps = [];
             
             weatherHistory.forEach((row, i) => {
-                const ts = formatStreamTimestamp(row);
-                const rowId = row.id != null ? `#${row.id}` : '--';
+                const timeStr = formatStreamTimestamp(row);
                 const temp = formatSupabaseValue(row.temperature);
                 const hum = formatSupabaseValue(row.humidity);
                 const wind = formatSupabaseValue(row.wind_speed);
@@ -849,11 +832,7 @@ async function refreshDashboard() {
                 tr.style.borderBottom = '1px solid #f1f5f9';
                 
                 tr.innerHTML = `
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 700; color: #0284c7; font-size: 12px; white-space: nowrap;">${rowId}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap;">
-                      <div style="font-weight: 700;">${ts.istDate}, ${ts.istTime}</div>
-                      <div style="font-size: 10.5px; color: #64748b;">${ts.utcTime}</div>
-                  </td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
                   <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${temp}</td>
                   <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${hum}</td>
                   <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${wind}</td>
@@ -873,7 +852,7 @@ async function refreshDashboard() {
                 document.getElementById('weather-high-temp').innerText = max + '°';
             }
         } else {
-            tbody.innerHTML = '<tr><td colspan="8" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
         }
 
         // LIVE AQI HISTORY (for chart and table)
@@ -922,9 +901,9 @@ async function refreshDashboard() {
             const diffMs = now - lastUpdate;
             aqiOfflineMinutes = Math.floor(diffMs / 60000);
             isAqiOffline = aqiOfflineMinutes > 5;
-            const timePart = lastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const timePart = lastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
             aqiLastUpdateTimeStr = aqiOfflineMinutes >= 1440
-                ? lastUpdate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + ', ' + timePart
+                ? lastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + timePart
                 : timePart;
         }
 
@@ -960,9 +939,9 @@ async function refreshDashboard() {
             const wLastUpdate = new Date(weatherData.timestamp);
             const wDiffMs = now - wLastUpdate;
             weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
-            const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
             weatherLastUpdateTimeStr = weatherOfflineMinutes >= 1440
-                ? wLastUpdate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + ', ' + wTimePart
+                ? wLastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + wTimePart
                 : wTimePart;
         }
 
@@ -1002,12 +981,18 @@ async function refreshDashboard() {
 
 var autoRefreshInterval = null;
 var currentTabIsAqi = true;
+var onLiveVisibilityChange = function() {
+    if (!document.hidden) {
+        refreshDashboard();
+    }
+};
 
 window.__cleanupCurrentPage = function() {
     if (autoRefreshInterval) {
         clearInterval(autoRefreshInterval);
         autoRefreshInterval = null;
     }
+    document.removeEventListener('visibilitychange', onLiveVisibilityChange);
     if (comparisonChartInstance) {
         comparisonChartInstance.destroy();
         comparisonChartInstance = null;
@@ -1031,6 +1016,9 @@ setTimeout(() => {
             refreshDashboard();
         }
     }, 4000);
+
+    // Immediately refresh when switching back to tab or unlocking screen
+    document.addEventListener('visibilitychange', onLiveVisibilityChange);
 }, 0);
 
 var pollutantDetails = {

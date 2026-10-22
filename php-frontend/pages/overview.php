@@ -2,7 +2,7 @@
 // Retrieve cached bulk telemetry for 0ms instant first-paint on both desktop and mobile
 $cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
 $init_bulk = null;
-if (file_exists($cache_file)) {
+if (file_exists($cache_file) && (time() - filemtime($cache_file) < 5)) {
     $raw_cache = @file_get_contents($cache_file);
     if ($raw_cache && strlen($raw_cache) > 20) {
         $init_bulk = @json_decode($raw_cache, true);
@@ -900,7 +900,7 @@ async function refreshData(isSilent = false) {
         if (latestDate && !isNaN(latestDate.getTime())) {
             diffMins = Math.floor((Date.now() - latestDate.getTime()) / 60000);
             isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 30;
-            timeFormatted = latestDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            timeFormatted = latestDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
             shortTime = timeFormatted;
         }
 
@@ -1033,7 +1033,7 @@ async function refreshData(isSilent = false) {
                 if (aqi > maxAqi) { maxAqi = aqi; maxTime = row.timestamp; }
                 
                 const dt = new Date(row.timestamp);
-                const timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase();
+                const timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' }).toLowerCase();
                 
                 labels.push(timeStr);
                 data.push(aqi);
@@ -1080,7 +1080,7 @@ function renderWeatherHistoryCharts(weatherHistoryRes) {
 
     wHistory.forEach(row => {
         const dt = new Date(row.timestamp || row.created_at || new Date());
-        wLabels.push(dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase());
+        wLabels.push(dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' }).toLowerCase());
         
         let tVal = row.temperature != null ? Number(row.temperature) : 0;
         if (tempUnit === 'F') tVal = Number(((tVal * 9/5) + 32).toFixed(1));
@@ -1348,6 +1348,11 @@ function initCanvas() {
 }
 
 var autoRefreshOverviewTimer = null;
+var onOverviewVisibilityChange = function() {
+    if (!document.hidden) {
+        refreshData(true);
+    }
+};
 
 function startAutoRefreshOverview() {
     if (autoRefreshOverviewTimer) clearInterval(autoRefreshOverviewTimer);
@@ -1356,9 +1361,11 @@ function startAutoRefreshOverview() {
             refreshData(true);
         }
     }, 4000);
+    document.addEventListener('visibilitychange', onOverviewVisibilityChange);
 }
 
 window.__cleanupCurrentPage = function() {
+    document.removeEventListener('visibilitychange', onOverviewVisibilityChange);
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;

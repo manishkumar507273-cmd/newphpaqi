@@ -497,7 +497,16 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         'source' => 'supabase_aqi_forecasts_24h',
         'model_name' => "Air Quality Neural Forecast Engine",
         'standard' => 'National Air Quality Index (NAQI)',
-        'generated_at' => date('Y-m-d H:i:s T'),
+        'generated_at' => (function() use ($rows) {
+            if (!empty($rows[0]['forecast_generated_at'])) {
+                try {
+                    $genDt = new DateTime($rows[0]['forecast_generated_at']);
+                    $genDt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+                    return $genDt->format('Y-m-d H:i:s T');
+                } catch (Exception $e) {}
+            }
+            return date('Y-m-d H:i:s T');
+        })(),
         'hero' => [
             'aqi' => $curAqi,
             'dominant' => $curDom,
@@ -763,8 +772,11 @@ switch ($action) {
         $force = isset($_GET['force']) && $_GET['force'] === '1';
         $jsonFile = __DIR__ . '/forecast_data.json';
 
-        // 1. FAST PATH: Read from local forecast_data.json on disk (< 1ms execution time)
-        if (!$force && file_exists($jsonFile)) {
+        // 1. FAST PATH: Read from local forecast_data.json on disk if fresh (< 60s)
+        $cacheTtlSeconds = 60;
+        $isFresh = file_exists($jsonFile) && (time() - @filemtime($jsonFile) < $cacheTtlSeconds);
+
+        if (!$force && $isFresh) {
             $raw = @file_get_contents($jsonFile);
             if ($raw) {
                 $payload = json_decode($raw, true);
@@ -781,17 +793,6 @@ switch ($action) {
                                 $filteredHourly[] = $item;
                             }
                         } catch (Exception $e) {
-                            $filteredHourly[] = $item;
-                        }
-                    }
-
-                    if (empty($filteredHourly)) {
-                        $nextHourDt = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
-                        $nextHourDt->modify('+1 hour')->setTime((int)$nextHourDt->format('H'), 0, 0);
-                        foreach ($payload['hourly'] as $idx => $item) {
-                            $itemDt = clone $nextHourDt;
-                            $itemDt->modify("+{$idx} hour");
-                            $item['iso'] = $itemDt->format(DateTime::ATOM);
                             $filteredHourly[] = $item;
                         }
                     }

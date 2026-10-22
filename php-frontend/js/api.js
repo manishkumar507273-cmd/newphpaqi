@@ -186,7 +186,7 @@ function evaluateAndSyncLiveBadge(reading) {
     }
     const diffMins = Math.floor((Date.now() - parsedDate.getTime()) / 60000);
     const isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 30;
-    const timeFormatted = parsedDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const timeFormatted = parsedDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
     const tip = isLive 
         ? `Live telemetry streaming from cloud (Updated: ${timeFormatted})` 
         : `Sensor node offline: Last received ${diffMins >= 1440 ? Math.floor(diffMins/1440) + 'd ago' : (diffMins >= 60 ? Math.floor(diffMins/60) + 'h ago' : diffMins + 'm ago')} (${timeFormatted})`;

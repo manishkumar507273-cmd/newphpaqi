@@ -913,11 +913,11 @@ function renderUI(skipDayFilter = false) {
                 const [hr, mn] = parts[1].split(':').map(Number);
                 const dt = new Date(yr, mo - 1, da, hr, mn || 0);
                 dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
-                timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' });
             } else {
                 const dt = new Date(d.timestamp);
-                dateStr = dt.toLocaleDateString('en-GB');
-                timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                dateStr = dt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+                timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' });
             }
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                 <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>
@@ -950,11 +950,11 @@ function renderUI(skipDayFilter = false) {
                 const [hr, mn] = parts[1].split(':').map(Number);
                 const dt = new Date(yr, mo - 1, da, hr, mn || 0);
                 dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
-                timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' });
             } else {
                 const dt = new Date(d.timestamp);
-                dateStr = dt.toLocaleDateString('en-GB');
-                timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                dateStr = dt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+                timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' });
             }
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                 <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>

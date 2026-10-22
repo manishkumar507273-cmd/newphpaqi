@@ -397,10 +397,10 @@ if (file_exists($forecastJsonFile)) {
             const isFirst = (idx === 0);
             let timeLabel = item.label;
 
-            if (item.iso) {
+            if (!timeLabel && item.iso) {
                 const dt = new Date(item.iso);
-                timeLabel = dt.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
-            } else if (typeof item.hour === 'number') {
+                timeLabel = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: true });
+            } else if (!timeLabel && typeof item.hour === 'number') {
                 const h = item.hour % 24;
                 const ampm = h >= 12 ? 'PM' : 'AM';
                 const h12 = h % 12 || 12;
@@ -863,6 +863,14 @@ if (file_exists($forecastJsonFile)) {
                 loadForecastData(false);
             }
         }, 60000);
+
+        window.__onForecastVisibility = () => {
+            if (!document.hidden) {
+                renderForecastUI();
+                loadForecastData(false);
+            }
+        };
+        document.addEventListener('visibilitychange', window.__onForecastVisibility);
     }
 
     // Clean up timer on SPA navigation
@@ -870,6 +878,10 @@ if (file_exists($forecastJsonFile)) {
         if (autoRefreshForecastTimer) {
             clearInterval(autoRefreshForecastTimer);
             autoRefreshForecastTimer = null;
+        }
+        if (window.__onForecastVisibility) {
+            document.removeEventListener('visibilitychange', window.__onForecastVisibility);
+            window.__onForecastVisibility = null;
         }
     };
 

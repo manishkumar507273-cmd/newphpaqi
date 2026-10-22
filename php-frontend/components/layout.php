@@ -327,10 +327,12 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
             <span style="font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
               Smart <span style="color: #00bfa5;">WeatherNet</span>
             </span>
-            <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
-              <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; display: inline-block; flex-shrink: 0;"></span>
-              <span style="font-size: 10.5px; font-weight: 700; color: #64748b; white-space: nowrap;">SMVITM Campus</span>
-              <span class="hidden sm:inline" style="font-size: 9.5px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 5px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
+            <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px; flex-wrap: wrap;">
+              <div style="display: inline-flex; align-items: center; gap: 4px;">
+                <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; display: inline-block; flex-shrink: 0;"></span>
+                <span style="font-size: 10px; font-weight: 700; color: #64748b; white-space: nowrap;">SMVITM Campus</span>
+              </div>
+              <span style="font-size: 9px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 4px; margin-left: 1px; white-space: nowrap; font-family: var(--font-mono, monospace);">13°15'40" N, 74°47'13" E</span>
             </div>
           </div>
         </a>

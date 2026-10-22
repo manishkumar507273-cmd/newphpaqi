@@ -1,11 +1,9 @@
-name: Hourly AQI Forecast Engine
+name: Daily AQI Forecast Engine
 
 on:
   schedule:
-    # Triggers every hour sharp in Indian Standard Time (IST = UTC + 5:30)
-    # Minute 30 UTC corresponds exactly to minute 00 IST (e.g. 8:00 PM, 9:00 PM, 10:00 PM IST)
-    # Running at :30 UTC also avoids GitHub's heavy minute-0 runner queue congestion.
-    - cron: '30 * * * *'
+    # Triggers daily at 1:00 AM IST (Indian Standard Time: UTC + 5:30 -> 19:30 UTC)
+    - cron: '30 19 * * *'
   workflow_dispatch:
     # Allows manual trigger anytime from the GitHub Actions tab
 
@@ -31,7 +29,7 @@ jobs:
           pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements.txt
 
-      - name: Run 168h Forecast Engine & Sync Supabase
+      - name: Run AQI Forecast Engine & Sync Supabase
         env:
           KERAS_BACKEND: torch
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://sgkdpliqlhgiqsabxzxe.supabase.co' }}

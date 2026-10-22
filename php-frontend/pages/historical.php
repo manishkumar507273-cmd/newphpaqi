@@ -508,8 +508,8 @@ function switchHistTab(tab) {
         document.getElementById('summary-aqi-block').style.display = 'none';
         document.getElementById('summary-weather-block').style.display = 'flex';
         
-        document.getElementById('chart-main-title').innerText = 'Weather Hourly Trend Analysis (8:00 AM – 8:00 AM)';
-        document.getElementById('table-title').innerText = 'Weather Historical Telemetry Table (8:00 AM – 8:00 AM)';
+        document.getElementById('chart-main-title').innerText = 'Weather Hourly Trend Analysis (12:00 AM – 12:00 AM)';
+        document.getElementById('table-title').innerText = 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)';
     }
     
     setParam(currentParam);
@@ -601,9 +601,9 @@ function renderUI(skipDayFilter = false) {
         
         const sourceData = currentSubTab === 'aqi' ? historicalDataAqi : historicalDataWeather;
 
-        // AQI uses 12:00 AM to 12:00 AM (calendar day midnight to midnight), Weather uses 8:00 AM to 8:00 AM
+        // Both AQI and Weather display full calendar day from midnight to midnight (12:00 AM – 12:00 AM)
         const [y, m, d] = dateInput.split('-').map(Number);
-        const startHour = currentSubTab === 'aqi' ? 0 : 8;
+        const startHour = 0;
         const startWindow = new Date(y, m - 1, d, startHour, 0, 0, 0).getTime();
         const endWindow = startWindow + (24 * 60 * 60 * 1000);
         const nextDateObj = new Date(endWindow);
@@ -633,15 +633,11 @@ function renderUI(skipDayFilter = false) {
         filteredDayData.sort((a,b) => parseIsoLocal(a.timestamp) - parseIsoLocal(b.timestamp));
         
         const dateStrLong = startDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-        const nextDateStrLong = nextDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-        const nextDateStrShort = nextDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
         
-        rangeLabel = currentSubTab === 'aqi'
-            ? `${dateStrLong} (12:00 AM – 12:00 AM)`
-            : `${dateStrLong} 8:00 AM – ${nextDateStrLong} 8:00 AM`;
+        rangeLabel = `${dateStrLong} (12:00 AM – 12:00 AM)`;
         
         document.getElementById('date-subtitle-desktop').innerText = `Showing ${filteredDayData.length} hourly data points (${rangeLabel})`;
-        document.getElementById('summary-date-display').innerText = currentSubTab === 'aqi' ? dateStrLong : `${dateStrLong} → ${nextDateStrShort}`;
+        document.getElementById('summary-date-display').innerText = dateStrLong;
         document.getElementById('log-count').innerText = filteredDayData.length;
         
         document.getElementById('chart-sub-title').innerText = `24-Hour progression: ${rangeLabel}`;

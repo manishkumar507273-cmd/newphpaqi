@@ -8,6 +8,16 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header("Location: /?page=predictive");
     exit;
 }
+
+// 0ms instant pre-hydration from disk cache
+$forecastJsonFile = __DIR__ . '/../api/forecast_data.json';
+$preloadedForecastJson = 'null';
+if (file_exists($forecastJsonFile)) {
+    $rawPreload = @file_get_contents($forecastJsonFile);
+    if ($rawPreload && strlen($rawPreload) > 20) {
+        $preloadedForecastJson = $rawPreload;
+    }
+}
 ?>
 
 <div class="forecast-page-container p-3 sm:p-6 flex flex-col gap-4 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
@@ -68,7 +78,6 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
           <span>Predicted Air Quality Index</span>
           <span>•</span>
           <span class="text-slate-600 font-semibold" id="forecast-date-str">Loading...</span>
-          <span id="forecast-target-time-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00bfa5]/10 text-[#00bfa5] border border-teal-200 font-mono tracking-tight">Next Timestamp</span>
         </div>
 
         <div class="flex items-baseline gap-3 mb-2 sm:mb-2.5">
@@ -295,7 +304,7 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
 <!-- ── JavaScript Forecast Model Engine ── -->
 <script>
 (function() {
-    let trainedModelData = null; // Will hold user's model once trained and connected
+    let trainedModelData = <?php echo $preloadedForecastJson ?: 'null'; ?>;
 
     // AQI Colors and Categories
     function getAqiBadge(aqi) {
@@ -547,17 +556,6 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             const heroHum = document.getElementById('forecast-hero-humidity');
             if (heroHum) heroHum.innerText = (curHour.humidity !== undefined ? curHour.humidity : '--') + '%';
 
-            // Next Timestamp Badge
-            const badgeEl = document.getElementById('forecast-target-time-badge');
-            if (badgeEl) {
-                if (isNext) {
-                    badgeEl.className = "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00bfa5]/10 text-[#00bfa5] border border-teal-200 font-mono tracking-tight flex items-center gap-1";
-                    badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Next Timestamp: ${curHour.label}`;
-                } else {
-                    badgeEl.className = "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 font-mono tracking-tight flex items-center gap-1.5";
-                    badgeEl.innerHTML = `<span>Viewing: ${curHour.label}</span> · <span onclick="selectForecastHour(0)" class="underline cursor-pointer hover:text-blue-900 font-bold">Reset to Next Hour</span>`;
-                }
-            }
 
             // 3. Render 7 Predicted Model Parameters Grid for this timestamp
             const paramsGrid = document.getElementById('predicted-parameters-grid');
@@ -629,46 +627,22 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
 
             // Top Status Chip
             const topChip = document.getElementById('forecast-model-status-chip');
-            const tierHours = trainedModelData.tier_hours || 168;
-            const tierSel = trainedModelData.tier_selection;
-            const aqiTable = (tierSel && tierSel.aqi_table) || 'AQI_NODE1';
+            const isStandby = (trainedModelData.status === 'standby') || (!trainedModelData.hero || trainedModelData.hero.aqi === null);
 
             if (topChip) {
-                topChip.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono";
-                topChip.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> MODEL ACTIVE · ${tierHours}H TIER`;
+                if (isStandby) {
+                    topChip.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono";
+                    topChip.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> AWAITING NEW MODEL · STANDBY`;
+                } else {
+                    topChip.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono";
+                    topChip.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> MODEL ACTIVE · INFERENCE LIVE`;
+                }
             }
             const topSubtext = document.getElementById('forecast-model-subtext');
             if (topSubtext) {
-                topSubtext.innerText = `Ingest: ${aqiTable} · ${tierHours}h Input Data Window`;
+                topSubtext.innerText = isStandby ? 'Ready for new model deployment in forcast/' : 'Ingest: AQI_NODE1 + WEATHER_NODE1 · 48h Past Input Window';
             }
 
-            // Ingest Status Bar
-            const tableChip = document.getElementById('tier-input-table-chip');
-            if (tableChip) tableChip.innerText = aqiTable;
-
-            const availChip = document.getElementById('tier-available-hours-chip');
-            if (availChip) {
-                const count = tierSel ? tierSel.available_hours : tierHours;
-                availChip.innerText = `${count}h Available in ${aqiTable}`;
-            }
-
-            const expText = document.getElementById('tier-explanation-text');
-            if (expText && tierSel && tierSel.explanation) {
-                const cleanExp = (tierSel.explanation || '')
-                    .replace(/\s*\([^)]*\.keras\)/gi, '')
-                    .replace(/\s*\(model_tier_[^)]+\)/gi, '')
-                    .replace(/\.keras/gi, '');
-                expText.innerText = cleanExp;
-            }
-
-            // Update active tier button state
-            document.querySelectorAll('.tier-selector-btn').forEach(btn => {
-                btn.className = "tier-selector-btn px-2 py-1 rounded-lg text-[10.5px] font-mono font-semibold bg-white text-slate-700 border border-slate-200 hover:border-teal-400 cursor-pointer transition-all";
-            });
-            const activeTierBtn = document.getElementById('tier-btn-' + tierHours) || document.getElementById('tier-btn-auto');
-            if (activeTierBtn) {
-                activeTierBtn.className = "tier-selector-btn px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-extrabold bg-[#00bfa5] text-white border border-teal-500 shadow-xs cursor-pointer transition-all";
-            }
             const subtitleEl = document.getElementById('forecast-model-subtitle');
             if (subtitleEl) {
                 subtitleEl.innerText = `Direct multi-target outputs from trained model`;
@@ -888,7 +862,7 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             if (!document.hidden) {
                 loadForecastData(false);
             }
-        }, 15000);
+        }, 60000);
     }
 
     // Clean up timer on SPA navigation
@@ -911,7 +885,9 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     // Initial render and data fetch
     function initForecastPage() {
         renderForecastUI();
-        loadForecastData(false);
+        if (!trainedModelData) {
+            loadForecastData(false);
+        }
         startAutoRefreshForecast();
     }
 

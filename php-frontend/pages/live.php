@@ -334,8 +334,10 @@
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 800px;">
           <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <tr>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Time</th>
+              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Row ID</th>
+              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST / UTC)</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">AQI</th>
+              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Dominant</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">PM2.5 (µg/m³)</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">PM10 (µg/m³)</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">CO (mg/m³)</th>
@@ -345,7 +347,7 @@
           </thead>
           <tbody id="live-table-body">
             <tr>
-              <td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">
+              <td colspan="9" style="padding: 40px; text-align: center; color: #64748b;">
                 Loading stream...
               </td>
             </tr>
@@ -466,19 +468,25 @@ function switchLiveTab(tab) {
     const weatherView = document.getElementById('weather-view');
 
     if (tab === 'aqi') {
-        aqiBtn.style.backgroundColor = '#00bfa5';
-        aqiBtn.style.color = '#ffffff';
-        weatherBtn.style.backgroundColor = 'transparent';
-        weatherBtn.style.color = '#64748b';
-        aqiView.style.display = 'block';
-        weatherView.style.display = 'none';
+        if (aqiBtn) { aqiBtn.style.backgroundColor = '#00bfa5'; aqiBtn.style.color = '#ffffff'; }
+        if (weatherBtn) { weatherBtn.style.backgroundColor = 'transparent'; weatherBtn.style.color = '#64748b'; }
+        if (aqiView) aqiView.style.display = 'block';
+        if (weatherView) weatherView.style.display = 'none';
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'aqi');
+            history.replaceState(null, '', url.toString());
+        } catch(e) {}
     } else {
-        weatherBtn.style.backgroundColor = '#00bfa5';
-        weatherBtn.style.color = '#ffffff';
-        aqiBtn.style.backgroundColor = 'transparent';
-        aqiBtn.style.color = '#64748b';
-        weatherView.style.display = 'block';
-        aqiView.style.display = 'none';
+        if (weatherBtn) { weatherBtn.style.backgroundColor = '#00bfa5'; weatherBtn.style.color = '#ffffff'; }
+        if (aqiBtn) { aqiBtn.style.backgroundColor = 'transparent'; aqiBtn.style.color = '#64748b'; }
+        if (weatherView) weatherView.style.display = 'block';
+        if (aqiView) aqiView.style.display = 'none';
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'weather');
+            history.replaceState(null, '', url.toString());
+        } catch(e) {}
     }
 }
 
@@ -598,26 +606,64 @@ function renderComparisonChart() {
     });
 }
 
+function formatSupabaseValue(val, suffix = '', defaultVal = '--') {
+    if (val === null || val === undefined || val === '') return defaultVal;
+    const num = Number(val);
+    if (isNaN(num)) return String(val) + suffix;
+    return num.toString() + suffix;
+}
+
+function formatStreamTimestamp(row) {
+    const rawTs = row.created_at || row.timestamp;
+    if (!rawTs) return { istDate: '--', istTime: '--', utcTime: '--' };
+    const dt = new Date(rawTs);
+    
+    // IST formatting: "22/10/2026", "05:49:58 PM"
+    const istDate = dt.toLocaleDateString('en-GB');
+    const istTime = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    
+    // UTC formatting matching Supabase Dashboard: "12:19:58 UTC"
+    const utcHours = String(dt.getUTCHours()).padStart(2, '0');
+    const utcMins = String(dt.getUTCMinutes()).padStart(2, '0');
+    const utcSecs = String(dt.getUTCSeconds()).padStart(2, '0');
+    const utcTime = `${utcHours}:${utcMins}:${utcSecs} UTC`;
+
+    return { istDate, istTime, utcTime };
+}
+
 function renderLiveTable() {
     const tbody = document.getElementById('live-table-body');
     if (!tbody) return;
     
     if (liveDataStream.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No telemetry stream data.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="padding: 40px; text-align: center; color: #64748b;">No telemetry stream data.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = liveDataStream.map((d, i) => {
-        const dt = new Date(d.created_at || d.timestamp || new Date());
-        const timeStr = dt.toLocaleDateString('en-GB') + ', ' + dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase();
+        const ts = formatStreamTimestamp(d);
+        const rowId = d.id != null ? `#${d.id}` : '--';
+        const aqiVal = d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '--';
+        const dom = d.dominant_pollutant || '--';
+        const pm25 = formatSupabaseValue(d.pm25 ?? d['pm2.5']);
+        const pm10 = formatSupabaseValue(d.pm10);
+        const co = formatSupabaseValue(d.co);
+        const no2 = formatSupabaseValue(d.no2);
+        const o3 = formatSupabaseValue(d.o3);
+
         return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-            <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #64748b; white-space: nowrap;">${timeStr}</td>
-            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${Math.round(d.cpcb_aqi || 0)}</td>
-            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.pm25 || 0).toFixed(3)}</td>
-            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.pm10 || 0).toFixed(3)}</td>
-            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.co || 0).toFixed(3)}</td>
-            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.no2 || 0).toFixed(3)}</td>
-            <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${Number(d.o3 || 0).toFixed(3)}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 700; color: #0284c7; font-size: 12px; white-space: nowrap;">${rowId}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap;">
+                <div style="font-weight: 700;">${ts.istDate}, ${ts.istTime}</div>
+                <div style="font-size: 10.5px; color: #64748b;">${ts.utcTime}</div>
+            </td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${aqiVal}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #475569;"><span style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 7px; border-radius: 6px; font-weight: 700;">${dom}</span></td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${pm25}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${pm10}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: ${co === '--' ? '#94a3b8' : '#334155'};">${co}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${no2}</td>
+            <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${o3}</td>
         </tr>`;
     }).join('');
 }
@@ -625,7 +671,7 @@ function renderLiveTable() {
 async function refreshDashboard() {
     try {
         let bulkData;
-        if (window.INITIAL_DATA) {
+        if (window.INITIAL_DATA && window.INITIAL_DATA.aqi_history) {
             bulkData = window.INITIAL_DATA;
             window.INITIAL_DATA = null;
         } else {
@@ -700,40 +746,42 @@ async function refreshDashboard() {
             }
 
             // Quick PM Summary
-            document.getElementById('hero-pm25').innerText = `${d.pm25 != null ? d.pm25 : 0} µg/m³`;
-            document.getElementById('hero-pm10').innerText = `${d.pm10 != null ? d.pm10 : 0} µg/m³`;
+            document.getElementById('hero-pm25').innerText = `${formatSupabaseValue(d.pm25 ?? d['pm2.5'])} µg/m³`;
+            document.getElementById('hero-pm10').innerText = `${formatSupabaseValue(d.pm10)} µg/m³`;
 
-            // Cards: If Supabase states 0 (or null), show 0 everywhere, never N/A
-            document.getElementById('card-pm25').innerText = d.pm25 != null ? d.pm25 : 0;
-            document.getElementById('card-pm10').innerText = d.pm10 != null ? d.pm10 : 0;
-            document.getElementById('card-co').innerText = d.co != null ? d.co : 0;
-            document.getElementById('card-no2').innerText = d.no2 != null ? d.no2 : 0;
-            document.getElementById('card-o3').innerText = d.o3 != null ? d.o3 : 0;
+            // Cards: Display exact raw values from Supabase without forcing 0 for null
+            document.getElementById('card-pm25').innerText = formatSupabaseValue(d.pm25 ?? d['pm2.5']);
+            document.getElementById('card-pm10').innerText = formatSupabaseValue(d.pm10);
+            document.getElementById('card-co').innerText = formatSupabaseValue(d.co);
+            document.getElementById('card-no2').innerText = formatSupabaseValue(d.no2);
+            document.getElementById('card-o3').innerText = formatSupabaseValue(d.o3);
 
-            updateTag('tag-pm25', d.pm25 != null ? d.pm25 : 0, 15);
-            updateTag('tag-pm10', d.pm10 != null ? d.pm10 : 0, 45);
-            updateTag('tag-co', d.co != null ? d.co : 0, 4);
-            updateTag('tag-no2', d.no2 != null ? d.no2 : 0, 25);
-            updateTag('tag-o3', d.o3 != null ? d.o3 : 0, 100);
+            updateTag('tag-pm25', d.pm25 ?? d['pm2.5'], 15);
+            updateTag('tag-pm10', d.pm10, 45);
+            updateTag('tag-co', d.co, 4);
+            updateTag('tag-no2', d.no2, 25);
+            updateTag('tag-o3', d.o3, 100);
         }
         
         // WEATHER DATA POPULATION
         if (weatherData) {
             const w = weatherData;
-            const fmt = (val) => (val != null && !isNaN(Number(val))) ? Number(val).toFixed(1) : '0.0';
             
-            document.getElementById('weather-hero-temp').innerText = fmt(w.temperature);
-            document.getElementById('card-temp').innerText = fmt(w.temperature) + '°C';
-            document.getElementById('card-hum').innerText = fmt(w.humidity) + '%';
-            document.getElementById('card-wind').innerText = fmt(w.wind_speed) + ' km/h';
-            document.getElementById('card-gust').innerText = fmt(w.wind_gust) + ' km/h';
-            document.getElementById('card-rain').innerText = fmt(w.rain_gauge) + ' mm';
+            document.getElementById('weather-hero-temp').innerText = formatSupabaseValue(w.temperature);
+            document.getElementById('card-temp').innerText = formatSupabaseValue(w.temperature, '°C');
+            document.getElementById('card-hum').innerText = formatSupabaseValue(w.humidity, '%');
+            document.getElementById('card-wind').innerText = formatSupabaseValue(w.wind_speed, ' km/h');
+            document.getElementById('card-gust').innerText = formatSupabaseValue(w.wind_gust, ' km/h');
+            document.getElementById('card-rain').innerText = formatSupabaseValue(w.rain_gauge, ' mm');
             
             // Today's rainfall synchronized with overview page
             const todayRainEl = document.getElementById('card-today-rain');
             if (todayRainEl) {
-                const tr = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total).toFixed(1) : '0.0';
-                todayRainEl.innerText = tr + ' mm';
+                let trVal = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total) : 0;
+                if (w.rain_gauge != null && Number(w.rain_gauge) > 0 && trVal < Number(w.rain_gauge)) {
+                    trVal = Number(w.rain_gauge);
+                }
+                todayRainEl.innerText = trVal.toFixed(1) + ' mm';
             }
 
             // Humidity condition: Low (< 60%) = Sunny, High (>= 60%) = Cloudy
@@ -761,7 +809,7 @@ async function refreshDashboard() {
               const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
               return dirs[Math.round(deg / 22.5) % 16];
             };
-            const dir = getCompassDir(w.wind_direction);
+            const dir = (w.wind_direction != null && isNaN(Number(w.wind_direction))) ? w.wind_direction : getCompassDir(w.wind_direction);
             document.getElementById('card-dir').innerText = dir;
 
             const weatherIcon = isRaining ? '🌧️' : (isCloudy ? '☁️' : '☀️');
@@ -785,10 +833,15 @@ async function refreshDashboard() {
             let temps = [];
             
             weatherHistory.forEach((row, i) => {
-                const tsStr = row.timestamp || row.created_at;
-                const tsDate = tsStr ? new Date(tsStr) : null;
-                const formattedTime = tsDate ? tsDate.toLocaleDateString('en-GB') + ', ' + tsDate.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}).toLowerCase() : 'N/A';
-                
+                const ts = formatStreamTimestamp(row);
+                const rowId = row.id != null ? `#${row.id}` : '--';
+                const temp = formatSupabaseValue(row.temperature);
+                const hum = formatSupabaseValue(row.humidity);
+                const wind = formatSupabaseValue(row.wind_speed);
+                const gust = formatSupabaseValue(row.wind_gust);
+                const dir = row.wind_direction || '--';
+                const rain = formatSupabaseValue(row.rain_gauge);
+
                 if (row.temperature != null) temps.push(Number(row.temperature));
                 
                 const tr = document.createElement('tr');
@@ -796,11 +849,17 @@ async function refreshDashboard() {
                 tr.style.borderBottom = '1px solid #f1f5f9';
                 
                 tr.innerHTML = `
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #64748b; white-space: nowrap;">${formattedTime}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${row.temperature != null ? Number(row.temperature).toFixed(1) : 'N/A'}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.humidity != null ? Number(row.humidity).toFixed(1) : 'N/A'}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.wind_speed != null ? Number(row.wind_speed).toFixed(2) : 'N/A'}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); color: #334155;">${row.rain_gauge != null ? Number(row.rain_gauge).toFixed(2) : 'N/A'}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 700; color: #0284c7; font-size: 12px; white-space: nowrap;">${rowId}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap;">
+                      <div style="font-weight: 700;">${ts.istDate}, ${ts.istTime}</div>
+                      <div style="font-size: 10.5px; color: #64748b;">${ts.utcTime}</div>
+                  </td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${temp}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${hum}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${wind}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${gust}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${dir}</td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${rain}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -814,7 +873,7 @@ async function refreshDashboard() {
                 document.getElementById('weather-high-temp').innerText = max + '°';
             }
         } else {
-            tbody.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
         }
 
         // LIVE AQI HISTORY (for chart and table)
@@ -875,49 +934,25 @@ async function refreshDashboard() {
         const heroAqiSubtext = document.getElementById('hero-aqi-subtext');
         const heroLeftBar = document.getElementById('hero-left-bar');
 
-        if (isAqiOffline) {
-            const aqiDuration = formatOfflineDuration(aqiOfflineMinutes);
-            if (aqiBanner) {
-                document.getElementById('aqi-offline-last-update').innerText = aqiLastUpdateTimeStr + ' • ' + aqiDuration.timeAgo;
-                document.getElementById('aqi-offline-badge-text').innerText = 'OFFLINE (' + aqiDuration.badge + ')';
-                aqiBanner.style.display = 'flex';
-            }
-            const aqiLiveBadge = document.getElementById('aqi-live-badge');
-            if (aqiLiveBadge) {
-                aqiLiveBadge.style.backgroundColor = '#fff7ed';
-                aqiLiveBadge.style.color = '#ea580c';
-                aqiLiveBadge.style.borderColor = '#fed7aa';
-                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE (${aqiDuration.pill})`;
-            }
-            if (heroDot) heroDot.style.backgroundColor = '#f97316';
-            if (heroStreamText) heroStreamText.innerText = 'OFFLINE (CACHED DATA)';
-            if (heroAqiSubtext) {
-                heroAqiSubtext.innerText = 'LAST RECORDED AQI';
-                heroAqiSubtext.style.color = '#ea580c';
-            }
-            if (heroLeftBar) heroLeftBar.style.backgroundColor = '#f97316';
-            document.getElementById('latest-time').innerText = aqiLastUpdateTimeStr;
-        } else {
-            if (aqiBanner) aqiBanner.style.display = 'none';
-            const aqiLiveBadge = document.getElementById('aqi-live-badge');
-            if (aqiLiveBadge) {
-                aqiLiveBadge.style.backgroundColor = '#ecfdf5';
-                aqiLiveBadge.style.color = '#059669';
-                aqiLiveBadge.style.borderColor = '#a7f3d0';
-                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
-            }
-            if (heroDot) heroDot.style.backgroundColor = '#22c55e';
-            if (heroStreamText) heroStreamText.innerText = 'Live Stream';
-            if (heroAqiSubtext) {
-                heroAqiSubtext.innerText = 'LIVE AQI';
-                heroAqiSubtext.style.color = '#64748b';
-            }
-            if (heroLeftBar) heroLeftBar.style.backgroundColor = '#22c55e';
-            document.getElementById('latest-time').innerText = aqiLastUpdateTimeStr;
+        if (aqiBanner) aqiBanner.style.display = 'none';
+        const aqiLiveBadge = document.getElementById('aqi-live-badge');
+        if (aqiLiveBadge) {
+            aqiLiveBadge.style.backgroundColor = '#ecfdf5';
+            aqiLiveBadge.style.color = '#059669';
+            aqiLiveBadge.style.borderColor = '#a7f3d0';
+            aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
         }
+        if (heroDot) heroDot.style.backgroundColor = '#22c55e';
+        if (heroStreamText) heroStreamText.innerText = 'Live Stream';
+        if (heroAqiSubtext) {
+            heroAqiSubtext.innerText = 'LIVE AQI';
+            heroAqiSubtext.style.color = '#64748b';
+        }
+        if (heroLeftBar) heroLeftBar.style.backgroundColor = '#22c55e';
+        const latestTimeEl = document.getElementById('latest-time');
+        if (latestTimeEl) latestTimeEl.innerText = aqiLastUpdateTimeStr;
 
         // --- Weather Offline Check ---
-        let isWeatherOffline = true;
         let weatherOfflineMinutes = 0;
         let weatherLastUpdateTimeStr = "Unknown";
 
@@ -925,7 +960,6 @@ async function refreshDashboard() {
             const wLastUpdate = new Date(weatherData.timestamp);
             const wDiffMs = now - wLastUpdate;
             weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
-            isWeatherOffline = weatherOfflineMinutes > 5;
             const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
             weatherLastUpdateTimeStr = weatherOfflineMinutes >= 1440
                 ? wLastUpdate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + ', ' + wTimePart
@@ -935,32 +969,15 @@ async function refreshDashboard() {
         const weatherBanner = document.getElementById('weather-offline-banner');
         const weatherLatestTime = document.getElementById('weather-latest-time');
         
-        if (isWeatherOffline) {
-            const weatherDuration = formatOfflineDuration(weatherOfflineMinutes);
-            if (weatherBanner) {
-                document.getElementById('weather-offline-last-update').innerText = weatherLastUpdateTimeStr + ' • ' + weatherDuration.timeAgo;
-                document.getElementById('weather-offline-badge-text').innerText = 'OFFLINE (' + weatherDuration.badge + ')';
-                weatherBanner.style.display = 'flex';
-            }
-            const weatherLiveBadge = document.getElementById('weather-live-badge');
-            if (weatherLiveBadge) {
-                weatherLiveBadge.style.backgroundColor = '#fff7ed';
-                weatherLiveBadge.style.color = '#ea580c';
-                weatherLiveBadge.style.borderColor = '#fed7aa';
-                weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE (${weatherDuration.pill})`;
-            }
-            if(weatherLatestTime) weatherLatestTime.innerText = weatherLastUpdateTimeStr;
-        } else {
-            if (weatherBanner) weatherBanner.style.display = 'none';
-            const weatherLiveBadge = document.getElementById('weather-live-badge');
-            if (weatherLiveBadge) {
-                weatherLiveBadge.style.backgroundColor = '#ecfdf5';
-                weatherLiveBadge.style.color = '#059669';
-                weatherLiveBadge.style.borderColor = '#a7f3d0';
-                weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
-            }
-            if(weatherLatestTime) weatherLatestTime.innerText = weatherLastUpdateTimeStr;
+        if (weatherBanner) weatherBanner.style.display = 'none';
+        const weatherLiveBadge = document.getElementById('weather-live-badge');
+        if (weatherLiveBadge) {
+            weatherLiveBadge.style.backgroundColor = '#ecfdf5';
+            weatherLiveBadge.style.color = '#059669';
+            weatherLiveBadge.style.borderColor = '#a7f3d0';
+            weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
         }
+        if (weatherLatestTime) weatherLatestTime.innerText = weatherLastUpdateTimeStr;
 
         const isOverallLive = (!isAqiOffline || !isWeatherOffline);
         const minOfflineMins = Math.min(
@@ -998,15 +1015,22 @@ window.__cleanupCurrentPage = function() {
 };
 
 setTimeout(() => {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'weather') {
+            switchLiveTab('weather');
+        }
+    } catch(e) {}
+
     refreshDashboard();
     
-    // Auto-refresh every 12 seconds silently in background
+    // Auto-refresh every 4 seconds silently in background
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {
         if (!document.hidden) {
             refreshDashboard();
         }
-    }, 12000);
+    }, 4000);
 }, 0);
 
 var pollutantDetails = {

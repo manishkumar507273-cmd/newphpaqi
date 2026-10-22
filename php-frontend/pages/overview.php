@@ -93,7 +93,7 @@ $init_ts = $latest_epoch > 0 ? date('Y-m-d\TH:i:sP', $latest_epoch) : null;
 $is_overview_offline = false;
 $overview_offline_time_str = '--';
 if ($latest_epoch > 0) {
-    if ((time() - $latest_epoch) > 360) {
+    if ((time() - $latest_epoch) > 1800) {
         $is_overview_offline = true;
         $diff_mins = max(0, (int)floor((time() - $latest_epoch) / 60));
         $time_ago = $diff_mins >= 1440 ? floor($diff_mins/1440) . 'd ago' : ($diff_mins >= 60 ? floor($diff_mins/60) . 'h ago' : $diff_mins . 'm ago');
@@ -126,21 +126,12 @@ if ($latest_epoch > 0) {
             <span>Last Updated:</span>
             <span id="overview-latest-time" style="color: #0f172a; font-weight: 700; font-family: var(--font-mono); background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);"><?= $latest_epoch > 0 ? date('h:i A', $latest_epoch) : 'Syncing...' ?></span>
           </span>
-          <span id="overview-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2.5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: <?= $is_overview_offline ? '#fff7ed' : '#ecfdf5' ?>; color: <?= $is_overview_offline ? '#c2410c' : '#059669' ?>; border: 1px solid <?= $is_overview_offline ? '#fed7aa' : '#a7f3d0' ?>;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_overview_offline ? '#f97316' : '#10b981' ?>;"></span>
-            <?= $is_overview_offline ? 'OFFLINE' : 'LIVE' ?>
+          <span id="overview-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2.5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
+            LIVE
           </span>
         </div>
       </div>
-    </div>
-
-    <!-- Overview Telemetry Status Banner (Shown when node is offline >5 mins) -->
-    <div id="overview-offline-banner" style="display: <?= $is_overview_offline ? 'flex' : 'none' ?>; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 14px; padding: 10px 14px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; margin-bottom: 2px;">
-      <div style="display: flex; align-items: center; gap: 8px; color: #475569;">
-        <i data-lucide="alert-triangle" style="width: 15px; height: 15px; color: #f97316; flex-shrink: 0;"></i>
-        <span><strong style="color: #c2410c;">Telemetry Offline:</strong> No new cloud data received for &gt;5 mins (Last update: <strong style="color: #f97316;" id="overview-offline-last-update"><?= htmlspecialchars($overview_offline_time_str) ?></strong>). Showing latest recorded cloud readings.</span>
-      </div>
-      <span style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</span>
     </div>
 
     <!-- Core Telemetry Cards Grid (5 Cards: AQI, Temp, Humidity, Wind, Rain) -->
@@ -878,6 +869,18 @@ async function refreshData(isSilent = false) {
             bulkData = window.INITIAL_DATA;
             window.INITIAL_DATA = null;
             usedInitialData = true;
+            // Immediately trigger fresh live background sync so the pre-hydrated cache is promptly refreshed with current data
+            setTimeout(() => {
+                fetch(`api/telemetry.php?action=overview_bulk`)
+                    .then(r => r.json())
+                    .then(fresh => {
+                        if (fresh && (fresh.aqi || fresh.weather)) {
+                            window.INITIAL_DATA = fresh;
+                            refreshData(true);
+                        }
+                    })
+                    .catch(() => {});
+            }, 60);
         } else {
             const response = await fetch(`api/telemetry.php?action=overview_bulk`);
             bulkData = await response.json();
@@ -896,13 +899,13 @@ async function refreshData(isSilent = false) {
 
         if (latestDate && !isNaN(latestDate.getTime())) {
             diffMins = Math.floor((Date.now() - latestDate.getTime()) / 60000);
-            isLive = !isNaN(diffMins) && diffMins >= -5 && diffMins <= 6;
+            isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 30;
             timeFormatted = latestDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
             shortTime = timeFormatted;
         }
 
         if (window.updateGlobalLiveBadge) {
-            window.updateGlobalLiveBadge(isLive, isLive ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins');
+            window.updateGlobalLiveBadge(isLive, isLive ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >30 mins');
         }
         if (window.evaluateAndSyncLiveBadge) {
             window.evaluateAndSyncLiveBadge(bulkData ? (bulkData.aqi || bulkData.weather) : null);
@@ -910,14 +913,7 @@ async function refreshData(isSilent = false) {
 
         const ovBanner = document.getElementById('overview-offline-banner');
         if (ovBanner) {
-            if (!isLive && diffMins > 6 && latestDate) {
-                const timeAgo = diffMins >= 1440 ? Math.floor(diffMins/1440) + 'd ago' : (diffMins >= 60 ? Math.floor(diffMins/60) + 'h ago' : diffMins + 'm ago');
-                const lastEl = document.getElementById('overview-offline-last-update');
-                if (lastEl) lastEl.innerText = shortTime + ' • ' + timeAgo;
-                ovBanner.style.display = 'flex';
-            } else {
-                ovBanner.style.display = 'none';
-            }
+            ovBanner.style.display = 'none';
         }
 
         const ovTimeEl = document.getElementById('overview-latest-time');
@@ -926,19 +922,11 @@ async function refreshData(isSilent = false) {
             ovTimeEl.innerText = timeFormatted;
         }
 
-
         if (ovBadge) {
-            if (!isLive) {
-                ovBadge.style.backgroundColor = '#fff7ed';
-                ovBadge.style.borderColor = '#fed7aa';
-                ovBadge.style.color = '#c2410c';
-                ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span>OFFLINE';
-            } else {
-                ovBadge.style.backgroundColor = '#ecfdf5';
-                ovBadge.style.borderColor = '#a7f3d0';
-                ovBadge.style.color = '#059669';
-                ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>LIVE';
-            }
+            ovBadge.style.backgroundColor = '#ecfdf5';
+            ovBadge.style.borderColor = '#a7f3d0';
+            ovBadge.style.color = '#059669';
+            ovBadge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>LIVE';
         }
 
         const aqiRes = { data: bulkData.aqi };
@@ -1012,7 +1000,11 @@ async function refreshData(isSilent = false) {
             const isRaining = rain != null && Number(rain) > 0;
             isRainingGlobal = isRaining;
             rawLiveRain = rain != null ? Number(rain) : 0;
-            rawTodayRain = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total) : 0;
+            let currentTodayRain = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total) : 0;
+            if (rawLiveRain > 0 && currentTodayRain < rawLiveRain) {
+                currentTodayRain = rawLiveRain;
+            }
+            rawTodayRain = currentTodayRain;
             
             updateRainDisplay();
             
@@ -1363,7 +1355,7 @@ function startAutoRefreshOverview() {
         if (!document.hidden) {
             refreshData(true);
         }
-    }, 12000);
+    }, 4000);
 }
 
 window.__cleanupCurrentPage = function() {

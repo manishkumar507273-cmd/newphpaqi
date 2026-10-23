@@ -1,5 +1,4 @@
 
-
 A modern intelligence platform for real-time air quality index (AQI) telemetry and meteorological monitoring, powered by **PHP**, **JavaScript**, and **Supabase Cloud**.
 
 🌐 **Live Deployment:** [http://localhost:8001](http://localhost:8001)

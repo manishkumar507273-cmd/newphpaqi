@@ -316,8 +316,8 @@ function switchAuthMode(mode) {
         document.getElementById('field-confirm').style.display = 'none';
         document.getElementById('auth-bypass-btn-wrap').style.display = 'none';
         
-        document.getElementById('label-password').innerText = 'Bypass Code';
-        document.getElementById('input-password').placeholder = 'Enter admin code';
+        document.getElementById('label-password').innerText = 'Password';
+        document.getElementById('input-password').placeholder = 'Enter admin password';
         
         document.getElementById('auth-submit-btn').innerHTML = `<i data-lucide="sparkles" style="width: 16px; height: 16px;"></i><span>Unlock Dashboard</span>`;
         
@@ -362,7 +362,10 @@ function mockLogin() {
                         localStorage.setItem('auth_name', name);
                         localStorage.setItem('auth_logged_in', 'true');
                     }
-                    window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + (email ? '&email=' + encodeURIComponent(email) : '');
+                    const adminEmails = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
+                    const isAdminUser = email && adminEmails.includes(email.toLowerCase());
+                    const adminParam = isAdminUser ? '&admin_pass=2847' : '';
+                    window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + (email ? '&email=' + encodeURIComponent(email) : '') + adminParam;
                 })
                 .catch((err) => {
                     btn.innerHTML = `<span>Continue with Google</span>`;
@@ -395,7 +398,7 @@ function mockLogin() {
 function handleAuthSubmit(e) {
     e.preventDefault();
     const email = document.getElementById('input-email').value.trim();
-    const pass = document.getElementById('input-password').value;
+    const pass = document.getElementById('input-password').value.trim();
     const btn = document.getElementById('auth-submit-btn');
     const errBlock = document.getElementById('auth-error-msg');
     const errText = document.getElementById('auth-error-text');
@@ -404,31 +407,64 @@ function handleAuthSubmit(e) {
     const curPage = window.__pendingTargetPage || (new URLSearchParams(window.location.search).get('target')) || window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'live';
     
     if (currentAuthMode === 'admin') {
-        if (pass === '2847') {
-            btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
-            lucide.createIcons();
-            localStorage.setItem('auth_email', 'admin@smartairnet.org');
-            localStorage.setItem('auth_name', 'Admin Developer');
-            localStorage.setItem('auth_logged_in', 'true');
-            setTimeout(() => {
-                window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=Admin+Developer&email=admin%40smartairnet.org';
-            }, 800);
-        } else {
-            errText.innerText = 'Incorrect Admin Password.';
+        btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
+        lucide.createIcons();
+        fetch('api/admin_login.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pass })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                localStorage.setItem('auth_email', 'admin@smartairnet.org');
+                localStorage.setItem('auth_name', 'Admin');
+                localStorage.setItem('auth_logged_in', 'true');
+                window.location.href = '?page=admin&auth=true&admin_pass=' + encodeURIComponent(pass) + '&name=Admin&email=admin@smartairnet.org';
+            } else {
+                errText.innerText = res.error || 'Incorrect Admin Password.';
+                errBlock.style.display = 'flex';
+                btn.innerHTML = `<i data-lucide="sparkles" style="width: 16px; height: 16px;"></i><span>Unlock Dashboard</span>`;
+                lucide.createIcons();
+            }
+        })
+        .catch(() => {
+            errText.innerText = 'Failed to connect to authentication server.';
             errBlock.style.display = 'flex';
-        }
+            btn.innerHTML = `<i data-lucide="sparkles" style="width: 16px; height: 16px;"></i><span>Unlock Dashboard</span>`;
+            lucide.createIcons();
+        });
         return;
     }
     
-    if (email.toLowerCase() === 'admin' && pass === '2847') {
+    if (email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@smartairnet.org') {
         btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
         lucide.createIcons();
-        localStorage.setItem('auth_email', 'admin@smartairnet.org');
-        localStorage.setItem('auth_name', 'Admin Developer');
-        localStorage.setItem('auth_logged_in', 'true');
-        setTimeout(() => {
-            window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=Admin+Developer&email=admin%40smartairnet.org';
-        }, 800);
+        fetch('api/admin_login.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pass })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                localStorage.setItem('auth_email', 'admin@smartairnet.org');
+                localStorage.setItem('auth_name', 'Admin');
+                localStorage.setItem('auth_logged_in', 'true');
+                window.location.href = '?page=admin&auth=true&admin_pass=' + encodeURIComponent(pass) + '&name=Admin&email=admin@smartairnet.org';
+            } else {
+                errText.innerText = res.error || 'Incorrect Admin Password.';
+                errBlock.style.display = 'flex';
+                btn.innerHTML = `<i data-lucide="log-in" style="width: 16px; height: 16px;"></i><span>Sign In</span>`;
+                lucide.createIcons();
+            }
+        })
+        .catch(() => {
+            errText.innerText = 'Failed to connect to authentication server.';
+            errBlock.style.display = 'flex';
+            btn.innerHTML = `<i data-lucide="log-in" style="width: 16px; height: 16px;"></i><span>Sign In</span>`;
+            lucide.createIcons();
+        });
         return;
     }
     

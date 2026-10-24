@@ -26,7 +26,6 @@
     <div class="flex-1 min-w-[280px]">
       <div id="weather-date-str" class="text-[13px] text-slate-500 mb-3 font-semibold">--</div>
       <div class="flex items-center gap-4 mb-3">
-        <span id="weather-temp-icon" class="text-5xl sm:text-6xl leading-none">☀️</span>
         <div class="flex items-baseline gap-1">
           <span id="weather-hero-temp" class="font-mono text-[64px] sm:text-[76px] font-extrabold leading-none tracking-tight text-slate-900">--</span>
           <span class="font-mono text-2xl sm:text-[32px] font-bold text-slate-500">°C</span>

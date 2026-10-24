@@ -50,8 +50,8 @@ if (!is_dir($proofs_dir)) {
     @mkdir($proofs_dir, 0777, true);
 }
 
-// Fallback to temp dir only if local data directory cannot be written to
-if (!file_exists($requests_file) && !@touch($requests_file)) {
+// Fallback to temp dir if local data directory is read-only (standard on Vercel Serverless)
+if (!is_writable($data_dir) || (file_exists($requests_file) && !is_writable($requests_file)) || (!file_exists($requests_file) && !@touch($requests_file))) {
     $requests_file = sys_get_temp_dir() . '/phpAQI_requests.json';
     $proofs_dir = sys_get_temp_dir() . '/phpAQI_proofs';
     if (!is_dir($proofs_dir)) {
@@ -65,6 +65,15 @@ $clean_name = '';
 
 // Decode and save proof document securely
 if (!empty($proof_data) && !empty($proof_name)) {
+    // 1. Strict extension whitelist validation
+    $ext = strtolower(pathinfo($proof_name, PATHINFO_EXTENSION));
+    $allowed_exts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+    if (!in_array($ext, $allowed_exts, true)) {
+        http_response_code(422);
+        echo json_encode(['error' => 'Invalid file format. Only JPG, PNG, WEBP, and PDF documents are permitted.']);
+        exit;
+    }
+
     if (strpos($proof_data, ';base64,') !== false) {
         list(, $data_part) = explode(';base64,', $proof_data);
     } else {
@@ -73,11 +82,20 @@ if (!empty($proof_data) && !empty($proof_name)) {
     
     $binary = base64_decode($data_part);
     if ($binary !== false) {
-        $clean_name = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $proof_name);
-        $unique_name = $new_id . '_' . $clean_name;
+        // Enforce max upload limit of 10MB
+        if (strlen($binary) > 10 * 1024 * 1024) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Uploaded file exceeds the maximum 10MB limit.']);
+            exit;
+        }
+
+        $safe_base = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($proof_name, PATHINFO_FILENAME));
+        if (empty($safe_base)) $safe_base = 'id_proof';
+        $unique_name = $new_id . '_' . substr($safe_base, 0, 40) . '.' . $ext;
         $save_path = $proofs_dir . '/' . $unique_name;
         if (file_put_contents($save_path, $binary)) {
             $proof_file_path = 'data/proofs/' . $unique_name;
+            $clean_name = $unique_name;
         }
     }
 }

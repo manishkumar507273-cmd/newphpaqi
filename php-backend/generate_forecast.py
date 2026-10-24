@@ -22,6 +22,12 @@ if BASE_DIR not in sys.path:
 
 from cpcb_calculator import calculate_aqi, calculate_sub_index, get_cpcb_category, CPCB_BREAKPOINTS
 
+try:
+    from rainfall_model_runner import RainfallForecastEngine
+except Exception as e:
+    print(f"Notice: RainfallForecastEngine import: {e}", file=sys.stderr)
+    RainfallForecastEngine = None
+
 def load_env_file():
     """Load key-value pairs from system environment and candidate .env files."""
     env_vars = dict(os.environ)
@@ -51,8 +57,8 @@ def load_env_file():
 
 ENV = load_env_file()
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL") or ENV.get("VITE_SUPABASE_URL") or ENV.get("SUPABASE_URL") or "https://sgkdpliqlhgiqsabxzxe.supabase.co"
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or ENV.get("VITE_SUPABASE_ANON_KEY") or ENV.get("SUPABASE_KEY") or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30"
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or ENV.get("VITE_SUPABASE_URL") or ENV.get("SUPABASE_URL") or ""
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or ENV.get("VITE_SUPABASE_ANON_KEY") or ENV.get("SUPABASE_KEY") or ""
 
 FORCAST_DIR = os.path.join(PROJECT_DIR, "forcast")
 OUTPUT_JSON_PATH = os.path.join(PROJECT_DIR, "php-frontend", "api", "forecast_data.json")
@@ -150,27 +156,37 @@ def fetch_supabase(table, order_col="timestamp_hour", limit=250):
         print(f"Error fetching from table {table}: {e}", file=sys.stderr)
         return []
 
-def get_weather_icon(hour, temp, humidity, aqi):
+def get_weather_icon(hour, temp, humidity, aqi, is_rain=False, rain_mm=0.0):
+    if is_rain or rain_mm >= 0.2:
+        return '🌧️' if rain_mm >= 2.0 else '🌦️'
     is_night = (hour >= 19 or hour < 6)
-    if humidity > 85:
-        return '🌧️' if humidity > 90 else '🌦️'
     if aqi > 100:
         return '🌫️'
     if is_night:
-        return '🌙' if humidity < 75 else '☁️'
+        if humidity > 92:
+            return '🌫️'
+        return '🌙' if humidity < 80 else '☁️'
     if temp > 32:
         return '☀️'
-    if humidity > 70:
+    if humidity > 80:
+        return '☁️'
+    if humidity > 65:
         return '⛅'
     return '🌤️'
 
-def get_condition_text(temp, humidity, aqi):
+def get_condition_text(temp, humidity, aqi, is_rain=False, rain_mm=0.0):
+    if is_rain or rain_mm >= 0.2:
+        if rain_mm >= 7.5:
+            return 'Heavy Rainfall Expected'
+        elif rain_mm >= 2.5:
+            return 'Steady Rain Expected'
+        return 'Light Rain / Showers'
     if aqi > 200:
         return 'Severely Polluted'
     if aqi > 100:
         return 'Moderate Air Discomfort'
     if humidity > 88:
-        return 'Humid with Rain Risk'
+        return 'Humid Night (Mist/Dew)' if (temp < 27) else 'Humid & Overcast'
     if humidity > 78:
         return 'Humid & Overcast'
     if temp > 33:
@@ -415,7 +431,29 @@ def main():
         # 3-point weighted moving average [0.25, 0.50, 0.25]
         smoothed_24[:, col_idx] = 0.25 * padded[:-2] + 0.50 * padded[1:-1] + 0.25 * padded[2:]
 
-    start_dt = (now_ist + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    # 1.5. Run SAPE 24h Rainfall Forecast Engine (72h historical window from WEATHER_NODE1)
+    rainfall_data = None
+    if RainfallForecastEngine is not None:
+        try:
+            print("Evaluating SAPE 24h Rainfall Forecast Model (72h continuous window)...", file=sys.stderr)
+            rf_engine = RainfallForecastEngine()
+            rainfall_data = rf_engine.predict(weather_rows, now_ist)
+            print(f"Rainfall forecast computed: {rainfall_data['total_24h_rainfall_mm']} mm expected (Peak: {rainfall_data['peak_hourly_rate_mm']} mm/h at {rainfall_data['peak_hour_label']})", file=sys.stderr)
+            
+            # Save dedicated rainfall forecast json
+            rf_json_path = os.path.join(PROJECT_DIR, "php-frontend", "api", "rainfall_forecast_24h.json")
+            with open(rf_json_path, "w", encoding="utf-8") as rf_fp:
+                json.dump(rainfall_data, rf_fp, indent=2)
+        except Exception as e:
+            print(f"Warning: Rainfall model inference encountered error: {e}", file=sys.stderr)
+
+    # When generating hourly forecast:
+    # If run near the top of the hour (minute < 30), forecast starts at the current hour (e.g. 18:00 at 6 PM).
+    # If run in second half of hour, start at the upcoming hour (now + 1h).
+    if now_ist.minute < 30:
+        start_dt = now_ist.replace(minute=0, second=0, microsecond=0)
+    else:
+        start_dt = (now_ist + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
 
     hourly_list = []
     temps = []
@@ -442,7 +480,15 @@ def main():
         temps.append(p_temp)
         aqis.append(aqi_val)
         time_label = target_dt.strftime('%I %p').lstrip('0')
-        icon = get_weather_icon(target_dt.hour, p_temp, p_hum, aqi_val)
+
+        # Extract calibrated rainfall metrics for this hour
+        r_step = rainfall_data['hourly'][i] if (rainfall_data and i < len(rainfall_data.get('hourly', []))) else {}
+        r_prob = r_step.get('rain_prob_pct', 0.0)
+        r_mm = r_step.get('rain_mm', 0.0)
+        r_is_rain = r_step.get('is_rain', False)
+        r_intensity = r_step.get('rain_intensity', 'None')
+
+        icon = get_weather_icon(target_dt.hour, p_temp, p_hum, aqi_val, is_rain=r_is_rain, rain_mm=r_mm)
 
         hourly_list.append({
             'index': i,
@@ -462,6 +508,10 @@ def main():
             'o3': p_o3,
             'temp': p_temp,
             'humidity': p_hum,
+            'rain_prob': r_prob,
+            'rain_mm': r_mm,
+            'is_rain': r_is_rain,
+            'rain_intensity': r_intensity,
             'icon': icon,
             'isNow': (i == 0)
         })
@@ -543,13 +593,17 @@ def main():
             'humidity': hourly_list[0]['humidity'],
             'dayLow': min(temps),
             'dayHigh': max(temps),
-            'condition': get_condition_text(temps[0], hourly_list[0]['humidity'], current_aqi),
+            'condition': get_condition_text(temps[0], hourly_list[0]['humidity'], current_aqi, is_rain=hourly_list[0].get('is_rain', False), rain_mm=hourly_list[0].get('rain_mm', 0.0)),
             'pm25': hourly_list[0]['pm25'],
             'pm10': hourly_list[0]['pm10'],
             'no2': hourly_list[0]['no2'],
             'co': hourly_list[0]['co'],
             'o3': hourly_list[0]['o3'],
-            'confidence': 'High (48h SWT Res-CNN-BiLSTM Wavelet Telemetry)'
+            'rain_24h_mm': rainfall_data['total_24h_rainfall_mm'] if rainfall_data else 0.0,
+            'rain_risk': rainfall_data['rain_risk_level'] if rainfall_data else 'None',
+            'rain_peak_rate': rainfall_data['peak_hourly_rate_mm'] if rainfall_data else 0.0,
+            'rain_peak_hour': rainfall_data['peak_hour_label'] if rainfall_data else 'N/A',
+            'confidence': 'High (48h SWT Res-CNN-BiLSTM + 72h SMVITM Wavelet Telemetry)'
         },
         'parameters': {
             'pm25': {'label': 'PM2.5 Particulate', 'unit': 'µg/m³', 'current': hourly_list[0]['pm25'], 'current_subindex': current_sub_indices.get('PM2.5', 0.0), 'min': round(min(h['pm25'] for h in hourly_list), 2), 'max': round(max(h['pm25'] for h in hourly_list), 2), 'mean': round(sum(h['pm25'] for h in hourly_list) / 24, 2), 'safe_limit': '60.0 µg/m³'},
@@ -558,8 +612,19 @@ def main():
             'co': {'label': 'Carbon Monoxide (CO)', 'unit': 'mg/m³', 'current': hourly_list[0]['co'], 'current_subindex': current_sub_indices.get('CO', 0.0), 'min': round(min(h['co'] for h in hourly_list), 3), 'max': round(max(h['co'] for h in hourly_list), 3), 'mean': round(sum(h['co'] for h in hourly_list) / 24, 3), 'safe_limit': '2.0 mg/m³'},
             'o3': {'label': 'Surface Ozone (O₃)', 'unit': 'µg/m³', 'current': hourly_list[0]['o3'], 'current_subindex': current_sub_indices.get('O₃', 0.0), 'min': round(min(h['o3'] for h in hourly_list), 2), 'max': round(max(h['o3'] for h in hourly_list), 2), 'mean': round(sum(h['o3'] for h in hourly_list) / 24, 2), 'safe_limit': '100.0 µg/m³'},
             'temp': {'label': 'Ambient Temperature', 'unit': '°C', 'current': temps[0], 'min': round(min(temps), 1), 'max': round(max(temps), 1), 'mean': round(sum(temps) / 24, 1), 'safe_limit': 'Campus Baseline'},
-            'humidity': {'label': 'Relative Humidity', 'unit': '%', 'current': hourly_list[0]['humidity'], 'min': round(min(h['humidity'] for h in hourly_list), 1), 'max': round(max(h['humidity'] for h in hourly_list), 1), 'mean': round(sum(h['humidity'] for h in hourly_list) / 24, 1), 'safe_limit': 'Comfort 40-70%'}
+            'humidity': {'label': 'Relative Humidity', 'unit': '%', 'current': hourly_list[0]['humidity'], 'min': round(min(h['humidity'] for h in hourly_list), 1), 'max': round(max(h['humidity'] for h in hourly_list), 1), 'mean': round(sum(h['humidity'] for h in hourly_list) / 24, 1), 'safe_limit': 'Comfort 40-70%'},
+            'rainfall': {
+                'label': 'Rainfall Accumulation',
+                'unit': 'mm',
+                'current': hourly_list[0].get('rain_mm', 0.0),
+                'total_24h': rainfall_data['total_24h_rainfall_mm'] if rainfall_data else 0.0,
+                'peak_hourly': rainfall_data['peak_hourly_rate_mm'] if rainfall_data else 0.0,
+                'peak_hour': rainfall_data['peak_hour_label'] if rainfall_data else 'N/A',
+                'risk': rainfall_data['rain_risk_level'] if rainfall_data else 'None',
+                'safe_limit': 'Campus Drainage Baseline'
+            }
         },
+        'rainfall': rainfall_data,
         'advisory': {
             'title': 'Air Quality Forecast Active',
             'severity': hero_cat['severity'],

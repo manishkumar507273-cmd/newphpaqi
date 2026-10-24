@@ -61,6 +61,18 @@ if (!$target_request) {
     die("<h3>Request Not Found</h3><p>The requested dataset access application was not found or has been removed.</p>");
 }
 
+require_once __DIR__ . '/auth_guard.php';
+
+// Authorization: Requires admin session OR matching approve_token
+$token = trim($_GET['token'] ?? '');
+$token_valid = (!empty($target_request['approve_token']) && !empty($token) && hash_equals($target_request['approve_token'], $token));
+$is_admin = verifyAdminSession();
+
+if (!$is_admin && !$token_valid) {
+    http_response_code(403);
+    die("<div style='font-family:sans-serif;padding:40px;text-align:center;'><h3>Access Denied</h3><p style='color:#64748b;'>Administrator credentials or an authorized security token are required to view this dossier.</p></div>");
+}
+
 $name = htmlspecialchars($target_request['name'] ?? 'Unknown Requester');
 $email = htmlspecialchars($target_request['email'] ?? 'N/A');
 $org = htmlspecialchars($target_request['org'] ?? 'N/A');
@@ -105,8 +117,8 @@ if (!is_dir($proofs_dir)) {
     @mkdir($proofs_dir, 0777, true);
 }
 
-// Auto-restore file on disk from proof_data if missing
-if (!empty($proof_data) && !empty($proof_filename) && !file_exists($proofs_dir . '/' . $proof_filename)) {
+// Auto-restore file on disk from proof_data if missing (only allowed image/pdf formats)
+if (($is_image || $is_pdf) && !empty($proof_data) && !empty($proof_filename) && !file_exists($proofs_dir . '/' . $proof_filename)) {
     $clean_b64 = (strpos($proof_data, ';base64,') !== false) ? explode(';base64,', $proof_data)[1] : $proof_data;
     $binary = @base64_decode($clean_b64);
     if ($binary !== false) {

@@ -1,6 +1,7 @@
 <?php
 // Secure ID proof document viewer with multi-tier storage fallback
 session_start();
+require_once __DIR__ . '/auth_guard.php';
 
 $file = isset($_GET['file']) ? basename($_GET['file']) : '';
 $req_id = isset($_GET['id']) ? trim($_GET['id']) : '';
@@ -8,6 +9,32 @@ $req_id = isset($_GET['id']) ? trim($_GET['id']) : '';
 // Attempt to extract request ID from filename if not explicitly provided
 if (empty($req_id) && preg_match('/^(req_[a-zA-Z0-9]+)/i', $file, $matches)) {
     $req_id = $matches[1];
+}
+
+// Authorization check: Requires admin session OR matching approve_token
+if (!verifyAdminSession()) {
+    $token = trim($_GET['token'] ?? '');
+    $authorized = false;
+    if (!empty($req_id) && !empty($token)) {
+        $reqs_file = __DIR__ . '/../data/requests.json';
+        if (file_exists($reqs_file)) {
+            $reqs = @json_decode(file_get_contents($reqs_file), true) ?: [];
+            foreach ($reqs as $r) {
+                if (($r['id'] ?? '') === $req_id && !empty($r['approve_token'])) {
+                    if (hash_equals($r['approve_token'], $token)) {
+                        $authorized = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (!$authorized) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Forbidden: Administrator credentials or security token required to view proof documents.']);
+        exit;
+    }
 }
 
 $proofs_dir = __DIR__ . '/../data/proofs';
@@ -85,7 +112,12 @@ if (!$found && !empty($req_id)) {
         }
         $binary = @base64_decode($clean_b64);
         if ($binary !== false) {
-            $save_dest = !empty($file) ? ($proofs_dir . '/' . $file) : ($proofs_dir . '/' . $req_id . '_proof.jpg');
+            $save_ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (!in_array($save_ext, ['jpg', 'jpeg', 'png', 'webp', 'pdf'])) {
+                $save_ext = 'jpg';
+            }
+            $safe_filename = !empty($file) ? (pathinfo($file, PATHINFO_FILENAME) . '.' . $save_ext) : ($req_id . '_proof.jpg');
+            $save_dest = $proofs_dir . '/' . $safe_filename;
             if (@file_put_contents($save_dest, $binary)) {
                 $target_file = $save_dest;
                 $found = true;

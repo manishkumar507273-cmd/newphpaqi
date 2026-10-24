@@ -1,3 +1,132 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$admin_whitelist = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
+$env_admin = getenv('ADMIN_EMAIL');
+if ($env_admin && !in_array(strtolower($env_admin), $admin_whitelist)) {
+    $admin_whitelist[] = strtolower($env_admin);
+}
+if (file_exists(__DIR__ . '/../.env')) {
+    $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), 'ADMIN_EMAIL=') === 0) {
+            $ae = trim(substr($line, strlen('ADMIN_EMAIL=')));
+            if ($ae && !in_array(strtolower($ae), $admin_whitelist)) {
+                $admin_whitelist[] = strtolower($ae);
+            }
+        }
+    }
+}
+
+require_once __DIR__ . '/../api/auth_guard.php';
+
+// Direct unlock check if passed via query string
+if (isset($_GET['admin_pass']) && in_array(trim($_GET['admin_pass']), getAdminAllowedPasswords())) {
+    $_SESSION['is_admin'] = true;
+    if (empty($_SESSION['user_id'])) {
+        $_SESSION['user_id'] = 'admin';
+        $_SESSION['user_name'] = 'Administrator';
+        $_SESSION['user_email'] = 'admin@smartairnet.org';
+    }
+}
+
+// Auto authorize if user email is in admin whitelist
+if (!empty($_SESSION['user_email']) && in_array(strtolower(trim($_SESSION['user_email'])), $admin_whitelist)) {
+    $_SESSION['is_admin'] = true;
+}
+
+// Check remember cookie
+if (empty($_SESSION['is_admin']) && !empty($_COOKIE['aqi_remember_auth'])) {
+    $decoded = json_decode(base64_decode($_COOKIE['aqi_remember_auth']), true);
+    if (!empty($decoded['is_admin']) && $decoded['is_admin'] === true) {
+        $_SESSION['is_admin'] = true;
+    }
+    if (!empty($decoded['email']) && in_array(strtolower(trim($decoded['email'])), $admin_whitelist)) {
+        $_SESSION['is_admin'] = true;
+    }
+}
+
+$is_authorized_admin = !empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
+?>
+<?php if (!$is_authorized_admin): ?>
+<!-- Admin Password Gate -->
+<div class="p-4 sm:p-8 max-w-[480px] mx-auto min-h-[60vh] flex flex-col justify-center items-center font-sans text-center">
+  <div style="width: 100%; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 24px; padding: 36px 26px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);">
+    <div style="width: 56px; height: 56px; border-radius: 16px; background: #ecfdf5; border: 1.5px solid #a7f3d0; color: #00bfa5; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+      <i data-lucide="shield-lock" style="width: 28px; height: 28px; color: #00bfa5;"></i>
+    </div>
+    <h2 style="font-size: 21px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Admin Access Required</h2>
+    <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 24px;">
+      This portal is restricted. Please enter the master admin password to view and manage data requests.
+    </p>
+
+    <div id="gate-error-msg" style="display: none; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; background-color: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 12.5px; font-weight: 600; margin-bottom: 16px; text-align: left;">
+      <i data-lucide="alert-circle" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+      <span id="gate-error-text">Incorrect Admin Password.</span>
+    </div>
+
+    <form onsubmit="handleGateUnlock(event)" style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="position: relative;">
+        <i data-lucide="lock" style="position: absolute; left: 14px; top: 13px; color: #94a3b8; width: 16px; height: 16px;"></i>
+        <input id="gate-password-input" type="password" required placeholder="Enter administrator password" style="width: 100%; padding: 11px 40px 11px 40px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 14px; outline: none; box-sizing: border-box; transition: border-color 0.15s ease;" onfocus="this.style.borderColor='#00bfa5';" onblur="this.style.borderColor='#cbd5e1';">
+        <button type="button" onclick="toggleGatePass()" style="position: absolute; right: 12px; top: 12px; background: none; border: none; cursor: pointer; color: #94a3b8; padding: 2px;">
+          <i data-lucide="eye" id="gate-eye-icon" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+
+      <button type="submit" id="gate-unlock-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border-radius: 12px; border: none; background: linear-gradient(135deg, #00bfa5 0%, #009688 100%); color: #ffffff; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35); transition: all 0.15s ease;">
+        <i data-lucide="key" style="width: 16px; height: 16px;"></i>
+        <span>Unlock Dashboard</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleGatePass() {
+    const el = document.getElementById('gate-password-input');
+    el.type = (el.type === 'password') ? 'text' : 'password';
+}
+
+function handleGateUnlock(e) {
+    e.preventDefault();
+    const pass = document.getElementById('gate-password-input').value.trim();
+    const btn = document.getElementById('gate-unlock-btn');
+    const errBox = document.getElementById('gate-error-msg');
+    const errTxt = document.getElementById('gate-error-text');
+    
+    errBox.style.display = 'none';
+    btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Verifying...</span>`;
+    if (window.lucide) lucide.createIcons();
+    
+    fetch('api/admin_login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pass })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            window.location.reload();
+        } else {
+            errTxt.innerText = res.error || 'Incorrect administrator password.';
+            errBox.style.display = 'flex';
+            btn.innerHTML = `<i data-lucide="key" style="width: 16px; height: 16px;"></i> <span>Unlock Dashboard</span>`;
+            if (window.lucide) lucide.createIcons();
+        }
+    })
+    .catch(() => {
+        errTxt.innerText = 'Failed to connect to authentication server.';
+        errBox.style.display = 'flex';
+        btn.innerHTML = `<i data-lucide="key" style="width: 16px; height: 16px;"></i> <span>Unlock Dashboard</span>`;
+        if (window.lucide) lucide.createIcons();
+    });
+}
+if (window.lucide) lucide.createIcons();
+</script>
+<?php else: ?>
 <div class="p-3.5 sm:p-6 md:p-8 max-w-[1200px] mx-auto flex flex-col gap-6 sm:gap-8 font-sans">
   
   <!-- Header Section -->
@@ -377,17 +506,26 @@ function loadRequests(isSilent = false) {
     ])
     .then(([backendDataRaw, firebaseData]) => {
           let firebaseReqs = [];
-          if (firebaseData && typeof firebaseData === 'object') {
-              firebaseReqs = Object.keys(firebaseData).map(k => ({...firebaseData[k], _fbKey: k}));
+          if (firebaseData && typeof firebaseData === 'object' && !firebaseData.error && !Array.isArray(firebaseData)) {
+              firebaseReqs = Object.keys(firebaseData)
+                  .filter(k => firebaseData[k] && typeof firebaseData[k] === 'object' && (firebaseData[k].email || firebaseData[k].id))
+                  .map(k => ({...firebaseData[k], _fbKey: k}));
           }
           
-          firebaseReqs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-          
           const backendData = Array.isArray(backendDataRaw) ? backendDataRaw : [];
-          const allData = [...firebaseReqs, ...backendData];
+          // Prioritize backendData (complete local file storage with proof files), followed by any Firebase records
+          const allData = [...backendData, ...firebaseReqs];
           const uniqueDataMap = new Map();
-          allData.forEach(item => uniqueDataMap.set(item.id, item));
+          allData.forEach(item => {
+              if (item && typeof item === 'object') {
+                  const key = item.id || item._fbKey;
+                  if (key && (item.email || item.name) && !uniqueDataMap.has(key)) {
+                      uniqueDataMap.set(key, item);
+                  }
+              }
+          });
           const finalData = Array.from(uniqueDataMap.values());
+          finalData.sort((a, b) => new Date(b.created_at || b.timestamp || 0) - new Date(a.created_at || a.timestamp || 0));
           window.__lastLoadedRequests = finalData;
           
           if (countBadge) {
@@ -949,56 +1087,53 @@ document.getElementById('confirm-approve-btn').addEventListener('click', functio
     btn.style.opacity = '0.8';
     lucide.createIcons();
     
-    // First get the request from Firebase to extract email for the backend
-    fetch(`${getFbDbUrl()}/requests.json`)
-      .then(res => res.json())
-      .then(fbData => {
-          let reqData = null;
-          let fbKey = null;
-          if (fbData) {
-              for (let key in fbData) {
-                  if (fbData[key] && (fbData[key].id === pendingApprovalId || key === pendingApprovalId)) {
-                      reqData = fbData[key];
-                      fbKey = key;
-                      break;
-                  }
-              }
-          }
-          
-          return fetch('api/approve_request.php', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                  id: pendingApprovalId,
-                  email: reqData ? reqData.email : null,
-                  name: reqData ? reqData.name : null
-              })
-          }).then(res => res.json()).then(data => ({data, fbKey}));
-      })
-      .then(({data, fbKey}) => {
-          if(data && data.success) {
-              // Update Firebase status only if email successfully sent
-              if (fbKey) {
-                  fetch(`${getFbDbUrl()}/requests/${fbKey}.json`, {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ status: 'approved' })
-                  });
-              }
-              
-              if (window.triggerHaptic) window.triggerHaptic('success');
-              closeConfirmModal();
-              setTimeout(loadRequests, 800);
-              const msg = data.message || "Request approved! The dataset (last 24h) has been successfully emailed via SMTP.";
-              showToast(msg, msg.includes('failed') ? "error" : "success");
-          } else {
-              if (window.triggerHaptic) window.triggerHaptic('warning');
-              showToast("Error: " + (data ? data.error || data.message || "Failed to send email" : "Unknown Error"), "error");
-          }
-      })
-      .catch(err => {
-          showToast("Failed to connect to secure server.", "error");
-      })
+    const targetReq = window.__lastLoadedRequests ? window.__lastLoadedRequests.find(r => (r.id === pendingApprovalId || r._fbKey === pendingApprovalId)) : null;
+    const reqEmail = targetReq ? targetReq.email : null;
+    const reqName = targetReq ? targetReq.name : null;
+    const fbKey = targetReq ? targetReq._fbKey : null;
+    
+    fetch('api/approve_request.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            id: pendingApprovalId,
+            email: reqEmail,
+            name: reqName
+        })
+    })
+    .then(async res => {
+        const text = await res.text();
+        try {
+            return JSON.parse(text);
+        } catch(e) {
+            console.error("Non-JSON approval response:", text);
+            throw new Error(text.replace(/<[^>]*>/g, '').trim() || "Server returned non-JSON response");
+        }
+    })
+    .then(data => {
+        if(data && data.success) {
+            // Update Firebase status asynchronously if key exists
+            if (fbKey) {
+                fetch(`${getFbDbUrl()}/requests/${fbKey}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved' })
+                }).catch(() => {});
+            }
+            
+            if (window.triggerHaptic) window.triggerHaptic('success');
+            closeConfirmModal();
+            setTimeout(loadRequests, 800);
+            const msg = data.message || "Request approved! The dataset (last 24h) has been successfully emailed via SMTP.";
+            showToast(msg, data.email_notice ? "warning" : "success");
+        } else {
+            if (window.triggerHaptic) window.triggerHaptic('warning');
+            showToast("Error: " + (data ? data.error || data.message || "Failed to process approval" : "Unknown Error"), "error");
+        }
+    })
+    .catch(err => {
+        showToast("Error: " + (err.message || "Failed to connect to secure server."), "error");
+    })
     .finally(() => {
         btn.innerHTML = originalText;
         btn.style.pointerEvents = 'auto';
@@ -1142,3 +1277,4 @@ if (document.readyState === 'loading') {
     startAdminAutoRefresh();
 }
 </script>
+<?php endif; ?>

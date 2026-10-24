@@ -33,7 +33,7 @@ function dispatchApprovedDatasetEmail($request_id) {
     $requests = json_decode(file_get_contents($requests_file), true) ?: [];
     $target_req = null;
     foreach ($requests as $r) {
-        if (($r['id'] ?? '') === $request_id) {
+        if (($r['id'] ?? '') === $request_id || ($r['_fbKey'] ?? '') === $request_id) {
             $target_req = $r;
             break;
         }
@@ -90,10 +90,13 @@ function dispatchApprovedDatasetEmail($request_id) {
         }
     }
 
-    if (empty($supabaseUrl)) $supabaseUrl = getenv('VITE_SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: '';
-    if (empty($supabaseKey)) $supabaseKey = getenv('VITE_SUPABASE_ANON_KEY') ?: getenv('SUPABASE_KEY') ?: '';
-    if (empty($smtp_user))   $smtp_user   = getenv('SMTP_USER') ?: 'weathernet@sode-edu.in';
-    if (empty($smtp_pass))   $smtp_pass   = getenv('SMTP_PASSWORD') ?: '';
+    $get_mail_env = function($key) {
+        return $_ENV[$key] ?? ($_SERVER[$key] ?? (getenv($key) ?: ''));
+    };
+    if (empty($supabaseUrl)) $supabaseUrl = $get_mail_env('VITE_SUPABASE_URL') ?: $get_mail_env('SUPABASE_URL');
+    if (empty($supabaseKey)) $supabaseKey = $get_mail_env('VITE_SUPABASE_ANON_KEY') ?: $get_mail_env('SUPABASE_KEY');
+    if (empty($smtp_user))   $smtp_user   = $get_mail_env('SMTP_USER') ?: 'weathernet@sode-edu.in';
+    if (empty($smtp_pass))   $smtp_pass   = $get_mail_env('SMTP_PASSWORD');
 
     // Fetch telemetry data from cache or Supabase REST
     $rows = [];

@@ -43,13 +43,16 @@ foreach ($env_paths as $env_path) {
     }
 }
 
-// Fallback to system environment variables (Vercel / hosting) or project default
-if (empty($supabaseUrl)) $supabaseUrl = getenv('VITE_SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: 'https://sgkdpliqlhgiqsabxzxe.supabase.co';
-if (empty($supabaseKey)) $supabaseKey = getenv('VITE_SUPABASE_ANON_KEY') ?: getenv('SUPABASE_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30';
-$TABLE_AQI_LIVE        = getenv('TABLE_AQI_LIVE') ?: $TABLE_AQI_LIVE;
-$TABLE_AQI_HISTORICAL  = getenv('TABLE_AQI_HISTORICAL') ?: (getenv('SOURCE_AQI_TABLE') ?: $TABLE_AQI_HISTORICAL);
-$TABLE_WEATHER_LIVE    = getenv('TABLE_WEATHER_LIVE') ?: $TABLE_WEATHER_LIVE;
-$TABLE_WEATHER_HIST    = getenv('TABLE_WEATHER_HISTORICAL') ?: $TABLE_WEATHER_HIST;
+// Fallback to system environment variables (Vercel serverless / hosting)
+$get_v_env = function($key) {
+    return $_ENV[$key] ?? ($_SERVER[$key] ?? (getenv($key) ?: ''));
+};
+if (empty($supabaseUrl)) $supabaseUrl = $get_v_env('VITE_SUPABASE_URL') ?: $get_v_env('SUPABASE_URL');
+if (empty($supabaseKey)) $supabaseKey = $get_v_env('VITE_SUPABASE_ANON_KEY') ?: $get_v_env('SUPABASE_KEY');
+$TABLE_AQI_LIVE        = $get_v_env('TABLE_AQI_LIVE') ?: $TABLE_AQI_LIVE;
+$TABLE_AQI_HISTORICAL  = $get_v_env('TABLE_AQI_HISTORICAL') ?: ($get_v_env('SOURCE_AQI_TABLE') ?: $TABLE_AQI_HISTORICAL);
+$TABLE_WEATHER_LIVE    = $get_v_env('TABLE_WEATHER_LIVE') ?: $TABLE_WEATHER_LIVE;
+$TABLE_WEATHER_HIST    = $get_v_env('TABLE_WEATHER_HISTORICAL') ?: $TABLE_WEATHER_HIST;
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $limit  = isset($_GET['limit'])  ? intval($_GET['limit'])  : 50;
@@ -73,13 +76,27 @@ function cacheKey(string $key): string {
 function cacheGet(string $key, int $ttl) {
     $file = cacheKey($key);
     if (file_exists($file) && (time() - filemtime($file)) < $ttl) {
-        $raw = file_get_contents($file);
-        if ($raw !== false) return json_decode($raw, true);
+        $raw = @file_get_contents($file);
+        if ($raw !== false && strlen($raw) > 50) return json_decode($raw, true);
+    }
+    return null;
+}
+
+function cacheGetStale(string $key) {
+    $file = cacheKey($key);
+    if (file_exists($file)) {
+        $raw = @file_get_contents($file);
+        if ($raw !== false && strlen($raw) > 50) return json_decode($raw, true);
     }
     return null;
 }
 
 function cacheSet(string $key, $data): void {
+    if ($data === null) return;
+    if (is_array($data) && isset($data['aqi']) && $data['aqi'] === null && isset($data['weather']) && $data['weather'] === null) {
+        // Do not corrupt cache with empty/failed response
+        return;
+    }
     file_put_contents(cacheKey($key), json_encode($data), LOCK_EX);
 }
 
@@ -197,7 +214,7 @@ function formatWeatherReading($row) {
     if (!$row) return null;
     $tsRaw = $row['timestamp_hour'] ?? $row['created_at'] ?? $row['timestamp'] ?? null;
     $row['timestamp'] = parseToIstIso($tsRaw);
-    if (isset($row['temperature']) && $row['temperature'] !== null) $row['temperature'] = round((float)$row['temperature'], 2);
+    if (isset($row['temperature']) && $row['temperature'] !== null) $row['temperature'] = round((float)$row['temperature'], 1);
     if (isset($row['humidity']) && $row['humidity'] !== null) $row['humidity'] = round((float)$row['humidity'], 2);
     if (isset($row['wind_speed']) && $row['wind_speed'] !== null) $row['wind_speed'] = round((float)$row['wind_speed'], 2);
     if (isset($row['wind_gust']) && $row['wind_gust'] !== null) $row['wind_gust'] = round((float)$row['wind_gust'], 2);
@@ -256,7 +273,7 @@ function formatRawReading($raw) {
         'id'                => $raw['id'] ?? null,
         'created_at'        => $raw['created_at'] ?? ($raw['timestamp'] ?? null),
         'timestamp'         => parseToIstIso($ts),
-        'temperature'       => isset($raw['temperature']) && $raw['temperature'] !== null ? round((float)$raw['temperature'], 2) : null,
+        'temperature'       => isset($raw['temperature']) && $raw['temperature'] !== null ? round((float)$raw['temperature'], 1) : null,
         'humidity'          => isset($raw['humidity']) && $raw['humidity'] !== null ? round((float)$raw['humidity'], 2) : null,
         'pm25'              => $rawPm25,
         'pm2.5'             => $rawPm25,
@@ -287,9 +304,9 @@ function getForecastWeatherIcon(int $hour, float $temp, float $humidity, int $aq
 function buildForecastPayloadFromDbRows(array $rows): ?array {
     if (empty($rows)) return null;
 
-    // Discard any rows that have already elapsed in the past
+    // Retain rows for the current clock hour and upcoming hours (drops only when the full clock hour has elapsed)
     $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
-    $nowTs = $now->getTimestamp();
+    $currentHourStartTs = (clone $now)->setTime((int)$now->format('H'), 0, 0)->getTimestamp();
 
     $futureRows = [];
     foreach ($rows as $r) {
@@ -297,7 +314,7 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         try {
             $dt = new DateTime($tsStr);
             $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-            if ($dt->getTimestamp() > $nowTs) {
+            if ($dt->getTimestamp() >= $currentHourStartTs) {
                 $futureRows[] = $r;
             }
         } catch (Exception $e) {
@@ -420,6 +437,48 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         'humidity' => $calcStats($humVals,  0.0, 0.0),
     ];
 
+    // Enrich with 24h Rainfall Model forecast if available
+    $rfJsonPath = __DIR__ . '/rainfall_forecast_24h.json';
+    $rfData = null;
+    if (file_exists($rfJsonPath)) {
+        $rfRaw = @file_get_contents($rfJsonPath);
+        if ($rfRaw) {
+            $rfDecoded = json_decode($rfRaw, true);
+            if (is_array($rfDecoded) && !empty($rfDecoded['hourly'])) {
+                $rfData = $rfDecoded;
+                $rfHourlyMap = [];
+                foreach ($rfData['hourly'] as $rfH) {
+                    if (isset($rfH['hour'])) {
+                        $rfHourlyMap[(int)$rfH['hour']] = $rfH;
+                    }
+                }
+                foreach ($hourlyList as $idx => &$hItem) {
+                    $hr = (int)($hItem['hour'] ?? -1);
+                    $rfMatch = $rfHourlyMap[$hr] ?? ($rfData['hourly'][$idx] ?? null);
+                    if ($rfMatch) {
+                        $hItem['rain_prob'] = $rfMatch['rain_prob_pct'] ?? 0.0;
+                        $hItem['rain_mm'] = $rfMatch['rain_mm'] ?? 0.0;
+                        $hItem['is_rain'] = $rfMatch['is_rain'] ?? false;
+                        $hItem['rain_intensity'] = $rfMatch['rain_intensity'] ?? 'Dry';
+                    }
+                }
+                unset($hItem);
+
+                $h0 = $hourlyList[0];
+                $parameters['rainfall'] = [
+                    'current' => $h0['rain_mm'] ?? 0.0,
+                    'unit' => 'mm',
+                    'name' => 'Rainfall Rate',
+                    'status' => $h0['rain_intensity'] ?? 'Dry',
+                    'prob' => $h0['rain_prob'] ?? 0.0,
+                    'total_24h' => $rfData['total_24h_rainfall_mm'] ?? 0.0,
+                    'safe_limit' => ($rfData['rain_risk_level'] ?? 'Low') . ' Risk',
+                    'mean' => 'Peak ' . ($rfData['peak_hourly_rate_mm'] ?? 0) . ' mm/h'
+                ];
+            }
+        }
+    }
+
     if ($curAqi <= 50) {
         $advTitle = 'Air Quality Ideal (Good) · Minimal Health Impact';
         $advDesc = "Predicted ambient AQI is {$curAqi} (Dominant: {$curDom}). All criteria pollutant concentrations are within safe limits.";
@@ -524,9 +583,16 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
             'no2' => $h0['no2'],
             'co' => $h0['co'],
             'o3' => $h0['o3'],
+            'rain_mm' => $h0['rain_mm'] ?? 0.0,
+            'rain_prob' => $h0['rain_prob'] ?? 0.0,
+            'rain_24h_mm' => $rfData['total_24h_rainfall_mm'] ?? ($h0['rain_mm'] ?? 0.0),
+            'rain_max_mm_h' => $rfData['peak_hourly_rate_mm'] ?? 0.0,
+            'rain_status' => $rfData['rain_risk_summary'] ?? 'Dry / Safe',
+            'rain_prob_next' => $h0['rain_prob'] ?? 0.0,
             'confidence' => 'Calibrated Machine Learning Output'
         ],
         'parameters' => $parameters,
+        'rainfall' => $rfData,
         'advisory' => [
             'title' => $advTitle,
             'severity' => $sevLabel,
@@ -547,11 +613,16 @@ switch ($action) {
     case 'aqi_live': {
         $ckey = "aqi_live";
         $cached = cacheGet($ckey, 30);
-        if ($cached !== null) { echo json_encode($cached); break; }
+        if ($cached !== null && !empty($cached['data'])) { echo json_encode($cached); break; }
 
         $data = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=id.desc&limit=1", $supabaseKey);
         $out  = ($data && count($data) > 0) ? ['data' => formatRawReading($data[0])] : null;
-        cacheSet($ckey, $out);
+        if ($out !== null) {
+            cacheSet($ckey, $out);
+        } else {
+            $stale = cacheGetStale($ckey);
+            if ($stale !== null) $out = $stale;
+        }
         echo json_encode($out);
         break;
     }
@@ -559,11 +630,16 @@ switch ($action) {
     case 'weather_live': {
         $ckey = "weather_live";
         $cached = cacheGet($ckey, 30);
-        if ($cached !== null) { echo json_encode($cached); break; }
+        if ($cached !== null && !empty($cached['data'])) { echo json_encode($cached); break; }
 
         $data = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=id.desc&limit=1", $supabaseKey);
         $out  = ($data && count($data) > 0) ? ['data' => $data[0]] : null;
-        cacheSet($ckey, $out);
+        if ($out !== null) {
+            cacheSet($ckey, $out);
+        } else {
+            $stale = cacheGetStale($ckey);
+            if ($stale !== null) $out = $stale;
+        }
         echo json_encode($out);
         break;
     }
@@ -685,8 +761,8 @@ switch ($action) {
     case 'overview_bulk': {
         $lim   = 60;
         $ckey  = "overview_bulk";
-        $cached = cacheGet($ckey, 3);
-        if ($cached !== null) { echo json_encode($cached); break; }
+        $cached = cacheGet($ckey, 15);
+        if ($cached !== null && (!empty($cached['aqi']) || !empty($cached['weather']))) { echo json_encode($cached); break; }
 
         $dtMidnightIst = new DateTime('today midnight', new DateTimeZone('Asia/Kolkata'));
         $dtMidnightIst->setTimezone(new DateTimeZone('UTC'));
@@ -701,6 +777,15 @@ switch ($action) {
         $res = [];
         $res['aqi']     = ($raw['aqi_hist']     && count($raw['aqi_hist'])     > 0) ? formatRawReading($raw['aqi_hist'][0])     : null;
         $res['weather'] = ($raw['weather_hist'] && count($raw['weather_hist']) > 0) ? formatWeatherReading($raw['weather_hist'][0]) : null;
+
+        // If momentary network blip occurred and both are null, fall back to last known good cached reading
+        if ($res['aqi'] === null && $res['weather'] === null) {
+            $stale = cacheGetStale($ckey);
+            if ($stale !== null && (!empty($stale['aqi']) || !empty($stale['weather']))) {
+                echo json_encode($stale);
+                break;
+            }
+        }
 
         $hist = [];
         if ($raw['aqi_hist']) { foreach ($raw['aqi_hist'] as $row) { $f = formatRawReading($row); if ($f) $hist[] = $f; } }
@@ -725,7 +810,9 @@ switch ($action) {
         }
         $res['today_rain_total'] = round($today_rain_sum, 2);
 
-        cacheSet($ckey, $res);
+        if ($res['aqi'] !== null || $res['weather'] !== null) {
+            cacheSet($ckey, $res);
+        }
         echo json_encode($res);
         break;
     }
@@ -772,8 +859,8 @@ switch ($action) {
         $force = isset($_GET['force']) && $_GET['force'] === '1';
         $jsonFile = __DIR__ . '/forecast_data.json';
 
-        // 1. FAST PATH: Read from local forecast_data.json on disk if fresh (< 60s)
-        $cacheTtlSeconds = 60;
+        // 1. FAST PATH: Read from local forecast_data.json on disk if fresh (< 3600s / 1 hour)
+        $cacheTtlSeconds = 3600;
         $isFresh = file_exists($jsonFile) && (time() - @filemtime($jsonFile) < $cacheTtlSeconds);
 
         if (!$force && $isFresh) {
@@ -782,14 +869,14 @@ switch ($action) {
                 $payload = json_decode($raw, true);
                 if (is_array($payload) && !empty($payload['hourly'])) {
                     $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
-                    $nowTs = $now->getTimestamp();
+                    $currentHourStartTs = (clone $now)->setTime((int)$now->format('H'), 0, 0)->getTimestamp();
                     $filteredHourly = [];
 
                     foreach ($payload['hourly'] as $item) {
                         try {
                             $dt = new DateTime($item['iso'] ?? '');
                             $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-                            if ($dt->getTimestamp() > $nowTs) {
+                            if ($dt->getTimestamp() >= $currentHourStartTs) {
                                 $filteredHourly[] = $item;
                             }
                         } catch (Exception $e) {
@@ -830,6 +917,12 @@ switch ($action) {
                         $payload['hero']['no2'] = $h0['no2'];
                         $payload['hero']['co'] = $h0['co'];
                         $payload['hero']['o3'] = $h0['o3'];
+                        if (isset($h0['rain_mm'])) {
+                            $payload['hero']['rain_mm'] = $h0['rain_mm'];
+                            $payload['hero']['rain_prob'] = $h0['rain_prob'] ?? 0;
+                            $payload['hero']['is_rain'] = $h0['is_rain'] ?? false;
+                            $payload['hero']['rain_intensity'] = $h0['rain_intensity'] ?? 'Dry';
+                        }
 
                         if (isset($payload['parameters'])) {
                             if (isset($payload['parameters']['pm25'])) $payload['parameters']['pm25']['current'] = $h0['pm25'];
@@ -839,6 +932,11 @@ switch ($action) {
                             if (isset($payload['parameters']['o3']))   $payload['parameters']['o3']['current']   = $h0['o3'];
                             if (isset($payload['parameters']['temp'])) $payload['parameters']['temp']['current'] = $h0['temp'];
                             if (isset($payload['parameters']['humidity'])) $payload['parameters']['humidity']['current'] = $h0['humidity'];
+                            if (isset($payload['parameters']['rainfall'])) {
+                                $payload['parameters']['rainfall']['current'] = $h0['rain_mm'] ?? 0.0;
+                                $payload['parameters']['rainfall']['prob'] = $h0['rain_prob'] ?? 0.0;
+                                $payload['parameters']['rainfall']['status'] = $h0['rain_intensity'] ?? 'Dry';
+                            }
                         }
 
                         echo json_encode($payload);

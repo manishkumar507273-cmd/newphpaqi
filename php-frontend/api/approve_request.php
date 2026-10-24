@@ -6,9 +6,8 @@
  *  2. POST requests from Admin Portal AJAX calls
  */
 date_default_timezone_set('Asia/Kolkata');
-session_start();
-
 require_once __DIR__ . '/send_approved_dataset.php';
+require_once __DIR__ . '/auth_guard.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -57,7 +56,7 @@ if ($method === 'GET') {
     // Token verification (prevents unauthorized callers)
     if (!empty($target_req['approve_token'])) {
         $token_valid = (!empty($token) && hash_equals($target_req['approve_token'], $token));
-        $is_admin_session = !empty($_SESSION['admin_logged_in']);
+        $is_admin_session = verifyAdminSession();
         if (!$token_valid && !$is_admin_session) {
             renderApprovalHtml('Access Denied', 'This authorization link is invalid or has expired.', 'error');
             exit;
@@ -110,7 +109,9 @@ if ($method === 'GET') {
 // ─────────────────────────────────────────────────────────────
 // Branch B: POST Request (Admin Portal AJAX Call)
 // ─────────────────────────────────────────────────────────────
+if (ob_get_length()) ob_clean();
 header('Content-Type: application/json');
+requireAdminAuth();
 
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input || empty($input['id'])) {
@@ -119,12 +120,22 @@ if (!$input || empty($input['id'])) {
     exit;
 }
 
-$req_id = $input['id'];
+$req_id = trim((string)$input['id']);
 $target_index = -1;
 $target_req   = null;
 
 foreach ($requests as $idx => $r) {
-    if (($r['id'] ?? '') === $req_id) {
+    $curr_id = $r['id'] ?? '';
+    $curr_fb = $r['_fbKey'] ?? '';
+    $curr_email = strtolower(trim($r['email'] ?? ''));
+    $search_email = !empty($input['email']) ? strtolower(trim($input['email'])) : '';
+
+    if ($curr_id === $req_id || $curr_fb === $req_id) {
+        $target_index = $idx;
+        $target_req   = $r;
+        break;
+    }
+    if (!empty($search_email) && $curr_email === $search_email) {
         $target_index = $idx;
         $target_req   = $r;
         break;
@@ -142,10 +153,12 @@ $requests[$target_index]['status'] = 'approved';
 $requests[$target_index]['approved_at'] = date('Y-m-d H:i:s');
 @file_put_contents($requests_file, json_encode($requests, JSON_PRETTY_PRINT));
 
-// Dispatch dataset
-$dispatch_res = dispatchApprovedDatasetEmail($req_id);
-$target_email = $target_req['email'] ?? '';
+// Dispatch dataset using the canonical request id
+$canonical_id = $target_req['id'] ?? $req_id;
+$dispatch_res = dispatchApprovedDatasetEmail($canonical_id);
+$target_email = $target_req['email'] ?? ($input['email'] ?? '');
 
+if (ob_get_length()) ob_clean();
 if ($dispatch_res['success']) {
     echo json_encode([
         'success' => true,
@@ -154,7 +167,8 @@ if ($dispatch_res['success']) {
 } else {
     echo json_encode([
         'success' => true,
-        'message' => "Request marked approved, but email delivery noted: " . ($dispatch_res['error'] ?? 'check server logs')
+        'email_notice' => $dispatch_res['error'] ?? 'SMTP delivery issue',
+        'message' => "Request marked approved! Telemetry dispatch note: " . ($dispatch_res['error'] ?? 'Check server logs')
     ]);
 }
 exit;

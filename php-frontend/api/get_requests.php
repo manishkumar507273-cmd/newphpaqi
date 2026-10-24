@@ -1,9 +1,9 @@
 <?php
 header('Content-Type: application/json');
-session_start();
+require_once __DIR__ . '/auth_guard.php';
 
-// Security: Vercel serverless doesn't share sessions reliably across lambda instances
-// Removing strict session check for demo purposes, UI is already guarded by index.php
+// Strict administrator verification
+requireAdminAuth();
 
 $data_dir = __DIR__ . '/../data';
 $requests_file = $data_dir . '/requests.json';

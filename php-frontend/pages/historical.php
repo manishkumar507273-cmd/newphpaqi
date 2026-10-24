@@ -270,6 +270,13 @@
           <label style="display: block; font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Requested Dataset Scope</label>
           <div id="modal-dataset-scope" style="font-size: 14px; color: #64748b; font-weight: 400;">
             AQI Telemetry — Data provided is strictly limited to 24 hours of the previous day.
+            <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; font-size: 12.5px; color: #475569; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span>For more dataset</span>
+              <span style="color: #94a3b8;">→</span>
+              <button type="button" onclick="closeDatasetModal(); document.getElementById('contact-modal').style.display='flex'; if (window.lucide) { lucide.createIcons(); }" style="background: none; border: none; font-size: 12.5px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,191,165,0.4); text-underline-offset: 3px; display: inline-flex; align-items: center; gap: 2px; padding: 0; transition: all 0.2s;" onmouseover="this.style.color='#0d9488';" onmouseout="this.style.color='#00bfa5';">
+                Contact Us
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1237,6 +1244,13 @@ function renderModalScopeHtml(scopeLabel, targetDate, timeFrame) {
       </div>
       <div style="font-size: 12px; color: #ef4444; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; font-weight: 600;">
         * Data provided is strictly limited to 24 hours of the previous day (${timeFrame}).
+      </div>
+      <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; font-size: 12.5px; color: #475569; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <span>For more dataset</span>
+        <span style="color: #94a3b8;">→</span>
+        <button type="button" onclick="closeDatasetModal(); document.getElementById('contact-modal').style.display='flex'; if (window.lucide) { lucide.createIcons(); }" style="background: none; border: none; font-size: 12.5px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,191,165,0.4); text-underline-offset: 3px; display: inline-flex; align-items: center; gap: 2px; padding: 0; transition: all 0.2s;" onmouseover="this.style.color='#0d9488';" onmouseout="this.style.color='#00bfa5';">
+          Contact Us
+        </button>
       </div>
     `;
     lucide.createIcons();

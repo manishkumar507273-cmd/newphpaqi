@@ -168,13 +168,19 @@ function safeParseDate(ts) {
 }
 window.safeParseDate = safeParseDate;
 
+let lastKnownLiveReading = null;
+
 function evaluateAndSyncLiveBadge(reading) {
     if (!window.updateGlobalLiveBadge) return;
-    if (!reading) {
+    if (reading && (reading.timestamp || reading.created_at)) {
+        lastKnownLiveReading = reading;
+    }
+    const targetReading = reading || lastKnownLiveReading;
+    if (!targetReading) {
         window.updateGlobalLiveBadge(false, 'No telemetry data received from cloud');
         return;
     }
-    const ts = reading.timestamp || reading.created_at || reading.timestamp_hour;
+    const ts = targetReading.timestamp || targetReading.created_at || targetReading.timestamp_hour;
     if (!ts) {
         window.updateGlobalLiveBadge(false, 'No timestamp received from cloud');
         return;
@@ -185,7 +191,7 @@ function evaluateAndSyncLiveBadge(reading) {
         return;
     }
     const diffMins = Math.floor((Date.now() - parsedDate.getTime()) / 60000);
-    const isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 30;
+    const isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 90;
     const timeFormatted = parsedDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
     const tip = isLive 
         ? `Live telemetry streaming from cloud (Updated: ${timeFormatted})` 
@@ -206,6 +212,7 @@ async function getLiveAqi() {
         const data = await response.json();
         if (data && data.data) {
             apiCache.aqiLive = data;
+            apiCache.lastFetchTime = Date.now();
             evaluateAndSyncLiveBadge(data.data);
             return data;
         }
@@ -229,6 +236,7 @@ async function getLiveWeather() {
         const data = await response.json();
         if (data && data.data) {
             apiCache.weatherLive = data;
+            apiCache.lastFetchTime = Date.now();
             evaluateAndSyncLiveBadge(data.data);
             return data;
         }
@@ -312,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
-    if (window.INITIAL_DATA) {
+    if (window.INITIAL_DATA && (window.INITIAL_DATA.aqi || window.INITIAL_DATA.weather)) {
         evaluateAndSyncLiveBadge(window.INITIAL_DATA.aqi || window.INITIAL_DATA.weather);
     } else {
         getLiveAqi();

@@ -35,6 +35,36 @@ if (!empty($_SESSION['user_name']) && $_SESSION['user_name'] === 'Manish B') {
     }
 }
 
+require_once __DIR__ . '/api/auth_guard.php';
+
+// Direct admin bypass unlock if passed via query string
+if (isset($_GET['admin_pass']) && in_array(trim($_GET['admin_pass']), getAdminAllowedPasswords())) {
+    $_SESSION['is_admin'] = true;
+    if (empty($_SESSION['user_id'])) {
+        $_SESSION['user_id'] = 'admin';
+        $_SESSION['user_name'] = 'Admin';
+        $_SESSION['user_email'] = 'admin@smartairnet.org';
+    }
+}
+
+// Admin email whitelist
+$admin_whitelist = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
+$env_admin = getenv('ADMIN_EMAIL');
+if ($env_admin && !in_array(strtolower($env_admin), $admin_whitelist)) {
+    $admin_whitelist[] = strtolower($env_admin);
+}
+if (file_exists(__DIR__ . '/.env')) {
+    $env_lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($env_lines as $el) {
+        if (strpos(trim($el), 'ADMIN_EMAIL=') === 0) {
+            $ae = trim(substr($el, strlen('ADMIN_EMAIL=')));
+            if ($ae && !in_array(strtolower($ae), $admin_whitelist)) {
+                $admin_whitelist[] = strtolower($ae);
+            }
+        }
+    }
+}
+
 // Restore session from persistent 1-year cookie if session file was flushed or device reopened
 if (empty($_SESSION['user_id']) && !empty($_COOKIE['aqi_remember_auth']) && !isset($_GET['logout'])) {
     $decoded = json_decode(base64_decode($_COOKIE['aqi_remember_auth']), true);
@@ -47,11 +77,16 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['aqi_remember_auth']) && !iss
             $_SESSION['user_id'] = !empty($decoded['id']) ? $decoded['id'] : 'guest';
             $_SESSION['user_name'] = !empty($decoded['name']) ? $decoded['name'] : explode('@', $em)[0];
             $_SESSION['user_email'] = $em;
-            if (!empty($decoded['is_admin']) || strpos(strtolower($_SESSION['user_name']), 'admin') !== false) {
+            if (!empty($decoded['is_admin']) && $decoded['is_admin'] === true) {
                 $_SESSION['is_admin'] = true;
             }
         }
     }
+}
+
+// Automatically grant admin rights if current user email is in admin whitelist
+if (!empty($_SESSION['user_email']) && in_array(strtolower(trim($_SESSION['user_email'])), $admin_whitelist)) {
+    $_SESSION['is_admin'] = true;
 }
 
 // Auth handling: saves real authenticated session and writes persistent cookie
@@ -71,15 +106,16 @@ if (isset($_GET['auth']) && $_GET['auth'] === 'true') {
         $_SESSION['user_id'] = 'guest';
         $_SESSION['user_name'] = $raw_name ?: ($raw_email ? explode('@', $raw_email)[0] : 'User');
         $_SESSION['user_email'] = $raw_email;
-        if (strpos(strtolower($_SESSION['user_name']), 'admin') !== false) {
+        if ((isset($_GET['admin_pass']) && in_array(trim($_GET['admin_pass']), getAdminAllowedPasswords())) || ($raw_email && in_array(strtolower($raw_email), $admin_whitelist))) {
             $_SESSION['is_admin'] = true;
+            $_SESSION['user_name'] = 'Admin';
         }
 
         if ($raw_email) {
             // Set 1-year persistent cookie so returning users are automatically recognized
             $cookie_payload = base64_encode(json_encode([
                 'id' => $_SESSION['user_id'],
-                'name' => $_SESSION['user_name'],
+                'name' => !empty($_SESSION['is_admin']) ? 'Admin' : $_SESSION['user_name'],
                 'email' => $_SESSION['user_email'],
                 'is_admin' => !empty($_SESSION['is_admin']),
                 'time' => time()
@@ -132,10 +168,11 @@ if (!in_array($page, $allowed_pages)) {
     $page = 'overview';
 }
 
-$is_logged_in = isset($_SESSION['user_id']);
+$is_logged_in = isset($_SESSION['user_id']) || (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
 $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
 
-$protected_pages = ['live', 'historical', 'predictive', 'weather', 'admin'];
+// Pages requiring user login; admin page handles its own dedicated gate and session auth
+$protected_pages = ['live', 'historical', 'predictive', 'weather'];
 
 if (in_array($page, $protected_pages) && !$is_logged_in) {
     if ($is_ajax) {
@@ -235,13 +272,11 @@ if ($is_ajax) {
 
     <?php
     $initial_overview_json = 'null';
-    if ($page === 'overview') {
-        $cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
-        if (file_exists($cache_file)) {
-            $raw_cache = @file_get_contents($cache_file);
-            if ($raw_cache && strlen($raw_cache) > 50) {
-                $initial_overview_json = $raw_cache;
-            }
+    $cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
+    if (file_exists($cache_file)) {
+        $raw_cache = @file_get_contents($cache_file);
+        if ($raw_cache && strlen($raw_cache) > 50) {
+            $initial_overview_json = $raw_cache;
         }
     }
     ?>

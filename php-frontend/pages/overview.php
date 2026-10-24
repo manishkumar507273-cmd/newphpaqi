@@ -899,13 +899,13 @@ async function refreshData(isSilent = false) {
 
         if (latestDate && !isNaN(latestDate.getTime())) {
             diffMins = Math.floor((Date.now() - latestDate.getTime()) / 60000);
-            isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 30;
+            isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 90;
             timeFormatted = latestDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
             shortTime = timeFormatted;
         }
 
         if (window.updateGlobalLiveBadge) {
-            window.updateGlobalLiveBadge(isLive, isLive ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >30 mins');
+            window.updateGlobalLiveBadge(isLive, isLive ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >90 mins');
         }
         if (window.evaluateAndSyncLiveBadge) {
             window.evaluateAndSyncLiveBadge(bulkData ? (bulkData.aqi || bulkData.weather) : null);
@@ -913,7 +913,7 @@ async function refreshData(isSilent = false) {
 
         const ovBanner = document.getElementById('overview-offline-banner');
         if (ovBanner) {
-            ovBanner.style.display = 'none';
+            ovBanner.style.display = isLive ? 'none' : 'flex';
         }
 
         const ovTimeEl = document.getElementById('overview-latest-time');

@@ -5,7 +5,29 @@ $is_logged_in = isset($_SESSION['user_id']);
 $user_display_name = !empty($_SESSION['user_name']) ? $_SESSION['user_name'] : (!empty($_SESSION['user_email']) ? explode('@', $_SESSION['user_email'])[0] : 'User');
 $user_email = $_SESSION['user_email'] ?? '';
 $user_initial = strtoupper(substr($user_display_name, 0, 1));
-$is_admin = !empty($_SESSION['is_admin']) || ($is_logged_in && !empty($_SESSION['user_name']) && strpos(strtolower($_SESSION['user_name']), 'admin') !== false);
+$admin_whitelist = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
+$env_admin = getenv('ADMIN_EMAIL');
+if ($env_admin && !in_array(strtolower($env_admin), $admin_whitelist)) {
+    $admin_whitelist[] = strtolower($env_admin);
+}
+if (file_exists(__DIR__ . '/../.env')) {
+    $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), 'ADMIN_EMAIL=') === 0) {
+            $ae = trim(substr($line, strlen('ADMIN_EMAIL=')));
+            if ($ae && !in_array(strtolower($ae), $admin_whitelist)) {
+                $admin_whitelist[] = strtolower($ae);
+            }
+        }
+    }
+}
+$is_admin = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true)
+    || ($is_logged_in && !empty($_SESSION['user_email']) && in_array(strtolower(trim($_SESSION['user_email'])), $admin_whitelist));
+if ($is_admin) {
+    $_SESSION['is_admin'] = true;
+    $user_display_name = 'Admin';
+    $user_initial = 'A';
+}
 
 // Check server-side telemetry cache to determine if cloud data is currently live (received <= 6 mins)
 $is_telemetry_live = true;
@@ -22,7 +44,7 @@ if (file_exists($telemetry_cache_file)) {
         $latest_epoch = max($aqi_epoch, $weather_epoch);
         if ($latest_epoch > 0) {
             $telemetry_last_updated_time = date('h:i A', $latest_epoch);
-            if ((time() - $latest_epoch) > 360 || (time() - $latest_epoch) < -120) {
+            if ((time() - $latest_epoch) > 5400 || (time() - $latest_epoch) < -120) {
                 $is_telemetry_live = false;
             }
         }
@@ -33,7 +55,7 @@ $page_titles = [
     'overview'   => 'Atmosphere Snapshot',
     'live'       => 'Live Data Stream',
     'historical' => 'Analytics Archive',
-    'predictive' => 'Forecast & Advisory',
+    'predictive' => 'Weather Forecast',
     'admin'      => 'Admin Center',
     'weather'    => 'Weather Conditions'
 ];
@@ -78,23 +100,26 @@ foreach ($env_paths as $env_path) {
 }
 
 // Fallback to Vercel/System environment variables if not found in .env file
-if (empty($env_config['supabaseUrl'])) $env_config['supabaseUrl'] = getenv('VITE_SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: '';
-if (empty($env_config['supabaseKey'])) $env_config['supabaseKey'] = getenv('VITE_SUPABASE_ANON_KEY') ?: getenv('SUPABASE_KEY') ?: '';
-if (empty($env_config['firebaseApiKey'])) $env_config['firebaseApiKey'] = getenv('VITE_FIREBASE_API_KEY') ?: getenv('FIREBASE_API_KEY') ?: '';
-if (empty($env_config['firebaseAuthDomain'])) $env_config['firebaseAuthDomain'] = getenv('VITE_FIREBASE_AUTH_DOMAIN') ?: getenv('FIREBASE_AUTH_DOMAIN') ?: '';
-if (empty($env_config['firebaseProjectId'])) $env_config['firebaseProjectId'] = getenv('VITE_FIREBASE_PROJECT_ID') ?: getenv('FIREBASE_PROJECT_ID') ?: '';
-if (empty($env_config['firebaseDatabaseUrl'])) $env_config['firebaseDatabaseUrl'] = getenv('FIREBASE_DATABASE_URL') ?: getenv('VITE_FIREBASE_DATABASE_URL') ?: '';
+$get_layout_env = function($key) {
+    return $_ENV[$key] ?? ($_SERVER[$key] ?? (getenv($key) ?: ''));
+};
+if (empty($env_config['supabaseUrl'])) $env_config['supabaseUrl'] = $get_layout_env('VITE_SUPABASE_URL') ?: $get_layout_env('SUPABASE_URL');
+if (empty($env_config['supabaseKey'])) $env_config['supabaseKey'] = $get_layout_env('VITE_SUPABASE_ANON_KEY') ?: $get_layout_env('SUPABASE_KEY');
+if (empty($env_config['firebaseApiKey'])) $env_config['firebaseApiKey'] = $get_layout_env('VITE_FIREBASE_API_KEY') ?: $get_layout_env('FIREBASE_API_KEY');
+if (empty($env_config['firebaseAuthDomain'])) $env_config['firebaseAuthDomain'] = $get_layout_env('VITE_FIREBASE_AUTH_DOMAIN') ?: $get_layout_env('FIREBASE_AUTH_DOMAIN');
+if (empty($env_config['firebaseProjectId'])) $env_config['firebaseProjectId'] = $get_layout_env('VITE_FIREBASE_PROJECT_ID') ?: $get_layout_env('FIREBASE_PROJECT_ID');
+if (empty($env_config['firebaseDatabaseUrl'])) $env_config['firebaseDatabaseUrl'] = $get_layout_env('FIREBASE_DATABASE_URL') ?: $get_layout_env('VITE_FIREBASE_DATABASE_URL');
 
 ?>
 
 <script>
 window.ENV_CONFIG = <?= json_encode($env_config) ?>;
 window.FIREBASE_ENV_CONFIG = {
-    apiKey: window.ENV_CONFIG.firebaseApiKey || "AIzaSyC8UYQMhOaS5SFAdkCcdISTkEWw57WsmFs",
-    authDomain: window.ENV_CONFIG.firebaseAuthDomain || "smart-air-net.firebaseapp.com",
-    projectId: window.ENV_CONFIG.firebaseProjectId || "smart-air-net",
-    databaseURL: window.ENV_CONFIG.firebaseDatabaseUrl || "https://smart-air-net-default-rtdb.firebaseio.com",
-    storageBucket: "smart-air-net.firebasestorage.app",
+    apiKey: window.ENV_CONFIG.firebaseApiKey || "",
+    authDomain: window.ENV_CONFIG.firebaseAuthDomain || "",
+    projectId: window.ENV_CONFIG.firebaseProjectId || "",
+    databaseURL: window.ENV_CONFIG.firebaseDatabaseUrl || "",
+    storageBucket: window.ENV_CONFIG.firebaseProjectId ? `${window.ENV_CONFIG.firebaseProjectId}.firebasestorage.app` : "",
     messagingSenderId: "647061464752",
     appId: "1:647061464752:web:349c77286659f3a9d4fd75",
     measurementId: "G-09JTD9RQQJ"
@@ -103,7 +128,8 @@ window.__currentPage = <?= json_encode($current_page) ?>;
 window.__currentUser = <?= json_encode([
     'is_logged_in' => $is_logged_in,
     'name' => $is_logged_in ? ($_SESSION['user_name'] ?? '') : '',
-    'email' => $is_logged_in ? ($_SESSION['user_email'] ?? '') : ''
+    'email' => $is_logged_in ? ($_SESSION['user_email'] ?? '') : '',
+    'is_admin' => $is_admin
 ]) ?>;
 window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_email'] ?? '') : '') ?>;
 window.__isTelemetryLive = <?= $is_telemetry_live ? 'true' : 'false' ?>;
@@ -204,19 +230,32 @@ window.closeAccountModal = function() {
 window.updateUserAccountUI = function(user) {
     if (!user) return;
     const email = user.email || '';
-    const name = user.displayName || (email ? email.split('@')[0] : 'User');
-    const initial = (name || email || 'U')[0].toUpperCase();
+    const adminEmails = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
+    const isAdmin = Boolean(
+        (window.__currentUser && window.__currentUser.is_admin) || 
+        user.is_admin || 
+        (email && adminEmails.includes(email.toLowerCase())) ||
+        (user.displayName && (user.displayName.toLowerCase() === 'admin' || user.displayName.toLowerCase().includes('administrator') || user.displayName.toLowerCase().includes('admin dev')))
+    );
+
+    const name = isAdmin ? 'Admin' : (user.displayName || (email ? email.split('@')[0] : 'User'));
+    const initial = isAdmin ? 'A' : (name || email || 'U')[0].toUpperCase();
 
     // Mobile top bar
     const mobBtn = document.getElementById('mobile-user-btn');
     const mobSignin = document.getElementById('mobile-signin-btn');
     const mobAvatar = document.getElementById('mobile-user-avatar');
     const mobTag = document.getElementById('mobile-user-initial-tag');
-    if (mobAvatar) mobAvatar.innerText = initial;
+    if (mobAvatar) {
+        mobAvatar.innerText = initial;
+        mobAvatar.style.background = isAdmin ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
+    }
     if (mobTag) mobTag.innerText = name;
-    if (mobBtn) mobBtn.style.display = 'inline-flex';
+    if (mobBtn) {
+        mobBtn.style.display = 'inline-flex';
+        mobBtn.style.borderColor = isAdmin ? '#6366f1' : '#00bfa5';
+    }
     if (mobSignin) mobSignin.style.display = 'none';
-
 
     // Desktop header
     const deskContainer = document.getElementById('desktop-user-badge');
@@ -224,9 +263,28 @@ window.updateUserAccountUI = function(user) {
     const deskAvatar = document.getElementById('desktop-user-avatar');
     const deskName = document.getElementById('desktop-user-name');
     const deskEmail = document.getElementById('desktop-user-email');
-    if (deskAvatar) deskAvatar.innerText = initial;
+    const deskAdminTag = document.getElementById('desktop-user-admin-tag');
+
+    if (deskAvatar) {
+        deskAvatar.innerText = initial;
+        deskAvatar.style.background = isAdmin ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
+    }
     if (deskName) deskName.innerText = name;
-    if (deskEmail) deskEmail.innerText = email;
+
+    if (isAdmin) {
+        if (deskEmail) {
+            deskEmail.innerText = '';
+            deskEmail.style.display = 'none';
+        }
+        if (deskAdminTag) deskAdminTag.style.display = 'inline-block';
+    } else {
+        if (deskEmail) {
+            deskEmail.innerText = email;
+            deskEmail.style.display = 'block';
+        }
+        if (deskAdminTag) deskAdminTag.style.display = 'none';
+    }
+
     if (deskContainer) deskContainer.style.display = 'flex';
     if (deskSignin) deskSignin.style.display = 'none';
 
@@ -234,9 +292,20 @@ window.updateUserAccountUI = function(user) {
     const accModalAvatar = document.getElementById('acc-modal-avatar');
     const accModalName = document.getElementById('acc-modal-name');
     const accModalEmail = document.getElementById('acc-modal-email');
-    if (accModalAvatar) accModalAvatar.innerText = initial;
+    if (accModalAvatar) {
+        accModalAvatar.innerText = initial;
+        accModalAvatar.style.background = isAdmin ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
+    }
     if (accModalName) accModalName.innerText = name;
-    if (accModalEmail) accModalEmail.innerText = email || 'Signed in user';
+    if (accModalEmail) {
+        if (isAdmin) {
+            accModalEmail.style.display = 'none';
+            accModalEmail.innerText = '';
+        } else {
+            accModalEmail.style.display = 'block';
+            accModalEmail.innerText = email || 'Signed in user';
+        }
+    }
 };
 
 window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) {
@@ -266,7 +335,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
             badge.style.backgroundColor = '#fff7ed';
             badge.style.color = '#c2410c';
             badge.style.borderColor = '#fed7aa';
-            badge.title = tooltip || 'Sensor node offline: No live telemetry received in cloud for >5 mins';
+            badge.title = tooltip || 'Sensor node offline: No live telemetry received in cloud for >90 mins';
             if (dot) {
                 dot.className = 'status-dot';
                 dot.style.backgroundColor = '#f97316';
@@ -366,8 +435,13 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
         <i data-lucide="database" style="width: 15px; height: 15px; opacity: <?= $current_page === 'historical' ? '1' : '0.75' ?>;"></i> Analytics Archive
       </a>
       <a href="?page=predictive" data-nav-link="predictive" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
-        <i data-lucide="line-chart" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Predictive Forecast
+        <i data-lucide="cloud-rain" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Weather Forecast
       </a>
+      <?php if ($is_admin): ?>
+      <a href="?page=admin" data-nav-link="admin" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; text-decoration: none; color: <?= $current_page === 'admin' ? '#ffffff' : '#6366f1' ?>; background-color: <?= $current_page === 'admin' ? '#6366f1' : 'rgba(99, 102, 241, 0.08)' ?>; box-shadow: <?= $current_page === 'admin' ? '0 4px 14px rgba(99, 102, 241, 0.35)' : 'none' ?>; border: 1px solid <?= $current_page === 'admin' ? '#6366f1' : 'rgba(99, 102, 241, 0.25)' ?>; transition: all 0.2s ease;">
+        <i data-lucide="shield-check" style="width: 15px; height: 15px; opacity: 1; color: <?= $current_page === 'admin' ? '#ffffff' : '#6366f1' ?>;"></i> Admin Center
+      </a>
+      <?php endif; ?>
     </nav>
 
     <!-- Right: Auth & Admin & Mobile Trigger -->
@@ -375,21 +449,17 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
 
       <!-- Desktop Auth & Admin -->
       <div class="hidden md:flex items-center gap-2.5">
-        <?php if ($is_admin): ?>
-          <a href="?page=admin" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #e2e8f0; background-color: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
-            <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #00bfa5;"></i>
-            <span>Admin Center</span>
-          </a>
-        <?php endif; ?>
-
         <!-- Desktop Auth Block -->
         <div id="desktop-user-badge" style="display: <?= $is_logged_in ? 'flex' : 'none' ?>; align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
-          <div id="desktop-user-avatar" style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.35); flex-shrink: 0;">
-            <?= htmlspecialchars($user_initial) ?>
+          <div id="desktop-user-avatar" style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, <?= $is_admin ? '#6366f1 0%, #4f46e5 100%' : '#00bfa5 0%, #0d9488 100%' ?>); color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.35); flex-shrink: 0;">
+            <?= htmlspecialchars($is_admin ? 'A' : $user_initial) ?>
           </div>
-          <div style="display: flex; flex-direction: column; line-height: 1.15; max-width: 130px; overflow: hidden;">
-            <span id="desktop-user-name" style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($user_display_name) ?></span>
-            <span id="desktop-user-email" style="font-size: 9.5px; font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($user_email) ?></span>
+          <div style="display: flex; flex-direction: column; justify-content: center; line-height: 1.2; max-width: 140px; overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span id="desktop-user-name" style="font-size: 12.5px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($is_admin ? 'Admin' : $user_display_name) ?></span>
+              <span id="desktop-user-admin-tag" style="display: <?= $is_admin ? 'inline-block' : 'none' ?>; font-size: 8.5px; font-weight: 800; background: #6366f1; color: white; padding: 1px 5px; border-radius: 999px; letter-spacing: 0.04em;">ADMIN</span>
+            </div>
+            <span id="desktop-user-email" style="display: <?= $is_admin ? 'none' : 'block' ?>; font-size: 9.5px; font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($is_admin ? '' : $user_email) ?></span>
           </div>
           <a href="?logout=true" onclick="window.signOutUser(); return false;" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
             <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
@@ -401,7 +471,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
         </button>
         
         <!-- Live / Offline Badge (Desktop) -->
-        <div id="header-live-badge-desktop" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins' ?>" style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer;">
+        <div id="header-live-badge-desktop" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >90 mins' ?>" style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer;">
           <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#16a34a' : '#f97316' ?>;"></span>
           <span class="status-text"><?= $is_telemetry_live ? 'LIVE' : 'OFFLINE' ?></span>
         </div>
@@ -410,7 +480,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
       <!-- Mobile Right Items (Visible on mobile screens) -->
       <div class="flex md:hidden items-center gap-2 flex-shrink-0">
         <!-- Live / Offline Badge (Mobile) -->
-        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >5 mins' ?>" style="display: flex; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 4px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
+        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >90 mins' ?>" style="display: flex; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 4px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
           <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#16a34a' : '#f97316' ?>;"></span>
           <span class="status-text"><?= $is_telemetry_live ? 'LIVE' : 'OFFLINE' ?></span>
         </div>
@@ -456,21 +526,13 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
       <div style="display: flex; align-items: center; gap: 8px;">
         <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Logo" style="width: 22px; height: 22px; object-fit: contain;">
         <span style="font-weight: 700; color: #0f172a;">Smart WeatherNet</span>
-        <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">&bull; SMVITM Campus</span>
       </div>
 
-      <span style="color: #cbd5e1; font-weight: 300;" class="hidden sm:inline">|</span>
+      <span style="color: #cbd5e1; font-weight: 300;">|</span>
 
-      <button type="button" onclick="document.getElementById('contact-modal').style.display='flex';" style="background: none; border: none; font-size: 13px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,191,165,0.4); text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#0d9488';" onmouseout="this.style.color='#00bfa5';">
+      <button type="button" onclick="document.getElementById('contact-modal').style.display='flex'; if (window.lucide) { lucide.createIcons(); }" style="background: none; border: none; font-size: 13px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,191,165,0.4); text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#0d9488';" onmouseout="this.style.color='#00bfa5';">
         Contact Us
       </button>
-
-      <span style="color: #cbd5e1; font-weight: 300;" class="hidden sm:inline">|</span>
-
-      <a href="mailto:weathernet@sode-edu.in" style="font-weight: 600; color: #475569; text-decoration: none; display: flex; align-items: center; gap: 5px; transition: color 0.2s;" onmouseover="this.style.color='#00bfa5'" onmouseout="this.style.color='#475569'">
-        <i data-lucide="mail" style="width: 14px; height: 14px; color: #00bfa5;"></i>
-        <span>weathernet@sode-edu.in</span>
-      </a>
       
     </footer>
   </main>
@@ -501,16 +563,16 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
 
     <!-- Forecast -->
     <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-      <i data-lucide="line-chart" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
+      <i data-lucide="cloud-rain" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Weather</span>
     </a>
 
-    <!-- Admin (Only for Admin users) -->
     <?php if ($is_admin): ?>
-      <a href="?page=admin" data-bottom-nav="admin" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'admin' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-        <i data-lucide="shield-check" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'admin' ? 'color: #00bfa5;' : '' ?>"></i>
-        <span style="font-size: 10px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Admin</span>
-      </a>
+    <!-- Admin Center -->
+    <a href="?page=admin" data-bottom-nav="admin" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'admin' ? '#6366f1' : '#64748b' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(99, 102, 241, 0.12)' : 'transparent' ?>;">
+      <i data-lucide="shield-check" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'admin' ? 'color: #6366f1;' : '' ?>"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'admin' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Admin</span>
+    </a>
     <?php endif; ?>
 
 
@@ -525,20 +587,26 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
         <i data-lucide="x" style="width: 15px; height: 15px;"></i>
       </button>
       <div style="padding: 24px 20px 20px; text-align: center;">
-        <div id="acc-modal-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; margin: 0 auto 12px; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
-          <?= htmlspecialchars($user_initial) ?>
+        <div id="acc-modal-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, <?= $is_admin ? '#6366f1 0%, #4f46e5 100%' : '#00bfa5 0%, #0d9488 100%' ?>); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; margin: 0 auto 12px; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
+          <?= htmlspecialchars($is_admin ? 'A' : $user_initial) ?>
         </div>
         <h3 id="acc-modal-name" style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
-          <?= htmlspecialchars($user_display_name) ?>
+          <?= htmlspecialchars($is_admin ? 'Admin' : $user_display_name) ?>
         </h3>
-        <p id="acc-modal-email" style="margin: 3px 0 14px; font-size: 13px; color: #64748b; word-break: break-all; font-family: var(--font-mono);">
-          <?= htmlspecialchars($user_email ?: 'Signed in user') ?>
+        <p id="acc-modal-email" style="margin: 3px 0 14px; font-size: 13px; color: #64748b; word-break: break-all; font-family: var(--font-mono); <?= $is_admin ? 'display: none;' : '' ?>">
+          <?= htmlspecialchars($is_admin ? '' : ($user_email ?: 'Signed in user')) ?>
         </p>
         <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #059669; font-size: 11px; font-weight: 700; margin-bottom: 20px;">
           <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
           <span>Active Authenticated Session</span>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
+          <?php if ($is_admin): ?>
+          <a href="?page=admin" onclick="closeAccountModal()" style="display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 11px 16px; border-radius: 12px; background: #e0e7ff; border: 1.5px solid #c7d2fe; color: #4338ca; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; transition: all 0.15s ease;">
+            <i data-lucide="shield-check" style="width: 16px; height: 16px; color: #4f46e5;"></i>
+            <span>Open Admin Center</span>
+          </a>
+          <?php endif; ?>
           <a href="?logout=true" onclick="window.signOutUser(); return false;" style="display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 11px 16px; border-radius: 12px; background: #fee2e2; border: 1.5px solid #fca5a5; color: #b91c1c; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; transition: all 0.15s ease;">
             <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
             <span>Sign Out from this Device</span>
@@ -554,7 +622,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
   <?php include __DIR__ . '/auth-modal.php'; ?>
   
   <!-- Contact Us Developer Modal -->
-  <div id="contact-modal" style="display: none; position: fixed; z-index: 100; inset: 0; align-items: center; justify-content: center; padding: 20px;">
+  <div id="contact-modal" style="display: none; position: fixed; z-index: 10000; inset: 0; align-items: center; justify-content: center; padding: 20px;">
     <!-- Backdrop -->
     <div style="position: absolute; inset: 0; background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);" onclick="document.getElementById('contact-modal').style.display='none';"></div>
     
@@ -585,6 +653,16 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
           Dr. Nagaraj Bhat <i data-lucide="arrow-up-right" style="width: 14px; height: 14px;"></i>
         </a>
       </p>
+
+      <div style="margin: 20px auto; width: 40px; height: 2px; background-color: #e2e8f0; border-radius: 2px;"></div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">Contact Email</span>
+        <a href="mailto:weathernet@sode-edu.in" style="font-weight: 600; font-size: 13px; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; transition: all 0.2s;" onmouseover="this.style.borderColor='#00bfa5'; this.style.color='#00bfa5'; this.style.background='#f0fdfa';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.color='#475569'; this.style.background='#f8fafc';">
+          <i data-lucide="mail" style="width: 15px; height: 15px; color: #00bfa5;"></i>
+          <span>weathernet@sode-edu.in</span>
+        </a>
+      </div>
     </div>
   </div>
 

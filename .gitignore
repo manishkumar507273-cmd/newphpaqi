@@ -28,6 +28,7 @@ dist/
 # Environment variables
 .env
 .env*
+!.env.example
 .env.local
 .env.*.local
 env*
@@ -38,8 +39,21 @@ php-backend/.env
 php-backend/.env.*
 php-frontend/.env
 php-frontend/.env.*
+!php-frontend/.env.example
 files_for_friend/
 *.zip
+
+# User Data & Uploaded Verification Documents (CRITICAL PII)
+php-frontend/data/proofs/
+php-frontend/data/requests.json
+data/proofs/
+data/requests.json
+!php-frontend/data/requests.example.json
+
+# Local Runtime Caches & Dynamic Forecast JSON
+php-frontend/api/rainfall_forecast_24h.json
+php-frontend/api/forecast_data.json
+forecast_cron.log
 
 # IDEs & Editors
 .vscode/

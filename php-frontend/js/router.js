@@ -123,11 +123,20 @@
         document.querySelectorAll('[data-nav-link]').forEach(el => {
             const pageKey = el.getAttribute('data-nav-link');
             const isActive = pageKey === targetPage;
-            el.style.backgroundColor = isActive ? '#00bfa5' : 'transparent';
-            el.style.color = isActive ? '#ffffff' : '#64748b';
-            el.style.boxShadow = isActive ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none';
+            if (pageKey === 'admin') {
+                el.style.backgroundColor = isActive ? '#6366f1' : 'rgba(99, 102, 241, 0.08)';
+                el.style.color = isActive ? '#ffffff' : '#6366f1';
+                el.style.boxShadow = isActive ? '0 4px 14px rgba(99, 102, 241, 0.35)' : 'none';
+            } else {
+                el.style.backgroundColor = isActive ? '#00bfa5' : 'transparent';
+                el.style.color = isActive ? '#ffffff' : '#64748b';
+                el.style.boxShadow = isActive ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none';
+            }
             const icon = el.querySelector('i');
-            if (icon) icon.style.opacity = isActive ? '1' : '0.75';
+            if (icon) {
+                icon.style.opacity = isActive ? '1' : '0.85';
+                if (pageKey === 'admin') icon.style.color = isActive ? '#ffffff' : '#6366f1';
+            }
         });
 
         // Update Mobile Dropdown Nav items
@@ -142,24 +151,26 @@
         document.querySelectorAll('[data-bottom-nav]').forEach(el => {
             const pageKey = el.getAttribute('data-bottom-nav');
             const isActive = pageKey === targetPage;
+            const activeColor = (pageKey === 'admin') ? '#6366f1' : '#00bfa5';
+            const activeBg = (pageKey === 'admin') ? 'rgba(99, 102, 241, 0.12)' : 'rgba(0, 191, 165, 0.08)';
             const icon = el.querySelector('i') || el.querySelector('svg');
             const label = el.querySelector('span');
             if (isActive) {
-                el.style.color = '#00bfa5';
-                el.style.backgroundColor = 'rgba(0, 191, 165, 0.08)';
+                el.style.color = activeColor;
+                el.style.backgroundColor = activeBg;
                 if (icon) {
-                    icon.style.color = '#00bfa5';
+                    icon.style.color = activeColor;
                     icon.style.transform = 'scale(1.1)';
                 }
                 if (label) {
-                    label.style.color = '#00bfa5';
+                    label.style.color = activeColor;
                     label.style.fontWeight = '700';
                 }
             } else {
                 el.style.color = '#64748b';
                 el.style.backgroundColor = 'transparent';
                 if (icon) {
-                    icon.style.color = '#64748b';
+                    icon.style.color = (pageKey === 'admin') ? '#6366f1' : '#64748b';
                     icon.style.transform = 'scale(1)';
                 }
                 if (label) {
@@ -184,9 +195,9 @@
             return;
         }
 
-        // Instant client-side auth check for protected pages
-        const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather', 'admin'];
-        const isUserLoggedIn = Boolean(window.__currentUser && window.__currentUser.is_logged_in);
+        // Instant client-side auth check for protected pages (admin handles its own dedicated gate)
+        const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather'];
+        const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin));
 
         if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) {
             window.__pendingTargetPage = targetPage;
@@ -198,7 +209,7 @@
                     const pageLabels = {
                         live: 'Live Data Stream',
                         historical: 'Analytics Archive',
-                        predictive: 'Predictive Forecast',
+                        predictive: 'Weather Forecast',
                         weather: 'Weather Telemetry',
                         admin: 'Admin Center'
                     };
@@ -271,7 +282,7 @@
                         const pageLabels = {
                             live: 'Live Data Stream',
                             historical: 'Analytics Archive',
-                            predictive: 'Predictive Forecast',
+                            predictive: 'Weather Forecast',
                             weather: 'Weather Telemetry',
                             admin: 'Admin Center'
                         };

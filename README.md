@@ -77,7 +77,7 @@ Alternatively, deploy the `php-frontend` directory to any standard Apache/Nginx 
 
 ### 2. Administrator Access & SMTP Configuration
 
-- **Admin Dashboard Code**: The default admin login code is `1234`.
+- **Admin Dashboard Code**: Configured via `ADMIN_PASSWORD` in `.env` (default: `2847`).
 - **Email Configuration**: Update `api/approve_request.php` with your Gmail App Password to enable dataset dispatch.
 
 ---

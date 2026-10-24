@@ -1,6 +1,9 @@
 <?php
 header('Content-Type: application/json');
-session_start();
+require_once __DIR__ . '/auth_guard.php';
+
+// Strict administrator verification
+requireAdminAuth();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

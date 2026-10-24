@@ -611,6 +611,13 @@ function formatSupabaseValue(val, suffix = '', defaultVal = '--') {
     return num.toString() + suffix;
 }
 
+function formatTempOneDecimal(val, suffix = '', defaultVal = '--') {
+    if (val === null || val === undefined || val === '') return defaultVal;
+    const num = Number(val);
+    if (isNaN(num)) return String(val) + suffix;
+    return num.toFixed(1) + suffix;
+}
+
 function formatStreamTimestamp(row) {
     const rawTs = row.created_at || row.timestamp;
     if (!rawTs) return '--';
@@ -752,8 +759,8 @@ async function refreshDashboard() {
         if (weatherData) {
             const w = weatherData;
             
-            document.getElementById('weather-hero-temp').innerText = formatSupabaseValue(w.temperature);
-            document.getElementById('card-temp').innerText = formatSupabaseValue(w.temperature, '°C');
+            document.getElementById('weather-hero-temp').innerText = formatTempOneDecimal(w.temperature);
+            document.getElementById('card-temp').innerText = formatTempOneDecimal(w.temperature, '°C');
             document.getElementById('card-hum').innerText = formatSupabaseValue(w.humidity, '%');
             document.getElementById('card-wind').innerText = formatSupabaseValue(w.wind_speed, ' km/h');
             document.getElementById('card-gust').innerText = formatSupabaseValue(w.wind_gust, ' km/h');
@@ -800,7 +807,7 @@ async function refreshDashboard() {
             const weatherIcon = isRaining ? '🌧️' : (isCloudy ? '☁️' : '☀️');
 
             const tempIconEl = document.getElementById('weather-temp-icon');
-            if (tempIconEl) tempIconEl.innerText = weatherIcon;
+            if (tempIconEl) tempIconEl.remove();
 
             const heroLabelEl = document.getElementById('weather-hero-label');
             if (heroLabelEl) heroLabelEl.remove();
@@ -818,7 +825,7 @@ async function refreshDashboard() {
             
             weatherHistory.forEach((row, i) => {
                 const timeStr = formatStreamTimestamp(row);
-                const temp = formatSupabaseValue(row.temperature);
+                const temp = formatTempOneDecimal(row.temperature);
                 const hum = formatSupabaseValue(row.humidity);
                 const wind = formatSupabaseValue(row.wind_speed);
                 const gust = formatSupabaseValue(row.wind_gust);
@@ -891,7 +898,7 @@ async function refreshDashboard() {
             }
         }
         
-        // --- AQI Offline Check ---
+        // --- AQI Offline Check (Sensors log hourly; healthy threshold is 90 mins) ---
         let isAqiOffline = true;
         let aqiOfflineMinutes = 0;
         let aqiLastUpdateTimeStr = "Unknown";
@@ -900,7 +907,7 @@ async function refreshDashboard() {
             const lastUpdate = new Date(aqiData.timestamp);
             const diffMs = now - lastUpdate;
             aqiOfflineMinutes = Math.floor(diffMs / 60000);
-            isAqiOffline = aqiOfflineMinutes > 5;
+            isAqiOffline = aqiOfflineMinutes > 90;
             const timePart = lastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
             aqiLastUpdateTimeStr = aqiOfflineMinutes >= 1440
                 ? lastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + timePart
@@ -913,25 +920,36 @@ async function refreshDashboard() {
         const heroAqiSubtext = document.getElementById('hero-aqi-subtext');
         const heroLeftBar = document.getElementById('hero-left-bar');
 
-        if (aqiBanner) aqiBanner.style.display = 'none';
+        if (aqiBanner) aqiBanner.style.display = isAqiOffline ? 'flex' : 'none';
+        const aqiOffTime = document.getElementById('aqi-offline-last-update');
+        if (aqiOffTime) aqiOffTime.innerText = aqiLastUpdateTimeStr;
+
         const aqiLiveBadge = document.getElementById('aqi-live-badge');
         if (aqiLiveBadge) {
-            aqiLiveBadge.style.backgroundColor = '#ecfdf5';
-            aqiLiveBadge.style.color = '#059669';
-            aqiLiveBadge.style.borderColor = '#a7f3d0';
-            aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
+            if (isAqiOffline) {
+                aqiLiveBadge.style.backgroundColor = '#fff7ed';
+                aqiLiveBadge.style.color = '#c2410c';
+                aqiLiveBadge.style.borderColor = '#fed7aa';
+                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE`;
+            } else {
+                aqiLiveBadge.style.backgroundColor = '#ecfdf5';
+                aqiLiveBadge.style.color = '#059669';
+                aqiLiveBadge.style.borderColor = '#a7f3d0';
+                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
+            }
         }
-        if (heroDot) heroDot.style.backgroundColor = '#22c55e';
-        if (heroStreamText) heroStreamText.innerText = 'Live Stream';
+        if (heroDot) heroDot.style.backgroundColor = isAqiOffline ? '#f97316' : '#22c55e';
+        if (heroStreamText) heroStreamText.innerText = isAqiOffline ? 'Cached Stream' : 'Live Stream';
         if (heroAqiSubtext) {
-            heroAqiSubtext.innerText = 'LIVE AQI';
-            heroAqiSubtext.style.color = '#64748b';
+            heroAqiSubtext.innerText = isAqiOffline ? 'CACHED AQI' : 'LIVE AQI';
+            heroAqiSubtext.style.color = isAqiOffline ? '#c2410c' : '#64748b';
         }
-        if (heroLeftBar) heroLeftBar.style.backgroundColor = '#22c55e';
+        if (heroLeftBar) heroLeftBar.style.backgroundColor = isAqiOffline ? '#f97316' : '#22c55e';
         const latestTimeEl = document.getElementById('latest-time');
         if (latestTimeEl) latestTimeEl.innerText = aqiLastUpdateTimeStr;
 
-        // --- Weather Offline Check ---
+        // --- Weather Offline Check (Sensors log hourly; healthy threshold is 90 mins) ---
+        let isWeatherOffline = true;
         let weatherOfflineMinutes = 0;
         let weatherLastUpdateTimeStr = "Unknown";
 
@@ -939,6 +957,7 @@ async function refreshDashboard() {
             const wLastUpdate = new Date(weatherData.timestamp);
             const wDiffMs = now - wLastUpdate;
             weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
+            isWeatherOffline = weatherOfflineMinutes > 90;
             const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
             weatherLastUpdateTimeStr = weatherOfflineMinutes >= 1440
                 ? wLastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + wTimePart
@@ -948,13 +967,23 @@ async function refreshDashboard() {
         const weatherBanner = document.getElementById('weather-offline-banner');
         const weatherLatestTime = document.getElementById('weather-latest-time');
         
-        if (weatherBanner) weatherBanner.style.display = 'none';
+        if (weatherBanner) weatherBanner.style.display = isWeatherOffline ? 'flex' : 'none';
+        const wOffTime = document.getElementById('weather-offline-last-update');
+        if (wOffTime) wOffTime.innerText = weatherLastUpdateTimeStr;
+
         const weatherLiveBadge = document.getElementById('weather-live-badge');
         if (weatherLiveBadge) {
-            weatherLiveBadge.style.backgroundColor = '#ecfdf5';
-            weatherLiveBadge.style.color = '#059669';
-            weatherLiveBadge.style.borderColor = '#a7f3d0';
-            weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
+            if (isWeatherOffline) {
+                weatherLiveBadge.style.backgroundColor = '#fff7ed';
+                weatherLiveBadge.style.color = '#c2410c';
+                weatherLiveBadge.style.borderColor = '#fed7aa';
+                weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE`;
+            } else {
+                weatherLiveBadge.style.backgroundColor = '#ecfdf5';
+                weatherLiveBadge.style.color = '#059669';
+                weatherLiveBadge.style.borderColor = '#a7f3d0';
+                weatherLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
+            }
         }
         if (weatherLatestTime) weatherLatestTime.innerText = weatherLastUpdateTimeStr;
 

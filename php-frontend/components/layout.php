@@ -564,136 +564,20 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
       ?>
     </div>
     
-    <!-- Global Footer (Campus Identity, Quick Navigation, Hardware Specs & Support) -->
-    <footer id="global-footer" class="w-full bg-white text-slate-600 border-t border-slate-200 mt-12 mb-[92px] md:mb-0 relative z-10 shadow-[0_-4px_20px_rgba(15,23,42,0.02)] font-sans">
+    <!-- Global Footer (Contact Us & Campus Credits) -->
+    <footer id="global-footer" style="margin-top: auto; padding: 22px 16px; text-align: center; position: relative; z-index: 10; font-size: 13px; background: #ffffff; color: #64748b; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; width: 100%; box-sizing: border-box; box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.02);" class="mb-[84px] md:mb-0">
       
-      <!-- Main Footer Content Grid -->
-      <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
-          
-          <!-- Column 1: Brand & Campus Identity -->
-          <div class="flex flex-col gap-3.5">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-slate-50 flex items-center justify-center shadow-sm border border-slate-200 p-1 flex-shrink-0">
-                <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Logo" class="w-full h-full object-contain">
-              </div>
-              <div class="flex flex-col">
-                <span class="text-base font-extrabold text-slate-900 tracking-tight leading-tight">
-                  Smart <span class="text-[#00bfa5]">WeatherNet</span>
-                </span>
-                <span class="text-[11px] font-bold text-slate-500">SMVITM Campus</span>
-              </div>
-            </div>
-            
-            <p class="text-xs text-slate-500 leading-relaxed">
-              Continuous environmental telemetry & predictive microclimate monitoring platform. Powered by IoT sensor nodes and dual neural network forecast engines.
-            </p>
-
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-semibold text-slate-600 w-fit">
-              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-[#00bfa5] flex-shrink-0"></i>
-              <span>13°15'40" N, 74°47'13" E • Bantakal</span>
-            </div>
-          </div>
-
-          <!-- Column 2: Platform Navigation -->
-          <div class="flex flex-col gap-3">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Platform Navigation</h4>
-            <ul class="flex flex-col gap-2 text-xs">
-              <li>
-                <a href="?page=overview" class="text-slate-600 hover:text-[#00bfa5] transition-colors flex items-center gap-2">
-                  <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-slate-400"></i>
-                  <span>Atmosphere Snapshot (Overview)</span>
-                </a>
-              </li>
-              <li>
-                <a href="?page=live" class="text-slate-600 hover:text-[#00bfa5] transition-colors flex items-center gap-2">
-                  <i data-lucide="radio" class="w-3.5 h-3.5 text-slate-400"></i>
-                  <span>Live Telemetry Stream</span>
-                </a>
-              </li>
-              <li>
-                <a href="?page=predictive" class="text-slate-600 hover:text-[#00bfa5] transition-colors flex items-center gap-2">
-                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-400"></i>
-                  <span>24h AI AQI & Rain Forecast</span>
-                </a>
-              </li>
-              <li>
-                <a href="?page=historical" class="text-slate-600 hover:text-[#00bfa5] transition-colors flex items-center gap-2">
-                  <i data-lucide="database" class="w-3.5 h-3.5 text-slate-400"></i>
-                  <span>Analytics & Data Archive</span>
-                </a>
-              </li>
-              <li>
-                <a href="?page=weather" class="text-slate-600 hover:text-[#00bfa5] transition-colors flex items-center gap-2">
-                  <i data-lucide="cloud-sun" class="w-3.5 h-3.5 text-slate-400"></i>
-                  <span>Weather Conditions</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Column 3: Sensor & Model Specs -->
-          <div class="flex flex-col gap-3">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Telemetry Specs</h4>
-            <div class="flex flex-col gap-2 text-xs text-slate-600">
-              <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
-                <span class="text-[10.5px] uppercase font-bold text-slate-400 tracking-wider">Active Monitoring Node</span>
-                <span class="font-bold text-slate-800 text-[12px] flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  Node-1 (Atmosphere & Rain)
-                </span>
-                <span class="text-[11px] text-slate-500">Plantower PMS7003 • SHT31 • Rain Gauge</span>
-              </div>
-              <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
-                <span class="text-[10.5px] uppercase font-bold text-slate-400 tracking-wider">Neural Forecast Stack</span>
-                <span class="font-bold text-slate-800 text-[12px]">SWT CNN-BiLSTM + MODWT LSTM</span>
-                <span class="text-[11px] text-slate-500">CPCB 2024 Breakpoint Engine</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Column 4: Institution & Support -->
-          <div class="flex flex-col gap-3">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Institution & Access</h4>
-            <div class="flex flex-col gap-2.5 text-xs text-slate-600">
-              <p class="text-slate-600 leading-snug">
-                <strong>Shri Madhwa Vadiraja Institute of Technology & Management</strong><br>
-                <span class="text-slate-500 text-[11.5px]">Vishwothama Nagar, Bantakal, Udupi</span>
-              </p>
-
-              <div class="flex flex-col gap-2 pt-1">
-                <button type="button" onclick="document.getElementById('contact-modal').style.display='flex'; if (window.lucide) { lucide.createIcons(); }" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 text-[#00bfa5] font-bold text-xs border border-emerald-200 transition-all cursor-pointer">
-                  <i data-lucide="mail" class="w-3.5 h-3.5"></i>
-                  <span>Contact Support & Faculty</span>
-                </button>
-                
-                <a href="?page=admin" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-semibold text-xs transition-all no-underline">
-                  <i data-lucide="shield" class="w-3.5 h-3.5 text-slate-500"></i>
-                  <span>Admin Operations Portal</span>
-                </a>
-              </div>
-            </div>
-          </div>
-
-        </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Logo" style="width: 22px; height: 22px; object-fit: contain;">
+        <span style="font-weight: 700; color: #0f172a;">Smart WeatherNet</span>
       </div>
 
-      <!-- Bottom Credits & Status Sub-bar -->
-      <div class="border-t border-slate-100 bg-slate-50/80 py-4 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 text-center sm:text-left">
-          <div class="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-            <span>© <?= date('Y') ?> <strong>Smart WeatherNet</strong> • Developed for Campus Environmental Intelligence.</span>
-          </div>
+      <span style="color: #cbd5e1; font-weight: 300;">|</span>
 
-          <div class="flex items-center gap-3">
-            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-sm">
-              <span class="w-2 h-2 rounded-full <?= $is_telemetry_live ? 'bg-emerald-500 live-dot-pulse' : 'bg-amber-500' ?>"></span>
-              <span><?= $is_telemetry_live ? 'Telemetry Synchronized' : 'Node Reconnecting' ?></span>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <button type="button" onclick="document.getElementById('contact-modal').style.display='flex'; if (window.lucide) { lucide.createIcons(); }" style="background: none; border: none; font-size: 13px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,191,165,0.4); text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#0d9488';" onmouseout="this.style.color='#00bfa5';">
+        Contact Us
+      </button>
+      
     </footer>
   </main>
 

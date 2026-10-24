@@ -134,11 +134,30 @@ window.__currentUser = <?= json_encode([
 window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_email'] ?? '') : '') ?>;
 window.__isTelemetryLive = <?= $is_telemetry_live ? 'true' : 'false' ?>;
 
+// Global API URL resolver so API calls work from any URL path
+window.getApiUrl = function(endpoint) {
+    var ep = String(endpoint || '').replace(/^\/?api\//, '').replace(/^\//, '');
+    var origin = window.location.origin;
+    var path = window.location.pathname;
+    var base = '';
+    var idx = path.indexOf('/index.php');
+    if (idx !== -1) {
+        base = path.substring(0, idx);
+    }
+    return origin + (base ? base : '') + '/api/' + ep;
+};
+
 // Automatic Persistent Google / User Account Re-entry:
 // When someone signed in using a Google account and comes again on mobile or laptop,
 // they are let in directly without asking for login again.
 (function() {
-    if (window.location.search.includes('logout=true') || window.location.search.includes('logged_out=true')) {
+    var isLoggedOutUrl = window.location.search.includes('logout=true') || window.location.search.includes('logged_out=true');
+    var isDeliberateLogout = false;
+    try {
+        isDeliberateLogout = (sessionStorage.getItem('deliberate_logout') === 'true') || (localStorage.getItem('deliberate_logout') === 'true');
+    } catch (e) {}
+
+    if (isLoggedOutUrl || isDeliberateLogout) {
         try {
             localStorage.removeItem('auth_email');
             localStorage.removeItem('auth_name');
@@ -166,12 +185,37 @@ window.__isTelemetryLive = <?= $is_telemetry_live ? 'true' : 'false' ?>;
     }
 })();
 
-window.signOutUser = function() {
+window.signOutUser = async function(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
     try {
+        sessionStorage.setItem('deliberate_logout', 'true');
+        localStorage.setItem('deliberate_logout', 'true');
         localStorage.removeItem('auth_email');
         localStorage.removeItem('auth_name');
         localStorage.removeItem('auth_logged_in');
-    } catch (e) {}
+    } catch (err) {}
+
+    try {
+        if (e && e.currentTarget) {
+            e.currentTarget.style.opacity = '0.5';
+            e.currentTarget.style.pointerEvents = 'none';
+        }
+    } catch (err) {}
+
+    try {
+        if (typeof window.firebaseSignOut === 'function') {
+            await Promise.race([
+                window.firebaseSignOut(),
+                new Promise(resolve => setTimeout(resolve, 800))
+            ]);
+        }
+    } catch (err) {
+        console.warn("SignOut Firebase error:", err);
+    }
+
     window.location.href = '?logout=true';
 };
 
@@ -435,7 +479,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
         <i data-lucide="database" style="width: 15px; height: 15px; opacity: <?= $current_page === 'historical' ? '1' : '0.75' ?>;"></i> Analytics Archive
       </a>
       <a href="?page=predictive" data-nav-link="predictive" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
-        <i data-lucide="cloud-rain" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Weather Forecast
+        <i data-lucide="cloud-rain" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Forecast
       </a>
       <?php if ($is_admin): ?>
       <a href="?page=admin" data-nav-link="admin" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; text-decoration: none; color: <?= $current_page === 'admin' ? '#ffffff' : '#6366f1' ?>; background-color: <?= $current_page === 'admin' ? '#6366f1' : 'rgba(99, 102, 241, 0.08)' ?>; box-shadow: <?= $current_page === 'admin' ? '0 4px 14px rgba(99, 102, 241, 0.35)' : 'none' ?>; border: 1px solid <?= $current_page === 'admin' ? '#6366f1' : 'rgba(99, 102, 241, 0.25)' ?>; transition: all 0.2s ease;">
@@ -461,7 +505,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
             </div>
             <span id="desktop-user-email" style="display: <?= $is_admin ? 'none' : 'block' ?>; font-size: 9.5px; font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($is_admin ? '' : $user_email) ?></span>
           </div>
-          <a href="?logout=true" onclick="window.signOutUser(); return false;" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
+          <a href="?logout=true" onclick="window.signOutUser(event); return false;" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
             <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
           </a>
         </div>
@@ -564,7 +608,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
     <!-- Forecast -->
     <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
       <i data-lucide="cloud-rain" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Weather</span>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
     </a>
 
     <?php if ($is_admin): ?>
@@ -607,7 +651,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
             <span>Open Admin Center</span>
           </a>
           <?php endif; ?>
-          <a href="?logout=true" onclick="window.signOutUser(); return false;" style="display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 11px 16px; border-radius: 12px; background: #fee2e2; border: 1.5px solid #fca5a5; color: #b91c1c; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; transition: all 0.15s ease;">
+          <a href="?logout=true" onclick="window.signOutUser(event); return false;" style="display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 11px 16px; border-radius: 12px; background: #fee2e2; border: 1.5px solid #fca5a5; color: #b91c1c; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; transition: all 0.15s ease;">
             <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
             <span>Sign Out from this Device</span>
           </a>

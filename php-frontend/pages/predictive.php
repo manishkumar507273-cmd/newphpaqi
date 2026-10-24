@@ -60,10 +60,7 @@ if (file_exists($forecastJsonFile)) {
           </div>
         </div>
 
-        <button onclick="toggleAdvisoryDetails()" id="btn-toggle-advisory" class="mt-2.5 text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer bg-transparent border-none p-0">
-          <span id="toggle-advisory-text">View Action Guidance</span>
-          <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" id="toggle-advisory-icon"></i>
-        </button>
+
       </div>
     </div>
   </div>
@@ -135,12 +132,8 @@ if (file_exists($forecastJsonFile)) {
         <div class="w-8 h-8 rounded-lg bg-[#e6fcf9] text-[#00bfa5] flex items-center justify-center">
           <i data-lucide="activity" class="w-4 h-4"></i>
         </div>
-        <div>
-          <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Predicted Parameters (Next 24 Hours)</h2>
-          <p id="forecast-model-subtitle" class="text-xs text-slate-400 m-0">Direct multi-target outputs from trained LSTM models</p>
-        </div>
+        <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Predicted Parameters (Next 24 Hours)</h2>
       </div>
-      <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">8 Targets + AQI</span>
     </div>
 
     <!-- Grid of the 8 predicted parameters -->
@@ -327,23 +320,7 @@ if (file_exists($forecastJsonFile)) {
         return { label: 'Severe', bg: '#faf5ff', text: '#6b21a8', border: '#e9d5ff', dot: '#a855f7' };
     }
 
-    // Toggle advisory actions
-    window.toggleAdvisoryDetails = function() {
-        const sec = document.getElementById('advisory-expand-section');
-        const icon = document.getElementById('toggle-advisory-icon');
-        const text = document.getElementById('toggle-advisory-text');
-        if (!sec) return;
-        const isHidden = sec.style.display === 'none';
-        if (isHidden) {
-            sec.style.display = 'grid';
-            icon.style.transform = 'rotate(180deg)';
-            text.innerText = 'Hide Action Guidance';
-        } else {
-            sec.style.display = 'none';
-            icon.style.transform = 'rotate(0deg)';
-            text.innerText = 'View Action Guidance';
-        }
-    };
+
 
     // Toggle 7-Day Accordion Row
     window.toggleDayAccordion = function(dayIndex) {
@@ -364,32 +341,34 @@ if (file_exists($forecastJsonFile)) {
         if (window.lucide) lucide.createIcons();
     };
 
-    // Discard past hours and ensure forecast starts strictly from the NEXT upcoming timestamp
+    // Discard past hours and the current in-progress hour; starts strictly from the NEXT upcoming hour
     function filterAndNormalizeHourly(rawList) {
         if (!rawList || !Array.isArray(rawList) || rawList.length === 0) return [];
 
         const now = new Date();
-        const currentHourStartMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0).getTime();
+        // Next hour boundary: the hour slot that hasn't started yet
+        const nextHourStartMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0).getTime() + 3600000;
 
-        // Keep forecast starting from the current clock hour (e.g. 6, 7, 8) for that full hour
+        // Keep only future hours — strictly AFTER the current in-progress hour
+        // e.g. at 7:42 PM, discard 7 PM slot (already started), keep 8 PM onward
         const unelapsed = rawList.filter(item => {
             if (item.iso) {
                 const itemTime = new Date(item.iso).getTime();
-                return itemTime >= currentHourStartMs;
+                return itemTime >= nextHourStartMs;
             }
             if (typeof item.hour === 'number') {
-                return item.hour >= now.getHours();
+                return item.hour > now.getHours();
             }
             return true;
         });
 
-        // Fallback: if all 24 hours elapsed (e.g. older model file from days ago),
-        // cleanly align the 24 predictions starting from the current clock hour
+        // Fallback: if all future hours elapsed (e.g. older model file from days ago),
+        // cleanly align the 24 predictions starting from the NEXT clock hour
         let activeList = unelapsed;
         if (unelapsed.length === 0) {
-            const currentHourDt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0);
+            const nextHourDt = new Date(nextHourStartMs);
             activeList = rawList.map((item, idx) => {
-                const shiftedDt = new Date(currentHourDt.getTime() + (idx * 3600000));
+                const shiftedDt = new Date(nextHourDt.getTime() + (idx * 3600000));
                 return {
                     ...item,
                     index: idx,
@@ -537,10 +516,10 @@ if (file_exists($forecastJsonFile)) {
                 catBadge.style.color = b.text;
             }
 
-            // Target Hour Window Badge
+            // Target Hour Badge (shows only the hour, e.g. "8 PM")
             const targetWinEl = document.getElementById('forecast-hero-target-window');
             if (targetWinEl && curHour.label) {
-                targetWinEl.innerText = `${curHour.label} Window${isNext ? ' (Current)' : ''}`;
+                targetWinEl.innerText = curHour.label;
             }
 
             // Dominant Pollutant
@@ -620,6 +599,16 @@ if (file_exists($forecastJsonFile)) {
                 const rfInfo = trainedModelData.rainfall;
                 const curRainMm = curHour.rain_mm !== undefined ? curHour.rain_mm : (rfInfo?.hourly ? rfInfo.hourly[curHour.index]?.rain_mm : (p.rainfall?.current ?? 0.0));
 
+                // Compute rain chance % for the rainfall tile (same logic as hourly reel)
+                const curRainProb = (curHour.rain_prob !== undefined && curHour.rain_prob !== null)
+                    ? curHour.rain_prob
+                    : ((curHour.rain_prob_pct !== undefined && curHour.rain_prob_pct !== null)
+                        ? curHour.rain_prob_pct
+                        : (rfInfo?.hourly && rfInfo.hourly[curHour.index]?.rain_prob_pct !== undefined
+                            ? rfInfo.hourly[curHour.index].rain_prob_pct
+                            : (curRainMm > 0 ? 80 : 0)));
+                const curRainChance = Math.round(Number(curRainProb) || 0);
+
                 const items = [
                     { key: 'pm25', name: 'PM2.5', icon: '💨', current: curHour.pm25, subindex: curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: p.pm25.safe_limit },
                     { key: 'pm10', name: 'PM10', icon: '🌫️', current: curHour.pm10, subindex: curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: p.pm10.safe_limit },
@@ -628,7 +617,7 @@ if (file_exists($forecastJsonFile)) {
                     { key: 'o3', name: 'O₃', icon: '☀️', current: curHour.o3, subindex: curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: p.o3.safe_limit },
                     { key: 'temp', name: 'Temp', icon: '🌡️', current: curHour.temp, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
                     { key: 'humidity', name: 'Humidity', icon: '💧', current: curHour.humidity, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' },
-                    { key: 'rainfall', name: 'Rainfall', icon: '🌧️', current: curRainMm, subindex: null, unit: 'mm', range: `${rfInfo?.total_24h_rainfall_mm ?? p.rainfall?.total_24h ?? 0} mm/24h`, mean: rfInfo ? `Peak: ${rfInfo.peak_hourly_rate_mm} mm/h` : '0 mm/h', limit: rfInfo ? `${rfInfo.rain_risk_level} Risk` : 'Drainage Safe' }
+                    { key: 'rainfall', name: 'Rainfall', icon: '🌧️', current: curRainChance, subindex: null, unit: '%', rainMm: curRainMm, range: `${rfInfo?.total_24h_rainfall_mm ?? p.rainfall?.total_24h ?? 0} mm/24h`, mean: rfInfo ? `Peak: ${rfInfo.peak_hourly_rate_mm} mm/h` : '0 mm/h', limit: rfInfo ? `${rfInfo.rain_risk_level} Risk` : 'Drainage Safe' }
                 ];
 
                 paramsGrid.innerHTML = items.map((it) => `
@@ -638,8 +627,8 @@ if (file_exists($forecastJsonFile)) {
                           <span>${it.icon}</span> <span>${it.name}</span>
                         </span>
                         ${it.subindex !== null && it.subindex !== undefined ? `
-                          <span class="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded ${it.key === 'rainfall' ? 'bg-cyan-50 text-cyan-700 border border-cyan-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}">
-                            ${it.key === 'rainfall' ? 'Prob: ' + it.subindex : 'Sub: ' + it.subindex}
+                          <span class="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Sub: ${it.subindex}
                           </span>
                         ` : `
                           <span class="text-[9.5px] font-mono font-bold text-slate-400">${it.unit}</span>
@@ -648,7 +637,10 @@ if (file_exists($forecastJsonFile)) {
                       <div class="my-0.5 sm:my-1">
                         <div class="text-base sm:text-xl font-extrabold font-mono text-slate-900 leading-none">${it.current} <span class="text-[11px] sm:text-xs font-normal text-slate-400">${it.unit}</span></div>
                         <div class="text-[9.5px] sm:text-[10px] text-slate-400 mt-1 truncate">
-                          <span>${it.key === 'rainfall' ? it.limit : 'Safe: <strong class="text-slate-500 font-mono">' + it.limit + '</strong>'}</span>
+                          ${it.key === 'rainfall'
+                            ? `<span>${it.rainMm} mm · ${it.limit}</span>`
+                            : `<span>Safe: <strong class="text-slate-500 font-mono">${it.limit}</strong></span>`
+                          }
                         </div>
                       </div>
                     </div>
@@ -702,10 +694,6 @@ if (file_exists($forecastJsonFile)) {
                 topSubtext.innerText = isStandby ? 'Ready for new model deployment in forcast/' : 'Dual-Engine SAPE: AQI (48h Window) + Rainfall Wavelet LSTM (72h Window from WEATHER_NODE1)';
             }
 
-            const subtitleEl = document.getElementById('forecast-model-subtitle');
-            if (subtitleEl) {
-                subtitleEl.innerText = `Multi-target neural predictions (48h AQI BiLSTM + 72h SMVITM Wavelet Rainfall Engine)`;
-            }
 
             // Advisory Banner
             if (trainedModelData.advisory) {

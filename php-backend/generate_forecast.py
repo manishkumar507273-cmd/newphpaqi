@@ -57,8 +57,11 @@ def load_env_file():
 
 ENV = load_env_file()
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL") or ENV.get("VITE_SUPABASE_URL") or ENV.get("SUPABASE_URL") or ""
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or ENV.get("VITE_SUPABASE_ANON_KEY") or ENV.get("SUPABASE_KEY") or ""
+DEFAULT_SUPABASE_URL = "https://sgkdpliqlhgiqsabxzxe.supabase.co"
+DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30"
+
+SUPABASE_URL = (os.environ.get("SUPABASE_URL") or "").strip() or ENV.get("VITE_SUPABASE_URL") or ENV.get("SUPABASE_URL") or DEFAULT_SUPABASE_URL
+SUPABASE_KEY = (os.environ.get("SUPABASE_KEY") or "").strip() or ENV.get("VITE_SUPABASE_ANON_KEY") or ENV.get("SUPABASE_KEY") or DEFAULT_SUPABASE_KEY
 
 FORCAST_DIR = os.path.join(PROJECT_DIR, "forcast")
 OUTPUT_JSON_PATH = os.path.join(PROJECT_DIR, "php-frontend", "api", "forecast_data.json")
@@ -143,14 +146,17 @@ class SWT_Res_CNN_BiLSTM(nn.Module):
         return out_23x7, alpha
 
 def fetch_supabase(table, order_col="timestamp_hour", limit=250):
-    url = f"{SUPABASE_URL}/rest/v1/{table}?order={order_col}.desc&limit={limit}"
-    req = urllib.request.Request(url, headers={
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json"
-    })
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print(f"Error: SUPABASE_URL or SUPABASE_KEY not configured. Cannot fetch {table}.", file=sys.stderr)
+        return []
+    url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}?order={order_col}.desc&limit={limit}"
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        req = urllib.request.Request(url, headers={
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json"
+        })
+        with urllib.request.urlopen(req, timeout=20) as resp:
             return json.loads(resp.read().decode('utf-8'))
     except Exception as e:
         print(f"Error fetching from table {table}: {e}", file=sys.stderr)

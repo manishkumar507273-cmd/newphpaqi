@@ -65,8 +65,22 @@ if (file_exists(__DIR__ . '/.env')) {
     }
 }
 
+// Clear persistent cookie if user just logged out
+if (isset($_GET['logout']) || isset($_GET['logged_out'])) {
+    $is_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    setcookie('aqi_remember_auth', '', [
+        'expires' => time() - 86400,
+        'path' => '/',
+        'secure' => $is_secure,
+        'httponly' => false,
+        'samesite' => 'Lax'
+    ]);
+    setcookie('aqi_remember_auth', '', time() - 86400, '/');
+    unset($_COOKIE['aqi_remember_auth']);
+}
+
 // Restore session from persistent 1-year cookie if session file was flushed or device reopened
-if (empty($_SESSION['user_id']) && !empty($_COOKIE['aqi_remember_auth']) && !isset($_GET['logout'])) {
+if (empty($_SESSION['user_id']) && !empty($_COOKIE['aqi_remember_auth']) && !isset($_GET['logout']) && !isset($_GET['logged_out'])) {
     $decoded = json_decode(base64_decode($_COOKIE['aqi_remember_auth']), true);
     if (!empty($decoded) && !empty($decoded['email'])) {
         $em = trim($decoded['email']);
@@ -152,8 +166,19 @@ if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
             $params["secure"], $params["httponly"]
         );
     }
-    session_destroy();
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_destroy();
+    }
+    $is_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    setcookie('aqi_remember_auth', '', [
+        'expires' => time() - 86400,
+        'path' => '/',
+        'secure' => $is_secure,
+        'httponly' => false,
+        'samesite' => 'Lax'
+    ]);
     setcookie('aqi_remember_auth', '', time() - 86400, '/');
+    unset($_COOKIE['aqi_remember_auth']);
     header("Location: ?page=overview&logged_out=true");
     exit;
 }

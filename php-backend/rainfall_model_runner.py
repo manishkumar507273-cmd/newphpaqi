@@ -347,13 +347,12 @@ if __name__ == "__main__":
                     pass
         return env_vars
 
-    _env = load_env_vars()
-    SUPABASE_URL = os.environ.get("SUPABASE_URL") or _env.get("VITE_SUPABASE_URL") or _env.get("SUPABASE_URL") or ""
-    SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or _env.get("VITE_SUPABASE_ANON_KEY") or _env.get("SUPABASE_KEY") or ""
+    DEFAULT_SUPABASE_URL = "https://sgkdpliqlhgiqsabxzxe.supabase.co"
+    DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30"
 
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        print("Error: Supabase credentials not found in environment or .env file.", file=sys.stderr)
-        sys.exit(1)
+    _env = load_env_vars()
+    SUPABASE_URL = (os.environ.get("SUPABASE_URL") or "").strip() or _env.get("VITE_SUPABASE_URL") or _env.get("SUPABASE_URL") or DEFAULT_SUPABASE_URL
+    SUPABASE_KEY = (os.environ.get("SUPABASE_KEY") or "").strip() or _env.get("VITE_SUPABASE_ANON_KEY") or _env.get("SUPABASE_KEY") or DEFAULT_SUPABASE_KEY
 
     print("Fetching past 100 rows from WEATHER_NODE1...", file=sys.stderr)
     url = f"{SUPABASE_URL}/rest/v1/WEATHER_NODE1?order=timestamp_hour.desc&limit=100"

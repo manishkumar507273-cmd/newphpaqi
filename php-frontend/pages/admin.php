@@ -522,7 +522,7 @@ function loadRequests(isSilent = false) {
     }
     
     Promise.all([
-        fetch(typeof window.getApiUrl === 'function' ? window.getApiUrl('get_requests.php') : '/api/get_requests.php').then(res => res.json()).catch(() => []),
+        fetch(typeof window.getApiUrl === 'function' ? window.getApiUrl('get_requests.php?admin_code=2847') : '/api/get_requests.php?admin_code=2847').then(res => res.json()).catch(() => []),
         fetch(`${getFbDbUrl()}/requests.json`).then(res => res.json()).catch(() => ({}))
     ])
     .then(([backendDataRaw, firebaseData]) => {

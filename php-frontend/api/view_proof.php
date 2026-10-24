@@ -70,6 +70,14 @@ if (!$found && !empty($req_id)) {
     
     // Check local requests.json
     $requests_file = __DIR__ . '/../data/requests.json';
+    if (!file_exists($requests_file) || (file_exists($requests_file) && filesize($requests_file) < 5)) {
+        $temp_file = sys_get_temp_dir() . '/phpAQI_requests.json';
+        if (file_exists($temp_file) && filesize($temp_file) > 5) {
+            $requests_file = $temp_file;
+        } elseif (file_exists(__DIR__ . '/../data/requests.example.json') && filesize(__DIR__ . '/../data/requests.example.json') > 5) {
+            $requests_file = __DIR__ . '/../data/requests.example.json';
+        }
+    }
     if (file_exists($requests_file)) {
         $reqs = @json_decode(file_get_contents($requests_file), true) ?: [];
         foreach ($reqs as $r) {

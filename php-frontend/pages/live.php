@@ -1,7 +1,7 @@
-<div style="display: flex; flex-direction: column; gap: 20px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-3.5 sm:p-6">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-2.5 sm:p-6">
 
   <!-- Sub-Navigation Selector -->
-  <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
     <div style="display: inline-flex; align-items: center; background-color: #ffffff; padding: 4px; border-radius: 999px; border: 1px solid #cbd5e1; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); gap: 4px;" class="w-full sm:w-auto">
       <button id="tab-aqi" onclick="switchLiveTab('aqi')" class="flex-1 sm:flex-initial" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 999px; border: none; font-size: 13.5px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: #00bfa5; color: #ffffff; transition: all 0.15s ease; min-height: 44px;">
         <i data-lucide="activity" style="width: 17px; height: 17px; z-index: 1;"></i>
@@ -27,7 +27,7 @@
 
   <!-- Page Header Titles -->
   <div>
-    <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
+    <h1 class="page-heading" style="font-size: 24px; font-weight: 700; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
       Real-time Air Quality Index
     </h1>
     <div style="font-size: 12.5px; color: #64748b; margin-top: 6px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -40,7 +40,7 @@
   </div>
 
   <!-- HERO AQI CARD -->
-  <div id="hero-card" style="background-color: #f0fdf4; border-radius: 24px; padding: 28px 32px; color: #0f172a; border: 1.5px solid rgba(34, 197, 94, 0.25); box-shadow: 0 8px 30px rgba(34, 197, 94, 0.15), 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
+  <div id="hero-card" class="hero-card-responsive" style="background-color: #f0fdf4; border-radius: 24px; padding: 28px 32px; color: #0f172a; border: 1.5px solid rgba(34, 197, 94, 0.25); box-shadow: 0 8px 30px rgba(34, 197, 94, 0.15), 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
     <div id="hero-left-bar" style="position: absolute; top: 0; left: 0; bottom: 0; width: 6px; background-color: #22c55e;"></div>
 
     <div style="position: relative; z-index: 1;">

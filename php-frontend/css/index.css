@@ -430,12 +430,13 @@ img, svg, video, canvas {
   }
 
   /* 4. Hero Card & Main AQI / Weather Score */
-  .hero-card-responsive {
+  .hero-card-responsive,
+  #hero-card {
     flex-direction: column !important;
     align-items: stretch !important;
-    padding: 14px 14px !important;
+    padding: 12px 14px !important;
     border-radius: 16px !important;
-    gap: 10px !important;
+    gap: 8px !important;
   }
 
   .hero-left-col {
@@ -446,56 +447,75 @@ img, svg, video, canvas {
   .hero-metric-container {
     flex-direction: row !important;
     align-items: center !important;
-    gap: 14px !important;
-    margin-bottom: 10px !important;
+    gap: 12px !important;
+    margin-bottom: 8px !important;
     flex-wrap: nowrap !important;
   }
 
-  .hero-metric-val {
-    font-size: 50px !important;
+  .hero-metric-val,
+  #hero-aqi-val {
+    font-size: 38px !important;
     line-height: 1 !important;
   }
 
   .hero-score-badge {
-    padding: 3px 10px !important;
-    font-size: 12px !important;
+    padding: 3px 9px !important;
+    font-size: 11px !important;
     border-radius: 999px !important;
   }
 
   .hero-temp-icon {
-    font-size: 30px !important;
+    font-size: 26px !important;
   }
 
   .hero-right-col {
     width: 100% !important;
-    padding: 12px 14px !important;
-    border-radius: 14px !important;
-    margin-top: 8px !important;
+    padding: 10px 12px !important;
+    border-radius: 13px !important;
+    margin-top: 6px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 8px !important;
+    gap: 6px !important;
+  }
+
+  /* Spacing inside hero-card on mobile */
+  #hero-card [style*="margin-bottom: 20px"] {
+    margin-bottom: 8px !important;
+    gap: 12px !important;
+  }
+  #hero-card [style*="margin-bottom: 12px"] {
+    margin-bottom: 6px !important;
+  }
+  #hero-card [style*="margin-bottom: 14px"] {
+    margin-bottom: 6px !important;
+  }
+  #hero-aqi-badge {
+    padding: 4px 12px !important;
+    font-size: 13px !important;
   }
 
   /* 5. Scale Bar inside Hero Card */
-  .hero-scale-bar-track {
-    height: 8px !important;
+  .hero-scale-bar-track,
+  #hero-card [style*="height: 12px"] {
+    height: 7px !important;
   }
 
-  .hero-scale-bar-indicator {
-    width: 14px !important;
-    height: 14px !important;
+  .hero-scale-bar-indicator,
+  #hero-scale-indicator {
+    width: 13px !important;
+    height: 13px !important;
   }
 
   /* 6. Pollutant & Weather Card Grids */
   .overview-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
+    gap: 8px !important;
   }
 
   .grid-pollutants {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
+    gap: 7px !important;
   }
 
   /* Last card full-width if odd total (5 pollutants) */
@@ -505,17 +525,27 @@ img, svg, video, canvas {
 
   .grid-weather {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
+    gap: 7px !important;
+  }
+
+  .pollutant-card {
+    padding: 8px 10px !important;
+    border-radius: 13px !important;
+    gap: 6px !important;
+  }
+
+  .pollutant-card [id^="card-"] {
+    font-size: 17px !important;
   }
 
   .sensor-card-mobile {
-    padding: 10px 10px !important;
-    border-radius: 14px !important;
-    gap: 8px !important;
+    padding: 8px 9px !important;
+    border-radius: 13px !important;
+    gap: 6px !important;
   }
 
   .sensor-card-val-mobile {
-    font-size: 20px !important;
+    font-size: 18px !important;
   }
 
   
@@ -1245,29 +1275,50 @@ img, svg, video, canvas {
     display: none !important;
   }
 
-  /* Modern card override for overview cards on mobile */
+  /* Modern compact card override for overview cards on mobile */
   .overview-core-card {
-    border-radius: 20px !important;
-    padding: 14px !important;
-    box-shadow: 0 4px 20px -2px rgba(13, 148, 136, 0.07) !important;
-    border: 1px solid rgba(226, 231, 235, 0.7) !important;
-    min-height: 110px !important;
+    border-radius: 13px !important;
+    padding: 7px 9px 7px !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+    border: 1px solid rgba(226, 231, 235, 0.8) !important;
+    min-height: 80px !important;
     transition: transform 0.18s ease !important;
   }
   .overview-core-card:active {
-    transform: scale(0.97) !important;
+    transform: scale(0.98) !important;
   }
 
-  /* Progress bar height on mobile — keep but no scale text */
+  .overview-card-hero {
+    padding: 9px 11px 9px !important;
+    min-height: auto !important;
+    border-radius: 14px !important;
+  }
+
+  /* Progress bar height on mobile — sleek 3px bar */
   .overview-core-card [style*="height: 5px"] {
+    height: 3px !important;
+    border-radius: 999px !important;
+  }
+  .overview-core-card [style*="height: 6px"] {
     height: 4px !important;
     border-radius: 999px !important;
   }
 
-  /* Card value larger and bolder on mobile */
-  .overview-card-val,
-  .overview-core-card [style*="font-size: 32px"] {
-    font-size: 28px !important;
+  /* Card values balanced, elegant, and compact on mobile */
+  .overview-card-val {
+    font-size: 19px !important;
+    line-height: 1 !important;
+  }
+  .overview-card-hero .overview-card-val {
+    font-size: 24px !important;
+    line-height: 1 !important;
+  }
+  .overview-core-card [style*="font-size: 32px"],
+  .overview-core-card [style*="font-size: 34px"] {
+    font-size: 19px !important;
+  }
+  .overview-core-card [style*="font-size: 26px"] {
+    font-size: 16px !important;
   }
 
   /* Bottom nav — upgrade: icon above label, taller */
@@ -1319,7 +1370,67 @@ img, svg, video, canvas {
   /* Metrics grid 2x2 clean */
   .overview-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
+    gap: 8px !important;
+  }
+
+  /* Weather view mobile refinements */
+  #weather-hero-temp {
+    font-size: 38px !important;
+  }
+  #weather-low-temp, #weather-avg-temp, #weather-high-temp {
+    font-size: 16px !important;
+  }
+  #weather-view .min-h-\[125px\] {
+    min-height: 78px !important;
+    padding: 7px 9px !important;
+    border-radius: 13px !important;
+  }
+  #weather-view [id^="card-"] {
+    font-size: 18px !important;
+    margin-top: 4px !important;
+  }
+
+  /* Predictive view mobile refinements */
+  #forecast-hero-aqi {
+    font-size: 34px !important;
+  }
+  #forecast-advisory-banner {
+    padding: 9px 11px !important;
+    border-radius: 13px !important;
+  }
+  .forecast-page-container {
+    padding: 6px 8px 18px !important;
+    gap: 8px !important;
+  }
+  .forecast-page-container .rounded-\[20px\],
+  .forecast-page-container .rounded-\[24px\] {
+    padding: 9px 11px !important;
+    border-radius: 13px !important;
+  }
+  #predicted-parameters-grid {
+    gap: 6px !important;
+  }
+  #predicted-parameters-grid > div {
+    padding: 6px 8px !important;
+    border-radius: 11px !important;
+  }
+  #predicted-parameters-grid [id^="pred-"] {
+    font-size: 15px !important;
+  }
+
+  /* Historical view mobile refinements */
+  #summary-section {
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    gap: 8px !important;
+  }
+  #avg-aqi-badge-container {
+    padding: 5px 10px !important;
+    border-radius: 11px !important;
+    gap: 8px !important;
+  }
+  #avg-aqi-val {
+    font-size: 19px !important;
   }
 
   /* app main padding — account for larger bottom nav */
@@ -1330,9 +1441,11 @@ img, svg, video, canvas {
 
 /* Extra-small phones */
 @media (max-width: 390px) {
-  .mobile-hero-temp { font-size: 42px !important; }
-  .overview-core-card { padding: 12px !important; }
-  .chart-tab-btn { padding: 6px 11px !important; font-size: 11px !important; }
+  .mobile-hero-temp { font-size: 38px !important; }
+  .overview-core-card { padding: 6px 8px !important; min-height: 76px !important; }
+  .overview-card-val { font-size: 18px !important; }
+  .overview-card-hero .overview-card-val { font-size: 22px !important; }
+  .chart-tab-btn { padding: 5px 9px !important; font-size: 10.5px !important; }
 }
 
 /* ── Desktop: restore toolbar visibility ── */

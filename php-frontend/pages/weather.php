@@ -20,7 +20,7 @@
   </div>
 
   <!-- Hero Container -->
-  <div class="bg-white rounded-[24px] p-5 sm:p-8 border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.05)] mt-6 flex flex-col lg:flex-row gap-6 sm:gap-8 lg:items-center lg:justify-between">
+  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3.5 sm:p-8 border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.05)] mt-3 sm:mt-6 flex flex-col lg:flex-row gap-4 sm:gap-8 lg:items-center lg:justify-between">
     
     <!-- 1. Left (Hero) -->
     <div class="flex-1 min-w-[280px]">
@@ -62,88 +62,88 @@
   </div>
 
   <!-- Weather Cards Grid -->
-  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 mt-3 sm:mt-6">
     
     <!-- 1. Temperature -->
-    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[18px] sm:rounded-[20px] p-3.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[125px] sm:min-h-[130px] overflow-hidden">
-      <div class="flex items-center gap-2.5 sm:gap-3 w-full min-w-0">
-        <div class="w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[12px] bg-orange-50 text-orange-600 flex items-center justify-center text-[18px] sm:text-[20px] shrink-0">🌡️</div>
+    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[14px] sm:rounded-[20px] p-2.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[85px] sm:min-h-[130px] overflow-hidden">
+      <div class="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+        <div class="w-[28px] h-[28px] sm:w-[38px] sm:h-[38px] rounded-[8px] sm:rounded-[12px] bg-orange-50 text-orange-600 flex items-center justify-center text-[15px] sm:text-[20px] shrink-0">🌡️</div>
         <div class="min-w-0 flex-1">
-          <div class="text-[13px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Temperature</div>
-          <div class="text-[9.5px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
+          <div class="text-[12px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Temperature</div>
+          <div class="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-temp" class="font-mono text-[20px] sm:text-[26px] font-extrabold text-orange-600 mt-3 leading-none tracking-tight">--</div>
+      <div id="card-temp" class="font-mono text-[18px] sm:text-[26px] font-extrabold text-orange-600 mt-2 leading-none tracking-tight">--</div>
     </div>
 
     <!-- 2. Humidity -->
-    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[18px] sm:rounded-[20px] p-3.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[125px] sm:min-h-[130px] overflow-hidden">
-      <div class="flex items-center gap-2.5 sm:gap-3 w-full min-w-0">
-        <div class="w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[12px] bg-sky-50 text-sky-600 flex items-center justify-center text-[18px] sm:text-[20px] shrink-0">💧</div>
+    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[14px] sm:rounded-[20px] p-2.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[85px] sm:min-h-[130px] overflow-hidden">
+      <div class="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+        <div class="w-[28px] h-[28px] sm:w-[38px] sm:h-[38px] rounded-[8px] sm:rounded-[12px] bg-sky-50 text-sky-600 flex items-center justify-center text-[15px] sm:text-[20px] shrink-0">💧</div>
         <div class="min-w-0 flex-1">
-          <div class="text-[13px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Humidity</div>
-          <div class="text-[9.5px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
+          <div class="text-[12px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Humidity</div>
+          <div class="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
         </div>
       </div>
-      <div class="flex items-end justify-between w-full mt-3 gap-1.5 flex-wrap">
-        <div id="card-hum" class="font-mono text-[20px] sm:text-[26px] font-extrabold text-sky-600 leading-none tracking-tight">--</div>
-        <span id="weather-hum-badge" style="padding: 2.5px 7px; border-radius: 6px; font-size: 10px; sm:font-size: 11px; font-weight: 700; display: none; align-items: center; gap: 3px; border: 1px solid #cbd5e1; background-color: #f1f5f9; color: #475569; white-space: nowrap; margin-bottom: 1px; flex-shrink: 0;">
+      <div class="flex items-end justify-between w-full mt-2 gap-1.5 flex-wrap">
+        <div id="card-hum" class="font-mono text-[18px] sm:text-[26px] font-extrabold text-sky-600 leading-none tracking-tight">--</div>
+        <span id="weather-hum-badge" style="padding: 2px 6px; border-radius: 6px; font-size: 9.5px; font-weight: 700; display: none; align-items: center; gap: 3px; border: 1px solid #cbd5e1; background-color: #f1f5f9; color: #475569; white-space: nowrap; margin-bottom: 1px; flex-shrink: 0;">
           ☁️ Cloudy
         </span>
       </div>
     </div>
 
     <!-- 3. Wind Speed -->
-    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[18px] sm:rounded-[20px] p-3.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[125px] sm:min-h-[130px] overflow-hidden">
-      <div class="flex items-center gap-2.5 sm:gap-3 w-full min-w-0">
-        <div class="w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[12px] bg-indigo-50 text-indigo-600 flex items-center justify-center text-[18px] sm:text-[20px] shrink-0">💨</div>
+    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[14px] sm:rounded-[20px] p-2.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[85px] sm:min-h-[130px] overflow-hidden">
+      <div class="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+        <div class="w-[28px] h-[28px] sm:w-[38px] sm:h-[38px] rounded-[8px] sm:rounded-[12px] bg-indigo-50 text-indigo-600 flex items-center justify-center text-[15px] sm:text-[20px] shrink-0">💨</div>
         <div class="min-w-0 flex-1">
-          <div class="text-[13px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Wind Speed</div>
-          <div class="text-[9.5px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
+          <div class="text-[12px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Wind Speed</div>
+          <div class="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-wind" class="font-mono text-[20px] sm:text-[26px] font-extrabold text-indigo-600 mt-3 leading-none tracking-tight">--</div>
+      <div id="card-wind" class="font-mono text-[18px] sm:text-[26px] font-extrabold text-indigo-600 mt-2 leading-none tracking-tight">--</div>
     </div>
 
     <!-- 4. Wind Gust -->
-    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[18px] sm:rounded-[20px] p-3.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[125px] sm:min-h-[130px] overflow-hidden">
-      <div class="flex items-center gap-2.5 sm:gap-3 w-full min-w-0">
-        <div class="w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[12px] bg-purple-50 text-purple-600 flex items-center justify-center text-[18px] sm:text-[20px] shrink-0">🌪️</div>
+    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[14px] sm:rounded-[20px] p-2.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[85px] sm:min-h-[130px] overflow-hidden">
+      <div class="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+        <div class="w-[28px] h-[28px] sm:w-[38px] sm:h-[38px] rounded-[8px] sm:rounded-[12px] bg-purple-50 text-purple-600 flex items-center justify-center text-[15px] sm:text-[20px] shrink-0">🌪️</div>
         <div class="min-w-0 flex-1">
-          <div class="text-[13px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Wind Gust</div>
-          <div class="text-[9.5px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
+          <div class="text-[12px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Wind Gust</div>
+          <div class="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-gust" class="font-mono text-[20px] sm:text-[26px] font-extrabold text-purple-600 mt-3 leading-none tracking-tight">--</div>
+      <div id="card-gust" class="font-mono text-[18px] sm:text-[26px] font-extrabold text-purple-600 mt-2 leading-none tracking-tight">--</div>
     </div>
 
     <!-- 5. Rainfall -->
-    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[18px] sm:rounded-[20px] p-3.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[125px] sm:min-h-[130px] overflow-hidden">
-      <div class="flex items-center gap-2.5 sm:gap-3 w-full min-w-0">
-        <div class="w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[12px] bg-cyan-50 text-cyan-600 flex items-center justify-center text-[18px] sm:text-[20px] shrink-0">🌧️</div>
+    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[14px] sm:rounded-[20px] p-2.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[85px] sm:min-h-[130px] overflow-hidden">
+      <div class="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+        <div class="w-[28px] h-[28px] sm:w-[38px] sm:h-[38px] rounded-[8px] sm:rounded-[12px] bg-cyan-50 text-cyan-600 flex items-center justify-center text-[15px] sm:text-[20px] shrink-0">🌧️</div>
         <div class="min-w-0 flex-1">
-          <div class="text-[13px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Rainfall</div>
-          <div class="text-[9.5px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
+          <div class="text-[12px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Rainfall</div>
+          <div class="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
         </div>
       </div>
-      <div class="flex items-end justify-between w-full mt-3 gap-1.5 flex-wrap">
-        <div id="card-rain" class="font-mono text-[20px] sm:text-[26px] font-extrabold text-cyan-600 leading-none tracking-tight">--</div>
-        <span id="weather-today-rain-badge" style="padding: 2.5px 7px; border-radius: 6px; font-size: 10px; sm:font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; border: 1px solid #c7d2fe; background-color: #eef2ff; color: #4338ca; white-space: nowrap; margin-bottom: 1px; flex-shrink: 0;">
+      <div class="flex items-end justify-between w-full mt-2 gap-1.5 flex-wrap">
+        <div id="card-rain" class="font-mono text-[18px] sm:text-[26px] font-extrabold text-cyan-600 leading-none tracking-tight">--</div>
+        <span id="weather-today-rain-badge" style="padding: 2px 6px; border-radius: 6px; font-size: 9.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; border: 1px solid #c7d2fe; background-color: #eef2ff; color: #4338ca; white-space: nowrap; margin-bottom: 1px; flex-shrink: 0;">
           Today: <strong id="card-today-rain">0.0 mm</strong>
         </span>
       </div>
     </div>
 
     <!-- 6. Wind Direction -->
-    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[18px] sm:rounded-[20px] p-3.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[125px] sm:min-h-[130px] overflow-hidden">
-      <div class="flex items-center gap-2.5 sm:gap-3 w-full min-w-0">
-        <div class="w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[12px] bg-amber-50 text-amber-600 flex items-center justify-center text-[18px] sm:text-[20px] shrink-0">🧭</div>
+    <div class="flex flex-col justify-between bg-white border border-slate-200 rounded-[14px] sm:rounded-[20px] p-2.5 sm:p-5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] min-h-[85px] sm:min-h-[130px] overflow-hidden">
+      <div class="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+        <div class="w-[28px] h-[28px] sm:w-[38px] sm:h-[38px] rounded-[8px] sm:rounded-[12px] bg-amber-50 text-amber-600 flex items-center justify-center text-[15px] sm:text-[20px] shrink-0">🧭</div>
         <div class="min-w-0 flex-1">
-          <div class="text-[13px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Wind Direction</div>
-          <div class="text-[9.5px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
+          <div class="text-[12px] sm:text-[15px] font-bold text-slate-900 leading-tight tracking-tight truncate">Wind Direction</div>
+          <div class="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
         </div>
       </div>
-      <div id="card-dir" class="font-sans text-[20px] sm:text-[26px] font-extrabold text-slate-600 mt-3 leading-none tracking-tight">--</div>
+      <div id="card-dir" class="font-sans text-[18px] sm:text-[26px] font-extrabold text-slate-600 mt-2 leading-none tracking-tight">--</div>
     </div>
 
   </div>

@@ -1,10 +1,10 @@
-<div class="p-3.5 sm:p-6 flex flex-col gap-5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
+<div class="p-2.5 sm:p-6 flex flex-col gap-3.5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
   
   <!-- Header -->
-  <div class="flex justify-between items-end mb-2 sm:mb-4">
+  <div class="flex justify-between items-end mb-1 sm:mb-4">
     <div>
-      <h1 class="text-2xl sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Analytics Archive</h1>
-      <p class="m-0 text-slate-500 text-xs sm:text-sm font-medium mt-1">Access and analyze historical telemetry logs.</p>
+      <h1 class="text-xl sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Analytics Archive</h1>
+      <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Access and analyze historical telemetry logs.</p>
     </div>
   </div>
 
@@ -23,7 +23,7 @@
   </div>
 
   <!-- ── Analytics Date Picker Card ── -->
-  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
+  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-6 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
 
     <!-- Top Header Row: Date Selector & Controls -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">

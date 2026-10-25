@@ -20,18 +20,18 @@ if (file_exists($forecastJsonFile)) {
 }
 ?>
 
-<div class="forecast-page-container p-3 sm:p-6 flex flex-col gap-4 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
+<div class="forecast-page-container p-2.5 sm:p-6 flex flex-col gap-3 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
 
   <div class="mb-0.5 sm:mb-2">
-    <h1 class="text-xl sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Weather Forecast</h1>
-    <p class="m-0 text-slate-500 text-xs sm:text-sm font-medium mt-0.5">Atmospheric weather, rainfall, and air quality predictive forecasting for SMVITM Campus.</p>
+    <h1 class="text-lg sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Weather Forecast</h1>
+    <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Atmospheric weather, rainfall, and air quality predictive forecasting for SMVITM Campus.</p>
   </div>
 
   <!-- ── 2. High-Visibility AQI Advisory Banner ── -->
-  <div id="forecast-advisory-banner" class="bg-gradient-to-r from-slate-500/10 via-slate-400/10 to-slate-500/10 border-[1.5px] border-slate-300 rounded-[18px] sm:rounded-[20px] p-3.5 sm:p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative overflow-hidden transition-all">
-    <div class="flex items-start gap-3 sm:gap-3.5">
-      <div id="advisory-icon-box" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-slate-700/20 mt-0.5">
-        <i data-lucide="clock" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+  <div id="forecast-advisory-banner" class="bg-gradient-to-r from-slate-500/10 via-slate-400/10 to-slate-500/10 border-[1.5px] border-slate-300 rounded-[14px] sm:rounded-[20px] p-2.5 sm:p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative overflow-hidden transition-all">
+    <div class="flex items-start gap-2.5 sm:gap-3.5">
+      <div id="advisory-icon-box" class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-slate-700/20 mt-0.5">
+        <i data-lucide="clock" class="w-3.5 h-3.5 sm:w-5 sm:h-5"></i>
       </div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap mb-1">
@@ -66,7 +66,7 @@ if (file_exists($forecastJsonFile)) {
   </div>
 
   <!-- ── 3. Forecast Hero Summary Card: Predicted AQI ── -->
-  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-7 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] relative overflow-hidden">
+  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-7 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] relative overflow-hidden">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
       
       <!-- Left Hero Info: Big AQI & Category -->
@@ -80,7 +80,7 @@ if (file_exists($forecastJsonFile)) {
         </div>
 
         <div class="flex items-baseline gap-3 mb-2 sm:mb-2.5">
-          <span id="forecast-hero-aqi" class="text-5xl sm:text-6xl font-extrabold text-slate-400 font-mono tracking-tight">--</span>
+          <span id="forecast-hero-aqi" class="text-4xl sm:text-6xl font-extrabold text-slate-400 font-mono tracking-tight">--</span>
           <div class="flex flex-col">
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">AQI</span>

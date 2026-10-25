@@ -112,15 +112,15 @@ if ($latest_epoch > 0) {
   <div style="position: absolute; bottom: -10%; left: -5%; width: 45vw; height: 45vw; max-width: 500px; max-height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, rgba(241, 245, 249, 0) 70%); filter: blur(60px); pointer-events: none; z-index: 0;"></div>
 
   <!-- Content Container -->
-  <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px;">
+  <div class="overview-content-container" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px;">
 
     <!-- Overview Header: Title & Last Updated Status -->
     <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 2px;">
       <div style="width: 100%;">
-        <h1 style="font-size: clamp(20px, 2.5vw, 26px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
+        <h1 class="overview-page-title" style="font-size: clamp(20px, 2.5vw, 26px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
           Campus Telemetry Overview
         </h1>
-        <div style="font-size: 13px; color: #475569; margin-top: 6px; font-family: var(--font-sans); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <div class="overview-page-meta" style="font-size: 13px; color: #475569; margin-top: 6px; font-family: var(--font-sans); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
             <i data-lucide="clock" style="width: 14px; height: 14px; color: #00bfa5;"></i>
             <span>Last Updated:</span>
@@ -286,20 +286,20 @@ if ($latest_epoch > 0) {
             </button>
           </div>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; margin-bottom: auto; padding: 6px 0;">
+        <div class="overview-rain-container" style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; margin-bottom: auto; padding: 4px 0;">
           <div>
-            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Rain Now</div>
+            <div class="overview-rain-label" style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Rain Now</div>
             <div style="display: flex; align-items: baseline; gap: 3px;">
-              <span id="rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #4f46e5; font-family: var(--font-mono);"><?= $init_live_rain ?></span>
-              <span id="rain-unit-live" style="font-size: 12px; font-weight: 700; color: #818cf8;">mm</span>
+              <span id="rain-val" class="overview-card-val overview-card-val-sm" style="font-size: 24px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #4f46e5; font-family: var(--font-mono);"><?= $init_live_rain ?></span>
+              <span id="rain-unit-live" class="overview-rain-unit" style="font-size: 11px; font-weight: 700; color: #818cf8;">mm</span>
             </div>
           </div>
-          <div style="width: 1px; height: 36px; background: #e2e8f0; margin: 0 4px;"></div>
+          <div class="overview-rain-divider" style="width: 1px; height: 32px; background: #e2e8f0; margin: 0 4px;"></div>
           <div style="text-align: right;">
-            <div style="font-size: 10.5px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Today's Rain</div>
+            <div class="overview-rain-label" style="font-size: 10.5px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Today's Rain</div>
             <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 3px;">
-              <span id="total-rain-val" class="overview-card-val" style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);"><?= $init_today_rain ?></span>
-              <span id="rain-unit-total" style="font-size: 12px; font-weight: 700; color: #38bdf8;">mm</span>
+              <span id="total-rain-val" class="overview-card-val overview-card-val-sm" style="font-size: 24px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);"><?= $init_today_rain ?></span>
+              <span id="rain-unit-total" class="overview-rain-unit" style="font-size: 11px; font-weight: 700; color: #38bdf8;">mm</span>
             </div>
           </div>
         </div>
@@ -479,10 +479,36 @@ if ($latest_epoch > 0) {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
       }
     }
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
+      .overview-page-root {
+        padding: 8px 10px 14px !important;
+        min-height: auto !important;
+        border-radius: 16px !important;
+      }
+      .overview-content-container {
+        gap: 10px !important;
+      }
+      .overview-page-title {
+        font-size: 16px !important;
+        line-height: 1.25 !important;
+      }
+      .overview-page-meta {
+        font-size: 11px !important;
+        margin-top: 3px !important;
+        gap: 6px !important;
+      }
+      .overview-page-meta #overview-latest-time {
+        padding: 1.5px 6px !important;
+        font-size: 10px !important;
+      }
+      .overview-page-meta #overview-live-badge {
+        padding: 1.5px 6px !important;
+        font-size: 9.5px !important;
+      }
       .overview-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 10px !important;
+        gap: 8px !important;
+        margin-bottom: 4px !important;
       }
       /* Card 1: Air Quality is the full-width dominant hero card on mobile */
       .overview-grid > *:nth-child(1) {
@@ -493,7 +519,7 @@ if ($latest_epoch > 0) {
         grid-column: span 1 !important;
       }
       .overview-card-title {
-        font-size: 12px !important;
+        font-size: 11.5px !important;
         letter-spacing: -0.01em !important;
       }
       #card-wind .overview-card-title {
@@ -503,40 +529,114 @@ if ($latest_epoch > 0) {
         max-width: 58px;
       }
       .overview-card-icon {
-        width: 22px !important;
-        height: 22px !important;
+        width: 20px !important;
+        height: 20px !important;
         border-radius: 6px !important;
       }
       .overview-card-icon svg {
-        width: 12px !important;
-        height: 12px !important;
+        width: 11px !important;
+        height: 11px !important;
       }
       .segmented-unit-btn {
         padding: 1px !important;
         flex-shrink: 0 !important;
       }
       .segmented-unit-btn .unit-opt {
-        padding: 1.5px 4.5px !important;
-        font-size: 8.5px !important;
+        padding: 1px 3.5px !important;
+        font-size: 7.5px !important;
       }
       #btn-wind .unit-opt {
-        padding: 1.5px 3.5px !important;
-        font-size: 8px !important;
+        padding: 1px 3px !important;
+        font-size: 7.5px !important;
       }
       .overview-core-card {
-        padding: 12px 10px 10px !important;
-        min-height: 120px !important;
+        padding: 7px 9px 7px !important;
+        min-height: 80px !important;
+        border-radius: 13px !important;
       }
       .overview-card-hero {
-        padding: 14px 14px 12px !important;
+        padding: 9px 11px 9px !important;
         min-height: auto !important;
+        border-radius: 14px !important;
       }
       .overview-card-val {
-        font-size: 28px !important;
+        font-size: 19px !important;
+        line-height: 1 !important;
+      }
+      .overview-card-hero .overview-card-val {
+        font-size: 24px !important;
+        line-height: 1 !important;
+      }
+      .overview-card-hero #aqi-val + span {
+        font-size: 10px !important;
+      }
+      .overview-card-hero #aqi-dom {
+        font-size: 10px !important;
+      }
+      .overview-card-hero [style*="padding: 3px 9px"] {
+        padding: 2px 6px !important;
+        font-size: 9.5px !important;
+      }
+      .overview-card-hero #aqi-bar {
+        height: 4px !important;
+      }
+      .overview-core-card #temp-bar,
+      .overview-core-card #hum-bar,
+      .overview-core-card #wind-bar {
+        height: 3px !important;
+      }
+      .overview-wind-equalizer {
+        height: 11px !important;
+        gap: 2px !important;
+      }
+      .overview-wind-equalizer > div {
+        width: 2.5px !important;
       }
       /* Clean uncluttered gauges on mobile secondary cards */
-      .overview-core-card:not(.overview-card-hero) .overview-bar-scale {
+      .overview-bar-scale {
         display: none !important;
+      }
+      /* Card 5 Rainfall mobile compact formatting */
+      .overview-rain-container {
+        padding: 1px 0 !important;
+        margin: auto 0 0 !important;
+      }
+      .overview-rain-divider {
+        height: 22px !important;
+      }
+      .overview-rain-label {
+        font-size: 8.5px !important;
+        margin-bottom: 1px !important;
+      }
+      .overview-card-val-sm {
+        font-size: 16px !important;
+      }
+      .overview-rain-unit {
+        font-size: 9px !important;
+      }
+      /* Microclimate trends carousel adjustments */
+      .overview-chart-carousel-section {
+        margin-top: 4px !important;
+      }
+      .overview-chart-carousel-section .chart-slide-card {
+        padding: 9px 11px !important;
+        border-radius: 13px !important;
+        gap: 6px !important;
+      }
+      .overview-chart-carousel-section [style*="height: clamp(200px"] {
+        height: 155px !important;
+      }
+      #btn-chart-prev, #btn-chart-next {
+        width: 26px !important;
+        height: 26px !important;
+      }
+      #btn-chart-prev svg, #btn-chart-next svg {
+        width: 13px !important;
+        height: 13px !important;
+      }
+      #chart-slide-counter {
+        font-size: 9.5px !important;
+        padding: 2px 6px !important;
       }
     }
     .overview-chart-carousel::-webkit-scrollbar {

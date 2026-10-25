@@ -352,6 +352,28 @@ window.updateUserAccountUI = function(user) {
     }
 };
 
+// Immediately restore user account UI on mobile and desktop from localStorage if present
+try {
+    const savedEmail = localStorage.getItem('auth_email');
+    const savedName = localStorage.getItem('auth_name');
+    const isLoggedFlag = localStorage.getItem('auth_logged_in') === 'true';
+    const isDelibOut = sessionStorage.getItem('deliberate_logout') === 'true' || localStorage.getItem('deliberate_logout') === 'true';
+    if (!isDelibOut && isLoggedFlag && savedEmail) {
+        window.updateUserAccountUI({ email: savedEmail, displayName: savedName });
+    }
+} catch (e) {}
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const savedEmail = localStorage.getItem('auth_email');
+        const savedName = localStorage.getItem('auth_name');
+        const isLoggedFlag = localStorage.getItem('auth_logged_in') === 'true';
+        const isDelibOut = sessionStorage.getItem('deliberate_logout') === 'true' || localStorage.getItem('deliberate_logout') === 'true';
+        if (!isDelibOut && isLoggedFlag && savedEmail) {
+            window.updateUserAccountUI({ email: savedEmail, displayName: savedName });
+        }
+    } catch (e) {}
+});
+
 window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) {
     window.__isTelemetryLive = Boolean(isLive);
     const desktopBadge = document.getElementById('header-live-badge-desktop');
@@ -535,7 +557,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
             <div id="mobile-user-avatar" style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.4); flex-shrink: 0;">
               <?= htmlspecialchars($user_initial) ?>
             </div>
-            <span id="mobile-user-initial-tag" style="font-size: 11px; font-weight: 700; color: #0f172a; max-width: 55px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= htmlspecialchars($user_display_name) ?></span>
+            <span id="mobile-user-initial-tag" style="font-size: 11.5px; font-weight: 700; color: #0f172a; max-width: 85px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= htmlspecialchars($user_display_name) ?></span>
           </button>
           
           <button type="button" id="mobile-signin-btn" onclick="openAuthModal()" style="display: <?= $is_logged_in ? 'none' : 'inline-flex' ?>; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; background-color: #0f172a; border: none; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);">

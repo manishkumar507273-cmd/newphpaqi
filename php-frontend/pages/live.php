@@ -1,3 +1,105 @@
+<style>
+@media (max-width: 768px) {
+  /* Mobile compact layout for Live Telemetry */
+  #hero-card {
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    margin-bottom: 8px !important;
+  }
+  #hero-card [style*="margin-bottom: 12px"] {
+    margin-bottom: 4px !important;
+  }
+  #hero-card [style*="margin-bottom: 20px"] {
+    margin-bottom: 6px !important;
+    gap: 12px !important;
+  }
+  #hero-aqi-val {
+    font-size: 32px !important;
+    line-height: 1 !important;
+  }
+  #hero-aqi-subtext {
+    font-size: 8.5px !important;
+    margin-top: 2px !important;
+  }
+  #hero-aqi-badge {
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+  }
+  #hero-card [style*="margin-bottom: 14px"] {
+    margin-bottom: 6px !important;
+    gap: 6px !important;
+  }
+  #hero-card [style*="margin-bottom: 14px"] > div {
+    padding: 2px 7px !important;
+    font-size: 10px !important;
+    border-radius: 6px !important;
+  }
+  #hero-pm25, #hero-pm10 {
+    font-size: 10.5px !important;
+  }
+  #hero-scale-indicator {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  /* Pollutants Grid Mobile Refinements */
+  .pollutants-grid-responsive {
+    gap: 6px !important;
+  }
+  .pollutant-card {
+    padding: 7px 8px !important;
+    border-radius: 12px !important;
+    gap: 4px !important;
+    min-height: 68px !important;
+  }
+  .pollutant-card .pollutant-icon-box {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 11px !important;
+    border-radius: 6px !important;
+  }
+  .pollutant-card .pollutant-name {
+    font-size: 11.5px !important;
+    line-height: 1.1 !important;
+  }
+  .pollutant-card .pollutant-who {
+    font-size: 8px !important;
+    margin-top: 0px !important;
+  }
+  .pollutant-card .pollutant-info-icon {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .pollutant-card .pollutant-info-icon i,
+  .pollutant-card .pollutant-info-icon svg {
+    width: 9px !important;
+    height: 9px !important;
+  }
+  .pollutant-card [id^="card-"] {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+  .pollutant-card .pollutant-unit {
+    font-size: 8px !important;
+    margin-top: 1px !important;
+  }
+  .pollutant-card [id^="tag-"] {
+    padding: 1.5px 5px !important;
+    font-size: 8.5px !important;
+    border-radius: 999px !important;
+  }
+  .pollutant-card [id^="tag-"] span.w-1\.5 {
+    width: 4px !important;
+    height: 4px !important;
+  }
+  
+  .page-heading {
+    font-size: 18px !important;
+  }
+}
+</style>
+
 <div style="display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-2.5 sm:p-6">
 
   <!-- Sub-Navigation Selector -->
@@ -123,26 +225,26 @@
     </div>
 
     <!-- Pollutants Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div class="pollutants-grid-responsive grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
       
       <!-- PM2.5 -->
       <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('pm25')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🌫️</div>
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🌫️</div>
             <div>
-              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₂.₅</div>
-              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤15</div>
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₂.₅</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤15</div>
             </div>
           </div>
-          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
             <div id="card-pm25" class="font-mono text-lg sm:text-2xl font-extrabold text-sky-500 leading-none">--</div>
-            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
           <div id="tag-pm25" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
@@ -155,20 +257,20 @@
       <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('pm10')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☁️</div>
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☁️</div>
             <div>
-              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₁₀</div>
-              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤45</div>
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₁₀</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤45</div>
             </div>
           </div>
-          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
             <div id="card-pm10" class="font-mono text-lg sm:text-2xl font-extrabold text-indigo-500 leading-none">--</div>
-            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
           <div id="tag-pm10" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
@@ -181,20 +283,20 @@
       <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('co')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center text-sm sm:text-lg shrink-0">💨</div>
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center text-sm sm:text-lg shrink-0">💨</div>
             <div>
-              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">CO</div>
-              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤4</div>
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">CO</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤4</div>
             </div>
           </div>
-          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
             <div id="card-co" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-600 leading-none">--</div>
-            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">mg/m³</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">mg/m³</div>
           </div>
           <div id="tag-co" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
@@ -207,20 +309,20 @@
       <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('no2')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🏭</div>
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🏭</div>
             <div>
-              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">NO₂</div>
-              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤25</div>
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">NO₂</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤25</div>
             </div>
           </div>
-          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
             <div id="card-no2" class="font-mono text-lg sm:text-2xl font-extrabold text-purple-500 leading-none">--</div>
-            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
           <div id="tag-no2" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
@@ -233,20 +335,20 @@
       <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('o3')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☀️</div>
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☀️</div>
             <div>
-              <div class="text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">O₃</div>
-              <div class="text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤100</div>
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">O₃</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤100</div>
             </div>
           </div>
-          <div class="w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
             <div id="card-o3" class="font-mono text-lg sm:text-2xl font-extrabold text-amber-500 leading-none">--</div>
-            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
           <div id="tag-o3" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
@@ -604,18 +706,22 @@ function renderComparisonChart() {
     });
 }
 
-function formatSupabaseValue(val, suffix = '', defaultVal = '--') {
+function formatSupabaseValue(val, suffix = '', defaultVal = '--', decimals = 3) {
     if (val === null || val === undefined || val === '') return defaultVal;
     const num = Number(val);
     if (isNaN(num)) return String(val) + suffix;
-    return num.toString() + suffix;
+    return num.toFixed(decimals) + suffix;
 }
 
-function formatTempOneDecimal(val, suffix = '', defaultVal = '--') {
+function formatWeatherOneDecimal(val, suffix = '', defaultVal = '--') {
     if (val === null || val === undefined || val === '') return defaultVal;
     const num = Number(val);
     if (isNaN(num)) return String(val) + suffix;
     return num.toFixed(1) + suffix;
+}
+
+function formatTempOneDecimal(val, suffix = '', defaultVal = '--') {
+    return formatWeatherOneDecimal(val, suffix, defaultVal);
 }
 
 function formatStreamTimestamp(row) {
@@ -759,12 +865,12 @@ async function refreshDashboard() {
         if (weatherData) {
             const w = weatherData;
             
-            document.getElementById('weather-hero-temp').innerText = formatTempOneDecimal(w.temperature);
-            document.getElementById('card-temp').innerText = formatTempOneDecimal(w.temperature, '°C');
-            document.getElementById('card-hum').innerText = formatSupabaseValue(w.humidity, '%');
-            document.getElementById('card-wind').innerText = formatSupabaseValue(w.wind_speed, ' km/h');
-            document.getElementById('card-gust').innerText = formatSupabaseValue(w.wind_gust, ' km/h');
-            document.getElementById('card-rain').innerText = formatSupabaseValue(w.rain_gauge, ' mm');
+            document.getElementById('weather-hero-temp').innerText = formatWeatherOneDecimal(w.temperature);
+            document.getElementById('card-temp').innerText = formatWeatherOneDecimal(w.temperature, '°C');
+            document.getElementById('card-hum').innerText = formatWeatherOneDecimal(w.humidity, '%');
+            document.getElementById('card-wind').innerText = formatWeatherOneDecimal(w.wind_speed, ' km/h');
+            document.getElementById('card-gust').innerText = formatWeatherOneDecimal(w.wind_gust, ' km/h');
+            document.getElementById('card-rain').innerText = formatWeatherOneDecimal(w.rain_gauge, ' mm');
             
             // Today's rainfall synchronized with overview page
             const todayRainEl = document.getElementById('card-today-rain');
@@ -825,12 +931,12 @@ async function refreshDashboard() {
             
             weatherHistory.forEach((row, i) => {
                 const timeStr = formatStreamTimestamp(row);
-                const temp = formatTempOneDecimal(row.temperature);
-                const hum = formatSupabaseValue(row.humidity);
-                const wind = formatSupabaseValue(row.wind_speed);
-                const gust = formatSupabaseValue(row.wind_gust);
+                const temp = formatWeatherOneDecimal(row.temperature);
+                const hum = formatWeatherOneDecimal(row.humidity);
+                const wind = formatWeatherOneDecimal(row.wind_speed);
+                const gust = formatWeatherOneDecimal(row.wind_gust);
                 const dir = row.wind_direction || '--';
-                const rain = formatSupabaseValue(row.rain_gauge);
+                const rain = formatWeatherOneDecimal(row.rain_gauge);
 
                 if (row.temperature != null) temps.push(Number(row.temperature));
                 
@@ -1094,7 +1200,7 @@ function openPollutantModal(type) {
     const currentValStr = document.getElementById(`card-${type}`).innerText;
     const currentVal = parseFloat(currentValStr);
     
-    document.getElementById('pm-modal-val').innerText = isNaN(currentVal) ? '--' : currentVal.toFixed(2);
+    document.getElementById('pm-modal-val').innerText = isNaN(currentVal) ? '--' : currentVal.toFixed(3);
     document.getElementById('pm-modal-unit').innerText = data.unit;
     document.getElementById('pm-modal-short').innerText = data.id.toUpperCase();
     document.getElementById('pm-modal-q').innerText = data.id.toUpperCase();

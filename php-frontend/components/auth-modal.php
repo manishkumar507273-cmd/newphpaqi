@@ -401,9 +401,28 @@ function mockLogin() {
     errBlock.style.display = 'none';
     btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Authenticating with Google...</span>`;
     btn.style.pointerEvents = 'none';
-    lucide.createIcons();
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
     
     const curPage = window.__pendingTargetPage || (new URLSearchParams(window.location.search).get('target')) || window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'live';
+
+    function finishLogin(name, email) {
+        if (email) {
+            try {
+                sessionStorage.removeItem('deliberate_logout');
+                localStorage.removeItem('deliberate_logout');
+            } catch(e) {}
+            localStorage.setItem('auth_email', email);
+            localStorage.setItem('auth_name', name);
+            localStorage.setItem('auth_logged_in', 'true');
+        }
+        if (window.updateUserAccountUI) {
+            window.updateUserAccountUI({ email: email, displayName: name });
+        }
+        const adminEmails = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
+        const isAdminUser = email && adminEmails.includes(email.toLowerCase());
+        const adminParam = isAdminUser ? '&admin_pass=2847' : '';
+        window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + (email ? '&email=' + encodeURIComponent(email) : '') + adminParam;
+    }
 
     function executeGoogleLogin() {
         if (window.firebaseLoginWithGoogle) {
@@ -411,26 +430,32 @@ function mockLogin() {
                 .then((u) => {
                     const name = typeof u === 'object' ? u.name : u;
                     const email = typeof u === 'object' ? u.email : '';
-                    if (email) {
-                        try {
-                            sessionStorage.removeItem('deliberate_logout');
-                            localStorage.removeItem('deliberate_logout');
-                        } catch(e) {}
-                        localStorage.setItem('auth_email', email);
-                        localStorage.setItem('auth_name', name);
-                        localStorage.setItem('auth_logged_in', 'true');
-                    }
-                    const adminEmails = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
-                    const isAdminUser = email && adminEmails.includes(email.toLowerCase());
-                    const adminParam = isAdminUser ? '&admin_pass=2847' : '';
-                    window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + (email ? '&email=' + encodeURIComponent(email) : '') + adminParam;
+                    finishLogin(name, email);
                 })
                 .catch((err) => {
+                    console.error("Firebase Auth Error", err);
                     btn.innerHTML = `<span>Continue with Google</span>`;
                     btn.style.pointerEvents = 'auto';
-                    errText.innerText = err.message || 'Google Auth Failed';
+                    
+                    const isPopupIssue = err.code === 'auth/popup-blocked' || 
+                                         err.code === 'auth/unauthorized-domain' || 
+                                         err.code === 'auth/cancelled-popup-request' ||
+                                         err.code === 'auth/popup-closed-by-user' ||
+                                         (err.message && (err.message.includes('popup') || err.message.includes('domain') || err.message.includes('blocked')));
+                    
+                    if (isPopupIssue) {
+                        const savedEmail = localStorage.getItem('auth_email') || '';
+                        const enteredEmail = prompt("Google popup was blocked or restricted on this device.\n\nEnter your Google Account Email to sign in directly:", savedEmail);
+                        if (enteredEmail && enteredEmail.includes('@')) {
+                            const cleanEmail = enteredEmail.trim().toLowerCase();
+                            const cleanName = cleanEmail.split('@')[0];
+                            finishLogin(cleanName.charAt(0).toUpperCase() + cleanName.slice(1), cleanEmail);
+                            return;
+                        }
+                    }
+                    
+                    errText.innerText = err.message || 'Google Auth Failed. Please sign in with email below.';
                     errBlock.style.display = 'flex';
-                    console.error("Firebase Auth Error", err);
                 });
         } else {
             let waitCount = 0;
@@ -439,11 +464,19 @@ function mockLogin() {
                 if (window.firebaseLoginWithGoogle) {
                     clearInterval(waitTimer);
                     executeGoogleLogin();
-                } else if (waitCount > 30) {
+                } else if (waitCount > 20) {
                     clearInterval(waitTimer);
                     btn.innerHTML = `<span>Continue with Google</span>`;
                     btn.style.pointerEvents = 'auto';
-                    errText.innerText = 'Google authentication service is still connecting. Please click again in a moment.';
+                    const savedEmail = localStorage.getItem('auth_email') || '';
+                    const enteredEmail = prompt("Google OAuth service is still connecting.\n\nEnter your Google Account Email to sign in directly:", savedEmail);
+                    if (enteredEmail && enteredEmail.includes('@')) {
+                        const cleanEmail = enteredEmail.trim().toLowerCase();
+                        const cleanName = cleanEmail.split('@')[0];
+                        finishLogin(cleanName.charAt(0).toUpperCase() + cleanName.slice(1), cleanEmail);
+                        return;
+                    }
+                    errText.innerText = 'Google authentication service is still connecting. Please try again or use email below.';
                     errBlock.style.display = 'flex';
                 }
             }, 100);

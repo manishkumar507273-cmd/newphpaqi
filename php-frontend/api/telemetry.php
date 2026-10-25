@@ -428,10 +428,10 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
     };
 
     $parameters = [
-        'pm25'     => $calcStats($pm25Vals, 60.0, $h0['sub_indices']['PM2.5']),
-        'pm10'     => $calcStats($pm10Vals, 100.0, $h0['sub_indices']['PM10']),
-        'no2'      => $calcStats($no2Vals,  80.0, $h0['sub_indices']['NO₂']),
-        'co'       => $calcStats($coVals,   2.0,  $h0['sub_indices']['CO']),
+        'pm25'     => $calcStats($pm25Vals, 15.0, $h0['sub_indices']['PM2.5']),
+        'pm10'     => $calcStats($pm10Vals, 45.0, $h0['sub_indices']['PM10']),
+        'no2'      => $calcStats($no2Vals,  25.0, $h0['sub_indices']['NO₂']),
+        'co'       => $calcStats($coVals,   4.0,  $h0['sub_indices']['CO']),
         'o3'       => $calcStats($o3Vals,   100.0,$h0['sub_indices']['O₃']),
         'temp'     => $calcStats($tempVals, 0.0, 0.0),
         'humidity' => $calcStats($humVals,  0.0, 0.0),

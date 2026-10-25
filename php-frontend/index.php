@@ -153,6 +153,7 @@ if (isset($_GET['auth']) && $_GET['auth'] === 'true') {
 
     // Clean up the URL by stripping auth=true, but keeping the page parameter
     $target_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
+    session_write_close();
     header("Location: ?page=" . $target_page);
     exit;
 }

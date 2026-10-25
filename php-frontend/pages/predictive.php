@@ -609,12 +609,28 @@ if (file_exists($forecastJsonFile)) {
                             : (curRainMm > 0 ? 80 : 0)));
                 const curRainChance = Math.round(Number(curRainProb) || 0);
 
+                const whoSafeLimits = {
+                    pm25: '≤15 µg/m³',
+                    pm10: '≤45 µg/m³',
+                    no2:  '≤25 µg/m³',
+                    co:   '≤4 mg/m³',
+                    o3:   '≤100 µg/m³'
+                };
+
+                const formatCurVal = (val, key) => {
+                    if (val === null || val === undefined || isNaN(val)) return '--';
+                    if (['pm25', 'pm10', 'no2', 'co', 'o3'].includes(key)) {
+                        return Number(val).toFixed(3);
+                    }
+                    return val;
+                };
+
                 const items = [
-                    { key: 'pm25', name: 'PM2.5', icon: '💨', current: curHour.pm25, subindex: curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: p.pm25.safe_limit },
-                    { key: 'pm10', name: 'PM10', icon: '🌫️', current: curHour.pm10, subindex: curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: p.pm10.safe_limit },
-                    { key: 'no2', name: 'NO₂', icon: '🚦', current: curHour.no2, subindex: curSub['NO₂'] ?? curSub['no2'] ?? curSub['NO2'] ?? p.no2.current_subindex, unit: 'µg/m³', range: `${p.no2.min} - ${p.no2.max}`, mean: p.no2.mean, limit: p.no2.safe_limit },
-                    { key: 'co', name: 'CO', icon: '🏭', current: curHour.co, subindex: curSub['CO'] ?? curSub['co'] ?? p.co.current_subindex, unit: 'mg/m³', range: `${p.co.min} - ${p.co.max}`, mean: p.co.mean, limit: p.co.safe_limit },
-                    { key: 'o3', name: 'O₃', icon: '☀️', current: curHour.o3, subindex: curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: p.o3.safe_limit },
+                    { key: 'pm25', name: 'PM2.5', icon: '💨', current: formatCurVal(curHour.pm25, 'pm25'), subindex: curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: whoSafeLimits.pm25 },
+                    { key: 'pm10', name: 'PM10', icon: '🌫️', current: formatCurVal(curHour.pm10, 'pm10'), subindex: curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: whoSafeLimits.pm10 },
+                    { key: 'no2', name: 'NO₂', icon: '🚦', current: formatCurVal(curHour.no2, 'no2'), subindex: curSub['NO₂'] ?? curSub['no2'] ?? curSub['NO2'] ?? p.no2.current_subindex, unit: 'µg/m³', range: `${p.no2.min} - ${p.no2.max}`, mean: p.no2.mean, limit: whoSafeLimits.no2 },
+                    { key: 'co', name: 'CO', icon: '🏭', current: formatCurVal(curHour.co, 'co'), subindex: curSub['CO'] ?? curSub['co'] ?? p.co.current_subindex, unit: 'mg/m³', range: `${p.co.min} - ${p.co.max}`, mean: p.co.mean, limit: whoSafeLimits.co },
+                    { key: 'o3', name: 'O₃', icon: '☀️', current: formatCurVal(curHour.o3, 'o3'), subindex: curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: whoSafeLimits.o3 },
                     { key: 'temp', name: 'Temp', icon: '🌡️', current: curHour.temp, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
                     { key: 'humidity', name: 'Humidity', icon: '💧', current: curHour.humidity, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' },
                     { key: 'rainfall', name: 'Rainfall', icon: '🌧️', current: curRainChance, subindex: null, unit: '%', rainMm: curRainMm, range: `${rfInfo?.total_24h_rainfall_mm ?? p.rainfall?.total_24h ?? 0} mm/24h`, mean: rfInfo ? `Peak: ${rfInfo.peak_hourly_rate_mm} mm/h` : '0 mm/h', limit: rfInfo ? `${rfInfo.rain_risk_level} Risk` : 'Drainage Safe' }
@@ -639,7 +655,7 @@ if (file_exists($forecastJsonFile)) {
                         <div class="text-[9.5px] sm:text-[10px] text-slate-400 mt-1 truncate">
                           ${it.key === 'rainfall'
                             ? `<span>${it.rainMm} mm · ${it.limit}</span>`
-                            : `<span>Safe: <strong class="text-slate-500 font-mono">${it.limit}</strong></span>`
+                            : `<span>WHO: <strong class="text-slate-500 font-mono">${it.limit}</strong></span>`
                           }
                         </div>
                       </div>

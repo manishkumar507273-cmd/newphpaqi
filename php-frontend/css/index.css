@@ -1390,6 +1390,65 @@ img, svg, video, canvas {
     margin-top: 4px !important;
   }
 
+  /* Live Telemetry view mobile refinements */
+  .pollutants-grid-responsive {
+    gap: 6px !important;
+  }
+  .pollutant-card {
+    padding: 7px 8px !important;
+    border-radius: 12px !important;
+    gap: 4px !important;
+    min-height: 68px !important;
+  }
+  .pollutant-card .pollutant-icon-box {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 11px !important;
+    border-radius: 6px !important;
+  }
+  .pollutant-card .pollutant-name {
+    font-size: 11.5px !important;
+    line-height: 1.1 !important;
+  }
+  .pollutant-card .pollutant-who {
+    font-size: 8px !important;
+    margin-top: 0px !important;
+  }
+  .pollutant-card .pollutant-info-icon {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .pollutant-card [id^="card-"] {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+  .pollutant-card .pollutant-unit {
+    font-size: 8px !important;
+    margin-top: 1px !important;
+  }
+  .pollutant-card [id^="tag-"] {
+    padding: 1.5px 5px !important;
+    font-size: 8.5px !important;
+    border-radius: 999px !important;
+  }
+  #hero-card {
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    margin-bottom: 8px !important;
+  }
+  #hero-aqi-val {
+    font-size: 32px !important;
+    line-height: 1 !important;
+  }
+  #hero-aqi-subtext {
+    font-size: 8.5px !important;
+  }
+  #hero-aqi-badge {
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+  }
+
   /* Predictive view mobile refinements */
   #forecast-hero-aqi {
     font-size: 34px !important;

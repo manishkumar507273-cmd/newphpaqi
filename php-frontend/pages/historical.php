@@ -968,10 +968,10 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px; color: #00bfa5; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
                 <td style="padding: 10px 16px; color: #0f172a; font-weight: 600;">${d.temperature != null ? Number(d.temperature).toFixed(1) : '--'}</td>
                 <td style="padding: 10px 16px; color: #475569;">${d.humidity != null ? Number(d.humidity).toFixed(1) : '--'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.wind_speed != null ? Number(d.wind_speed).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.wind_gust != null ? Number(d.wind_gust).toFixed(3) : '0.000'}</td>
+                <td style="padding: 10px 16px; color: #475569;">${d.wind_speed != null ? Number(d.wind_speed).toFixed(1) : '0.0'}</td>
+                <td style="padding: 10px 16px; color: #475569;">${d.wind_gust != null ? Number(d.wind_gust).toFixed(1) : '0.0'}</td>
                 <td style="padding: 10px 16px; color: #475569;">${getCompassDir(d.wind_direction)}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.rain_gauge != null ? Number(d.rain_gauge).toFixed(3) : '0.000'}</td>
+                <td style="padding: 10px 16px; color: #475569;">${d.rain_gauge != null ? Number(d.rain_gauge).toFixed(1) : '0.0'}</td>
             </tr>`;
         }).join('');
     }

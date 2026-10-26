@@ -27,43 +27,7 @@ if (file_exists($forecastJsonFile)) {
     <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Atmospheric weather, rainfall, and air quality predictive forecasting for SMVITM Campus.</p>
   </div>
 
-  <!-- ── 2. High-Visibility AQI Advisory Banner ── -->
-  <div id="forecast-advisory-banner" class="bg-gradient-to-r from-slate-500/10 via-slate-400/10 to-slate-500/10 border-[1.5px] border-slate-300 rounded-[14px] sm:rounded-[20px] p-2.5 sm:p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative overflow-hidden transition-all">
-    <div class="flex items-start gap-2.5 sm:gap-3.5">
-      <div id="advisory-icon-box" class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-slate-700/20 mt-0.5">
-        <i data-lucide="clock" class="w-3.5 h-3.5 sm:w-5 sm:h-5"></i>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 flex-wrap mb-1">
-          <span class="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight" id="advisory-title">Predictive Advisory System · Standby</span>
-          <span id="advisory-severity-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-200 text-slate-700 border border-slate-300 tracking-wider uppercase font-mono">
-            AWAITING MODEL
-          </span>
-        </div>
-        <p class="text-xs sm:text-[13px] text-slate-700 leading-relaxed m-0" id="advisory-desc">
-          Predictive advisories and microclimate alerts will automatically generate once the custom trained forecast model is linked. Real-time campus telemetry continues monitoring baseline conditions.
-        </p>
 
-        <!-- Collapsible Action Guide -->
-        <div id="advisory-expand-section" class="mt-3 pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 text-xs text-slate-600" style="display: none;">
-          <div class="flex items-center gap-2 bg-white/80 p-2 sm:p-2.5 rounded-xl border border-slate-200">
-            <span class="text-base">🏃</span>
-            <span><strong>Outdoor Sports:</strong> <span id="advisory-sports-val">Awaiting model prediction</span></span>
-          </div>
-          <div class="flex items-center gap-2 bg-white/80 p-2 sm:p-2.5 rounded-xl border border-slate-200">
-            <span class="text-base">🪟</span>
-            <span><strong>Campus Ventilation:</strong> <span id="advisory-vent-val">Awaiting model prediction</span></span>
-          </div>
-          <div class="flex items-center gap-2 bg-white/80 p-2 sm:p-2.5 rounded-xl border border-slate-200">
-            <span class="text-base">💧</span>
-            <span><strong>Hydration / Advisory:</strong> <span id="advisory-hydr-val">Awaiting model prediction</span></span>
-          </div>
-        </div>
-
-
-      </div>
-    </div>
-  </div>
 
   <!-- ── 3. Forecast Hero Summary Card: Predicted AQI ── -->
   <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-7 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] relative overflow-hidden">
@@ -143,25 +107,30 @@ if (file_exists($forecastJsonFile)) {
   </div>
 
   <!-- ── 4. Hourly Forecast: Edge-to-Edge Horizontally Scrolling Reel ── -->
-  <div class="bg-white rounded-[24px] p-4 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)]">
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-3.5 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)]">
     
-    <div class="flex items-center justify-between mb-3 px-1">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-[#e6fcf9] text-[#00bfa5] flex items-center justify-center">
+    <div class="flex items-center justify-between gap-2 mb-3 px-1">
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-[#e6fcf9] text-[#00bfa5] flex items-center justify-center shrink-0">
           <i data-lucide="clock" class="w-4 h-4"></i>
         </div>
-        <div>
-          <h2 id="hourly-forecast-heading" class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Hourly Forecast (Next 24 Hours)</h2>
-          <p class="text-xs text-slate-400 m-0">Swipe horizontally to track predicted temperature, humidity, and AQI</p>
+        <div class="min-w-0">
+          <h2 id="hourly-forecast-heading" class="text-sm sm:text-base font-extrabold text-slate-900 m-0 tracking-tight truncate">Hourly Forecast (Next 24 Hours)</h2>
+          <p class="text-[11px] sm:text-xs text-slate-400 m-0 truncate">Swipe horizontally to track predicted temperature, humidity, and AQI</p>
         </div>
       </div>
-      <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-        <span>👈 Drag / Scroll 👉</span>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" onclick="scrollHourlyReel(-1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-600 flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer" title="Scroll left">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </button>
+        <button type="button" onclick="scrollHourlyReel(1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-600 flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer" title="Scroll right">
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
       </div>
     </div>
 
-    <!-- Edge-to-Edge Horizontal Reel with Scroll-Snap -->
-    <div id="hourly-forecast-reel" class="hourly-forecast-reel flex gap-3 overflow-x-auto py-2 px-1" style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+    <!-- Edge-to-Edge Horizontal Reel with High-Performance Smooth Scrolling -->
+    <div id="hourly-forecast-reel" class="hourly-forecast-reel flex gap-3 overflow-x-auto py-2 px-1">
       <!-- Populated dynamically by JS with smooth cards -->
       <div class="text-xs text-slate-400 py-6 text-center w-full">Loading hourly predictions...</div>
     </div>
@@ -169,30 +138,25 @@ if (file_exists($forecastJsonFile)) {
   </div>
 
   <!-- ── 5. Rainfall Prediction Probability Scale & Status Legend ── -->
-  <div class="bg-white rounded-[24px] p-4 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)]">
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-3.5 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)]">
     
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-1">
-      <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-          <i data-lucide="cloud-rain" class="w-4 h-4"></i>
-        </div>
-        <div>
-          <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight flex items-center gap-2">
-            <span>Rainfall Prediction Scale</span>
-            <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">5-Tier Standard</span>
-          </h2>
-          <p class="text-xs text-slate-400 m-0">Operational classification standard for machine-learned precipitation probability forecasts</p>
-        </div>
+    <div class="flex items-center gap-2.5 mb-3.5 sm:mb-4 px-1">
+      <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+        <i data-lucide="cloud-rain" class="w-4 h-4"></i>
       </div>
-      <div id="rain-scale-current-chip" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold border border-slate-200 bg-slate-50 text-slate-600 transition-all font-mono self-start sm:self-auto shadow-xs">
-        <span class="w-2 h-2 rounded-full bg-slate-400"></span> Selected Hour: <strong class="font-mono">--%</strong>
+      <div>
+        <h2 class="text-sm sm:text-base font-extrabold text-slate-900 m-0 tracking-tight flex items-center gap-2">
+          <span>Rainfall Prediction Scale</span>
+          <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">5-Tier Standard</span>
+        </h2>
+        <p class="text-[11px] sm:text-xs text-slate-400 m-0">Operational classification standard for machine-learned precipitation probability forecasts</p>
       </div>
     </div>
 
     <!-- Responsive Table Card -->
     <div class="overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-xs">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse min-w-[540px]">
+      <div class="w-full overflow-x-auto sm:overflow-x-visible">
+        <table class="rain-scale-table w-full text-left border-collapse sm:min-w-[540px]">
           <thead>
             <tr class="bg-slate-50/90 border-b border-slate-200 text-[11.5px] uppercase tracking-wider font-extrabold text-slate-500 font-mono">
               <th class="py-3.5 px-4 w-[28%]">Probability Range</th>
@@ -297,40 +261,30 @@ if (file_exists($forecastJsonFile)) {
 
   </div>
 
-  <!-- ── 6. Model Footnote & Campus Station Attribution ── -->
-  <div class="bg-slate-50 border border-slate-200 rounded-[20px] p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[#00bfa5] shrink-0 shadow-sm">
-        <i data-lucide="cpu" class="w-4 h-4"></i>
-      </div>
-      <div>
-        <div class="font-bold text-slate-700">SMVITM Atmospheric Predictive Engine (SAPE)</div>
-        <div class="text-[11px] text-slate-400 mt-0.5">Automated forecast engine • 24-hour model updates triggered exclusively via scheduled cron jobs. Project visits read static cache and never re-execute model.</div>
-      </div>
-    </div>
-    <div class="flex items-center gap-2 font-mono text-[11px]">
-      <span class="inline-block w-2 h-2 rounded-full bg-emerald-500" id="forecast-sync-dot"></span>
-      <span>Sync Status: <strong class="text-slate-700" id="forecast-sync-time">Cron Active</strong></span>
-    </div>
-  </div>
-
 </div>
 
 <!-- ── Custom Styles for Forecast Page ── -->
 <style>
-/* Horizontal Reel Custom Styling (Mobile & Desktop) */
+/* Horizontal Reel Custom Styling (High Performance, Smooth Momentum) */
 .hourly-forecast-reel {
   display: flex !important;
   flex-direction: row !important;
   flex-wrap: nowrap !important;
   overflow-x: auto !important;
+  scroll-behavior: smooth !important;
   -webkit-overflow-scrolling: touch !important;
-  scroll-snap-type: x mandatory !important;
+  overscroll-behavior-x: contain !important;
   scrollbar-width: none !important;
-  gap: 10px !important;
-  padding: 8px 4px 12px 4px !important;
+  gap: 12px !important;
+  padding: 8px 6px 14px 6px !important;
   width: 100% !important;
   box-sizing: border-box !important;
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-x pan-y;
+}
+.hourly-forecast-reel:active {
+  cursor: grabbing;
 }
 .hourly-forecast-reel::-webkit-scrollbar {
   display: none !important;
@@ -338,35 +292,45 @@ if (file_exists($forecastJsonFile)) {
   height: 0 !important;
 }
 .hourly-card {
-  scroll-snap-align: start !important;
-  flex: 0 0 88px !important;
-  min-width: 88px !important;
-  max-width: 88px !important;
+  flex: 0 0 136px !important;
+  min-width: 136px !important;
+  max-width: 136px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  padding: 10px 6px !important;
-  border-radius: 16px !important;
+  padding: 13px 10px !important;
+  border-radius: 20px !important;
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  user-select: none;
   box-sizing: border-box !important;
+  will-change: transform;
+  transform: translateZ(0);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  user-select: none;
 }
 .hourly-card:hover {
-  transform: translateY(-2px);
   border-color: #00bfa5;
   background: #ffffff;
-  box-shadow: 0 6px 18px rgba(0, 191, 165, 0.12);
+  box-shadow: 0 6px 18px rgba(0, 191, 165, 0.14);
+  transform: translateY(-2px);
 }
 .hourly-card.active-hour {
   background: #ffffff !important;
   border-color: #00bfa5 !important;
-  box-shadow: 0 6px 20px rgba(0, 191, 165, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(0, 191, 165, 0.2) !important;
 }
 .hourly-card.active-hour .hour-label {
   color: #00bfa5 !important;
   font-weight: 800 !important;
+}
+@media (max-width: 640px) {
+  .hourly-card {
+    flex: 0 0 118px !important;
+    min-width: 118px !important;
+    max-width: 118px !important;
+    padding: 11px 8px !important;
+    border-radius: 16px !important;
+  }
 }
 
 /* Accordion Row Styling */
@@ -427,7 +391,7 @@ if (file_exists($forecastJsonFile)) {
   background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 50%, #ef4444 100%);
 }
 
-/* Rainfall Scale Table Active Row Highlighting */
+/* Rainfall Scale Table Active Row Highlighting & Mobile Adaptation */
 .rain-scale-row {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -440,6 +404,70 @@ if (file_exists($forecastJsonFile)) {
 }
 .rain-scale-row.active-rain-tier td {
   font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .rain-scale-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .rain-scale-table thead {
+    display: none !important;
+  }
+  .rain-scale-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0 !important;
+  }
+  .rain-scale-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px 14px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .rain-scale-row td {
+    border: none !important;
+  }
+  .rain-scale-row td:nth-child(1) {
+    order: 1 !important;
+    width: auto !important;
+    padding: 0 !important;
+    font-size: 13.5px !important;
+  }
+  .rain-scale-row td:nth-child(2) {
+    order: 2 !important;
+    width: auto !important;
+    padding: 0 !important;
+    text-align: right !important;
+  }
+  .rain-scale-row td:nth-child(3) {
+    order: 3 !important;
+    width: 100% !important;
+    padding: 6px 0 0 0 !important;
+    font-size: 11.5px !important;
+    line-height: 1.45 !important;
+    color: #64748b !important;
+    font-weight: 400 !important;
+  }
+  .rain-scale-row.active-rain-tier {
+    border-left: 4px solid #00bfa5 !important;
+    background-color: #f0fdf4 !important;
+  }
+  .rain-scale-row.active-rain-tier td:first-child {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+  .rain-scale-row.active-rain-tier td:nth-child(3) {
+    color: #065f46 !important;
+    font-weight: 500 !important;
+  }
 }
 </style>
 
@@ -576,7 +604,24 @@ if (file_exists($forecastJsonFile)) {
     // Static forecast output remains stable across project runs/page views without synthetic hour shifting.
     function generateHourlyData() {
         if (trainedModelData && trainedModelData.hourly && Array.isArray(trainedModelData.hourly) && trainedModelData.hourly.length > 0) {
-            return trainedModelData.hourly.map((item, idx) => {
+            const now = new Date();
+            // Start strictly from the upcoming next hour (e.g. if now is 7:20 PM, predict 8 PM, 9 PM, 10 PM...)
+            const currentHourFloor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0).getTime();
+
+            // Filter out any hours that are in the past or currently in-progress
+            let validList = trainedModelData.hourly.filter(item => {
+                if (item.iso) {
+                    const itemTime = new Date(item.iso).getTime();
+                    return itemTime > currentHourFloor;
+                }
+                return true;
+            });
+
+            if (!validList || validList.length === 0) {
+                validList = trainedModelData.hourly;
+            }
+
+            return validList.map((item, idx) => {
                 let timeLabel = item.label;
 
                 if (!timeLabel && item.iso) {
@@ -593,7 +638,8 @@ if (file_exists($forecastJsonFile)) {
                     ...item,
                     index: idx,
                     isNext: (idx === 0),
-                    label: timeLabel || `+${idx}h`
+                    isNow: false,
+                    label: timeLabel || `+${idx+1}h`
                 };
             });
         }
@@ -602,13 +648,14 @@ if (file_exists($forecastJsonFile)) {
         const currentHour = now.getHours();
         const hours = [];
 
-        for (let i = 0; i < 24; i++) {
+        // Fallback: strictly predict upcoming 24 hours starting from next hour (i = 1..24)
+        for (let i = 1; i <= 24; i++) {
             const h = (currentHour + i) % 24;
             const hourDate = new Date(now.getTime() + (i * 3600000));
-            const timeLabel = i === 0 ? 'Now' : hourDate.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+            const timeLabel = hourDate.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
 
             hours.push({
-                index: i,
+                index: i - 1,
                 hour: h,
                 label: timeLabel,
                 temp: '--',
@@ -620,7 +667,8 @@ if (file_exists($forecastJsonFile)) {
                 no2: '--',
                 o3: '--',
                 icon: '⏳',
-                isNow: i === 0
+                isNow: false,
+                isNext: (i === 1)
             });
         }
         return hours;
@@ -766,14 +814,7 @@ if (file_exists($forecastJsonFile)) {
                 heroRain.innerText = `${hourRainMm} mm`;
             }
             if (heroRainRisk) {
-                heroRainRisk.innerText = `${hourRainProb}% · ${rainStatus.badge.toUpperCase()}`;
-                if (heroRainBadge) {
-                    heroRainBadge.style.backgroundColor = rainStatus.bg;
-                    heroRainBadge.style.borderColor = rainStatus.border;
-                    heroRainBadge.style.color = rainStatus.text;
-                    heroRainRisk.style.backgroundColor = rainStatus.chipBg;
-                    heroRainRisk.style.color = rainStatus.chipText;
-                }
+                heroRainRisk.innerText = `${hourRainProb}%`;
             }
 
             // Highlight active row in Section 5: Rainfall Prediction Scale table
@@ -783,13 +824,6 @@ if (file_exists($forecastJsonFile)) {
             const activeRow = document.getElementById(`rain-scale-tier-${rainStatus.tier}`);
             if (activeRow) {
                 activeRow.classList.add('active-rain-tier');
-            }
-            const rainChip = document.getElementById('rain-scale-current-chip');
-            if (rainChip) {
-                rainChip.innerHTML = `<span class="w-2 h-2 rounded-full" style="background:${rainStatus.color};"></span> Selected: <strong class="font-mono">${hourRainProb}%</strong> (${rainStatus.badge})`;
-                rainChip.style.backgroundColor = rainStatus.bg;
-                rainChip.style.borderColor = rainStatus.border;
-                rainChip.style.color = rainStatus.text;
             }
 
             // 3. Render 8 Predicted Model Parameters Grid for this timestamp
@@ -825,7 +859,7 @@ if (file_exists($forecastJsonFile)) {
                     { key: 'o3', name: 'O₃', icon: '☀️', current: formatCurVal(curHour.o3, 'o3'), subindex: curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: whoSafeLimits.o3 },
                     { key: 'temp', name: 'Temp', icon: '🌡️', current: curHour.temp, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
                     { key: 'humidity', name: 'Humidity', icon: '💧', current: curHour.humidity, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' },
-                    { key: 'rainfall', name: 'Rainfall', icon: '🌧️', current: curRainChance, subindex: rainStatus.badge, statusObj: rainStatus, unit: '%', rainMm: curRainMm, range: `${rfInfo?.total_24h_rainfall_mm ?? p.rainfall?.total_24h ?? 0} mm/24h`, mean: rfInfo ? `Peak: ${rfInfo.peak_hourly_rate_mm} mm/h` : '0 mm/h', limit: `Scale: ${rainStatus.range}` }
+                    { key: 'rainfall', name: 'Rainfall', icon: '🌧️', current: curRainChance, subindex: null, unit: '%', rainMm: curRainMm, range: `${rfInfo?.total_24h_rainfall_mm ?? p.rainfall?.total_24h ?? 0} mm/24h`, mean: rfInfo ? `Peak: ${rfInfo.peak_hourly_rate_mm} mm/h` : '0 mm/h', limit: `${curRainMm} mm` }
                 ];
 
                 paramsGrid.innerHTML = items.map((it) => `
@@ -834,23 +868,19 @@ if (file_exists($forecastJsonFile)) {
                         <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
                           <span>${it.icon}</span> <span>${it.name}</span>
                         </span>
-                        ${it.key === 'rainfall' ? `
-                          <span class="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded shadow-xs" style="background:${it.statusObj.bg}; color:${it.statusObj.text}; border:1px solid ${it.statusObj.border}; white-space:nowrap;">
-                            ${it.subindex}
-                          </span>
-                        ` : (it.subindex !== null && it.subindex !== undefined ? `
+                        ${it.subindex !== null && it.subindex !== undefined ? `
                           <span class="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                             Sub: ${it.subindex}
                           </span>
                         ` : `
                           <span class="text-[9.5px] font-mono font-bold text-slate-400">${it.unit}</span>
-                        `)}
+                        `}
                       </div>
                       <div class="my-0.5 sm:my-1">
                         <div class="text-base sm:text-xl font-extrabold font-mono text-slate-900 leading-none">${it.current} <span class="text-[11px] sm:text-xs font-normal text-slate-400">${it.unit}</span></div>
                         <div class="text-[9.5px] sm:text-[10px] text-slate-400 mt-1 truncate">
                           ${it.key === 'rainfall'
-                            ? `<span>${it.rainMm} mm · <strong class="text-slate-500 font-mono">${it.limit}</strong></span>`
+                            ? `<span>Precipitation: <strong class="text-slate-500 font-mono">${it.rainMm} mm</strong></span>`
                             : `<span>WHO: <strong class="text-slate-500 font-mono">${it.limit}</strong></span>`
                           }
                         </div>
@@ -907,43 +937,6 @@ if (file_exists($forecastJsonFile)) {
             }
 
 
-            // Advisory Banner
-            if (trainedModelData.advisory) {
-                const adv = trainedModelData.advisory;
-                const advTitle = document.getElementById('advisory-title');
-                if (advTitle) advTitle.innerText = adv.title;
-
-                const advBadge = document.getElementById('advisory-severity-badge');
-                if (advBadge) {
-                    advBadge.innerText = adv.severity;
-                    if (adv.severity === 'GOOD') {
-                        advBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 tracking-wider uppercase font-mono";
-                    } else if (adv.severity === 'SATISFACTORY') {
-                        advBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-lime-100 text-lime-800 border border-lime-300 tracking-wider uppercase font-mono";
-                    } else {
-                        advBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 tracking-wider uppercase font-mono";
-                    }
-                }
-
-                const advDesc = document.getElementById('advisory-desc');
-                if (advDesc) advDesc.innerText = adv.desc;
-
-                const sportsVal = document.getElementById('advisory-sports-val');
-                if (sportsVal) sportsVal.innerText = adv.sports;
-                const ventVal = document.getElementById('advisory-vent-val');
-                if (ventVal) ventVal.innerText = adv.ventilation;
-                const hydrVal = document.getElementById('advisory-hydr-val');
-                if (hydrVal) hydrVal.innerText = adv.hydration;
-
-                const banner = document.getElementById('forecast-advisory-banner');
-                if (banner) {
-                    banner.className = "bg-gradient-to-r from-teal-500/10 via-emerald-400/10 to-teal-500/10 border-[1.5px] border-emerald-200 rounded-[20px] p-4 sm:p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative overflow-hidden transition-all";
-                }
-                const iconBox = document.getElementById('advisory-icon-box');
-                if (iconBox) {
-                    iconBox.className = "w-10 h-10 rounded-xl bg-[#00bfa5] text-white flex items-center justify-center shrink-0 shadow-md shadow-teal-500/20 mt-0.5";
-                }
-            }
 
             const syncEl = document.getElementById('forecast-sync-time');
             if (syncEl) syncEl.innerText = `Active`;
@@ -972,18 +965,26 @@ if (file_exists($forecastJsonFile)) {
                 const rStatus = getRainStatus(rainChance);
 
                 return `
-                    <div class="hourly-card ${isSelected ? 'active-hour' : ''}" onclick="selectForecastHour(${idx})" style="cursor: pointer;" title="Rain Probability: ${rainChance}% (${rStatus.badge})">
-                      <div class="hour-label text-[11px] font-bold ${isFirst ? 'text-teal-600' : 'text-slate-500'} mb-1.5 whitespace-nowrap flex items-center gap-1">
+                    <div class="hourly-card ${isSelected ? 'active-hour' : ''}" onclick="selectForecastHour(${idx})" style="cursor: pointer;" title="Rain Probability: ${rainChance}%">
+                      <div class="hour-label text-xs sm:text-[13px] font-extrabold ${isFirst ? 'text-teal-600' : 'text-slate-600'} mb-1 whitespace-nowrap flex items-center gap-1.5">
                         <span>${item.label}</span>
-                        ${isFirst ? '<span class="text-[8.5px] font-mono px-1 rounded bg-teal-50 text-teal-700 border border-teal-200">NEXT</span>' : ''}
+                        ${isFirst ? '<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">NEXT</span>' : ''}
                       </div>
 
-                      <div class="font-mono text-base font-extrabold text-slate-800 leading-tight">${item.temp}°C</div>
-                      <div class="text-[9.5px] font-semibold text-blue-600 mt-1 flex items-center gap-0.5"><span>💧</span>${item.humidity}%</div>
-                      <div class="text-[9.5px] font-bold mt-0.5 flex items-center gap-0.5" style="color:${rStatus.color};" title="Precipitation: ${rainChance}% (${rStatus.badge})">
-                        <span>🌧️</span>${rainChance}%
+                      <div class="font-mono text-lg sm:text-[21px] font-black text-slate-800 leading-tight my-1 tracking-tight">${item.temp}°C</div>
+
+                      <div class="w-full bg-white/90 rounded-xl py-1.5 px-2 my-1 flex flex-col gap-1 border border-slate-200/70 shadow-2xs">
+                        <div class="flex items-center justify-between text-[11px] font-medium text-slate-600">
+                          <span class="flex items-center gap-1">💧 <span class="text-[10px] text-slate-400 font-semibold">Hum</span></span>
+                          <span class="font-mono font-bold text-sky-700">${item.humidity}%</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] font-medium text-slate-600" title="Precipitation: ${rainChance}%">
+                          <span class="flex items-center gap-1">🌧️ <span class="text-[10px] text-slate-400 font-semibold">Rain</span></span>
+                          <span class="font-mono font-extrabold" style="color:${rStatus.color};">${rainChance}%</span>
+                        </div>
                       </div>
-                      <div class="mt-1.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold font-mono" style="background:${b.bg}; color:${b.text}; border:1px solid ${b.border}; white-space:nowrap;">
+
+                      <div class="mt-1 w-full text-center py-1 rounded-xl text-[10.5px] font-extrabold font-mono shadow-2xs" style="background:${b.bg}; color:${b.text}; border:1px solid ${b.border}; white-space:nowrap;">
                         AQI ${item.aqi}
                       </div>
                     </div>
@@ -1097,6 +1098,60 @@ if (file_exists($forecastJsonFile)) {
         }
 
         if (window.lucide) lucide.createIcons();
+        initReelDrag();
+    }
+
+    // Smooth Left/Right Reel Navigation
+    window.scrollHourlyReel = function(direction) {
+        const reel = document.getElementById('hourly-forecast-reel');
+        if (reel) {
+            reel.scrollBy({ left: direction * 280, behavior: 'smooth' });
+        }
+    };
+
+    // Butter-smooth momentum mouse drag-to-scroll
+    function initReelDrag() {
+        const slider = document.getElementById('hourly-forecast-reel');
+        if (!slider || slider.__dragInitialized) return;
+        slider.__dragInitialized = true;
+
+        let isDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+        let isDragging = false;
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            isDragging = false;
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDown) {
+                isDown = false;
+                setTimeout(() => { isDragging = false; }, 50);
+            }
+        });
+
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 1.35;
+            if (Math.abs(walk) > 4) {
+                isDragging = true;
+            }
+            slider.scrollLeft = scrollLeft - walk;
+        });
+
+        // Intercept card clicks if user was actively dragging
+        slider.addEventListener('click', (e) => {
+            if (isDragging) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        }, true);
     }
 
     let autoRefreshForecastTimer = null;

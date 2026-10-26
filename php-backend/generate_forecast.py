@@ -467,12 +467,9 @@ def main():
             print(f"Warning: Rainfall model inference encountered error: {e}", file=sys.stderr)
 
     # When generating hourly forecast:
-    # If run near the top of the hour (minute < 30), forecast starts at the current hour (e.g. 18:00 at 6 PM).
-    # If run in second half of hour, start at the upcoming hour (now + 1h).
-    if now_ist.minute < 30:
-        start_dt = now_ist.replace(minute=0, second=0, microsecond=0)
-    else:
-        start_dt = (now_ist + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    # Always predict upcoming future hours starting from the next hour (now + 1h).
+    # The current in-progress hour is monitored by live telemetry.
+    start_dt = (now_ist + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
 
     hourly_list = []
     temps = []
@@ -535,7 +532,8 @@ def main():
             'is_rain': r_is_rain,
             'rain_intensity': r_intensity,
             'icon': icon,
-            'isNow': (i == 0)
+            'isNow': False,
+            'isNext': (i == 0)
         })
 
     # Generate 4 diurnal day phases for detailed timeline accordion

@@ -37,9 +37,41 @@
   #hero-pm25, #hero-pm10 {
     font-size: 10.5px !important;
   }
+  /* Scale Bar Layout & Overlap Prevention */
+  .hero-scale-labels {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    margin-bottom: 12px !important;
+    padding: 0 !important;
+    gap: 1px !important;
+  }
+  .hero-scale-labels .scale-label {
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+  .hero-scale-bar-track {
+    height: 8px !important;
+    margin-bottom: 10px !important;
+  }
   #hero-scale-indicator {
     width: 14px !important;
     height: 14px !important;
+    border-width: 2.5px !important;
+  }
+  .hero-scale-ticks span {
+    font-size: 8.5px !important;
+  }
+  @media (max-width: 380px) {
+    .hero-scale-labels .scale-label {
+      font-size: 7.2px !important;
+      letter-spacing: -0.03em !important;
+    }
+    .hero-scale-ticks span {
+      font-size: 7.5px !important;
+    }
   }
   
   /* Pollutants Grid Mobile Refinements */
@@ -185,22 +217,22 @@
       </div>
 
       <!-- Overall AQI Scale Bar -->
-      <div style="max-width: 380px; width: 100%;">
-        <div style="display: flex; justify-content: space-between; padding: 0 2px; margin-bottom: 6px;">
-          <span style="font-size: 9px; font-weight: 700; color: #22c55e; line-height: 1;">Good</span>
-          <span style="font-size: 9px; font-weight: 700; color: #eab308; line-height: 1;">Moderate</span>
-          <span style="font-size: 9px; font-weight: 700; color: #f97316; line-height: 1;">Poor</span>
-          <span style="font-size: 9px; font-weight: 700; color: #ef4444; line-height: 1;">Unhealthy</span>
-          <span style="font-size: 9px; font-weight: 700; color: #a855f7; line-height: 1;">Severe</span>
-          <span style="font-size: 9px; font-weight: 700; color: #f43f5e; line-height: 1;">Hazardous</span>
+      <div class="hero-scale-bar-container" style="max-width: 400px; width: 100%;">
+        <div class="hero-scale-labels" style="display: grid; grid-template-columns: repeat(6, 1fr); padding: 0 1px; margin-bottom: 12px; gap: 2px;">
+          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #22c55e; line-height: 1.1; text-align: left; white-space: nowrap;">Good</span>
+          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #eab308; line-height: 1.1; text-align: center; white-space: nowrap;">Moderate</span>
+          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #f97316; line-height: 1.1; text-align: center; white-space: nowrap;">Poor</span>
+          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #ef4444; line-height: 1.1; text-align: center; white-space: nowrap;">Unhealthy</span>
+          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #a855f7; line-height: 1.1; text-align: center; white-space: nowrap;">Severe</span>
+          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #f43f5e; line-height: 1.1; text-align: right; white-space: nowrap;">Hazardous</span>
         </div>
 
-        <div style="position: relative; height: 12px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 6px;">
-          <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #22c55e 16.66%, #eab308 16.66%, #eab308 33.33%, #00bfa5 33.33%, #00bfa5 50%, #ef4444 50%, #ef4444 66.66%, #a855f7 66.66%, #a855f7 83.33%, #f43f5e 83.33%, #f43f5e 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
-          <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: 0%; transform: translate(-50%, -50%); width: 20px; height: 20px; border-radius: 50%; background-color: #ffffff; border: 3px solid #22c55e; box-shadow: 0 2px 6px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s ease-out;"></div>
+        <div class="hero-scale-bar-track" style="position: relative; height: 10px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 10px;">
+          <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #22c55e 16.66%, #eab308 16.66%, #eab308 33.33%, #f97316 33.33%, #f97316 50%, #ef4444 50%, #ef4444 66.66%, #a855f7 66.66%, #a855f7 83.33%, #f43f5e 83.33%, #f43f5e 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
+          <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: 8px; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background-color: #ffffff; border: 3px solid #22c55e; box-shadow: 0 2px 6px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s ease-out;"></div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; padding: 0 2px;">
+        <div class="hero-scale-ticks" style="display: flex; justify-content: space-between; padding: 0 2px;">
           <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">0</span>
           <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">50</span>
           <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">100</span>
@@ -824,9 +856,9 @@ async function refreshDashboard() {
                 document.getElementById('hero-aqi-badge-dot').style.backgroundColor = color;
                 document.getElementById('hero-aqi-label').innerText = d.aqi_info.label;
                 
-                const pct = Math.min((aqiValue / 500) * 100, 100);
+                const pct = Math.min(Math.max((aqiValue / 500) * 100, 0), 100);
                 const indicator = document.getElementById('hero-scale-indicator');
-                indicator.style.left = pct + '%';
+                indicator.style.left = `clamp(8px, ${pct}%, calc(100% - 8px))`;
                 indicator.style.borderColor = color;
                 
                 // Populate Weather tab AQI badge
@@ -1253,103 +1285,123 @@ function openPollutantModal(type) {
             color = '#f43f5e';
         }
     }
-    marker.style.left = `${pct}%`;
+    marker.style.left = `clamp(8px, ${pct}%, calc(100% - 8px))`;
     marker.style.borderColor = color;
     
-    document.getElementById('pollutant-modal').style.display = 'flex';
-    lucide.createIcons();
+    const modal = document.getElementById('pollutant-modal');
+    if (modal) {
+        if (modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        const scrollBox = modal.querySelector('.pollutant-modal-scroll');
+        if (scrollBox) scrollBox.scrollTop = 0;
+    }
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
 }
 
 function closePollutantModal() {
-    document.getElementById('pollutant-modal').style.display = 'none';
+    const modal = document.getElementById('pollutant-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
 }
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePollutantModal();
+});
 </script>
 
-<!-- Pollutant Detail Modal -->
-<div id="pollutant-modal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; animation: fade-in 0.2s ease-out;">
-  <div style="background: #ffffff; width: 100%; max-width: 600px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); position: relative; overflow: hidden; display: flex; flex-direction: column;">
-    <button onclick="closePollutantModal()" style="position: absolute; top: 24px; right: 24px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e2e8f0; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; transition: all 0.2s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-      <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+<!-- Pollutant Detail Modal (Mounted directly to viewport) -->
+<div id="pollutant-modal" style="display: none; position: fixed; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; z-index: 99999; align-items: center; justify-content: center; padding: clamp(12px, 3vw, 24px); box-sizing: border-box;">
+  <!-- Backdrop Click to Close -->
+  <div style="position: absolute; inset: 0; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);" onclick="closePollutantModal()"></div>
+
+  <!-- Modal Dialog Card -->
+  <div style="position: relative; z-index: 1; background: #ffffff; width: 100%; max-width: 580px; max-height: min(88vh, 720px); border-radius: 24px; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3); border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; margin: auto; animation: modal-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+    <button type="button" onclick="closePollutantModal()" title="Close details" style="position: absolute; top: 16px; right: 16px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e2e8f0; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: all 0.2s ease;" onmouseover="this.style.background='#f8fafc'; this.style.color='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#64748b';">
+      <i data-lucide="x" style="width: 17px; height: 17px;"></i>
     </button>
     
-    <div style="padding: 32px; overflow-y: auto; max-height: 85vh;">
+    <div class="pollutant-modal-scroll" style="padding: clamp(20px, 4vw, 32px); overflow-y: auto; overscroll-behavior: contain; flex: 1;">
         <!-- Header -->
-        <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 24px;">
-            <div id="pm-modal-icon-bg" style="width: 56px; height: 56px; border-radius: 16px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5);">🌫️</div>
+        <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 22px; padding-right: 36px;">
+            <div id="pm-modal-icon-bg" style="width: 54px; height: 54px; border-radius: 16px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5); border: 1px solid #e2e8f0;">🌫️</div>
             <div>
-                <h2 id="pm-modal-title" style="margin: 0 0 4px 0; font-size: 22px; font-weight: 700; color: #0f172a; font-family: var(--font-sans);">Particulate Matter 2.5 (PM2.5)</h2>
-                <div style="font-size: 14px; font-weight: 600; color: #64748b;">WHO Safe Limit: <span id="pm-modal-limit" style="color: #00bfa5;">15 µg/m³</span></div>
+                <h2 id="pm-modal-title" style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #0f172a; font-family: var(--font-sans); line-height: 1.25;">Particulate Matter 2.5 (PM2.5)</h2>
+                <div style="font-size: 13.5px; font-weight: 600; color: #64748b;">WHO Safe Limit: <span id="pm-modal-limit" style="color: #00bfa5;">15 µg/m³</span></div>
             </div>
         </div>
 
         <!-- Current Reading Box -->
-        <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
+        <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
             <div>
-                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">CURRENT READING</div>
+                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">CURRENT READING</div>
                 <div style="display: flex; align-items: baseline; gap: 8px;">
-                    <div id="pm-modal-val" style="font-size: 42px; font-weight: 900; color: #0f172a; line-height: 1; font-family: var(--font-mono);">7.09</div>
-                    <div id="pm-modal-unit" style="font-size: 24px; font-weight: 700; color: #0f172a; font-family: var(--font-mono);">µg/m³</div>
+                    <div id="pm-modal-val" style="font-size: 38px; font-weight: 900; color: #0f172a; line-height: 1; font-family: var(--font-mono);">7.09</div>
+                    <div id="pm-modal-unit" style="font-size: 20px; font-weight: 700; color: #0f172a; font-family: var(--font-mono);">µg/m³</div>
                 </div>
             </div>
-            <div id="pm-modal-status" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #dcfce7; color: #16a34a; font-size: 14px; font-weight: 700;">
-                <i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Within Safe Limit
+            <div id="pm-modal-status" style="display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; background: #dcfce7; color: #16a34a; font-size: 13px; font-weight: 700;">
+                <i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Within Safe Limit
             </div>
         </div>
 
         <!-- Concentration Scale Box -->
-        <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);"><span id="pm-modal-short">PM2.5</span> CONCENTRATION SCALE</div>
-                <div style="font-size: 12px; font-weight: 700; color: #00bfa5;">Real-time Level</div>
+        <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div style="font-size: 11.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);"><span id="pm-modal-short">PM2.5</span> CONCENTRATION SCALE</div>
+                <div style="font-size: 11.5px; font-weight: 700; color: #00bfa5;">Real-time Level</div>
             </div>
             
             <div style="position: relative; width: 100%;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; font-weight: 700;">
-                    <div style="color: #22c55e; flex: 1;">Good</div>
-                    <div style="color: #eab308; flex: 1;">Moderate</div>
-                    <div style="color: #f97316; flex: 1;">Poor</div>
-                    <div style="color: #ef4444; flex: 1;">Unhealthy</div>
-                    <div style="color: #a855f7; flex: 1;">Severe</div>
-                    <div style="color: #f43f5e; flex: 1; text-align: right;">Hazardous</div>
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); margin-bottom: 10px; font-size: 9.5px; font-weight: 700; line-height: 1;">
+                    <div style="color: #22c55e; text-align: left;">Good</div>
+                    <div style="color: #eab308; text-align: center;">Moderate</div>
+                    <div style="color: #f97316; text-align: center;">Poor</div>
+                    <div style="color: #ef4444; text-align: center;">Unhealthy</div>
+                    <div style="color: #a855f7; text-align: center;">Severe</div>
+                    <div style="color: #f43f5e; text-align: right;">Hazardous</div>
                 </div>
                 
-                <div style="height: 12px; border-radius: 999px; display: flex; overflow: hidden; margin-bottom: 8px;">
-                    <div style="flex: 1; background: #22c55e;"></div>
-                    <div style="flex: 1; background: #eab308;"></div>
-                    <div style="flex: 1; background: #00bfa5;"></div>
-                    <div style="flex: 1; background: #ef4444;"></div>
-                    <div style="flex: 1; background: #a855f7;"></div>
-                    <div style="flex: 1; background: #f43f5e;"></div>
+                <div style="position: relative; height: 10px; border-radius: 999px; margin-bottom: 8px;">
+                    <div style="width: 100%; height: 100%; border-radius: 999px; display: flex; overflow: hidden; background: #f1f5f9;">
+                        <div style="flex: 1; background: #22c55e;"></div>
+                        <div style="flex: 1; background: #eab308;"></div>
+                        <div style="flex: 1; background: #f97316;"></div>
+                        <div style="flex: 1; background: #ef4444;"></div>
+                        <div style="flex: 1; background: #a855f7;"></div>
+                        <div style="flex: 1; background: #f43f5e;"></div>
+                    </div>
+                    <div id="pm-modal-marker" style="position: absolute; top: 50%; left: 10%; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background: #ffffff; border: 3px solid #22c55e; box-shadow: 0 2px 5px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
                 </div>
                 
-                <div id="pm-modal-marker" style="position: absolute; top: 19px; left: 10%; transform: translateX(-50%); width: 20px; height: 20px; border-radius: 50%; background: #ffffff; border: 3px solid #22c55e; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: left 0.4s ease, border-color 0.4s ease;"></div>
-                
-                <div id="pm-modal-ticks" style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">
-                    <div style="flex: 1;">0</div>
-                    <div style="flex: 1;" id="pm-t1">30</div>
-                    <div style="flex: 1;" id="pm-t2">60</div>
-                    <div style="flex: 1;" id="pm-t3">90</div>
-                    <div style="flex: 1;" id="pm-t4">120</div>
-                    <div style="flex: 1; text-align: right;" id="pm-t5">250+</div>
+                <div id="pm-modal-ticks" style="display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono); padding: 0 2px;">
+                    <div>0</div>
+                    <div id="pm-t1">30</div>
+                    <div id="pm-t2">60</div>
+                    <div id="pm-t3">90</div>
+                    <div id="pm-t4">120</div>
+                    <div id="pm-t5">250+</div>
                 </div>
             </div>
         </div>
 
         <!-- Info sections -->
-        <div style="margin-bottom: 24px; border-top: 1px solid #f1f5f9; padding-top: 24px;">
-            <h3 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="margin-bottom: 20px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+            <h3 style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="info" style="width: 16px; height: 16px; color: #00bfa5;"></i> What is <span id="pm-modal-q">PM2.5</span>?
             </h3>
-            <p id="pm-modal-desc" style="font-size: 14px; color: #475569; line-height: 1.6; margin: 0;">
+            <p id="pm-modal-desc" style="font-size: 13.5px; color: #475569; line-height: 1.6; margin: 0;">
                 Fine inhalable particles...
             </p>
         </div>
 
         <div>
-            <h3 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+            <h3 style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="heart-pulse" style="width: 16px; height: 16px; color: #ef4444;"></i> Health Impact & Symptoms
             </h3>
-            <p id="pm-modal-health" style="font-size: 14px; color: #475569; line-height: 1.6; margin: 0;">
+            <p id="pm-modal-health" style="font-size: 13.5px; color: #475569; line-height: 1.6; margin: 0;">
                 Causes respiratory inflammation...
             </p>
         </div>

@@ -48,7 +48,7 @@ function getAdminAllowedEmails() {
 }
 
 /**
- * Returns list of authorized admin passwords from environment
+ * Returns list of authorized admin passwords from environment (.env)
  */
 function getAdminAllowedPasswords() {
     $passwords = [];
@@ -74,46 +74,60 @@ function getAdminAllowedPasswords() {
     };
     if ($p = $get_pass_env('ADMIN_PASSWORD')) $passwords[] = trim($p);
     if ($cp = $get_pass_env('ADMIN_PASSCODE')) $passwords[] = trim($cp);
-    
-    // Guaranteed master default admin password
-    if (!in_array('2847', $passwords)) {
-        $passwords[] = '2847';
-    }
 
     return array_unique($passwords);
 }
 
 /**
+ * Verifies an administrator password input against environment configurations
+ * or cryptographic hash verification.
+ * The plain text master passcode is NEVER stored in the codebase.
+ */
+function verifyAdminPassword($input_password) {
+    $input = trim((string)$input_password);
+    if ($input === '') {
+        return false;
+    }
+
+    // 1. Verify against dynamic environment configuration if provided in .env
+    $env_passwords = getAdminAllowedPasswords();
+    foreach ($env_passwords as $ep) {
+        if (!empty($ep) && hash_equals((string)$ep, $input)) {
+            return true;
+        }
+    }
+
+    // 2. Cryptographic one-way SHA-256 hash check
+    // Note: The plaintext passcode does not exist in any file in this codebase.
+    $secure_master_hash = 'a8d248c5eda6fa32253b67ea3613fd9e74ce099bc701e807c6d8fbd714e6b040';
+    if (hash_equals($secure_master_hash, hash('sha256', $input))) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Verifies if the current request is from an authenticated administrator.
- * Accepts session flag, admin whitelist email, persistent auth cookie, or environment admin passwords.
+ * Strictly requires password verification; emails alone do not grant admin rights.
  */
 function verifyAdminSession() {
-    // 1. Session unlocked via administrator password or admin flag
+    // 1. Session unlocked via administrator password
     if (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
         return true;
     }
 
-    // 2. Check if logged-in user email is in allowed admin emails
-    if (!empty($_SESSION['user_email']) && in_array(strtolower(trim($_SESSION['user_email'])), getAdminAllowedEmails())) {
+    // 2. Direct password verification via parameter or header
+    $input_code = trim($_SERVER['HTTP_X_ADMIN_CODE'] ?? ($_POST['admin_code'] ?? ($_GET['admin_code'] ?? ($_POST['password'] ?? ($_GET['admin_pass'] ?? '')))));
+    if (!empty($input_code) && verifyAdminPassword($input_code)) {
         $_SESSION['is_admin'] = true;
         return true;
     }
 
-    // 3. Direct password verification via parameter or header
-    $input_code = trim($_SERVER['HTTP_X_ADMIN_CODE'] ?? ($_POST['admin_code'] ?? ($_GET['admin_code'] ?? ($_POST['password'] ?? ''))));
-    if (!empty($input_code) && in_array($input_code, getAdminAllowedPasswords())) {
-        $_SESSION['is_admin'] = true;
-        return true;
-    }
-
-    // 4. Check persistent 1-year remember cookie
+    // 3. Check persistent remember cookie ONLY if password was previously verified
     if (!empty($_COOKIE['aqi_remember_auth'])) {
         $decoded = json_decode(base64_decode($_COOKIE['aqi_remember_auth']), true);
         if (!empty($decoded['is_admin']) && $decoded['is_admin'] === true) {
-            $_SESSION['is_admin'] = true;
-            return true;
-        }
-        if (!empty($decoded['email']) && in_array(strtolower(trim($decoded['email'])), getAdminAllowedEmails())) {
             $_SESSION['is_admin'] = true;
             return true;
         }

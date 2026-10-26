@@ -3,52 +3,32 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$admin_whitelist = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
-$env_admin = getenv('ADMIN_EMAIL');
-if ($env_admin && !in_array(strtolower($env_admin), $admin_whitelist)) {
-    $admin_whitelist[] = strtolower($env_admin);
-}
-if (file_exists(__DIR__ . '/../.env')) {
-    $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), 'ADMIN_EMAIL=') === 0) {
-            $ae = trim(substr($line, strlen('ADMIN_EMAIL=')));
-            if ($ae && !in_array(strtolower($ae), $admin_whitelist)) {
-                $admin_whitelist[] = strtolower($ae);
-            }
-        }
-    }
-}
-
 require_once __DIR__ . '/../api/auth_guard.php';
 
-// Direct unlock check if passed via query string
-if (isset($_GET['admin_pass']) && in_array(trim($_GET['admin_pass']), getAdminAllowedPasswords())) {
-    $_SESSION['is_admin'] = true;
-    if (empty($_SESSION['user_id'])) {
-        $_SESSION['user_id'] = 'admin';
-        $_SESSION['user_name'] = 'Administrator';
-        $_SESSION['user_email'] = 'admin@smartairnet.org';
-    }
+// If a personal user is signed in, they are strictly never an authorized admin
+$is_personal_user = (!empty($_SESSION['user_email']) && strtolower(trim($_SESSION['user_email'])) !== 'admin@smartairnet.org');
+if ($is_personal_user) {
+    $_SESSION['is_admin'] = false;
+    unset($_SESSION['is_admin']);
 }
 
-// Auto authorize if user email is in admin whitelist
-if (!empty($_SESSION['user_email']) && in_array(strtolower(trim($_SESSION['user_email'])), $admin_whitelist)) {
+// Direct unlock check if passed via query string with verified password
+if (!$is_personal_user && isset($_GET['admin_pass']) && verifyAdminPassword($_GET['admin_pass'])) {
     $_SESSION['is_admin'] = true;
+    $_SESSION['user_id'] = 'admin';
+    $_SESSION['user_name'] = 'Administrator';
+    $_SESSION['user_email'] = 'admin@smartairnet.org';
 }
 
-// Check remember cookie
-if (empty($_SESSION['is_admin']) && !empty($_COOKIE['aqi_remember_auth'])) {
+// Check remember cookie ONLY for dedicated admin account
+if (!$is_personal_user && empty($_SESSION['is_admin']) && !empty($_COOKIE['aqi_remember_auth'])) {
     $decoded = json_decode(base64_decode($_COOKIE['aqi_remember_auth']), true);
-    if (!empty($decoded['is_admin']) && $decoded['is_admin'] === true) {
-        $_SESSION['is_admin'] = true;
-    }
-    if (!empty($decoded['email']) && in_array(strtolower(trim($decoded['email'])), $admin_whitelist)) {
+    if (!empty($decoded['is_admin']) && $decoded['is_admin'] === true && !empty($decoded['email']) && strtolower($decoded['email']) === 'admin@smartairnet.org') {
         $_SESSION['is_admin'] = true;
     }
 }
 
-$is_authorized_admin = !empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
+$is_authorized_admin = !$is_personal_user && !empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
 ?>
 <?php if (!$is_authorized_admin): ?>
 <!-- Admin Password Gate -->
@@ -115,13 +95,13 @@ function handleGateUnlock(e) {
     })
     .then(r => r.json())
     .then(res => {
-        if (res.success || pass === '2847') {
+        if (res.success) {
             try {
                 localStorage.setItem('auth_email', 'admin@smartairnet.org');
                 localStorage.setItem('auth_name', 'Admin');
                 localStorage.setItem('auth_logged_in', 'true');
             } catch(e) {}
-            window.location.href = '?page=admin&auth=true&admin_pass=' + encodeURIComponent(pass) + '&name=Admin&email=admin@smartairnet.org';
+            window.location.href = '?page=admin';
         } else {
             errTxt.innerText = res.error || 'Incorrect administrator password.';
             errBox.style.display = 'flex';
@@ -130,15 +110,6 @@ function handleGateUnlock(e) {
         }
     })
     .catch(() => {
-        if (pass === '2847') {
-            try {
-                localStorage.setItem('auth_email', 'admin@smartairnet.org');
-                localStorage.setItem('auth_name', 'Admin');
-                localStorage.setItem('auth_logged_in', 'true');
-            } catch(e) {}
-            window.location.href = '?page=admin&auth=true&admin_pass=2847&name=Admin&email=admin@smartairnet.org';
-            return;
-        }
         errTxt.innerText = 'Failed to connect to authentication server.';
         errBox.style.display = 'flex';
         btn.innerHTML = `<i data-lucide="key" style="width: 16px; height: 16px;"></i> <span>Unlock Dashboard</span>`;
@@ -522,7 +493,7 @@ function loadRequests(isSilent = false) {
     }
     
     Promise.all([
-        fetch(typeof window.getApiUrl === 'function' ? window.getApiUrl('get_requests.php?admin_code=2847') : '/api/get_requests.php?admin_code=2847').then(res => res.json()).catch(() => []),
+        fetch(typeof window.getApiUrl === 'function' ? window.getApiUrl('get_requests.php') : '/api/get_requests.php').then(res => res.json()).catch(() => []),
         fetch(`${getFbDbUrl()}/requests.json`).then(res => res.json()).catch(() => ({}))
     ])
     .then(([backendDataRaw, firebaseData]) => {

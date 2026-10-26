@@ -24,7 +24,7 @@ require_once __DIR__ . '/auth_guard.php';
 $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
 $password = trim($input['password'] ?? ($input['admin_code'] ?? ''));
 
-if (!empty($password) && in_array($password, getAdminAllowedPasswords())) {
+if (!empty($password) && verifyAdminPassword($password)) {
     $_SESSION['is_admin'] = true;
     $_SESSION['user_id'] = 'admin';
     $_SESSION['user_name'] = 'Admin';

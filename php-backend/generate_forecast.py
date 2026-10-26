@@ -201,6 +201,19 @@ def get_condition_text(temp, humidity, aqi, is_rain=False, rain_mm=0.0):
         return 'Mild & Clear'
     return 'Clean & Partly Cloudy'
 
+def get_rainfall_status_badge(prob_pct):
+    p = round(float(prob_pct or 0.0), 1)
+    if p >= 85.0:
+        return {"status_badge": "Heavy Rain Alert", "probability_range": "85% – 100%", "color": "#ef4444"}
+    elif p >= 70.0:
+        return {"status_badge": "Rain Likely", "probability_range": "70% – 84%", "color": "#f97316"}
+    elif p >= 50.0:
+        return {"status_badge": "Chance of Rain", "probability_range": "50% – 69%", "color": "#3b82f6"}
+    elif p >= 25.0:
+        return {"status_badge": "Mostly Dry", "probability_range": "25% – 49%", "color": "#06b6d4"}
+    else:
+        return {"status_badge": "Dry / Clear", "probability_range": "0% – 25%", "color": "#10b981"}
+
 def sync_supabase_forecast_table(hourly_list, now_ist):
     """
     Deletes the old 24h forecast rows and inserts the fresh 24h predictions
@@ -493,6 +506,7 @@ def main():
         r_mm = r_step.get('rain_mm', 0.0)
         r_is_rain = r_step.get('is_rain', False)
         r_intensity = r_step.get('rain_intensity', 'None')
+        r_badge_info = get_rainfall_status_badge(r_prob)
 
         icon = get_weather_icon(target_dt.hour, p_temp, p_hum, aqi_val, is_rain=r_is_rain, rain_mm=r_mm)
 
@@ -516,6 +530,8 @@ def main():
             'humidity': p_hum,
             'rain_prob': r_prob,
             'rain_mm': r_mm,
+            'rain_status_badge': r_badge_info['status_badge'],
+            'rain_probability_range': r_badge_info['probability_range'],
             'is_rain': r_is_rain,
             'rain_intensity': r_intensity,
             'icon': icon,
@@ -606,6 +622,9 @@ def main():
             'co': hourly_list[0]['co'],
             'o3': hourly_list[0]['o3'],
             'rain_24h_mm': rainfall_data['total_24h_rainfall_mm'] if rainfall_data else 0.0,
+            'rain_prob': hourly_list[0].get('rain_prob', 0.0),
+            'rain_status_badge': hourly_list[0].get('rain_status_badge', 'Dry / Clear'),
+            'rain_probability_range': hourly_list[0].get('rain_probability_range', '0% – 25%'),
             'rain_risk': rainfall_data['rain_risk_level'] if rainfall_data else 'None',
             'rain_peak_rate': rainfall_data['peak_hourly_rate_mm'] if rainfall_data else 0.0,
             'rain_peak_hour': rainfall_data['peak_hour_label'] if rainfall_data else 'N/A',
@@ -623,6 +642,9 @@ def main():
                 'label': 'Rainfall Accumulation',
                 'unit': 'mm',
                 'current': hourly_list[0].get('rain_mm', 0.0),
+                'current_prob': hourly_list[0].get('rain_prob', 0.0),
+                'status_badge': hourly_list[0].get('rain_status_badge', 'Dry / Clear'),
+                'probability_range': hourly_list[0].get('rain_probability_range', '0% – 25%'),
                 'total_24h': rainfall_data['total_24h_rainfall_mm'] if rainfall_data else 0.0,
                 'peak_hourly': rainfall_data['peak_hourly_rate_mm'] if rainfall_data else 0.0,
                 'peak_hour': rainfall_data['peak_hour_label'] if rainfall_data else 'N/A',
@@ -631,6 +653,13 @@ def main():
             }
         },
         'rainfall': rainfall_data,
+        'rainfall_scale': [
+            {"range": "0% – 25%", "badge": "Dry / Clear", "description": "Dry / Clear conditions, minimal or zero probability of rain."},
+            {"range": "25% – 49%", "badge": "Mostly Dry", "description": "Overcast or slight moisture; precipitation remains unlikely."},
+            {"range": "50% – 69%", "badge": "Chance of Rain", "description": "Scattered showers possible; carry an umbrella."},
+            {"range": "70% – 84%", "badge": "Rain Likely", "description": "High probability of steady rainfall; wet ground conditions."},
+            {"range": "85% – 100%", "badge": "Heavy Rain Alert", "description": "Downpour or heavy precipitation alert; runoff risk."}
+        ],
         'advisory': {
             'title': 'Air Quality Forecast Active',
             'severity': hero_cat['severity'],

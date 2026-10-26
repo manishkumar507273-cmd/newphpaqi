@@ -36,8 +36,18 @@ def parse_wind_direction(val):
         return COMPASS_MAP[val_str]
     try:
         return float(val_str)
-    except Exception:
-        return 225.0
+def get_rainfall_status_badge(prob_pct):
+    p = round(float(prob_pct or 0.0), 1)
+    if p >= 85.0:
+        return {"status_badge": "Heavy Rain Alert", "probability_range": "85% – 100%", "color": "#ef4444"}
+    elif p >= 70.0:
+        return {"status_badge": "Rain Likely", "probability_range": "70% – 84%", "color": "#f97316"}
+    elif p >= 50.0:
+        return {"status_badge": "Chance of Rain", "probability_range": "50% – 69%", "color": "#3b82f6"}
+    elif p >= 25.0:
+        return {"status_badge": "Mostly Dry", "probability_range": "25% – 49%", "color": "#06b6d4"}
+    else:
+        return {"status_badge": "Dry / Clear", "probability_range": "0% – 25%", "color": "#10b981"}
 
 class RainfallForecastEngine:
     def __init__(self, model_dir=MODEL_DIR):
@@ -282,12 +292,17 @@ class RainfallForecastEngine:
                 peak_rate_mm = calib_mm
                 peak_hour_label = f_dt.strftime('%I %p').lstrip('0')
 
+            prob_pct = round(p_calibrated * 100, 1)
+            status_meta = get_rainfall_status_badge(prob_pct)
+
             hourly_rainfall.append({
                 "step": i + 1,
                 "hour": f_dt.hour,
                 "label": f_dt.strftime('%I %p').lstrip('0'),
                 "iso": f_dt.isoformat(),
-                "rain_prob_pct": round(p_calibrated * 100, 1),
+                "rain_prob_pct": prob_pct,
+                "status_badge": status_meta["status_badge"],
+                "probability_range": status_meta["probability_range"],
                 "threshold_tau": round(tau, 3),
                 "is_rain": is_rain,
                 "rain_mm": calib_mm,
@@ -328,6 +343,13 @@ class RainfallForecastEngine:
             "rain_risk_level": risk_level,
             "rain_risk_color": risk_color,
             "rain_risk_summary": risk_summary,
+            "rainfall_scale": [
+                {"range": "0% – 25%", "badge": "Dry / Clear", "description": "Dry / Clear conditions, minimal or zero probability of rain."},
+                {"range": "25% – 49%", "badge": "Mostly Dry", "description": "Overcast or slight moisture; precipitation remains unlikely."},
+                {"range": "50% – 69%", "badge": "Chance of Rain", "description": "Scattered showers possible; carry an umbrella."},
+                {"range": "70% – 84%", "badge": "Rain Likely", "description": "High probability of steady rainfall; wet ground conditions."},
+                {"range": "85% – 100%", "badge": "Heavy Rain Alert", "description": "Downpour or heavy precipitation alert; runoff risk."}
+            ],
             "hourly": hourly_rainfall
         }
 

@@ -416,12 +416,11 @@ function mockLogin() {
             localStorage.setItem('auth_logged_in', 'true');
         }
         if (window.updateUserAccountUI) {
-            window.updateUserAccountUI({ email: email, displayName: name });
+            window.updateUserAccountUI({ email: email, displayName: name, is_admin: false });
         }
-        const adminEmails = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
-        const isAdminUser = email && adminEmails.includes(email.toLowerCase());
-        const adminParam = isAdminUser ? '&admin_pass=2847' : '';
-        window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + (email ? '&email=' + encodeURIComponent(email) : '') + adminParam;
+        let target = curPage;
+        if (target === 'admin') target = 'overview';
+        window.location.href = '?page=' + encodeURIComponent(target) + '&auth=true&name=' + encodeURIComponent(name) + (email ? '&email=' + encodeURIComponent(email) : '');
     }
 
     function executeGoogleLogin() {
@@ -501,10 +500,9 @@ function handleAuthSubmit(e) {
     errBlock.style.display = 'none';
     const curPage = window.__pendingTargetPage || (new URLSearchParams(window.location.search).get('target')) || window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'live';
     
-    const isPassAdmin = (pass === '2847');
     const isEmailAdmin = (email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@smartairnet.org');
     
-    if (currentAuthMode === 'admin' || isEmailAdmin || (isPassAdmin && (!email || isEmailAdmin))) {
+    if (currentAuthMode === 'admin' || (isEmailAdmin && pass)) {
         btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
         if (window.lucide) lucide.createIcons();
 
@@ -522,7 +520,7 @@ function handleAuthSubmit(e) {
         })
         .then(r => r.json())
         .then(res => {
-            if (res.success || pass === '2847') {
+            if (res.success) {
                 try {
                     sessionStorage.removeItem('deliberate_logout');
                     localStorage.removeItem('deliberate_logout');
@@ -530,7 +528,7 @@ function handleAuthSubmit(e) {
                 localStorage.setItem('auth_email', 'admin@smartairnet.org');
                 localStorage.setItem('auth_name', 'Admin');
                 localStorage.setItem('auth_logged_in', 'true');
-                window.location.href = '?page=admin&auth=true&admin_pass=' + encodeURIComponent(pass) + '&name=Admin&email=admin@smartairnet.org';
+                window.location.href = '?page=admin';
             } else {
                 errText.innerText = res.error || 'Incorrect Admin Password.';
                 errBlock.style.display = 'flex';
@@ -541,17 +539,6 @@ function handleAuthSubmit(e) {
             }
         })
         .catch(() => {
-            if (pass === '2847') {
-                try {
-                    sessionStorage.removeItem('deliberate_logout');
-                    localStorage.removeItem('deliberate_logout');
-                } catch(e) {}
-                localStorage.setItem('auth_email', 'admin@smartairnet.org');
-                localStorage.setItem('auth_name', 'Admin');
-                localStorage.setItem('auth_logged_in', 'true');
-                window.location.href = '?page=admin&auth=true&admin_pass=2847&name=Admin&email=admin@smartairnet.org';
-                return;
-            }
             errText.innerText = 'Failed to connect to authentication server.';
             errBlock.style.display = 'flex';
             btn.innerHTML = (currentAuthMode === 'admin') 
@@ -562,33 +549,57 @@ function handleAuthSubmit(e) {
         return;
     }
     
-    // Real Firebase Email Login
+    // Standard User Email Login (or Register)
     btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Signing in...</span>`;
-    lucide.createIcons();
-    
+    if (window.lucide) lucide.createIcons();
+
+    const nameInput = document.querySelector('#field-name input');
+    const enteredName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : '';
+
+    function finishUserLogin(finalName, finalEmail) {
+        const displayName = finalName || (finalEmail.split('@')[0].charAt(0).toUpperCase() + finalEmail.split('@')[0].slice(1));
+        try {
+            sessionStorage.removeItem('deliberate_logout');
+            localStorage.removeItem('deliberate_logout');
+        } catch(e) {}
+        localStorage.setItem('auth_email', finalEmail);
+        localStorage.setItem('auth_name', displayName);
+        localStorage.setItem('auth_logged_in', 'true');
+        if (window.updateUserAccountUI) {
+            window.updateUserAccountUI({ email: finalEmail, displayName: displayName, is_admin: false });
+        }
+        let target = curPage;
+        if (target === 'admin') target = 'overview';
+        window.location.href = '?page=' + encodeURIComponent(target) + '&auth=true&name=' + encodeURIComponent(displayName) + '&email=' + encodeURIComponent(finalEmail);
+    }
+
     if (window.firebaseLoginWithEmail && currentAuthMode === 'login') {
         window.firebaseLoginWithEmail(email, pass)
             .then((u) => {
-                const name = typeof u === 'object' ? u.name : (email.split('@')[0]);
+                const name = typeof u === 'object' ? u.name : enteredName;
                 const uEmail = typeof u === 'object' ? u.email : email;
-                localStorage.setItem('auth_email', uEmail);
-                localStorage.setItem('auth_name', name);
-                localStorage.setItem('auth_logged_in', 'true');
-                window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(uEmail);
+                finishUserLogin(name, uEmail);
             })
             .catch((err) => {
-                btn.innerHTML = `<span>Sign In & Unlock Dashboard</span>`;
-                errText.innerText = err.message || 'Login failed.';
-                errBlock.style.display = 'flex';
-                console.error("Firebase Email Auth Error", err);
+                console.warn("Firebase email login fallback:", err);
+                if (email && email.includes('@') && email.includes('.')) {
+                    finishUserLogin(enteredName, email);
+                } else {
+                    btn.innerHTML = `<span>Sign In & Unlock Dashboard</span>`;
+                    errText.innerText = err.message || 'Please enter a valid email address.';
+                    errBlock.style.display = 'flex';
+                }
             });
     } else {
+        if (!email || !email.includes('@') || !email.includes('.')) {
+            btn.innerHTML = (currentAuthMode === 'register') ? `<span>Create Account & Unlock Dashboard</span>` : `<span>Sign In & Unlock Dashboard</span>`;
+            errText.innerText = 'Please enter a valid email address (e.g. user@example.com).';
+            errBlock.style.display = 'flex';
+            return;
+        }
         setTimeout(() => {
-            let name = email.split('@')[0];
-            name = name.charAt(0).toUpperCase() + name.slice(1);
-            localStorage.setItem('auth_email', email);
-            window.location.href = '?page=' + encodeURIComponent(curPage) + '&auth=true&name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(email);
-        }, 1200);
+            finishUserLogin(enteredName, email);
+        }, 500);
     }
 }
 </script>

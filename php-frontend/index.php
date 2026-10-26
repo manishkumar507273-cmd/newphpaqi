@@ -37,32 +37,20 @@ if (!empty($_SESSION['user_name']) && $_SESSION['user_name'] === 'Manish B') {
 
 require_once __DIR__ . '/api/auth_guard.php';
 
-// Direct admin bypass unlock if passed via query string
-if (isset($_GET['admin_pass']) && in_array(trim($_GET['admin_pass']), getAdminAllowedPasswords())) {
-    $_SESSION['is_admin'] = true;
-    if (empty($_SESSION['user_id'])) {
-        $_SESSION['user_id'] = 'admin';
-        $_SESSION['user_name'] = 'Admin';
-        $_SESSION['user_email'] = 'admin@smartairnet.org';
-    }
-}
-
-// Admin email whitelist
-$admin_whitelist = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
-$env_admin = getenv('ADMIN_EMAIL');
-if ($env_admin && !in_array(strtolower($env_admin), $admin_whitelist)) {
-    $admin_whitelist[] = strtolower($env_admin);
-}
-if (file_exists(__DIR__ . '/.env')) {
-    $env_lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($env_lines as $el) {
-        if (strpos(trim($el), 'ADMIN_EMAIL=') === 0) {
-            $ae = trim(substr($el, strlen('ADMIN_EMAIL=')));
-            if ($ae && !in_array(strtolower($ae), $admin_whitelist)) {
-                $admin_whitelist[] = strtolower($ae);
-            }
+// Direct admin bypass unlock if passed via query string with verified password
+if (isset($_GET['admin_pass'])) {
+    if (verifyAdminPassword($_GET['admin_pass'])) {
+        $_SESSION['is_admin'] = true;
+        if (empty($_SESSION['user_id']) || (!empty($_SESSION['user_email']) && $_SESSION['user_email'] === 'admin@smartairnet.org')) {
+            $_SESSION['user_id'] = 'admin';
+            $_SESSION['user_name'] = 'Admin';
+            $_SESSION['user_email'] = 'admin@smartairnet.org';
         }
     }
+    // Clean admin_pass from URL immediately so password is never exposed in browser address bar
+    $clean_target = isset($_GET['page']) ? $_GET['page'] : 'admin';
+    header("Location: ?page=" . urlencode($clean_target));
+    exit;
 }
 
 // Clear persistent cookie if user just logged out
@@ -77,6 +65,7 @@ if (isset($_GET['logout']) || isset($_GET['logged_out'])) {
     ]);
     setcookie('aqi_remember_auth', '', time() - 86400, '/');
     unset($_COOKIE['aqi_remember_auth']);
+    unset($_SESSION['is_admin']);
 }
 
 // Restore session from persistent 1-year cookie if session file was flushed or device reopened
@@ -91,16 +80,14 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['aqi_remember_auth']) && !iss
             $_SESSION['user_id'] = !empty($decoded['id']) ? $decoded['id'] : 'guest';
             $_SESSION['user_name'] = !empty($decoded['name']) ? $decoded['name'] : explode('@', $em)[0];
             $_SESSION['user_email'] = $em;
-            if (!empty($decoded['is_admin']) && $decoded['is_admin'] === true) {
+            if (!empty($decoded['is_admin']) && $decoded['is_admin'] === true && strtolower($em) === 'admin@smartairnet.org') {
                 $_SESSION['is_admin'] = true;
+            } else {
+                $_SESSION['is_admin'] = false;
+                unset($_SESSION['is_admin']);
             }
         }
     }
-}
-
-// Automatically grant admin rights if current user email is in admin whitelist
-if (!empty($_SESSION['user_email']) && in_array(strtolower(trim($_SESSION['user_email'])), $admin_whitelist)) {
-    $_SESSION['is_admin'] = true;
 }
 
 // Auth handling: saves real authenticated session and writes persistent cookie
@@ -117,19 +104,33 @@ if (isset($_GET['auth']) && $_GET['auth'] === 'true') {
     }
 
     if ($raw_email || $raw_name) {
-        $_SESSION['user_id'] = 'guest';
-        $_SESSION['user_name'] = $raw_name ?: ($raw_email ? explode('@', $raw_email)[0] : 'User');
-        $_SESSION['user_email'] = $raw_email;
-        if ((isset($_GET['admin_pass']) && in_array(trim($_GET['admin_pass']), getAdminAllowedPasswords())) || ($raw_email && in_array(strtolower($raw_email), $admin_whitelist))) {
+        $is_personal_user = (!empty($raw_email) && strtolower($raw_email) !== 'admin@smartairnet.org');
+
+        if ($is_personal_user) {
+            // Personal email accounts are strictly NEVER admins
+            $_SESSION['is_admin'] = false;
+            unset($_SESSION['is_admin']);
+            $_SESSION['user_id'] = 'guest';
+            $_SESSION['user_name'] = $raw_name ?: explode('@', $raw_email)[0];
+            $_SESSION['user_email'] = $raw_email;
+        } else if (isset($_GET['admin_pass']) && verifyAdminPassword($_GET['admin_pass'])) {
             $_SESSION['is_admin'] = true;
+            $_SESSION['user_id'] = 'admin';
             $_SESSION['user_name'] = 'Admin';
+            $_SESSION['user_email'] = 'admin@smartairnet.org';
+        } else {
+            $_SESSION['is_admin'] = false;
+            unset($_SESSION['is_admin']);
+            $_SESSION['user_id'] = 'guest';
+            $_SESSION['user_name'] = $raw_name ?: 'User';
+            $_SESSION['user_email'] = $raw_email;
         }
 
         if ($raw_email) {
             // Set 1-year persistent cookie so returning users are automatically recognized
             $cookie_payload = base64_encode(json_encode([
                 'id' => $_SESSION['user_id'],
-                'name' => !empty($_SESSION['is_admin']) ? 'Admin' : $_SESSION['user_name'],
+                'name' => $_SESSION['user_name'],
                 'email' => $_SESSION['user_email'],
                 'is_admin' => !empty($_SESSION['is_admin']),
                 'time' => time()
@@ -153,6 +154,9 @@ if (isset($_GET['auth']) && $_GET['auth'] === 'true') {
 
     // Clean up the URL by stripping auth=true, but keeping the page parameter
     $target_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
+    if ($target_page === 'admin' && empty($_SESSION['is_admin'])) {
+        $target_page = 'overview';
+    }
     session_write_close();
     header("Location: ?page=" . $target_page);
     exit;

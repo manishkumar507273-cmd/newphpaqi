@@ -5,28 +5,19 @@ $is_logged_in = isset($_SESSION['user_id']);
 $user_display_name = !empty($_SESSION['user_name']) ? $_SESSION['user_name'] : (!empty($_SESSION['user_email']) ? explode('@', $_SESSION['user_email'])[0] : 'User');
 $user_email = $_SESSION['user_email'] ?? '';
 $user_initial = strtoupper(substr($user_display_name, 0, 1));
-$admin_whitelist = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
-$env_admin = getenv('ADMIN_EMAIL');
-if ($env_admin && !in_array(strtolower($env_admin), $admin_whitelist)) {
-    $admin_whitelist[] = strtolower($env_admin);
-}
-if (file_exists(__DIR__ . '/../.env')) {
-    $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), 'ADMIN_EMAIL=') === 0) {
-            $ae = trim(substr($line, strlen('ADMIN_EMAIL=')));
-            if ($ae && !in_array(strtolower($ae), $admin_whitelist)) {
-                $admin_whitelist[] = strtolower($ae);
-            }
-        }
+$admin_whitelist = [];
+$is_personal_user = (!empty($user_email) && strtolower(trim($user_email)) !== 'admin@smartairnet.org');
+if ($is_personal_user) {
+    // A personal email user is strictly NEVER an admin
+    $is_admin = false;
+    $_SESSION['is_admin'] = false;
+    unset($_SESSION['is_admin']);
+} else {
+    $is_admin = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
+    if ($is_admin) {
+        $user_display_name = 'Admin';
+        $user_initial = 'A';
     }
-}
-$is_admin = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true)
-    || ($is_logged_in && !empty($_SESSION['user_email']) && in_array(strtolower(trim($_SESSION['user_email'])), $admin_whitelist));
-if ($is_admin) {
-    $_SESSION['is_admin'] = true;
-    $user_display_name = 'Admin';
-    $user_initial = 'A';
 }
 
 // Check server-side telemetry cache to determine if cloud data is currently live (received <= 6 mins)
@@ -274,12 +265,10 @@ window.closeAccountModal = function() {
 window.updateUserAccountUI = function(user) {
     if (!user) return;
     const email = user.email || '';
-    const adminEmails = ['weathernet@sode-edu.in', 'manishkumar507273@gmail.com', 'mb507273@gmail.com', 'admin@smartairnet.org'];
-    const isAdmin = Boolean(
+    const isPersonalUser = Boolean(email && email.toLowerCase() !== 'admin@smartairnet.org');
+    const isAdmin = !isPersonalUser && Boolean(
         (window.__currentUser && window.__currentUser.is_admin) || 
-        user.is_admin || 
-        (email && adminEmails.includes(email.toLowerCase())) ||
-        (user.displayName && (user.displayName.toLowerCase() === 'admin' || user.displayName.toLowerCase().includes('administrator') || user.displayName.toLowerCase().includes('admin dev')))
+        user.is_admin
     );
 
     const name = isAdmin ? 'Admin' : (user.displayName || (email ? email.split('@')[0] : 'User'));

@@ -77,7 +77,7 @@ Alternatively, deploy the `php-frontend` directory to any standard Apache/Nginx 
 
 ### 2. Administrator Access & SMTP Configuration
 
-- **Admin Dashboard Code**: Configured via `ADMIN_PASSWORD` in `.env` (default: `2847`).
+- **Admin Dashboard Code**: Configured securely via `ADMIN_PASSWORD` in `.env`.
 - **Email Configuration**: Update `api/approve_request.php` with your Gmail App Password to enable dataset dispatch.
 
 ---

@@ -207,6 +207,9 @@
           localStorage.setItem('auth_email', userEmail);
           localStorage.setItem('auth_name', userName);
           localStorage.setItem('auth_logged_in', 'true');
+          if (typeof window.setAuthCookie === 'function') {
+              window.setAuthCookie('guest', userName, userEmail, false);
+          }
 
           // Dynamically fill dataset modal email and name if open/present on the page
           const emailInput = document.getElementById('dataset-email-input');
@@ -290,6 +293,13 @@
 let currentAuthMode = 'login';
 
 function openAuthModal() {
+    const isAlreadyLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin)) ||
+        (localStorage.getItem('auth_logged_in') === 'true' && Boolean(localStorage.getItem('auth_email')) &&
+         sessionStorage.getItem('deliberate_logout') !== 'true' && localStorage.getItem('deliberate_logout') !== 'true');
+    if (isAlreadyLoggedIn) {
+        console.log("openAuthModal suppressed: user is already authenticated on this device.");
+        return;
+    }
     const modal = document.getElementById('auth-modal');
     if (!modal) return;
     modal.style.display = 'flex';
@@ -414,6 +424,9 @@ function mockLogin() {
             localStorage.setItem('auth_email', email);
             localStorage.setItem('auth_name', name);
             localStorage.setItem('auth_logged_in', 'true');
+            if (typeof window.setAuthCookie === 'function') {
+                window.setAuthCookie('guest', name, email, false);
+            }
         }
         if (window.updateUserAccountUI) {
             window.updateUserAccountUI({ email: email, displayName: name, is_admin: false });
@@ -528,6 +541,9 @@ function handleAuthSubmit(e) {
                 localStorage.setItem('auth_email', 'admin@smartairnet.org');
                 localStorage.setItem('auth_name', 'Admin');
                 localStorage.setItem('auth_logged_in', 'true');
+                if (typeof window.setAuthCookie === 'function') {
+                    window.setAuthCookie('admin', 'Admin', 'admin@smartairnet.org', true);
+                }
                 window.location.href = '?page=admin';
             } else {
                 errText.innerText = res.error || 'Incorrect Admin Password.';
@@ -565,6 +581,9 @@ function handleAuthSubmit(e) {
         localStorage.setItem('auth_email', finalEmail);
         localStorage.setItem('auth_name', displayName);
         localStorage.setItem('auth_logged_in', 'true');
+        if (typeof window.setAuthCookie === 'function') {
+            window.setAuthCookie('guest', displayName, finalEmail, false);
+        }
         if (window.updateUserAccountUI) {
             window.updateUserAccountUI({ email: finalEmail, displayName: displayName, is_admin: false });
         }

@@ -69,7 +69,7 @@ if (isset($_GET['logout']) || isset($_GET['logged_out'])) {
 }
 
 // Restore session from persistent 1-year cookie if session file was flushed or device reopened
-if (empty($_SESSION['user_id']) && !empty($_COOKIE['aqi_remember_auth']) && !isset($_GET['logout']) && !isset($_GET['logged_out'])) {
+if ((empty($_SESSION['user_id']) || empty($_SESSION['user_email'])) && !empty($_COOKIE['aqi_remember_auth']) && !isset($_GET['logout']) && !isset($_GET['logged_out'])) {
     $decoded = json_decode(base64_decode($_COOKIE['aqi_remember_auth']), true);
     if (!empty($decoded) && !empty($decoded['email'])) {
         $em = trim($decoded['email']);
@@ -88,6 +88,24 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['aqi_remember_auth']) && !iss
             }
         }
     }
+}
+
+// Automatically refresh and keep the 1-year cookie active for all returning logged-in visitors
+if (!empty($_SESSION['user_email']) && !isset($_GET['logout']) && !isset($_GET['logged_out'])) {
+    $cookie_payload = base64_encode(json_encode([
+        'id' => $_SESSION['user_id'] ?? 'guest',
+        'name' => $_SESSION['user_name'] ?? explode('@', $_SESSION['user_email'])[0],
+        'email' => $_SESSION['user_email'],
+        'is_admin' => !empty($_SESSION['is_admin']),
+        'time' => time()
+    ]));
+    setcookie('aqi_remember_auth', $cookie_payload, [
+        'expires' => time() + (86400 * 365),
+        'path' => '/',
+        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'httponly' => false,
+        'samesite' => 'Lax'
+    ]);
 }
 
 // Auth handling: saves real authenticated session and writes persistent cookie
@@ -198,7 +216,7 @@ if (!in_array($page, $allowed_pages)) {
     $page = 'overview';
 }
 
-$is_logged_in = isset($_SESSION['user_id']) || (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
+$is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']) || (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
 $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
 
 // Pages requiring user login; admin page handles its own dedicated gate and session auth

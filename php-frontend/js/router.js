@@ -197,7 +197,13 @@
 
         // Instant client-side auth check for protected pages (admin handles its own dedicated gate)
         const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather'];
-        const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin));
+        const hasSavedAuth = (() => {
+            try {
+                return (localStorage.getItem('auth_logged_in') === 'true' && Boolean(localStorage.getItem('auth_email'))) &&
+                       !(sessionStorage.getItem('deliberate_logout') === 'true' || localStorage.getItem('deliberate_logout') === 'true');
+            } catch(e) { return false; }
+        })();
+        const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin)) || hasSavedAuth;
 
         if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) {
             window.__pendingTargetPage = targetPage;
@@ -267,6 +273,15 @@
 
             // Handle auth requirement from server response
             if (data.require_login) {
+                if (hasSavedAuth) {
+                    const savedEmail = localStorage.getItem('auth_email');
+                    const savedName = localStorage.getItem('auth_name') || (savedEmail ? savedEmail.split('@')[0] : '');
+                    if (typeof window.setAuthCookie === 'function') {
+                        window.setAuthCookie('guest', savedName, savedEmail, false);
+                    }
+                    window.location.href = `?page=${encodeURIComponent(targetPage)}&auth=true&name=${encodeURIComponent(savedName)}&email=${encodeURIComponent(savedEmail)}`;
+                    return;
+                }
                 resetProgressBar();
                 if (wrapper) {
                     wrapper.classList.remove('page-fade-leave');

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/brand-assets.php';
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
-$is_logged_in = isset($_SESSION['user_id']);
+$is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']) || (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
 $user_display_name = !empty($_SESSION['user_name']) ? $_SESSION['user_name'] : (!empty($_SESSION['user_email']) ? explode('@', $_SESSION['user_email'])[0] : 'User');
 $user_email = $_SESSION['user_email'] ?? '';
 $user_initial = strtoupper(substr($user_display_name, 0, 1));
@@ -138,8 +138,26 @@ window.getApiUrl = function(endpoint) {
     return origin + (base ? base : '') + '/api/' + ep;
 };
 
+// Global helper to write persistent 1-year auth cookie across browser restarts
+window.setAuthCookie = function(id, name, email, isAdmin) {
+    if (!email) return;
+    try {
+        var payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+            id: id || 'guest',
+            name: name || '',
+            email: email || '',
+            is_admin: Boolean(isAdmin),
+            time: Math.floor(Date.now() / 1000)
+        }))));
+        var isSecure = window.location.protocol === 'https:';
+        document.cookie = 'aqi_remember_auth=' + payload + '; path=/; max-age=' + (365 * 86400) + '; SameSite=Lax' + (isSecure ? '; Secure' : '');
+    } catch(e) {
+        console.warn("Could not write auth cookie:", e);
+    }
+};
+
 // Automatic Persistent Google / User Account Re-entry:
-// When someone signed in using a Google account and comes again on mobile or laptop,
+// When someone signed in and comes again on mobile or laptop,
 // they are let in directly without asking for login again.
 (function() {
     var isLoggedOutUrl = window.location.search.includes('logout=true') || window.location.search.includes('logged_out=true');
@@ -153,6 +171,7 @@ window.getApiUrl = function(endpoint) {
             localStorage.removeItem('auth_email');
             localStorage.removeItem('auth_name');
             localStorage.removeItem('auth_logged_in');
+            document.cookie = 'aqi_remember_auth=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
         } catch (e) {}
         return;
     }
@@ -162,17 +181,21 @@ window.getApiUrl = function(endpoint) {
         localStorage.removeItem('auth_name');
     }
     
+    var savedEmail = localStorage.getItem('auth_email');
+    var savedName = localStorage.getItem('auth_name') || (savedEmail ? savedEmail.split('@')[0] : '');
+    var isLoggedInFlag = localStorage.getItem('auth_logged_in') === 'true';
+
+    // Keep persistent 1-year cookie refreshed in document.cookie
+    if (isLoggedInFlag && savedEmail && (!document.cookie.includes('aqi_remember_auth='))) {
+        window.setAuthCookie('guest', savedName, savedEmail, false);
+    }
+    
     var isPhpLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;
-    if (!isPhpLoggedIn) {
-        var savedEmail = localStorage.getItem('auth_email');
-        var savedName = localStorage.getItem('auth_name') || (savedEmail ? savedEmail.split('@')[0] : '');
-        var isLoggedInFlag = localStorage.getItem('auth_logged_in') === 'true';
-        
-        if (isLoggedInFlag && savedEmail && savedEmail !== 'manish@sode-edu.in' && savedEmail !== 'manishb@sode-edu.in') {
-            console.log("Persistent Google/user account recognized, restoring session directly:", savedEmail);
-            var page = window.__currentPage || 'overview';
-            window.location.replace('?page=' + encodeURIComponent(page) + '&auth=true&name=' + encodeURIComponent(savedName) + '&email=' + encodeURIComponent(savedEmail));
-        }
+    if (!isPhpLoggedIn && isLoggedInFlag && savedEmail && savedEmail !== 'manish@sode-edu.in' && savedEmail !== 'manishb@sode-edu.in') {
+        console.log("Persistent user account recognized, restoring session directly:", savedEmail);
+        var targetParam = new URLSearchParams(window.location.search).get('target');
+        var page = targetParam || window.__currentPage || 'overview';
+        window.location.replace('?page=' + encodeURIComponent(page) + '&auth=true&name=' + encodeURIComponent(savedName) + '&email=' + encodeURIComponent(savedEmail));
     }
 })();
 
@@ -187,6 +210,7 @@ window.signOutUser = async function(e) {
         localStorage.removeItem('auth_email');
         localStorage.removeItem('auth_name');
         localStorage.removeItem('auth_logged_in');
+        document.cookie = 'aqi_remember_auth=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     } catch (err) {}
 
     try {
@@ -728,9 +752,23 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
 <?php if (isset($_GET['require_login']) && $_GET['require_login'] === 'true'): ?>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
+      const savedEmail = localStorage.getItem('auth_email');
+      const isLoggedInFlag = localStorage.getItem('auth_logged_in') === 'true';
+      const isDeliberateLogout = (sessionStorage.getItem('deliberate_logout') === 'true') || (localStorage.getItem('deliberate_logout') === 'true');
+      const targetPg = (new URLSearchParams(window.location.search).get('target')) || 'overview';
+
+      // If user is already signed in on this device, restore and enter directly without asking for login
+      if (isLoggedInFlag && savedEmail && !isDeliberateLogout && savedEmail !== 'manish@sode-edu.in' && savedEmail !== 'manishb@sode-edu.in') {
+          const savedName = localStorage.getItem('auth_name') || savedEmail.split('@')[0];
+          if (typeof window.setAuthCookie === 'function') {
+              window.setAuthCookie('guest', savedName, savedEmail, false);
+          }
+          window.location.replace('?page=' + encodeURIComponent(targetPg) + '&auth=true&name=' + encodeURIComponent(savedName) + '&email=' + encodeURIComponent(savedEmail));
+          return;
+      }
+
       setTimeout(() => {
           if (typeof openAuthModal === 'function') {
-              const targetPg = (new URLSearchParams(window.location.search).get('target')) || '';
               if (targetPg) window.__pendingTargetPage = targetPg;
               openAuthModal();
               

@@ -29,16 +29,44 @@
         }, 280);
     }
 
-    const PROTECTED_PAGES = ['admin'];
+    const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather', 'admin'];
+
+    function isUserAuthenticated() {
+        return Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin));
+    }
+
+    function isUserAdmin() {
+        return Boolean(window.__currentUser && window.__currentUser.is_admin);
+    }
+
+    function showAuthPrompt(targetPg) {
+        const errBlock = document.getElementById('auth-error-msg');
+        const errText = document.getElementById('auth-error-text');
+        if (errBlock && errText) {
+            const pageLabels = {
+                live: 'Live Data Stream',
+                historical: 'Analytics Archive',
+                predictive: 'Forecast & Advisory',
+                weather: 'Weather Telemetry',
+                admin: 'Admin Center'
+            };
+            const label = pageLabels[targetPg] || 'this page';
+            errText.innerText = `Please sign in to view ${label}.`;
+            errBlock.style.backgroundColor = "rgba(0, 191, 165, 0.1)";
+            errBlock.style.color = "#00bfa5";
+            errBlock.style.border = "1px solid rgba(0, 191, 165, 0.2)";
+            errBlock.style.display = 'flex';
+        }
+    }
 
     // Prefetch page data on hover/touch or eager pre-cache
     function prefetchPage(url) {
         try {
             const urlObj = new URL(url, window.location.origin);
             const targetPage = urlObj.searchParams.get('page') || 'overview';
-            const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin));
+            const isUserLoggedIn = isUserAuthenticated();
 
-            // Skip prefetching protected admin page for unauthenticated visitors
+            // Skip prefetching protected pages for unauthenticated visitors
             if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) return;
             if (targetPage === currentPage || pageCache.has(targetPage)) return;
 
@@ -63,7 +91,7 @@
         window.addEventListener('load', () => setTimeout(initPrecache, 150));
     }
     function initPrecache() {
-        const isUserLoggedIn = Boolean(window.__currentUser && window.__currentUser.is_logged_in);
+        const isUserLoggedIn = isUserAuthenticated();
         CORE_PAGES.forEach((pg, idx) => {
             if (PROTECTED_PAGES.includes(pg) && !isUserLoggedIn) return;
             if (pg !== currentPage && !pageCache.has(pg)) {
@@ -148,13 +176,7 @@
         });
 
         // Update Mobile Bottom Nav Dock items
-        const hasSavedAuth = (() => {
-            try {
-                return (localStorage.getItem('auth_logged_in') === 'true' && Boolean(localStorage.getItem('auth_email'))) &&
-                       !(sessionStorage.getItem('deliberate_logout') === 'true' || localStorage.getItem('deliberate_logout') === 'true');
-            } catch(e) { return false; }
-        })();
-        const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin)) || hasSavedAuth;
+        const isUserLoggedIn = isUserAuthenticated();
 
         document.querySelectorAll('[data-bottom-nav]').forEach(el => {
             const pageKey = el.getAttribute('data-bottom-nav');
@@ -165,12 +187,17 @@
             const label = el.querySelector('span');
             const liveDot = el.querySelector('.campus-status-dot');
 
-            el.classList.remove('bottom-nav-locked');
+            const isLocked = !isUserLoggedIn && pageKey !== 'overview' && pageKey !== 'admin';
+            if (isLocked) {
+                el.classList.add('bottom-nav-locked');
+            } else {
+                el.classList.remove('bottom-nav-locked');
+            }
             el.removeAttribute('aria-disabled');
             el.style.cursor = 'pointer';
 
             if (liveDot) {
-                liveDot.style.display = '';
+                liveDot.style.display = isLocked ? 'none' : '';
             }
 
             if (isActive) {
@@ -188,12 +215,12 @@
                     label.style.fontWeight = '700';
                 }
             } else {
-                el.style.opacity = '0.78';
+                el.style.opacity = isLocked ? '0.38' : '0.78';
                 el.style.color = '#94a3b8';
                 el.style.backgroundColor = 'transparent';
                 if (icon) {
                     icon.style.color = (pageKey === 'admin') ? '#6366f1' : '#94a3b8';
-                    icon.style.opacity = '0.85';
+                    icon.style.opacity = isLocked ? '0.75' : '0.85';
                     icon.style.transform = 'scale(1)';
                     icon.style.strokeWidth = '1.8';
                 }
@@ -219,21 +246,27 @@
             return;
         }
 
-        // Only admin page requires admin authentication check
-        const hasSavedAuth = (() => {
-            try {
-                return (localStorage.getItem('auth_logged_in') === 'true' && Boolean(localStorage.getItem('auth_email'))) &&
-                       !(sessionStorage.getItem('deliberate_logout') === 'true' || localStorage.getItem('deliberate_logout') === 'true');
-            } catch(e) { return false; }
-        })();
-        const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin)) || hasSavedAuth;
+        const isUserLoggedIn = isUserAuthenticated();
 
-        if (targetPage === 'admin' && !Boolean(window.__currentUser && window.__currentUser.is_admin)) {
-            window.__pendingTargetPage = 'admin';
-            if (typeof openAuthModal === 'function') {
-                openAuthModal();
+        // Check authentication requirement before making any network calls or page transitions
+        if (PROTECTED_PAGES.includes(targetPage)) {
+            if (targetPage === 'admin') {
+                if (!isUserAdmin()) {
+                    window.__pendingTargetPage = 'admin';
+                    if (typeof openAuthModal === 'function') {
+                        openAuthModal(true);
+                        showAuthPrompt('admin');
+                    }
+                    return;
+                }
+            } else if (!isUserLoggedIn) {
+                window.__pendingTargetPage = targetPage;
+                if (typeof openAuthModal === 'function') {
+                    openAuthModal(true);
+                    showAuthPrompt(targetPage);
+                }
+                return;
             }
-            return;
         }
 
         if (isTransitioning) return;
@@ -279,15 +312,6 @@
 
             // Handle auth requirement from server response
             if (data.require_login) {
-                if (hasSavedAuth) {
-                    const savedEmail = localStorage.getItem('auth_email');
-                    const savedName = localStorage.getItem('auth_name') || (savedEmail ? savedEmail.split('@')[0] : '');
-                    if (typeof window.setAuthCookie === 'function') {
-                        window.setAuthCookie('guest', savedName, savedEmail, false);
-                    }
-                    window.location.href = `?page=${encodeURIComponent(targetPage)}&auth=true&name=${encodeURIComponent(savedName)}&email=${encodeURIComponent(savedEmail)}`;
-                    return;
-                }
                 resetProgressBar();
                 if (wrapper) {
                     wrapper.classList.remove('page-fade-leave');
@@ -296,25 +320,8 @@
                 isTransitioning = false;
                 window.__pendingTargetPage = data.target_page || targetPage;
                 if (typeof openAuthModal === 'function') {
-                    openAuthModal();
-                    const errBlock = document.getElementById('auth-error-msg');
-                    const errText = document.getElementById('auth-error-text');
-                    if (errBlock && errText) {
-                        const pageLabels = {
-                            live: 'Live Data Stream',
-                            historical: 'Analytics Archive',
-                            predictive: 'Weather Forecast',
-                            weather: 'Weather Telemetry',
-                            admin: 'Admin Center'
-                        };
-                        const targetPg = data.target_page || targetPage;
-                        const label = pageLabels[targetPg] || 'this page';
-                        errText.innerText = `Please sign in to view ${label}.`;
-                        errBlock.style.backgroundColor = "rgba(0, 191, 165, 0.1)";
-                        errBlock.style.color = "#00bfa5";
-                        errBlock.style.border = "1px solid rgba(0, 191, 165, 0.2)";
-                        errBlock.style.display = 'flex';
-                    }
+                    openAuthModal(true);
+                    showAuthPrompt(data.target_page || targetPage);
                 }
                 return;
             }

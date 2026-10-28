@@ -292,13 +292,13 @@
 <script>
 let currentAuthMode = 'login';
 
-function openAuthModal() {
-    const isAlreadyLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin)) ||
-        (localStorage.getItem('auth_logged_in') === 'true' && Boolean(localStorage.getItem('auth_email')) &&
-         sessionStorage.getItem('deliberate_logout') !== 'true' && localStorage.getItem('deliberate_logout') !== 'true');
-    if (isAlreadyLoggedIn) {
-        console.log("openAuthModal suppressed: user is already authenticated on this device.");
-        return;
+function openAuthModal(force = false) {
+    if (!force) {
+        const isAlreadyLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin));
+        if (isAlreadyLoggedIn) {
+            console.log("openAuthModal suppressed: user is already authenticated in active session.");
+            return;
+        }
     }
     const modal = document.getElementById('auth-modal');
     if (!modal) return;

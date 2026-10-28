@@ -185,17 +185,18 @@ window.setAuthCookie = function(id, name, email, isAdmin) {
     var savedName = localStorage.getItem('auth_name') || (savedEmail ? savedEmail.split('@')[0] : '');
     var isLoggedInFlag = localStorage.getItem('auth_logged_in') === 'true';
 
-    // Keep persistent 1-year cookie refreshed in document.cookie
-    if (isLoggedInFlag && savedEmail && (!document.cookie.includes('aqi_remember_auth='))) {
-        window.setAuthCookie('guest', savedName, savedEmail, false);
-    }
-    
     var isPhpLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;
-    if (!isPhpLoggedIn && isLoggedInFlag && savedEmail && savedEmail !== 'manish@sode-edu.in' && savedEmail !== 'manishb@sode-edu.in') {
-        console.log("Persistent user account recognized, restoring session directly:", savedEmail);
-        var targetParam = new URLSearchParams(window.location.search).get('target');
-        var page = targetParam || window.__currentPage || 'overview';
-        window.location.replace('?page=' + encodeURIComponent(page) + '&auth=true&name=' + encodeURIComponent(savedName) + '&email=' + encodeURIComponent(savedEmail));
+    if (!isPhpLoggedIn) {
+        try {
+            localStorage.removeItem('auth_email');
+            localStorage.removeItem('auth_name');
+            localStorage.removeItem('auth_logged_in');
+        } catch (e) {}
+    } else {
+        // Keep persistent 1-year cookie refreshed in document.cookie
+        if (savedEmail && (!document.cookie.includes('aqi_remember_auth='))) {
+            window.setAuthCookie('guest', savedName, savedEmail, false);
+        }
     }
 })();
 
@@ -386,10 +387,10 @@ window.updateBottomNavLockedState = function(isLoggedIn) {
 
         if (!isAuth) {
             el.classList.add('bottom-nav-locked');
-            el.setAttribute('aria-disabled', 'true');
+            el.removeAttribute('aria-disabled');
             el.style.opacity = '0.38';
             el.style.color = '#94a3b8';
-            el.style.cursor = 'not-allowed';
+            el.style.cursor = 'pointer';
             el.style.backgroundColor = 'transparent';
             if (icon) {
                 icon.style.color = '#94a3b8';
@@ -686,29 +687,30 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
   <!-- Fixed Native Mobile Bottom Navigation Bar —— Safe area compliant & haptic response -->
   <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
 
+    <?php $is_nav_locked = !$is_logged_in; ?>
     <!-- Overview -->
-    <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'overview' ? '1' : '0.78' ?>; cursor: pointer;">
+    <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'overview' ? '1' : ($is_nav_locked ? '0.38' : '0.78') ?>; cursor: pointer;">
       <i data-lucide="home" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'overview' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'overview' ? '#00bfa5' : '#94a3b8' ?>;"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
     </a>
 
     <!-- Live Feed -->
-    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'live' ? '1' : '0.78' ?>; cursor: pointer;">
+    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'live') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'live' ? '1' : ($is_nav_locked ? '0.38' : '0.78') ?>; cursor: pointer;">
       <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
         <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'live' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'live' ? '#00bfa5' : '#94a3b8' ?>;"></i>
-        <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; border: 1px solid #ffffff;"></span>
+        <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; border: 1px solid #ffffff; <?= $is_nav_locked ? 'display: none;' : '' ?>"></span>
       </div>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
     </a>
 
     <!-- Analytics -->
-    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : '0.78' ?>; cursor: pointer;">
+    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : ($is_nav_locked ? '0.38' : '0.78') ?>; cursor: pointer;">
       <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'historical' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : '#94a3b8' ?>;"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
     </a>
 
     <!-- Forecast -->
-    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : '0.78' ?>; cursor: pointer;">
+    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : ($is_nav_locked ? '0.38' : '0.78') ?>; cursor: pointer;">
       <i data-lucide="cloud-rain" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'predictive' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#94a3b8' ?>;"></i>
       <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
     </a>
@@ -834,25 +836,11 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
 <?php if (isset($_GET['require_login']) && $_GET['require_login'] === 'true'): ?>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-      const savedEmail = localStorage.getItem('auth_email');
-      const isLoggedInFlag = localStorage.getItem('auth_logged_in') === 'true';
-      const isDeliberateLogout = (sessionStorage.getItem('deliberate_logout') === 'true') || (localStorage.getItem('deliberate_logout') === 'true');
       const targetPg = (new URLSearchParams(window.location.search).get('target')) || 'overview';
-
-      // If user is already signed in on this device, restore and enter directly without asking for login
-      if (isLoggedInFlag && savedEmail && !isDeliberateLogout && savedEmail !== 'manish@sode-edu.in' && savedEmail !== 'manishb@sode-edu.in') {
-          const savedName = localStorage.getItem('auth_name') || savedEmail.split('@')[0];
-          if (typeof window.setAuthCookie === 'function') {
-              window.setAuthCookie('guest', savedName, savedEmail, false);
-          }
-          window.location.replace('?page=' + encodeURIComponent(targetPg) + '&auth=true&name=' + encodeURIComponent(savedName) + '&email=' + encodeURIComponent(savedEmail));
-          return;
-      }
-
       setTimeout(() => {
           if (typeof openAuthModal === 'function') {
               if (targetPg) window.__pendingTargetPage = targetPg;
-              openAuthModal();
+              openAuthModal(true);
               
               const errBlock = document.getElementById('auth-error-msg');
               const errText = document.getElementById('auth-error-text');
@@ -860,11 +848,11 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
                   const pageLabels = {
                       live: 'Live Data Stream',
                       historical: 'Analytics Archive',
-                      predictive: 'Predictive Forecast',
+                      predictive: 'Forecast & Advisory',
                       weather: 'Weather Telemetry',
                       admin: 'Admin Center'
                   };
-                  const label = pageLabels[targetPg] || 'this dashboard';
+                  const label = pageLabels[targetPg] || 'this page';
                   errText.innerText = "Please sign in to view " + label + ".";
                   errBlock.style.backgroundColor = "rgba(0, 191, 165, 0.1)";
                   errBlock.style.color = "#00bfa5";

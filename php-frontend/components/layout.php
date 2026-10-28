@@ -231,6 +231,12 @@ window.signOutUser = async function(e) {
         console.warn("SignOut Firebase error:", err);
     }
 
+    try {
+        if (typeof window.updateBottomNavLockedState === 'function') {
+            window.updateBottomNavLockedState(false);
+        }
+    } catch (e) {}
+
     window.location.href = '?logout=true';
 };
 
@@ -363,6 +369,61 @@ window.updateUserAccountUI = function(user) {
             accModalEmail.innerText = email || 'Signed in user';
         }
     }
+
+    if (typeof window.updateBottomNavLockedState === 'function') {
+        window.updateBottomNavLockedState(true);
+    }
+};
+
+window.updateBottomNavLockedState = function(isLoggedIn) {
+    const isAuth = Boolean(isLoggedIn);
+    document.querySelectorAll('[data-bottom-nav]').forEach(el => {
+        const pageKey = el.getAttribute('data-bottom-nav');
+        if (pageKey === 'overview' || pageKey === 'admin') return;
+        const icon = el.querySelector('i') || el.querySelector('svg');
+        const label = el.querySelector('span');
+        const liveDot = el.querySelector('.campus-status-dot');
+
+        if (!isAuth) {
+            el.classList.add('bottom-nav-locked');
+            el.setAttribute('aria-disabled', 'true');
+            el.style.opacity = '0.38';
+            el.style.color = '#94a3b8';
+            el.style.cursor = 'not-allowed';
+            el.style.backgroundColor = 'transparent';
+            if (icon) {
+                icon.style.color = '#94a3b8';
+                icon.style.opacity = '0.75';
+                icon.style.transform = 'scale(1)';
+            }
+            if (label) {
+                label.style.color = '#94a3b8';
+                label.style.fontWeight = '500';
+            }
+            if (liveDot) {
+                liveDot.style.display = 'none';
+            }
+        } else {
+            el.classList.remove('bottom-nav-locked');
+            el.removeAttribute('aria-disabled');
+            el.style.opacity = '1';
+            el.style.cursor = 'pointer';
+            if (liveDot) {
+                liveDot.style.display = '';
+            }
+            const isCurrent = (window.__currentPage || 'overview') === pageKey;
+            el.style.color = isCurrent ? '#00bfa5' : '#64748b';
+            el.style.backgroundColor = isCurrent ? 'rgba(0, 191, 165, 0.1)' : 'transparent';
+            if (icon) {
+                icon.style.color = isCurrent ? '#00bfa5' : '#64748b';
+                icon.style.opacity = '1';
+            }
+            if (label) {
+                label.style.color = isCurrent ? '#00bfa5' : '#64748b';
+                label.style.fontWeight = isCurrent ? '700' : '600';
+            }
+        }
+    });
 };
 
 // Immediately restore user account UI on mobile and desktop from localStorage if present
@@ -587,8 +648,8 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
   </script>
 
   <!-- Main Content Area -->
-  <main style="flex: 1; display: flex; flex-direction: column; position: relative;">
-    <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 1;">
+  <main style="display: flex; flex-direction: column; position: relative;">
+    <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 0; min-height: auto;">
       <?php
         $page_file = __DIR__ . '/../pages/' . $current_page . '.php';
         if (file_exists($page_file)) {
@@ -599,25 +660,33 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
       ?>
     </div>
     
-    <!-- Global Footer (Contact Us & Campus Credits) -->
-    <footer id="global-footer" style="margin-top: auto; padding: 22px 16px; text-align: center; position: relative; z-index: 10; font-size: 13px; background: #ffffff; color: #64748b; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; width: 100%; box-sizing: border-box; box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.02);" class="mb-[84px] md:mb-0">
+    <!-- Global Footer (Differentiated styling with team LinkedIn links) -->
+    <footer id="global-footer" style="margin-top: 14px; padding: 18px 16px; text-align: center; position: relative; z-index: 10; font-size: 12.5px; background: #0f172a; color: #94a3b8; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.15);" class="mb-[84px] md:mb-0">
       
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Logo" style="width: 22px; height: 22px; object-fit: contain;">
-        <span style="font-weight: 700; color: #0f172a;">Smart WeatherNet</span>
+      <!-- Top Brand Row -->
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Logo" style="width: 20px; height: 20px; object-fit: contain;">
+          <span style="font-weight: 800; color: #f8fafc; font-size: 13px; letter-spacing: -0.01em;">Smart WeatherNet</span>
+        </div>
+
+        <span style="color: rgba(255, 255, 255, 0.25); font-weight: 300;">•</span>
+        <span style="font-size: 11.5px; color: #cbd5e1; font-weight: 500;">SMVITM Campus</span>
+        <span style="color: rgba(255, 255, 255, 0.25); font-weight: 300;">•</span>
+
+        <button type="button" onclick="document.getElementById('contact-modal').style.display='flex'; if (window.lucide) { lucide.createIcons(); }" style="background: none; border: none; font-size: 12px; font-weight: 700; color: #00e5c5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,229,197,0.4); text-underline-offset: 3px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#38bdf8';" onmouseout="this.style.color='#00e5c5';">
+          Contact Us
+        </button>
       </div>
 
-      <span style="color: #cbd5e1; font-weight: 300;">|</span>
-
-      <button type="button" onclick="document.getElementById('contact-modal').style.display='flex'; if (window.lucide) { lucide.createIcons(); }" style="background: none; border: none; font-size: 13px; font-weight: 700; color: #00bfa5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,191,165,0.4); text-underline-offset: 4px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#0d9488';" onmouseout="this.style.color='#00bfa5';">
-        Contact Us
-      </button>
       
     </footer>
   </main>
 
   <!-- Fixed Native Mobile Bottom Navigation Bar —— Safe area compliant & haptic response -->
   <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+
+    <?php $is_nav_locked = !$is_logged_in; ?>
 
     <!-- Overview -->
     <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
@@ -626,24 +695,24 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
     </a>
 
     <!-- Live Feed -->
-    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
+    <a href="?page=live" data-bottom-nav="live" <?= $is_nav_locked ? 'class="bottom-nav-locked" aria-disabled="true" title="Sign in required to view Live Feed"' : '' ?> onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= ($is_nav_locked) ? '#94a3b8' : ($current_page === 'live' ? '#00bfa5' : '#64748b') ?>; background-color: <?= (!$is_nav_locked && $current_page === 'live') ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; <?= $is_nav_locked ? 'opacity: 0.38; cursor: not-allowed;' : '' ?>">
       <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
-        <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'live' ? 'color: #00bfa5;' : '' ?>"></i>
-        <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; border: 1px solid #ffffff;"></span>
+        <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: <?= $is_nav_locked ? '1.8' : '2.2' ?>; flex-shrink: 0; color: <?= $is_nav_locked ? '#94a3b8' : ($current_page === 'live' ? '#00bfa5' : '#64748b') ?>;"></i>
+        <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="<?= $is_nav_locked ? 'display: none;' : '' ?> position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; border: 1px solid #ffffff;"></span>
       </div>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
+      <span style="font-size: 10px; font-weight: <?= $is_nav_locked ? '500' : ($current_page === 'live' ? '700' : '600') ?>; letter-spacing: -0.01em; white-space: nowrap; color: <?= $is_nav_locked ? '#94a3b8' : ($current_page === 'live' ? '#00bfa5' : '#64748b') ?>;">Live Feed</span>
     </a>
 
     <!-- Analytics -->
-    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-      <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'historical' ? 'color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
+    <a href="?page=historical" data-bottom-nav="historical" <?= $is_nav_locked ? 'class="bottom-nav-locked" aria-disabled="true" title="Sign in required to view Analytics Archive"' : '' ?> onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= ($is_nav_locked) ? '#94a3b8' : ($current_page === 'historical' ? '#00bfa5' : '#64748b') ?>; background-color: <?= (!$is_nav_locked && $current_page === 'historical') ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; <?= $is_nav_locked ? 'opacity: 0.38; cursor: not-allowed;' : '' ?>">
+      <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: <?= $is_nav_locked ? '1.8' : '2.2' ?>; flex-shrink: 0; color: <?= $is_nav_locked ? '#94a3b8' : ($current_page === 'historical' ? '#00bfa5' : '#64748b') ?>;"></i>
+      <span style="font-size: 10px; font-weight: <?= $is_nav_locked ? '500' : ($current_page === 'historical' ? '700' : '600') ?>; letter-spacing: -0.01em; white-space: nowrap; color: <?= $is_nav_locked ? '#94a3b8' : ($current_page === 'historical' ? '#00bfa5' : '#64748b') ?>;">Analytics</span>
     </a>
 
     <!-- Forecast -->
-    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>;">
-      <i data-lucide="cloud-rain" style="width: 20px; height: 20px; stroke-width: 2.2; flex-shrink: 0; <?= $current_page === 'predictive' ? 'color: #00bfa5;' : '' ?>"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
+    <a href="?page=predictive" data-bottom-nav="predictive" <?= $is_nav_locked ? 'class="bottom-nav-locked" aria-disabled="true" title="Sign in required to view Forecast"' : '' ?> onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= ($is_nav_locked) ? '#94a3b8' : ($current_page === 'predictive' ? '#00bfa5' : '#64748b') ?>; background-color: <?= (!$is_nav_locked && $current_page === 'predictive') ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; <?= $is_nav_locked ? 'opacity: 0.38; cursor: not-allowed;' : '' ?>">
+      <i data-lucide="cloud-rain" style="width: 20px; height: 20px; stroke-width: <?= $is_nav_locked ? '1.8' : '2.2' ?>; flex-shrink: 0; color: <?= $is_nav_locked ? '#94a3b8' : ($current_page === 'predictive' ? '#00bfa5' : '#64748b') ?>;"></i>
+      <span style="font-size: 10px; font-weight: <?= $is_nav_locked ? '500' : ($current_page === 'predictive' ? '700' : '600') ?>; letter-spacing: -0.01em; white-space: nowrap; color: <?= $is_nav_locked ? '#94a3b8' : ($current_page === 'predictive' ? '#00bfa5' : '#64748b') ?>;">Forecast</span>
     </a>
 
     <?php if ($is_admin): ?>
@@ -715,14 +784,29 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
         <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet" style="width: 100%; height: 100%; object-fit: contain;" />
       </div>
 
-      <p style="margin: 0; font-size: 14px; font-weight: 600; color: #475569; line-height: 1.8;">
-        Developed by<br/>
-        <span style="color: #00bfa5;">Manish Kumar</span><br/>
-        <span style="color: #00bfa5;">Manikanta CH</span><br/>
-        <span style="color: #00bfa5;">Madan</span><br/>
-        <span style="color: #00bfa5;">Aditya Thunga K</span><br/>
-        <span style="color: #00bfa5;">Prathvish Kumar</span>
-      </p>
+      <div style="margin: 0; font-size: 13.5px; font-weight: 600; color: #475569; display: flex; flex-direction: column; gap: 6px; align-items: center;">
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; font-weight: 700;">Developed by</span>
+        <a href="https://www.linkedin.com/in/manish-kumar-129b53330?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          <span>Manish Kumar</span>
+          <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/prathvish-kumar-037b60294?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          <span>Prathvish Kumar</span>
+          <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/manikanta-ch-2027935815035727046?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          <span>Manikanta CH</span>
+          <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/madan-k-19412b33b?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          <span>Madan K</span>
+          <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/aditya-thunga-k-365a1033a?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          <span>Aditya Thunga K</span>
+          <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+        </a>
+      </div>
       
       <div style="margin: 20px auto; width: 40px; height: 2px; background-color: #e2e8f0; border-radius: 2px;"></div>
 

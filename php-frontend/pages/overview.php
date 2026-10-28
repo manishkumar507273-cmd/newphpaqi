@@ -101,7 +101,7 @@ if ($latest_epoch > 0) {
     }
 }
 ?>
-<div class="overview-page-root" style="position: relative; min-height: 85vh; border-radius: 24px; overflow: hidden; padding: clamp(16px, 3vw, 28px); background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
+<div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow: hidden; padding: clamp(14px, 2.5vw, 20px); margin-bottom: 6px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
   
   <!-- Dynamic Ambient Canvas -->
   <canvas id="ambient-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.9;"></canvas>
@@ -722,7 +722,6 @@ if ($latest_epoch > 0) {
       white-space: nowrap;
     }
   </style>
-</div>
 
 <script>
 var tempUnit = 'C';

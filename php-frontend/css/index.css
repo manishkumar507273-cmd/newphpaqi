@@ -837,6 +837,50 @@ img, svg, video, canvas {
     white-space: nowrap !important;
   }
 
+  /* Locked bottom nav items — light, soft, faded appearance (without lock symbol) */
+  .mobile-bottom-nav a.bottom-nav-locked,
+  .mobile-bottom-nav button.bottom-nav-locked,
+  #mobile-bottom-nav a.bottom-nav-locked,
+  #mobile-bottom-nav button.bottom-nav-locked {
+    opacity: 0.38 !important;
+    color: #94a3b8 !important;
+    background-color: transparent !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    filter: grayscale(0.4);
+    transition: opacity 0.2s ease, color 0.2s ease !important;
+  }
+
+  .mobile-bottom-nav a.bottom-nav-locked:hover,
+  .mobile-bottom-nav button.bottom-nav-locked:hover,
+  #mobile-bottom-nav a.bottom-nav-locked:hover,
+  #mobile-bottom-nav button.bottom-nav-locked:hover {
+    opacity: 0.48 !important;
+    color: #94a3b8 !important;
+    background-color: transparent !important;
+  }
+
+  .mobile-bottom-nav a.bottom-nav-locked svg,
+  .mobile-bottom-nav a.bottom-nav-locked i,
+  #mobile-bottom-nav a.bottom-nav-locked svg,
+  #mobile-bottom-nav a.bottom-nav-locked i {
+    color: #94a3b8 !important;
+    opacity: 0.75 !important;
+    stroke-width: 1.8 !important;
+    transform: none !important;
+  }
+
+  .mobile-bottom-nav a.bottom-nav-locked span,
+  #mobile-bottom-nav a.bottom-nav-locked span {
+    color: #94a3b8 !important;
+    font-weight: 500 !important;
+  }
+
+  .mobile-bottom-nav a.bottom-nav-locked .campus-status-dot,
+  #mobile-bottom-nav a.bottom-nav-locked .campus-status-dot {
+    display: none !important;
+  }
+
   .hero-metric-unit {
     font-size: 18px !important;
   }

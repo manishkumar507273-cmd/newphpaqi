@@ -148,34 +148,76 @@
         });
 
         // Update Mobile Bottom Nav Dock items
+        const hasSavedAuth = (() => {
+            try {
+                return (localStorage.getItem('auth_logged_in') === 'true' && Boolean(localStorage.getItem('auth_email'))) &&
+                       !(sessionStorage.getItem('deliberate_logout') === 'true' || localStorage.getItem('deliberate_logout') === 'true');
+            } catch(e) { return false; }
+        })();
+        const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin)) || hasSavedAuth;
+
         document.querySelectorAll('[data-bottom-nav]').forEach(el => {
             const pageKey = el.getAttribute('data-bottom-nav');
             const isActive = pageKey === targetPage;
+            const isProtected = ['live', 'historical', 'predictive', 'weather'].includes(pageKey);
+            const isLocked = isProtected && !isUserLoggedIn;
             const activeColor = (pageKey === 'admin') ? '#6366f1' : '#00bfa5';
             const activeBg = (pageKey === 'admin') ? 'rgba(99, 102, 241, 0.12)' : 'rgba(0, 191, 165, 0.08)';
             const icon = el.querySelector('i') || el.querySelector('svg');
             const label = el.querySelector('span');
-            if (isActive) {
-                el.style.color = activeColor;
-                el.style.backgroundColor = activeBg;
-                if (icon) {
-                    icon.style.color = activeColor;
-                    icon.style.transform = 'scale(1.1)';
-                }
-                if (label) {
-                    label.style.color = activeColor;
-                    label.style.fontWeight = '700';
-                }
-            } else {
-                el.style.color = '#64748b';
+            const liveDot = el.querySelector('.campus-status-dot');
+
+            if (isLocked) {
+                el.classList.add('bottom-nav-locked');
+                el.setAttribute('aria-disabled', 'true');
+                el.style.opacity = '0.38';
+                el.style.color = '#94a3b8';
+                el.style.cursor = 'not-allowed';
                 el.style.backgroundColor = 'transparent';
                 if (icon) {
-                    icon.style.color = (pageKey === 'admin') ? '#6366f1' : '#64748b';
+                    icon.style.color = '#94a3b8';
+                    icon.style.opacity = '0.75';
                     icon.style.transform = 'scale(1)';
                 }
                 if (label) {
-                    label.style.color = '#64748b';
-                    label.style.fontWeight = '600';
+                    label.style.color = '#94a3b8';
+                    label.style.fontWeight = '500';
+                }
+                if (liveDot) {
+                    liveDot.style.display = 'none';
+                }
+            } else {
+                el.classList.remove('bottom-nav-locked');
+                el.removeAttribute('aria-disabled');
+                el.style.opacity = '1';
+                el.style.cursor = 'pointer';
+                if (liveDot) {
+                    liveDot.style.display = '';
+                }
+                if (isActive) {
+                    el.style.color = activeColor;
+                    el.style.backgroundColor = activeBg;
+                    if (icon) {
+                        icon.style.color = activeColor;
+                        icon.style.opacity = '1';
+                        icon.style.transform = 'scale(1.1)';
+                    }
+                    if (label) {
+                        label.style.color = activeColor;
+                        label.style.fontWeight = '700';
+                    }
+                } else {
+                    el.style.color = '#64748b';
+                    el.style.backgroundColor = 'transparent';
+                    if (icon) {
+                        icon.style.color = (pageKey === 'admin') ? '#6366f1' : '#64748b';
+                        icon.style.opacity = '1';
+                        icon.style.transform = 'scale(1)';
+                    }
+                    if (label) {
+                        label.style.color = '#64748b';
+                        label.style.fontWeight = '600';
+                    }
                 }
             }
         });

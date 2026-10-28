@@ -588,6 +588,7 @@ function setParam(param) {
 }
 
 function renderUI(skipDayFilter = false) {
+    if (!document.getElementById('history-date-picker')) return;
     const parseIsoLocal = (str) => {
         if (!str) return 0;
         const cleanStr = String(str).replace(/[Zz]|[+-]\d{2}(:\d{2})?$/, '');

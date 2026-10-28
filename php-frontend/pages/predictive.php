@@ -711,6 +711,7 @@ if (file_exists($forecastJsonFile)) {
 
     // Render Function
     function renderForecastUI() {
+        if (!document.getElementById('hourly-forecast-heading') && !document.getElementById('forecast-hero-aqi')) return;
         const hourly = generateHourlyData();
         const phases = generateTimelinePhases();
 

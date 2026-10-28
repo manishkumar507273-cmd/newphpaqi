@@ -219,22 +219,8 @@ if (!in_array($page, $allowed_pages)) {
 $is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']) || (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
 $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
 
-// Pages requiring user login; admin page handles its own dedicated gate and session auth
-$protected_pages = ['live', 'historical', 'predictive', 'weather'];
-
-if (in_array($page, $protected_pages) && !$is_logged_in) {
-    if ($is_ajax) {
-        header('Content-Type: application/json');
-        echo json_encode([
-            'require_login' => true,
-            'target_page' => $page,
-            'redirect' => '?page=overview&require_login=true&target=' . urlencode($page)
-        ]);
-        exit;
-    }
-    header("Location: ?page=overview&require_login=true&target=" . urlencode($page));
-    exit;
-}
+// Telemetry pages (overview, live, historical, predictive) are freely accessible
+$protected_pages = [];
 
 if ($is_ajax) {
     ob_start();

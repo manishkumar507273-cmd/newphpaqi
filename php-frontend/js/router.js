@@ -29,16 +29,16 @@
         }, 280);
     }
 
-    const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather', 'admin'];
+    const PROTECTED_PAGES = ['admin'];
 
     // Prefetch page data on hover/touch or eager pre-cache
     function prefetchPage(url) {
         try {
             const urlObj = new URL(url, window.location.origin);
             const targetPage = urlObj.searchParams.get('page') || 'overview';
-            const isUserLoggedIn = Boolean(window.__currentUser && window.__currentUser.is_logged_in);
+            const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin));
 
-            // Skip prefetching protected pages for unauthenticated visitors
+            // Skip prefetching protected admin page for unauthenticated visitors
             if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) return;
             if (targetPage === currentPage || pageCache.has(targetPage)) return;
 
@@ -159,65 +159,47 @@
         document.querySelectorAll('[data-bottom-nav]').forEach(el => {
             const pageKey = el.getAttribute('data-bottom-nav');
             const isActive = pageKey === targetPage;
-            const isProtected = ['live', 'historical', 'predictive', 'weather'].includes(pageKey);
-            const isLocked = isProtected && !isUserLoggedIn;
             const activeColor = (pageKey === 'admin') ? '#6366f1' : '#00bfa5';
-            const activeBg = (pageKey === 'admin') ? 'rgba(99, 102, 241, 0.12)' : 'rgba(0, 191, 165, 0.08)';
+            const activeBg = (pageKey === 'admin') ? 'rgba(99, 102, 241, 0.12)' : 'rgba(0, 191, 165, 0.1)';
             const icon = el.querySelector('i') || el.querySelector('svg');
             const label = el.querySelector('span');
             const liveDot = el.querySelector('.campus-status-dot');
 
-            if (isLocked) {
-                el.classList.add('bottom-nav-locked');
-                el.setAttribute('aria-disabled', 'true');
-                el.style.opacity = '0.38';
+            el.classList.remove('bottom-nav-locked');
+            el.removeAttribute('aria-disabled');
+            el.style.cursor = 'pointer';
+
+            if (liveDot) {
+                liveDot.style.display = '';
+            }
+
+            if (isActive) {
+                el.style.opacity = '1';
+                el.style.color = activeColor;
+                el.style.backgroundColor = activeBg;
+                if (icon) {
+                    icon.style.color = activeColor;
+                    icon.style.opacity = '1';
+                    icon.style.transform = 'scale(1.1)';
+                    icon.style.strokeWidth = '2.2';
+                }
+                if (label) {
+                    label.style.color = activeColor;
+                    label.style.fontWeight = '700';
+                }
+            } else {
+                el.style.opacity = '0.78';
                 el.style.color = '#94a3b8';
-                el.style.cursor = 'not-allowed';
                 el.style.backgroundColor = 'transparent';
                 if (icon) {
-                    icon.style.color = '#94a3b8';
-                    icon.style.opacity = '0.75';
+                    icon.style.color = (pageKey === 'admin') ? '#6366f1' : '#94a3b8';
+                    icon.style.opacity = '0.85';
                     icon.style.transform = 'scale(1)';
+                    icon.style.strokeWidth = '1.8';
                 }
                 if (label) {
                     label.style.color = '#94a3b8';
                     label.style.fontWeight = '500';
-                }
-                if (liveDot) {
-                    liveDot.style.display = 'none';
-                }
-            } else {
-                el.classList.remove('bottom-nav-locked');
-                el.removeAttribute('aria-disabled');
-                el.style.opacity = '1';
-                el.style.cursor = 'pointer';
-                if (liveDot) {
-                    liveDot.style.display = '';
-                }
-                if (isActive) {
-                    el.style.color = activeColor;
-                    el.style.backgroundColor = activeBg;
-                    if (icon) {
-                        icon.style.color = activeColor;
-                        icon.style.opacity = '1';
-                        icon.style.transform = 'scale(1.1)';
-                    }
-                    if (label) {
-                        label.style.color = activeColor;
-                        label.style.fontWeight = '700';
-                    }
-                } else {
-                    el.style.color = '#64748b';
-                    el.style.backgroundColor = 'transparent';
-                    if (icon) {
-                        icon.style.color = (pageKey === 'admin') ? '#6366f1' : '#64748b';
-                        icon.style.opacity = '1';
-                        icon.style.transform = 'scale(1)';
-                    }
-                    if (label) {
-                        label.style.color = '#64748b';
-                        label.style.fontWeight = '600';
-                    }
                 }
             }
         });
@@ -237,8 +219,7 @@
             return;
         }
 
-        // Instant client-side auth check for protected pages (admin handles its own dedicated gate)
-        const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather'];
+        // Only admin page requires admin authentication check
         const hasSavedAuth = (() => {
             try {
                 return (localStorage.getItem('auth_logged_in') === 'true' && Boolean(localStorage.getItem('auth_email'))) &&
@@ -247,27 +228,10 @@
         })();
         const isUserLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin)) || hasSavedAuth;
 
-        if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) {
-            window.__pendingTargetPage = targetPage;
+        if (targetPage === 'admin' && !Boolean(window.__currentUser && window.__currentUser.is_admin)) {
+            window.__pendingTargetPage = 'admin';
             if (typeof openAuthModal === 'function') {
                 openAuthModal();
-                const errBlock = document.getElementById('auth-error-msg');
-                const errText = document.getElementById('auth-error-text');
-                if (errBlock && errText) {
-                    const pageLabels = {
-                        live: 'Live Data Stream',
-                        historical: 'Analytics Archive',
-                        predictive: 'Weather Forecast',
-                        weather: 'Weather Telemetry',
-                        admin: 'Admin Center'
-                    };
-                    const label = pageLabels[targetPage] || 'this page';
-                    errText.innerText = `Please sign in to view ${label}.`;
-                    errBlock.style.backgroundColor = "rgba(0, 191, 165, 0.1)";
-                    errBlock.style.color = "#00bfa5";
-                    errBlock.style.border = "1px solid rgba(0, 191, 165, 0.2)";
-                    errBlock.style.display = 'flex';
-                }
             }
             return;
         }

@@ -956,6 +956,7 @@ function updateMobileHero() {
 }
 
 async function refreshData(isSilent = false) {
+    if (!document.getElementById('overview-latest-time')) return;
     const icon = document.getElementById('icon-refresh');
     if (!isSilent && icon) {
         icon.style.animation = 'spin 0.8s linear infinite';

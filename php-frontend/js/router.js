@@ -29,15 +29,12 @@
         }, 280);
     }
 
-    const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather', 'admin'];
+    const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather'];
 
     function isUserAuthenticated() {
-        return Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin));
+        return Boolean(window.__currentUser && window.__currentUser.is_logged_in);
     }
 
-    function isUserAdmin() {
-        return Boolean(window.__currentUser && window.__currentUser.is_admin);
-    }
 
     function showAuthPrompt(targetPg) {
         const errBlock = document.getElementById('auth-error-msg');
@@ -48,7 +45,6 @@
                 historical: 'Analytics Archive',
                 predictive: 'Forecast & Advisory',
                 weather: 'Weather Telemetry',
-                admin: 'Admin Center'
             };
             const label = pageLabels[targetPg] || 'this page';
             errText.innerText = `Please sign in to view ${label}.`;
@@ -84,7 +80,7 @@
     }
 
     // Eagerly pre-cache all main pages in background so page switching is 0ms instant
-    const CORE_PAGES = ['overview', 'live', 'historical', 'predictive', 'admin'];
+    const CORE_PAGES = ['overview', 'live', 'historical', 'predictive'];
     if (document.readyState === 'complete') {
         setTimeout(initPrecache, 100);
     } else {
@@ -107,7 +103,6 @@
             live: 'Live Data Stream',
             historical: 'Analytics Archive',
             predictive: 'Forecast & Advisory',
-            admin: 'Admin Center',
             weather: 'Weather Conditions'
         };
 
@@ -151,19 +146,12 @@
         document.querySelectorAll('[data-nav-link]').forEach(el => {
             const pageKey = el.getAttribute('data-nav-link');
             const isActive = pageKey === targetPage;
-            if (pageKey === 'admin') {
-                el.style.backgroundColor = isActive ? '#6366f1' : 'rgba(99, 102, 241, 0.08)';
-                el.style.color = isActive ? '#ffffff' : '#6366f1';
-                el.style.boxShadow = isActive ? '0 4px 14px rgba(99, 102, 241, 0.35)' : 'none';
-            } else {
-                el.style.backgroundColor = isActive ? '#00bfa5' : 'transparent';
-                el.style.color = isActive ? '#ffffff' : '#64748b';
-                el.style.boxShadow = isActive ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none';
-            }
+            el.style.backgroundColor = isActive ? '#00bfa5' : 'transparent';
+            el.style.color = isActive ? '#ffffff' : '#64748b';
+            el.style.boxShadow = isActive ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none';
             const icon = el.querySelector('i');
             if (icon) {
                 icon.style.opacity = isActive ? '1' : '0.85';
-                if (pageKey === 'admin') icon.style.color = isActive ? '#ffffff' : '#6366f1';
             }
         });
 
@@ -181,13 +169,13 @@
         document.querySelectorAll('[data-bottom-nav]').forEach(el => {
             const pageKey = el.getAttribute('data-bottom-nav');
             const isActive = pageKey === targetPage;
-            const activeColor = (pageKey === 'admin') ? '#6366f1' : '#00bfa5';
-            const activeBg = (pageKey === 'admin') ? 'rgba(99, 102, 241, 0.12)' : 'rgba(0, 191, 165, 0.1)';
+            const activeColor = '#00bfa5';
+            const activeBg = 'rgba(0, 191, 165, 0.1)';
             const icon = el.querySelector('i') || el.querySelector('svg');
             const label = el.querySelector('span');
             const liveDot = el.querySelector('.campus-status-dot');
 
-            const isLocked = !isUserLoggedIn && pageKey !== 'overview' && pageKey !== 'admin';
+            const isLocked = !isUserLoggedIn && pageKey !== 'overview';
             if (isLocked) {
                 el.classList.add('bottom-nav-locked');
             } else {
@@ -219,7 +207,7 @@
                 el.style.color = '#94a3b8';
                 el.style.backgroundColor = 'transparent';
                 if (icon) {
-                    icon.style.color = (pageKey === 'admin') ? '#6366f1' : '#94a3b8';
+                    icon.style.color = '#94a3b8';
                     icon.style.opacity = isLocked ? '0.75' : '0.85';
                     icon.style.transform = 'scale(1)';
                     icon.style.strokeWidth = '1.8';
@@ -250,16 +238,7 @@
 
         // Check authentication requirement before making any network calls or page transitions
         if (PROTECTED_PAGES.includes(targetPage)) {
-            if (targetPage === 'admin') {
-                if (!isUserAdmin()) {
-                    window.__pendingTargetPage = 'admin';
-                    if (typeof openAuthModal === 'function') {
-                        openAuthModal(true);
-                        showAuthPrompt('admin');
-                    }
-                    return;
-                }
-            } else if (!isUserLoggedIn) {
+            if (!isUserLoggedIn) {
                 window.__pendingTargetPage = targetPage;
                 if (typeof openAuthModal === 'function') {
                     openAuthModal(true);

@@ -35,23 +35,6 @@ if (!empty($_SESSION['user_name']) && $_SESSION['user_name'] === 'Manish B') {
     }
 }
 
-require_once __DIR__ . '/api/auth_guard.php';
-
-// Direct admin bypass unlock if passed via query string with verified password
-if (isset($_GET['admin_pass'])) {
-    if (verifyAdminPassword($_GET['admin_pass'])) {
-        $_SESSION['is_admin'] = true;
-        if (empty($_SESSION['user_id']) || (!empty($_SESSION['user_email']) && $_SESSION['user_email'] === 'admin@smartairnet.org')) {
-            $_SESSION['user_id'] = 'admin';
-            $_SESSION['user_name'] = 'Admin';
-            $_SESSION['user_email'] = 'admin@smartairnet.org';
-        }
-    }
-    // Clean admin_pass from URL immediately so password is never exposed in browser address bar
-    $clean_target = isset($_GET['page']) ? $_GET['page'] : 'admin';
-    header("Location: ?page=" . urlencode($clean_target));
-    exit;
-}
 
 // Clear persistent cookie if user just logged out
 if (isset($_GET['logout']) || isset($_GET['logged_out'])) {
@@ -65,8 +48,7 @@ if (isset($_GET['logout']) || isset($_GET['logged_out'])) {
     ]);
     setcookie('aqi_remember_auth', '', time() - 86400, '/');
     unset($_COOKIE['aqi_remember_auth']);
-    unset($_SESSION['is_admin']);
-}
+    }
 
 // Restore session from persistent 1-year cookie if session file was flushed or device reopened
 if ((empty($_SESSION['user_id']) || empty($_SESSION['user_email'])) && !empty($_COOKIE['aqi_remember_auth']) && !isset($_GET['logout']) && !isset($_GET['logged_out'])) {
@@ -80,13 +62,7 @@ if ((empty($_SESSION['user_id']) || empty($_SESSION['user_email'])) && !empty($_
             $_SESSION['user_id'] = !empty($decoded['id']) ? $decoded['id'] : 'guest';
             $_SESSION['user_name'] = !empty($decoded['name']) ? $decoded['name'] : explode('@', $em)[0];
             $_SESSION['user_email'] = $em;
-            if (!empty($decoded['is_admin']) && $decoded['is_admin'] === true && strtolower($em) === 'admin@smartairnet.org') {
-                $_SESSION['is_admin'] = true;
-            } else {
-                $_SESSION['is_admin'] = false;
-                unset($_SESSION['is_admin']);
-            }
-        }
+                    }
     }
 }
 
@@ -96,7 +72,6 @@ if (!empty($_SESSION['user_email']) && !isset($_GET['logout']) && !isset($_GET['
         'id' => $_SESSION['user_id'] ?? 'guest',
         'name' => $_SESSION['user_name'] ?? explode('@', $_SESSION['user_email'])[0],
         'email' => $_SESSION['user_email'],
-        'is_admin' => !empty($_SESSION['is_admin']),
         'time' => time()
     ]));
     setcookie('aqi_remember_auth', $cookie_payload, [
@@ -122,27 +97,9 @@ if (isset($_GET['auth']) && $_GET['auth'] === 'true') {
     }
 
     if ($raw_email || $raw_name) {
-        $is_personal_user = (!empty($raw_email) && strtolower($raw_email) !== 'admin@smartairnet.org');
-
-        if ($is_personal_user) {
-            // Personal email accounts are strictly NEVER admins
-            $_SESSION['is_admin'] = false;
-            unset($_SESSION['is_admin']);
-            $_SESSION['user_id'] = 'guest';
-            $_SESSION['user_name'] = $raw_name ?: explode('@', $raw_email)[0];
-            $_SESSION['user_email'] = $raw_email;
-        } else if (isset($_GET['admin_pass']) && verifyAdminPassword($_GET['admin_pass'])) {
-            $_SESSION['is_admin'] = true;
-            $_SESSION['user_id'] = 'admin';
-            $_SESSION['user_name'] = 'Admin';
-            $_SESSION['user_email'] = 'admin@smartairnet.org';
-        } else {
-            $_SESSION['is_admin'] = false;
-            unset($_SESSION['is_admin']);
-            $_SESSION['user_id'] = 'guest';
-            $_SESSION['user_name'] = $raw_name ?: 'User';
-            $_SESSION['user_email'] = $raw_email;
-        }
+        $_SESSION['user_id'] = 'guest';
+        $_SESSION['user_name'] = $raw_name ?: (explode('@', $raw_email)[0] ?? 'User');
+        $_SESSION['user_email'] = $raw_email;
 
         if ($raw_email) {
             // Set 1-year persistent cookie so returning users are automatically recognized
@@ -150,8 +107,7 @@ if (isset($_GET['auth']) && $_GET['auth'] === 'true') {
                 'id' => $_SESSION['user_id'],
                 'name' => $_SESSION['user_name'],
                 'email' => $_SESSION['user_email'],
-                'is_admin' => !empty($_SESSION['is_admin']),
-                'time' => time()
+                        'time' => time()
             ]));
             setcookie('aqi_remember_auth', $cookie_payload, [
                 'expires' => time() + (86400 * 365),
@@ -172,9 +128,6 @@ if (isset($_GET['auth']) && $_GET['auth'] === 'true') {
 
     // Clean up the URL by stripping auth=true, but keeping the page parameter
     $target_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
-    if ($target_page === 'admin' && empty($_SESSION['is_admin'])) {
-        $target_page = 'overview';
-    }
     session_write_close();
     header("Location: ?page=" . $target_page);
     exit;
@@ -210,13 +163,13 @@ if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
 $page = isset($_GET['page']) ? $_GET['page'] : 'overview';
 
 // Allowed pages to prevent directory traversal
-$allowed_pages = ['overview', 'live', 'historical', 'weather', 'admin', 'predictive'];
+$allowed_pages = ['overview', 'live', 'historical', 'weather', 'predictive'];
 
 if (!in_array($page, $allowed_pages)) {
     $page = 'overview';
 }
 
-$is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']) || (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
+$is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']);
 $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
 
 // Pages requiring user login; overview is freely accessible to all guests

@@ -1,24 +1,11 @@
 <?php
 require_once __DIR__ . '/brand-assets.php';
-$current_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
-$is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']) || (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
+$allowed_pages = ['overview', 'live', 'historical', 'weather', 'predictive'];
+$current_page = (isset($_GET['page']) && in_array($_GET['page'], $allowed_pages)) ? $_GET['page'] : 'overview';
+$is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']);
 $user_display_name = !empty($_SESSION['user_name']) ? $_SESSION['user_name'] : (!empty($_SESSION['user_email']) ? explode('@', $_SESSION['user_email'])[0] : 'User');
 $user_email = $_SESSION['user_email'] ?? '';
 $user_initial = strtoupper(substr($user_display_name, 0, 1));
-$admin_whitelist = [];
-$is_personal_user = (!empty($user_email) && strtolower(trim($user_email)) !== 'admin@smartairnet.org');
-if ($is_personal_user) {
-    // A personal email user is strictly NEVER an admin
-    $is_admin = false;
-    $_SESSION['is_admin'] = false;
-    unset($_SESSION['is_admin']);
-} else {
-    $is_admin = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
-    if ($is_admin) {
-        $user_display_name = 'Admin';
-        $user_initial = 'A';
-    }
-}
 
 // Check server-side telemetry cache to determine if cloud data is currently live (received <= 6 mins)
 $is_telemetry_live = true;
@@ -47,7 +34,6 @@ $page_titles = [
     'live'       => 'Live Data Stream',
     'historical' => 'Analytics Archive',
     'predictive' => 'Weather Forecast',
-    'admin'      => 'Admin Center',
     'weather'    => 'Weather Conditions'
 ];
 $current_title = $page_titles[$current_page] ?? 'Smart WeatherNet';
@@ -119,8 +105,7 @@ window.__currentPage = <?= json_encode($current_page) ?>;
 window.__currentUser = <?= json_encode([
     'is_logged_in' => $is_logged_in,
     'name' => $is_logged_in ? ($_SESSION['user_name'] ?? '') : '',
-    'email' => $is_logged_in ? ($_SESSION['user_email'] ?? '') : '',
-    'is_admin' => $is_admin
+    'email' => $is_logged_in ? ($_SESSION['user_email'] ?? '') : ''
 ]) ?>;
 window.__currentUserEmail = <?= json_encode($is_logged_in ? ($_SESSION['user_email'] ?? '') : '') ?>;
 window.__isTelemetryLive = <?= $is_telemetry_live ? 'true' : 'false' ?>;
@@ -139,14 +124,13 @@ window.getApiUrl = function(endpoint) {
 };
 
 // Global helper to write persistent 1-year auth cookie across browser restarts
-window.setAuthCookie = function(id, name, email, isAdmin) {
+window.setAuthCookie = function(id, name, email) {
     if (!email) return;
     try {
         var payload = btoa(unescape(encodeURIComponent(JSON.stringify({
             id: id || 'guest',
             name: name || '',
             email: email || '',
-            is_admin: Boolean(isAdmin),
             time: Math.floor(Date.now() / 1000)
         }))));
         var isSecure = window.location.protocol === 'https:';
@@ -296,14 +280,8 @@ window.closeAccountModal = function() {
 window.updateUserAccountUI = function(user) {
     if (!user) return;
     const email = user.email || '';
-    const isPersonalUser = Boolean(email && email.toLowerCase() !== 'admin@smartairnet.org');
-    const isAdmin = !isPersonalUser && Boolean(
-        (window.__currentUser && window.__currentUser.is_admin) || 
-        user.is_admin
-    );
-
-    const name = isAdmin ? 'Admin' : (user.displayName || (email ? email.split('@')[0] : 'User'));
-    const initial = isAdmin ? 'A' : (name || email || 'U')[0].toUpperCase();
+    const name = user.displayName || (email ? email.split('@')[0] : 'User');
+    const initial = (name || email || 'U')[0].toUpperCase();
 
     // Mobile top bar
     const mobBtn = document.getElementById('mobile-user-btn');
@@ -312,12 +290,12 @@ window.updateUserAccountUI = function(user) {
     const mobTag = document.getElementById('mobile-user-initial-tag');
     if (mobAvatar) {
         mobAvatar.innerText = initial;
-        mobAvatar.style.background = isAdmin ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
+        mobAvatar.style.background = 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
     }
     if (mobTag) mobTag.innerText = name;
     if (mobBtn) {
         mobBtn.style.display = 'inline-flex';
-        mobBtn.style.borderColor = isAdmin ? '#6366f1' : '#00bfa5';
+        mobBtn.style.borderColor = '#00bfa5';
     }
     if (mobSignin) mobSignin.style.display = 'none';
 
@@ -327,26 +305,16 @@ window.updateUserAccountUI = function(user) {
     const deskAvatar = document.getElementById('desktop-user-avatar');
     const deskName = document.getElementById('desktop-user-name');
     const deskEmail = document.getElementById('desktop-user-email');
-    const deskAdminTag = document.getElementById('desktop-user-admin-tag');
 
     if (deskAvatar) {
         deskAvatar.innerText = initial;
-        deskAvatar.style.background = isAdmin ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
+        deskAvatar.style.background = 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
     }
     if (deskName) deskName.innerText = name;
 
-    if (isAdmin) {
-        if (deskEmail) {
-            deskEmail.innerText = '';
-            deskEmail.style.display = 'none';
-        }
-        if (deskAdminTag) deskAdminTag.style.display = 'inline-block';
-    } else {
-        if (deskEmail) {
-            deskEmail.innerText = email;
-            deskEmail.style.display = 'block';
-        }
-        if (deskAdminTag) deskAdminTag.style.display = 'none';
+    if (deskEmail) {
+        deskEmail.innerText = email;
+        deskEmail.style.display = 'block';
     }
 
     if (deskContainer) deskContainer.style.display = 'flex';
@@ -358,17 +326,12 @@ window.updateUserAccountUI = function(user) {
     const accModalEmail = document.getElementById('acc-modal-email');
     if (accModalAvatar) {
         accModalAvatar.innerText = initial;
-        accModalAvatar.style.background = isAdmin ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
+        accModalAvatar.style.background = 'linear-gradient(135deg, #00bfa5 0%, #0d9488 100%)';
     }
     if (accModalName) accModalName.innerText = name;
     if (accModalEmail) {
-        if (isAdmin) {
-            accModalEmail.style.display = 'none';
-            accModalEmail.innerText = '';
-        } else {
-            accModalEmail.style.display = 'block';
-            accModalEmail.innerText = email || 'Signed in user';
-        }
+        accModalEmail.style.display = 'block';
+        accModalEmail.innerText = email || 'Signed in user';
     }
 
     if (typeof window.updateBottomNavLockedState === 'function') {
@@ -380,7 +343,7 @@ window.updateBottomNavLockedState = function(isLoggedIn) {
     const isAuth = Boolean(isLoggedIn);
     document.querySelectorAll('[data-bottom-nav]').forEach(el => {
         const pageKey = el.getAttribute('data-bottom-nav');
-        if (pageKey === 'overview' || pageKey === 'admin') return;
+        if (pageKey === 'overview') return;
         const icon = el.querySelector('i') || el.querySelector('svg');
         const label = el.querySelector('span');
         const liveDot = el.querySelector('.campus-status-dot');
@@ -578,29 +541,24 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
       <a href="?page=predictive" data-nav-link="predictive" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
         <i data-lucide="cloud-rain" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Forecast
       </a>
-      <?php if ($is_admin): ?>
-      <a href="?page=admin" data-nav-link="admin" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; text-decoration: none; color: <?= $current_page === 'admin' ? '#ffffff' : '#6366f1' ?>; background-color: <?= $current_page === 'admin' ? '#6366f1' : 'rgba(99, 102, 241, 0.08)' ?>; box-shadow: <?= $current_page === 'admin' ? '0 4px 14px rgba(99, 102, 241, 0.35)' : 'none' ?>; border: 1px solid <?= $current_page === 'admin' ? '#6366f1' : 'rgba(99, 102, 241, 0.25)' ?>; transition: all 0.2s ease;">
-        <i data-lucide="shield-check" style="width: 15px; height: 15px; opacity: 1; color: <?= $current_page === 'admin' ? '#ffffff' : '#6366f1' ?>;"></i> Admin Center
-      </a>
-      <?php endif; ?>
     </nav>
 
-    <!-- Right: Auth & Admin & Mobile Trigger -->
+    <!-- Right: Auth & Mobile Trigger -->
     <div style="display: flex; align-items: center; gap: 8px;">
 
-      <!-- Desktop Auth & Admin -->
+      <!-- Desktop Auth -->
       <div class="hidden md:flex items-center gap-2.5">
         <!-- Desktop Auth Block -->
         <div id="desktop-user-badge" style="display: <?= $is_logged_in ? 'flex' : 'none' ?>; align-items: center; gap: 8px; background-color: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 3px 10px 3px 4px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
-          <div id="desktop-user-avatar" style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, <?= $is_admin ? '#6366f1 0%, #4f46e5 100%' : '#00bfa5 0%, #0d9488 100%' ?>); color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.35); flex-shrink: 0;">
-            <?= htmlspecialchars($is_admin ? 'A' : $user_initial) ?>
+          <div id="desktop-user-avatar" style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.35); flex-shrink: 0;">
+            <?= htmlspecialchars($user_initial) ?>
           </div>
           <div style="display: flex; flex-direction: column; justify-content: center; line-height: 1.2; max-width: 140px; overflow: hidden;">
             <div style="display: flex; align-items: center; gap: 4px;">
-              <span id="desktop-user-name" style="font-size: 12.5px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($is_admin ? 'Admin' : $user_display_name) ?></span>
-              <span id="desktop-user-admin-tag" style="display: <?= $is_admin ? 'inline-block' : 'none' ?>; font-size: 8.5px; font-weight: 800; background: #6366f1; color: white; padding: 1px 5px; border-radius: 999px; letter-spacing: 0.04em;">ADMIN</span>
+              <span id="desktop-user-name" style="font-size: 12.5px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($user_display_name) ?></span>
+              
             </div>
-            <span id="desktop-user-email" style="display: <?= $is_admin ? 'none' : 'block' ?>; font-size: 9.5px; font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($is_admin ? '' : $user_email) ?></span>
+            <span id="desktop-user-email" style="display: block; font-size: 9.5px; font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($user_email) ?></span>
           </div>
           <a href="?logout=true" onclick="window.signOutUser(event); return false;" title="Sign Out" style="padding: 4px 6px; border-radius: 999px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; text-decoration: none; transition: all 0.15s ease;">
             <i data-lucide="log-out" style="width: 13px; height: 13px;"></i>
@@ -715,14 +673,6 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
       <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
     </a>
 
-    <?php if ($is_admin): ?>
-    <!-- Admin Center -->
-    <a href="?page=admin" data-bottom-nav="admin" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'admin' ? '#6366f1' : '#94a3b8' ?>; background-color: <?= $current_page === 'admin' ? 'rgba(99, 102, 241, 0.12)' : 'transparent' ?>; opacity: <?= $current_page === 'admin' ? '1' : '0.78' ?>; cursor: pointer;">
-      <i data-lucide="shield-check" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'admin' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'admin' ? '#6366f1' : '#94a3b8' ?>;"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'admin' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Admin</span>
-    </a>
-    <?php endif; ?>
-
 
   </nav>
 
@@ -735,26 +685,20 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
         <i data-lucide="x" style="width: 15px; height: 15px;"></i>
       </button>
       <div style="padding: 24px 20px 20px; text-align: center;">
-        <div id="acc-modal-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, <?= $is_admin ? '#6366f1 0%, #4f46e5 100%' : '#00bfa5 0%, #0d9488 100%' ?>); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; margin: 0 auto 12px; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
-          <?= htmlspecialchars($is_admin ? 'A' : $user_initial) ?>
+        <div id="acc-modal-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; margin: 0 auto 12px; box-shadow: 0 4px 14px rgba(0, 191, 165, 0.35);">
+          <?= htmlspecialchars($user_initial) ?>
         </div>
         <h3 id="acc-modal-name" style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
-          <?= htmlspecialchars($is_admin ? 'Admin' : $user_display_name) ?>
+          <?= htmlspecialchars($user_display_name) ?>
         </h3>
-        <p id="acc-modal-email" style="margin: 3px 0 14px; font-size: 13px; color: #64748b; word-break: break-all; font-family: var(--font-mono); <?= $is_admin ? 'display: none;' : '' ?>">
-          <?= htmlspecialchars($is_admin ? '' : ($user_email ?: 'Signed in user')) ?>
+        <p id="acc-modal-email" style="margin: 3px 0 14px; font-size: 13px; color: #64748b; word-break: break-all; font-family: var(--font-mono); ">
+          <?= htmlspecialchars($user_email ?: 'Signed in user') ?>
         </p>
         <div style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #059669; font-size: 11px; font-weight: 700; margin-bottom: 20px;">
           <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
           <span>Active Authenticated Session</span>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <?php if ($is_admin): ?>
-          <a href="?page=admin" onclick="closeAccountModal()" style="display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 11px 16px; border-radius: 12px; background: #e0e7ff; border: 1.5px solid #c7d2fe; color: #4338ca; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; transition: all 0.15s ease;">
-            <i data-lucide="shield-check" style="width: 16px; height: 16px; color: #4f46e5;"></i>
-            <span>Open Admin Center</span>
-          </a>
-          <?php endif; ?>
           <a href="?logout=true" onclick="window.signOutUser(event); return false;" style="display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 11px 16px; border-radius: 12px; background: #fee2e2; border: 1.5px solid #fca5a5; color: #b91c1c; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; transition: all 0.15s ease;">
             <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
             <span>Sign Out from this Device</span>
@@ -850,7 +794,6 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
                       historical: 'Analytics Archive',
                       predictive: 'Forecast & Advisory',
                       weather: 'Weather Telemetry',
-                      admin: 'Admin Center'
                   };
                   const label = pageLabels[targetPg] || 'this page';
                   errText.innerText = "Please sign in to view " + label + ".";

@@ -1375,11 +1375,22 @@ async function submitDatasetRequest(e) {
                 ? window.ENV_CONFIG.firebaseDatabaseUrl.replace(/\/$/, '') 
                 : 'https://smart-air-net-default-rtdb.firebaseio.com';
             
-            fetch(`${fbDbUrl}/requests.json`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(reqData)
-            }).catch(e => console.warn("Firebase sync non-blocking error:", e));
+            (async () => {
+                try {
+                    let idToken = '';
+                    if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+                        idToken = await window.firebaseAuth.currentUser.getIdToken(true);
+                    }
+                    const url = idToken ? `${fbDbUrl}/requests.json?auth=${encodeURIComponent(idToken)}` : `${fbDbUrl}/requests.json`;
+                    fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(reqData)
+                    }).catch(e => console.warn("Firebase sync non-blocking error:", e));
+                } catch(tokenErr) {
+                    console.warn("Firebase ID token error:", tokenErr);
+                }
+            })();
         } else {
             alert("Error: " + (data.error || "Unknown error occurred"));
         }

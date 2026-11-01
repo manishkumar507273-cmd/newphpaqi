@@ -72,7 +72,7 @@
           <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px;">Email Address</label>
           <div style="position: relative;">
             <i data-lucide="mail" style="position: absolute; left: 12px; top: 12px; color: #94a3b8; width: 15px; height: 15px;"></i>
-            <input id="input-email" type="text" required placeholder="name@example.com or admin" style="width: 100%; padding: 9px 12px 9px 36px; border-radius: 11px; border: 1.5px solid #cbd5e1; font-size: 13px; outline: none; box-sizing: border-box; transition: border-color 0.15s ease;" onfocus="this.style.borderColor='#00bfa5';" onblur="this.style.borderColor='#cbd5e1';">
+            <input id="input-email" type="text" required placeholder="name@example.com" style="width: 100%; padding: 9px 12px 9px 36px; border-radius: 11px; border: 1.5px solid #cbd5e1; font-size: 13px; outline: none; box-sizing: border-box; transition: border-color 0.15s ease;" onfocus="this.style.borderColor='#00bfa5';" onblur="this.style.borderColor='#cbd5e1';">
           </div>
         </div>
 
@@ -105,9 +105,7 @@
         <button type="button" id="auth-bottom-btn" onclick="switchAuthMode('register')" style="background: none; border: none; padding: 0; color: #00bfa5; font-weight: 700; cursor: pointer; text-decoration: underline;">Create Account</button>
       </div>
 
-      <div id="auth-bypass-btn-wrap" style="margin-top: 16px; text-align: center;">
-        <button type="button" onclick="switchAuthMode('admin')" style="background: none; border: none; padding: 4px 8px; color: #94a3b8; font-size: 11px; font-weight: 600; cursor: pointer; text-decoration: underline;">Developer Admin Bypass</button>
-      </div>
+
 
     </div>
   </div>
@@ -294,7 +292,7 @@ let currentAuthMode = 'login';
 
 function openAuthModal(force = false) {
     if (!force) {
-        const isAlreadyLoggedIn = Boolean(window.__currentUser && (window.__currentUser.is_logged_in || window.__currentUser.is_admin));
+        const isAlreadyLoggedIn = Boolean(window.__currentUser && window.__currentUser.is_logged_in);
         if (isAlreadyLoggedIn) {
             console.log("openAuthModal suppressed: user is already authenticated in active session.");
             return;
@@ -325,7 +323,7 @@ function switchAuthMode(mode) {
         document.getElementById('auth-social-block').style.display = 'block';
         document.getElementById('field-email').style.display = 'block';
         document.getElementById('input-email').setAttribute('required', 'true');
-        document.getElementById('auth-bypass-btn-wrap').style.display = 'block';
+        
         document.getElementById('label-password').innerText = 'Password';
         document.getElementById('input-password').placeholder = mode === 'register' ? 'At least 6 characters' : 'Enter password';
         
@@ -366,25 +364,7 @@ function switchAuthMode(mode) {
             document.getElementById('auth-bottom-btn').onclick = () => switchAuthMode('register');
             document.getElementById('auth-bottom-btn').style.color = '#00bfa5';
         }
-    } else if (mode === 'admin') {
-        document.getElementById('auth-title').innerText = 'Developer Access';
-        document.getElementById('auth-desc').innerText = 'Enter the bypass code to unlock local dashboard access without a Firebase account.';
-        document.getElementById('auth-social-block').style.display = 'none';
-        document.getElementById('field-email').style.display = 'none';
-        document.getElementById('input-email').removeAttribute('required');
-        document.getElementById('field-name').style.display = 'none';
-        document.getElementById('field-confirm').style.display = 'none';
-        document.getElementById('auth-bypass-btn-wrap').style.display = 'none';
-        
-        document.getElementById('label-password').innerText = 'Password';
-        document.getElementById('input-password').placeholder = 'Enter admin password';
-        
-        document.getElementById('auth-submit-btn').innerHTML = `<i data-lucide="sparkles" style="width: 16px; height: 16px;"></i><span>Unlock Dashboard</span>`;
-        
-        document.getElementById('auth-bottom-text').innerText = '';
-        document.getElementById('auth-bottom-btn').innerText = 'Return to Sign In';
-        document.getElementById('auth-bottom-btn').onclick = () => switchAuthMode('login');
-        document.getElementById('auth-bottom-btn').style.color = '#64748b';
+
     }
     
     lucide.createIcons();
@@ -429,10 +409,10 @@ function mockLogin() {
             }
         }
         if (window.updateUserAccountUI) {
-            window.updateUserAccountUI({ email: email, displayName: name, is_admin: false });
+            window.updateUserAccountUI({ email: email, displayName: name });
         }
         let target = curPage;
-        if (target === 'admin') target = 'overview';
+        
         window.location.href = '?page=' + encodeURIComponent(target) + '&auth=true&name=' + encodeURIComponent(name) + (email ? '&email=' + encodeURIComponent(email) : '');
     }
 
@@ -513,57 +493,7 @@ function handleAuthSubmit(e) {
     errBlock.style.display = 'none';
     const curPage = window.__pendingTargetPage || (new URLSearchParams(window.location.search).get('target')) || window.__currentPage || (window.location.search.match(/page=([^&]+)/) || [])[1] || 'live';
     
-    const isEmailAdmin = (email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@smartairnet.org');
-    
-    if (currentAuthMode === 'admin' || (isEmailAdmin && pass)) {
-        btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Unlocking Dashboard...</span>`;
-        if (window.lucide) lucide.createIcons();
 
-        try {
-            sessionStorage.removeItem('deliberate_logout');
-            localStorage.removeItem('deliberate_logout');
-        } catch(e) {}
-
-        const apiUrl = (typeof window.getApiUrl === 'function') ? window.getApiUrl('admin_login.php') : '/api/admin_login.php';
-
-        fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: pass })
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                try {
-                    sessionStorage.removeItem('deliberate_logout');
-                    localStorage.removeItem('deliberate_logout');
-                } catch(e) {}
-                localStorage.setItem('auth_email', 'admin@smartairnet.org');
-                localStorage.setItem('auth_name', 'Admin');
-                localStorage.setItem('auth_logged_in', 'true');
-                if (typeof window.setAuthCookie === 'function') {
-                    window.setAuthCookie('admin', 'Admin', 'admin@smartairnet.org', true);
-                }
-                window.location.href = '?page=admin';
-            } else {
-                errText.innerText = res.error || 'Incorrect Admin Password.';
-                errBlock.style.display = 'flex';
-                btn.innerHTML = (currentAuthMode === 'admin') 
-                    ? `<i data-lucide="sparkles" style="width: 16px; height: 16px;"></i><span>Unlock Dashboard</span>`
-                    : `<span>Sign In & Unlock Dashboard</span>`;
-                if (window.lucide) lucide.createIcons();
-            }
-        })
-        .catch(() => {
-            errText.innerText = 'Failed to connect to authentication server.';
-            errBlock.style.display = 'flex';
-            btn.innerHTML = (currentAuthMode === 'admin') 
-                ? `<i data-lucide="sparkles" style="width: 16px; height: 16px;"></i><span>Unlock Dashboard</span>`
-                : `<span>Sign In & Unlock Dashboard</span>`;
-            if (window.lucide) lucide.createIcons();
-        });
-        return;
-    }
     
     // Standard User Email Login (or Register)
     btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> <span>Signing in...</span>`;
@@ -585,10 +515,10 @@ function handleAuthSubmit(e) {
             window.setAuthCookie('guest', displayName, finalEmail, false);
         }
         if (window.updateUserAccountUI) {
-            window.updateUserAccountUI({ email: finalEmail, displayName: displayName, is_admin: false });
+            window.updateUserAccountUI({ email: finalEmail, displayName: displayName });
         }
         let target = curPage;
-        if (target === 'admin') target = 'overview';
+        
         window.location.href = '?page=' + encodeURIComponent(target) + '&auth=true&name=' + encodeURIComponent(displayName) + '&email=' + encodeURIComponent(finalEmail);
     }
 

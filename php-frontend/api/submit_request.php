@@ -50,8 +50,17 @@ if (!is_dir($proofs_dir)) {
     @mkdir($proofs_dir, 0777, true);
 }
 
-// Fallback to temp dir if local data directory is read-only (standard on Vercel Serverless)
-if (!is_writable($data_dir) || (file_exists($requests_file) && !is_writable($requests_file)) || (!file_exists($requests_file) && !@touch($requests_file))) {
+// Fallback to temp dir if local data directory is truly read-only (standard on Vercel Serverless)
+$can_write_data = (file_exists($requests_file) && is_writable($requests_file)) || (!file_exists($requests_file) && @touch($requests_file));
+if (!$can_write_data) {
+    $probe = $data_dir . '/.write_probe_' . uniqid();
+    if (@file_put_contents($probe, '1') !== false) {
+        @unlink($probe);
+        $can_write_data = true;
+    }
+}
+
+if (!$can_write_data) {
     $requests_file = sys_get_temp_dir() . '/phpAQI_requests.json';
     $proofs_dir = sys_get_temp_dir() . '/phpAQI_proofs';
     if (!is_dir($proofs_dir)) {
@@ -127,6 +136,49 @@ $new_request = [
 
 array_unshift($requests, $new_request);
 
+// Push directly to Firebase Realtime Database
+function pushRequestToFirebase($requestData) {
+    $apiKey = 'AIzaSyC8UYQMhOaS5SFAdkCcdISTkEWw57WsmFs';
+    $authUrl = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={$apiKey}";
+    $authPayload = json_encode([
+        'email' => 'testuser123@example.com',
+        'password' => 'Password123!',
+        'returnSecureToken' => true
+    ]);
+    
+    $ch = curl_init($authUrl);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $authPayload,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 4,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json']
+    ]);
+    $authRes = curl_exec($ch);
+    curl_close($ch);
+    
+    if (!$authRes) return false;
+    $authData = json_decode($authRes, true);
+    $idToken = $authData['idToken'] ?? '';
+    if (empty($idToken)) return false;
+    
+    $rtdbUrl = "https://smart-air-net-default-rtdb.firebaseio.com/requests.json?auth=" . urlencode($idToken);
+    $ch2 = curl_init($rtdbUrl);
+    curl_setopt_array($ch2, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($requestData),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 4,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json']
+    ]);
+    $res = curl_exec($ch2);
+    $code = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+    curl_close($ch2);
+    return ($code >= 200 && $code < 300);
+}
+@pushRequestToFirebase($new_request);
+
+
 $saved = file_put_contents($requests_file, json_encode($requests, JSON_PRETTY_PRINT));
 
 if (!$saved) {
@@ -135,12 +187,84 @@ if (!$saved) {
     exit;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Forward request to External Admin Portal (Site B)
+// ─────────────────────────────────────────────────────────────
+$get_env_val = function($key, $default = '') {
+    $val = $_ENV[$key] ?? ($_SERVER[$key] ?? (getenv($key) ?: ''));
+    if (!empty($val)) return $val;
+    $env_paths = [__DIR__ . '/../.env', __DIR__ . '/../../.env'];
+    foreach ($env_paths as $ep) {
+        if (file_exists($ep)) {
+            $lines = file($ep, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos(trim($line), '#') === 0) continue;
+                if (strpos($line, '=') !== false) {
+                    list($k, $v) = explode('=', $line, 2);
+                    if (trim($k) === $key) return trim($v);
+                }
+            }
+        }
+    }
+    return $default;
+};
+
+$webhook_url = $get_env_val('EXTERNAL_ADMIN_WEBHOOK_URL', 'https://smart-airnet-admin.vercel.app/api/webhook_receive.php');
+$webhook_key = $get_env_val('EXTERNAL_ADMIN_API_KEY', 'sec_admin_token_2026_xyz');
+
+$forwarded_to_admin = false;
+$webhook_error = null;
+
+if (!empty($webhook_url)) {
+    $webhook_payload = [
+        'id'             => $new_id,
+        'name'           => $input['name'] ?? 'Unknown',
+        'email'          => $input['email'],
+        'org'            => $input['org'] ?? 'Unknown',
+        'industry'       => $industry ?: 'Unknown',
+        'id_number'      => $id_number,
+        'scope'          => $input['scope'],
+        'target_date'    => $input['target_date'] ?? date('Y-m-d', strtotime('-1 day')),
+        'telemetry_type' => $input['telemetry_type'] ?? 'aqi',
+        'use_case'       => $use_case,
+        'description'    => $use_case,
+        'proof_name'     => $clean_name ?: $proof_name,
+        'proof_base64'   => $proof_data,
+        'created_at'     => $new_request['created_at']
+    ];
+
+    $ch = curl_init($webhook_url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($webhook_payload),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 4,
+        CURLOPT_CONNECTTIMEOUT => 2,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $webhook_key
+        ]
+    ]);
+    $webhook_res = curl_exec($ch);
+    $curl_err = curl_error($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($webhook_res && $http_code >= 200 && $http_code < 300) {
+        $forwarded_to_admin = true;
+    } else {
+        $webhook_error = $curl_err ?: ("HTTP code " . $http_code);
+    }
+}
+
 echo json_encode([
-    'success'     => true,
-    'request_id'  => $new_request['id'],
-    'proof_file'  => $proof_file_path,
-    'proof_name'  => $new_request['proof_name'],
-    'use_case'    => $use_case,
-    'description' => $use_case,
-    'id_number'   => $id_number
+    'success'            => true,
+    'request_id'         => $new_request['id'],
+    'forwarded_to_admin' => $forwarded_to_admin,
+    'webhook_error'      => $webhook_error,
+    'proof_file'         => $proof_file_path,
+    'proof_name'         => $new_request['proof_name'],
+    'use_case'           => $use_case,
+    'description'        => $use_case,
+    'id_number'          => $id_number
 ]);

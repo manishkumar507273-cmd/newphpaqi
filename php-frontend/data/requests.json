@@ -34,25 +34,6 @@
     "user_id": "anonymous"
   },
   {
-    "id": "req_6ae7108eb1881",
-    "name": "Live Sync Test Requester",
-    "email": "livesync@sode-edu.in",
-    "org": "SMVITM Campus Labs",
-    "industry": "Education",
-    "id_number": "EDU-2026-X",
-    "proof_file": "data/proofs/req_6ae7108eb1881_campus_id.jpg",
-    "proof_name": "req_6ae7108eb1881_campus_id.jpg",
-    "proof_data": "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
-    "use_case": "Testing real-time sync into Admin Portal",
-    "description": "Testing real-time sync into Admin Portal",
-    "scope": "Telemetry Dataset (All Pollutants)",
-    "target_date": "2026-11-01",
-    "telemetry_type": "aqi",
-    "status": "pending",
-    "created_at": "2026-11-01T15:42:30+05:30",
-    "user_id": "anonymous"
-  },
-  {
     "id": "req_6ae70cda2b457",
     "name": "Manish B",
     "email": "mb507273@gmail.com",
@@ -70,25 +51,6 @@
     "status": "pending",
     "created_at": "2026-11-01T15:26:42+05:30",
     "user_id": "guest"
-  },
-  {
-    "id": "req_6ae70c4fb7716",
-    "name": "End to End Tester",
-    "email": "tester@sode-edu.in",
-    "org": "SMVITM",
-    "industry": "Education",
-    "id_number": "TEST-ID-999",
-    "proof_file": "data/proofs/req_6ae70c4fb7716_test.jpg",
-    "proof_name": "req_6ae70c4fb7716_test.jpg",
-    "proof_data": "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
-    "use_case": "End to end submission verification",
-    "description": "End to end submission verification",
-    "scope": "Telemetry Dataset",
-    "target_date": "2026-11-01",
-    "telemetry_type": "aqi",
-    "status": "pending",
-    "created_at": "2026-11-01T15:24:23+05:30",
-    "user_id": "anonymous"
   },
   {
     "id": "req_6ae6d8b518a23",

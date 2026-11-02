@@ -260,12 +260,12 @@ function formatRawReading($raw) {
         $dom = $domNames[$domKey] ?? 'PM2.5';
     }
 
-    $label = 'Good'; $color = '#65ff50';
-    if ($cpcb_aqi > 50  && $cpcb_aqi <= 100) { $label = 'Satisfactory'; $color = '#a3e635'; }
-    elseif ($cpcb_aqi > 100 && $cpcb_aqi <= 200) { $label = 'Moderate';     $color = '#facc15'; }
-    elseif ($cpcb_aqi > 200 && $cpcb_aqi <= 300) { $label = 'Poor';         $color = '#fb923c'; }
-    elseif ($cpcb_aqi > 300 && $cpcb_aqi <= 400) { $label = 'Very Poor';    $color = '#f87171'; }
-    elseif ($cpcb_aqi > 400)                      { $label = 'Severe';       $color = '#c084fc'; }
+    $label = 'Good'; $color = '#22c55e';
+    if ($cpcb_aqi > 50  && $cpcb_aqi <= 100) { $label = 'Moderate';     $color = '#eab308'; }
+    elseif ($cpcb_aqi > 100 && $cpcb_aqi <= 150) { $label = 'Poor';         $color = '#f97316'; }
+    elseif ($cpcb_aqi > 150 && $cpcb_aqi <= 200) { $label = 'Unhealthy';    $color = '#ef4444'; }
+    elseif ($cpcb_aqi > 200 && $cpcb_aqi <= 300) { $label = 'Severe';       $color = '#a855f7'; }
+    elseif ($cpcb_aqi > 300)                      { $label = 'Hazardous';    $color = '#f43f5e'; }
 
     $ts = $raw['timestamp_hour'] ?? $raw['created_at'] ?? $raw['timestamp'] ?? null;
 
@@ -882,6 +882,10 @@ switch ($action) {
                         } catch (Exception $e) {
                             $filteredHourly[] = $item;
                         }
+                    }
+
+                    if (empty($filteredHourly) && !empty($payload['hourly'])) {
+                        $filteredHourly = $payload['hourly'];
                     }
 
                     if (!empty($filteredHourly)) {

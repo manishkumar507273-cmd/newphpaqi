@@ -1,3 +1,78 @@
+<?php
+// Retrieve cached bulk telemetry for 0ms instant first-paint on both desktop and mobile
+$cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
+$init_bulk = null;
+if (file_exists($cache_file)) {
+    $raw_cache = @file_get_contents($cache_file);
+    if ($raw_cache && strlen($raw_cache) > 20) {
+        $init_bulk = @json_decode($raw_cache, true);
+    }
+}
+
+// AQI pre-calculated fields matching the exact 6 tiers
+$init_aqi_val = '--';
+$init_aqi_label = 'Good';
+$init_aqi_accent = '#22c55e';
+$init_aqi_bg = '#ecfdf5';
+$init_aqi_border = 'rgba(34, 197, 94, 0.4)';
+$init_aqi_shadow = 'rgba(34, 197, 94, 0.18)';
+$init_scale_pct = '8px';
+$init_pm25 = '-- µg/m³';
+$init_pm10 = '-- µg/m³';
+
+if (!empty($init_bulk['aqi'])) {
+    $aqi_d = $init_bulk['aqi'];
+    if (isset($aqi_d['cpcb_aqi'])) {
+        $v = (int)round($aqi_d['cpcb_aqi']);
+        $init_aqi_val = (string)$v;
+        if ($v <= 50) {
+            $init_aqi_label = 'Good';
+            $init_aqi_accent = '#22c55e';
+            $init_aqi_bg = '#ecfdf5';
+            $init_aqi_border = 'rgba(34, 197, 94, 0.4)';
+            $init_aqi_shadow = 'rgba(34, 197, 94, 0.18)';
+            $init_scale_pct = (4 + ($v / 50) * 9) . '%';
+        } elseif ($v <= 100) {
+            $init_aqi_label = 'Moderate';
+            $init_aqi_accent = '#eab308';
+            $init_aqi_bg = '#fef9c3';
+            $init_aqi_border = 'rgba(234, 179, 8, 0.45)';
+            $init_aqi_shadow = 'rgba(234, 179, 8, 0.22)';
+            $init_scale_pct = (21 + (($v - 50) / 50) * 8) . '%';
+        } elseif ($v <= 150) {
+            $init_aqi_label = 'Poor';
+            $init_aqi_accent = '#f97316';
+            $init_aqi_bg = '#ffedd5';
+            $init_aqi_border = 'rgba(249, 115, 22, 0.45)';
+            $init_aqi_shadow = 'rgba(249, 115, 22, 0.22)';
+            $init_scale_pct = (37 + (($v - 100) / 50) * 9) . '%';
+        } elseif ($v <= 200) {
+            $init_aqi_label = 'Unhealthy';
+            $init_aqi_accent = '#ef4444';
+            $init_aqi_bg = '#fee2e2';
+            $init_aqi_border = 'rgba(239, 68, 68, 0.45)';
+            $init_aqi_shadow = 'rgba(239, 68, 68, 0.22)';
+            $init_scale_pct = (54 + (($v - 150) / 50) * 9) . '%';
+        } elseif ($v <= 300) {
+            $init_aqi_label = 'Severe';
+            $init_aqi_accent = '#a855f7';
+            $init_aqi_bg = '#f3e8ff';
+            $init_aqi_border = 'rgba(168, 85, 247, 0.45)';
+            $init_aqi_shadow = 'rgba(168, 85, 247, 0.22)';
+            $init_scale_pct = (71 + (($v - 200) / 100) * 8) . '%';
+        } else {
+            $init_aqi_label = 'Hazardous';
+            $init_aqi_accent = '#f43f5e';
+            $init_aqi_bg = '#ffe4e6';
+            $init_aqi_border = 'rgba(244, 63, 94, 0.45)';
+            $init_aqi_shadow = 'rgba(244, 63, 94, 0.22)';
+            $init_scale_pct = (87 + min(($v - 300) / 200, 1) * 9) . '%';
+        }
+        if (isset($aqi_d['pm25'])) $init_pm25 = number_format((float)$aqi_d['pm25'], 3) . ' µg/m³';
+        if (isset($aqi_d['pm10'])) $init_pm10 = number_format((float)$aqi_d['pm10'], 3) . ' µg/m³';
+    }
+}
+?>
 <style>
 @media (max-width: 768px) {
   /* Mobile compact layout for Live Telemetry */
@@ -130,20 +205,92 @@
     font-size: 18px !important;
   }
 }
+
+/* Live Tab Selector Responsive (Compact on Mobile) */
+.live-tab-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  width: 100%;
+}
+.live-tab-container {
+  display: inline-flex;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  gap: 3px;
+  width: 100%;
+  max-width: 320px;
+}
+.live-tab-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 33px;
+  flex: 1;
+  white-space: nowrap;
+}
+.live-tab-btn i, .live-tab-btn svg {
+  width: 13.5px;
+  height: 13.5px;
+  flex-shrink: 0;
+}
+.live-tab-btn.live-tab-active {
+  background-color: #00bfa5;
+  color: #ffffff;
+}
+.live-tab-btn.live-tab-inactive {
+  background-color: transparent;
+  color: #64748b;
+}
+
+@media (min-width: 641px) {
+  .live-tab-container {
+    max-width: none;
+    width: auto;
+    padding: 4px;
+    gap: 4px;
+  }
+  .live-tab-btn {
+    padding: 8px 20px;
+    font-size: 13px;
+    min-height: 40px;
+    gap: 7px;
+    flex: initial;
+  }
+  .live-tab-btn i, .live-tab-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+}
 </style>
 
 <div style="display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-2.5 sm:p-6">
 
-  <!-- Sub-Navigation Selector -->
-  <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
-    <div style="display: inline-flex; align-items: center; background-color: #ffffff; padding: 4px; border-radius: 999px; border: 1px solid #cbd5e1; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); gap: 4px;" class="w-full sm:w-auto">
-      <button id="tab-aqi" onclick="switchLiveTab('aqi')" class="flex-1 sm:flex-initial" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 999px; border: none; font-size: 13.5px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: #00bfa5; color: #ffffff; transition: all 0.15s ease; min-height: 44px;">
-        <i data-lucide="activity" style="width: 17px; height: 17px; z-index: 1;"></i>
-        <span style="z-index: 1;">AQI Telemetry</span>
+  <!-- Sub-Navigation Selector (Compact Mobile Responsive) -->
+  <div class="live-tab-wrapper">
+    <div class="live-tab-container">
+      <button id="tab-aqi" onclick="switchLiveTab('aqi')" class="live-tab-btn live-tab-active" style="background-color: #00bfa5; color: #ffffff;">
+        <i data-lucide="activity"></i>
+        <span>AQI Telemetry</span>
       </button>
-      <button id="tab-weather" onclick="switchLiveTab('weather')" class="flex-1 sm:flex-initial" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 999px; border: none; font-size: 13.5px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; background-color: transparent; color: #64748b; transition: all 0.15s ease; min-height: 44px;">
-        <i data-lucide="cloud-sun" style="width: 17px; height: 17px; z-index: 1;"></i>
-        <span style="z-index: 1;">Weather Telemetry</span>
+      <button id="tab-weather" onclick="switchLiveTab('weather')" class="live-tab-btn live-tab-inactive" style="background-color: transparent; color: #64748b;">
+        <i data-lucide="cloud-sun"></i>
+        <span>Weather Telemetry</span>
       </button>
     </div>
   </div>
@@ -174,12 +321,12 @@
   </div>
 
   <!-- HERO AQI CARD -->
-  <div id="hero-card" class="hero-card-responsive" style="background-color: #f0fdf4; border-radius: 24px; padding: 28px 32px; color: #0f172a; border: 1.5px solid rgba(34, 197, 94, 0.25); box-shadow: 0 8px 30px rgba(34, 197, 94, 0.15), 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
-    <div id="hero-left-bar" style="position: absolute; top: 0; left: 0; bottom: 0; width: 6px; background-color: #22c55e;"></div>
+  <div id="hero-card" class="hero-card-responsive" style="background-color: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 28px 32px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 8px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
+    <div id="hero-left-bar" style="position: absolute; top: 0; left: 0; bottom: 0; width: 6px; background-color: <?= $init_aqi_accent ?>;"></div>
 
     <div style="position: relative; z-index: 1;">
       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-        <span id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e; display: inline-block;"></span>
+        <span id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: <?= $init_aqi_accent ?>; display: inline-block;"></span>
         <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
           <span>Status Panel • </span><span id="hero-stream-text">Live Stream</span>
         </span>
@@ -188,7 +335,7 @@
       <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 20px; flex-wrap: wrap;">
         <div>
           <div id="hero-aqi-val" style="font-family: var(--font-mono); font-size: 72px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: #0f172a;">
-            --
+            <?= $init_aqi_val ?>
           </div>
           <div id="hero-aqi-subtext" style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--font-mono);">
             LIVE AQI
@@ -197,9 +344,9 @@
 
         <div>
           <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">Air Quality is</div>
-          <div id="hero-aqi-badge" style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 18px; border-radius: 999px; background-color: #ffffff; border: 1.5px solid rgba(34, 197, 94, 0.3); color: #0f172a; font-size: 16px; font-weight: 800; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);">
-            <span id="hero-aqi-badge-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e;"></span>
-            <span id="hero-aqi-label">Loading...</span>
+          <div id="hero-aqi-badge" style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 18px; border-radius: 999px; background-color: #ffffff; border: 1.5px solid <?= $init_aqi_accent ?>60; color: #0f172a; font-size: 16px; font-weight: 800; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);">
+            <span id="hero-aqi-badge-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: <?= $init_aqi_accent ?>;"></span>
+            <span id="hero-aqi-label"><?= $init_aqi_label ?></span>
           </div>
         </div>
       </div>
@@ -208,11 +355,11 @@
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; background-color: #ffffff; border: 1px solid rgba(0, 0, 0, 0.07); font-size: 12px; color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <span style="color: #64748b; font-weight: 600;">PM₂.₅:</span>
-          <strong id="hero-pm25" style="color: #0f172a; font-family: var(--font-mono);">-- µg/m³</strong>
+          <strong id="hero-pm25" style="color: #0f172a; font-family: var(--font-mono);"><?= $init_pm25 ?></strong>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; background-color: #ffffff; border: 1px solid rgba(0, 0, 0, 0.07); font-size: 12px; color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <span style="color: #64748b; font-weight: 600;">PM₁₀:</span>
-          <strong id="hero-pm10" style="color: #0f172a; font-family: var(--font-mono);">-- µg/m³</strong>
+          <strong id="hero-pm10" style="color: #0f172a; font-family: var(--font-mono);"><?= $init_pm10 ?></strong>
         </div>
       </div>
 
@@ -229,7 +376,7 @@
 
         <div class="hero-scale-bar-track" style="position: relative; height: 10px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 10px;">
           <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #22c55e 16.66%, #eab308 16.66%, #eab308 33.33%, #f97316 33.33%, #f97316 50%, #ef4444 50%, #ef4444 66.66%, #a855f7 66.66%, #a855f7 83.33%, #f43f5e 83.33%, #f43f5e 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
-          <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: 8px; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background-color: #ffffff; border: 3px solid #22c55e; box-shadow: 0 2px 6px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s ease-out;"></div>
+          <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: <?= $init_scale_pct ?>; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background-color: #ffffff; border: 3px solid <?= $init_aqi_accent ?>; box-shadow: 0 2px 6px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s ease-out;"></div>
         </div>
 
         <div class="hero-scale-ticks" style="display: flex; justify-content: space-between; padding: 0 2px;">
@@ -600,8 +747,18 @@ function switchLiveTab(tab) {
     const weatherView = document.getElementById('weather-view');
 
     if (tab === 'aqi') {
-        if (aqiBtn) { aqiBtn.style.backgroundColor = '#00bfa5'; aqiBtn.style.color = '#ffffff'; }
-        if (weatherBtn) { weatherBtn.style.backgroundColor = 'transparent'; weatherBtn.style.color = '#64748b'; }
+        if (aqiBtn) { 
+            aqiBtn.classList.add('live-tab-active');
+            aqiBtn.classList.remove('live-tab-inactive');
+            aqiBtn.style.backgroundColor = '#00bfa5'; 
+            aqiBtn.style.color = '#ffffff'; 
+        }
+        if (weatherBtn) { 
+            weatherBtn.classList.add('live-tab-inactive');
+            weatherBtn.classList.remove('live-tab-active');
+            weatherBtn.style.backgroundColor = 'transparent'; 
+            weatherBtn.style.color = '#64748b'; 
+        }
         if (aqiView) aqiView.style.display = 'block';
         if (weatherView) weatherView.style.display = 'none';
         try {
@@ -610,8 +767,18 @@ function switchLiveTab(tab) {
             history.replaceState(null, '', url.toString());
         } catch(e) {}
     } else {
-        if (weatherBtn) { weatherBtn.style.backgroundColor = '#00bfa5'; weatherBtn.style.color = '#ffffff'; }
-        if (aqiBtn) { aqiBtn.style.backgroundColor = 'transparent'; aqiBtn.style.color = '#64748b'; }
+        if (weatherBtn) { 
+            weatherBtn.classList.add('live-tab-active');
+            weatherBtn.classList.remove('live-tab-inactive');
+            weatherBtn.style.backgroundColor = '#00bfa5'; 
+            weatherBtn.style.color = '#ffffff'; 
+        }
+        if (aqiBtn) { 
+            aqiBtn.classList.add('live-tab-inactive');
+            aqiBtn.classList.remove('live-tab-active');
+            aqiBtn.style.backgroundColor = 'transparent'; 
+            aqiBtn.style.color = '#64748b'; 
+        }
         if (weatherView) weatherView.style.display = 'block';
         if (aqiView) aqiView.style.display = 'none';
         try {
@@ -620,6 +787,7 @@ function switchLiveTab(tab) {
             history.replaceState(null, '', url.toString());
         } catch(e) {}
     }
+    if (window.lucide) lucide.createIcons();
 }
 
 function updateTag(elementId, value, limit) {
@@ -805,7 +973,7 @@ async function refreshDashboard() {
             bulkData = window.INITIAL_DATA;
             window.INITIAL_DATA = null;
         } else {
-            const res = await fetch('api/telemetry.php?action=live_bulk&limit=60');
+            const res = await fetch('api/telemetry.php?action=live_bulk&limit=60&_t=' + Date.now());
             bulkData = await res.json();
         }
         
@@ -813,65 +981,87 @@ async function refreshDashboard() {
         const weatherData = bulkData.weather;
         const weatherHistory = bulkData.weather_history;
         const historyData = bulkData.aqi_history;
+        let currentAQITheme = null;
+
+        // Precision non-overlapping positioning inside each of the 6 color segments
+        // Ensures indicator is completely situated inside the matching tier color:
+        // Good (0-50): 3%-14% (green) | Moderate (51-100): 19%-31% (yellow) | Poor (101-150): 36%-48% (orange)
+        // Unhealthy (151-200): 53%-64% (red) | Severe (201-300): 70%-80% (purple) | Hazardous (301+): 86%-97% (rose)
+        function getAQIScalePercentage(aqi) {
+            const v = Number(aqi);
+            if (isNaN(v) || v <= 0) return 4;
+            if (v <= 50)  return 4 + (v / 50) * 9;             // 4% to 13% (Good - Green)
+            if (v <= 100) return 21 + ((v - 50) / 50) * 8;     // 21% to 29% (Moderate - Yellow)
+            if (v <= 150) return 37 + ((v - 100) / 50) * 9;    // 37% to 46% (Poor - Orange)
+            if (v <= 200) return 54 + ((v - 150) / 50) * 9;    // 54% to 63% (Unhealthy - Red)
+            if (v <= 300) return 71 + ((v - 200) / 100) * 8;   // 71% to 79% (Severe - Purple)
+            return 87 + Math.min((v - 300) / 200, 1) * 9;      // 87% to 96% (Hazardous - Rose)
+        }
+
+        // AQI category themes matching the exact bar colors and labels
+        function getAQITheme(aqi) {
+            const v = Number(aqi);
+            if (isNaN(v) || v <= 50) {
+                return { label: 'Good', bg: '#ecfdf5', border: 'rgba(34, 197, 94, 0.4)', shadow: 'rgba(34, 197, 94, 0.18)', accent: '#22c55e' };
+            }
+            if (v <= 100) {
+                // Moderate: Warm rich yellow matching bar segment (#eab308)
+                return { label: 'Moderate', bg: '#fef9c3', border: 'rgba(234, 179, 8, 0.45)', shadow: 'rgba(234, 179, 8, 0.22)', accent: '#eab308' };
+            }
+            if (v <= 150) {
+                // Poor: Orange matching bar segment (#f97316)
+                return { label: 'Poor', bg: '#ffedd5', border: 'rgba(249, 115, 22, 0.45)', shadow: 'rgba(249, 115, 22, 0.22)', accent: '#f97316' };
+            }
+            if (v <= 200) {
+                // Unhealthy: Red matching bar segment (#ef4444)
+                return { label: 'Unhealthy', bg: '#fee2e2', border: 'rgba(239, 68, 68, 0.45)', shadow: 'rgba(239, 68, 68, 0.22)', accent: '#ef4444' };
+            }
+            if (v <= 300) {
+                // Severe: Purple matching bar segment (#a855f7)
+                return { label: 'Severe', bg: '#f3e8ff', border: 'rgba(168, 85, 247, 0.45)', shadow: 'rgba(168, 85, 247, 0.22)', accent: '#a855f7' };
+            }
+            // Hazardous: Pink/Dark Red matching bar segment (#f43f5e)
+            return { label: 'Hazardous', bg: '#ffe4e6', border: 'rgba(244, 63, 94, 0.45)', shadow: 'rgba(244, 63, 94, 0.22)', accent: '#f43f5e' };
+        }
         
         if (aqiData) {
             const d = aqiData;
             const aqiValue = d.cpcb_aqi ?? '--';
             document.getElementById('hero-aqi-val').innerText = aqiValue;
-            
+
             // AQI Badge & Colors
             if (d.aqi_info) {
-                const color = d.aqi_info.color || '#22c55e';
-                
-                // Hero Background
+                const theme = getAQITheme(aqiValue);
+                currentAQITheme = theme;
+                const color = theme.accent;
+
+                // Hero card — entire block changes to matching category color
                 const hero = document.getElementById('hero-card');
                 const badge = document.getElementById('hero-aqi-badge');
-                
-                if (color === '#65ff50' || color === '#22c55e') {
-                    hero.style.backgroundColor = '#f0fdf4';
-                    hero.style.borderColor = 'rgba(34,197,94,0.25)';
-                    hero.style.boxShadow = '0 8px 30px rgba(34,197,94,0.15), 0 1px 3px rgba(15,23,42,0.04)';
-                } else if (color === '#a3e635' || color === '#eab308' || color === '#facc15') {
-                    hero.style.backgroundColor = '#fefce8';
-                    hero.style.borderColor = 'rgba(234,179,8,0.25)';
-                    hero.style.boxShadow = '0 8px 30px rgba(234,179,8,0.15), 0 1px 3px rgba(15,23,42,0.04)';
-                } else if (color === '#fb923c' || color === '#f97316') {
-                    hero.style.backgroundColor = '#fff7ed';
-                    hero.style.borderColor = 'rgba(249,115,22,0.25)';
-                    hero.style.boxShadow = '0 8px 30px rgba(249,115,22,0.15), 0 1px 3px rgba(15,23,42,0.04)';
-                } else if (color === '#f87171' || color === '#ef4444') {
-                    hero.style.backgroundColor = '#fef2f2';
-                    hero.style.borderColor = 'rgba(239,68,68,0.25)';
-                    hero.style.boxShadow = '0 8px 30px rgba(239,68,68,0.15), 0 1px 3px rgba(15,23,42,0.04)';
-                } else if (color === '#c084fc' || color === '#a855f7') {
-                    hero.style.backgroundColor = '#faf5ff';
-                    hero.style.borderColor = 'rgba(168,85,247,0.25)';
-                    hero.style.boxShadow = '0 8px 30px rgba(168,85,247,0.15), 0 1px 3px rgba(15,23,42,0.04)';
-                }
 
-                document.getElementById('hero-left-bar').style.backgroundColor = color;
-                document.getElementById('status-dot').style.backgroundColor = color;
-                
-                badge.style.borderColor = color + '50';
-                document.getElementById('hero-aqi-badge-dot').style.backgroundColor = color;
-                document.getElementById('hero-aqi-label').innerText = d.aqi_info.label;
-                
-                const pct = Math.min(Math.max((aqiValue / 500) * 100, 0), 100);
+                hero.style.backgroundColor = theme.bg;
+                hero.style.borderColor     = theme.border;
+                hero.style.boxShadow       = `0 8px 30px ${theme.shadow}, 0 1px 3px rgba(15,23,42,0.04)`;
+
+                document.getElementById('hero-left-bar').style.backgroundColor = theme.accent;
+                document.getElementById('status-dot').style.backgroundColor    = theme.accent;
+
+                badge.style.borderColor = theme.accent + '60';
+                document.getElementById('hero-aqi-badge-dot').style.backgroundColor = theme.accent;
+                document.getElementById('hero-aqi-label').innerText = theme.label;
+
+                const pct = Math.min(Math.max(getAQIScalePercentage(aqiValue), 0), 100);
                 const indicator = document.getElementById('hero-scale-indicator');
-                indicator.style.left = `clamp(8px, ${pct}%, calc(100% - 8px))`;
-                indicator.style.borderColor = color;
+                indicator.style.left = `clamp(9px, ${pct}%, calc(100% - 9px))`;
+                indicator.style.borderColor = theme.accent;
                 
                 // Populate Weather tab AQI badge
                 const weatherAqiBadge = document.getElementById('weather-hero-aqi-label');
                 if (weatherAqiBadge) {
                     weatherAqiBadge.innerText = `AQI ${aqiValue} · ${d.aqi_info.label}`;
-                    weatherAqiBadge.style.color = color;
-                    weatherAqiBadge.style.borderColor = color + '50';
-                    if (color === '#65ff50' || color === '#22c55e') weatherAqiBadge.style.backgroundColor = '#f0fdf4';
-                    else if (color === '#a3e635' || color === '#eab308' || color === '#facc15') weatherAqiBadge.style.backgroundColor = '#fefce8';
-                    else if (color === '#fb923c' || color === '#f97316') weatherAqiBadge.style.backgroundColor = '#fff7ed';
-                    else if (color === '#f87171' || color === '#ef4444') weatherAqiBadge.style.backgroundColor = '#fef2f2';
-                    else if (color === '#c084fc' || color === '#a855f7') weatherAqiBadge.style.backgroundColor = '#faf5ff';
+                    weatherAqiBadge.style.color           = theme.accent;
+                    weatherAqiBadge.style.borderColor     = theme.accent + '50';
+                    weatherAqiBadge.style.backgroundColor = theme.bg;
                 }
             }
 
@@ -1076,13 +1266,14 @@ async function refreshDashboard() {
                 aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
             }
         }
-        if (heroDot) heroDot.style.backgroundColor = isAqiOffline ? '#f97316' : '#22c55e';
+        const liveAccent = (currentAQITheme && currentAQITheme.accent) ? currentAQITheme.accent : '#22c55e';
+        if (heroDot) heroDot.style.backgroundColor = isAqiOffline ? '#f97316' : liveAccent;
         if (heroStreamText) heroStreamText.innerText = isAqiOffline ? 'Cached Stream' : 'Live Stream';
         if (heroAqiSubtext) {
             heroAqiSubtext.innerText = isAqiOffline ? 'CACHED AQI' : 'LIVE AQI';
             heroAqiSubtext.style.color = isAqiOffline ? '#c2410c' : '#64748b';
         }
-        if (heroLeftBar) heroLeftBar.style.backgroundColor = isAqiOffline ? '#f97316' : '#22c55e';
+        if (heroLeftBar) heroLeftBar.style.backgroundColor = isAqiOffline ? '#f97316' : liveAccent;
         const latestTimeEl = document.getElementById('latest-time');
         if (latestTimeEl) latestTimeEl.innerText = aqiLastUpdateTimeStr;
 

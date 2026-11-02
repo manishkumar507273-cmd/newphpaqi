@@ -26,17 +26,17 @@ if (!empty($init_bulk['aqi'])) {
         $init_aqi_dom = !empty($aqi_data['dominant_pollutant']) ? htmlspecialchars($aqi_data['dominant_pollutant']) : 'O₃';
         
         if ($init_aqi <= 50) {
-            $init_aqi_label = 'Good'; $init_aqi_color = '#16a34a'; $init_aqi_bg = '#f0fdf4'; $init_aqi_border = '#86efac'; $init_aqi_text = '#15803d';
+            $init_aqi_label = 'Good'; $init_aqi_color = '#22c55e'; $init_aqi_bg = '#ecfdf5'; $init_aqi_border = '#86efac'; $init_aqi_text = '#15803d';
         } elseif ($init_aqi <= 100) {
-            $init_aqi_label = 'Satisfactory'; $init_aqi_color = '#65a30d'; $init_aqi_bg = '#f7fee7'; $init_aqi_border = '#bef264'; $init_aqi_text = '#3f6212';
+            $init_aqi_label = 'Moderate'; $init_aqi_color = '#eab308'; $init_aqi_bg = '#fef9c3'; $init_aqi_border = 'rgba(234, 179, 8, 0.45)'; $init_aqi_text = '#854d0e';
+        } elseif ($init_aqi <= 150) {
+            $init_aqi_label = 'Poor'; $init_aqi_color = '#f97316'; $init_aqi_bg = '#ffedd5'; $init_aqi_border = '#fed7aa'; $init_aqi_text = '#9a3412';
         } elseif ($init_aqi <= 200) {
-            $init_aqi_label = 'Moderate'; $init_aqi_color = '#d97706'; $init_aqi_bg = '#fffbeb'; $init_aqi_border = '#fde68a'; $init_aqi_text = '#92400e';
+            $init_aqi_label = 'Unhealthy'; $init_aqi_color = '#ef4444'; $init_aqi_bg = '#fee2e2'; $init_aqi_border = '#fecaca'; $init_aqi_text = '#991b1b';
         } elseif ($init_aqi <= 300) {
-            $init_aqi_label = 'Poor'; $init_aqi_color = '#ea580c'; $init_aqi_bg = '#fff7ed'; $init_aqi_border = '#fed7aa'; $init_aqi_text = '#9a3412';
-        } elseif ($init_aqi <= 400) {
-            $init_aqi_label = 'Very Poor'; $init_aqi_color = '#dc2626'; $init_aqi_bg = '#fef2f2'; $init_aqi_border = '#fecaca'; $init_aqi_text = '#991b1b';
+            $init_aqi_label = 'Severe'; $init_aqi_color = '#a855f7'; $init_aqi_bg = '#f3e8ff'; $init_aqi_border = '#e9d5ff'; $init_aqi_text = '#6b21a8';
         } else {
-            $init_aqi_label = 'Severe'; $init_aqi_color = '#9333ea'; $init_aqi_bg = '#faf5ff'; $init_aqi_border = '#e9d5ff'; $init_aqi_text = '#6b21a8';
+            $init_aqi_label = 'Hazardous'; $init_aqi_color = '#f43f5e'; $init_aqi_bg = '#ffe4e6'; $init_aqi_border = '#fda4af'; $init_aqi_text = '#9f1239';
         }
         $init_aqi_bar_width = min(100, max(4, round(($init_aqi / 500) * 100))) . '%';
     }
@@ -742,12 +742,12 @@ if (!window.INITIAL_DATA && <?= $init_bulk ? 'true' : 'false' ?>) {
 
 var getAqiCategory = function(val) {
     const v = Number(val);
-    if (v <= 50) return { label: 'Good', color: '#16a34a', bg: '#f0fdf4', border: '#86efac', text: '#15803d' };
-    if (v <= 100) return { label: 'Satisfactory', color: '#65a30d', bg: '#f7fee7', border: '#bef264', text: '#3f6212' };
-    if (v <= 200) return { label: 'Moderate', color: '#d97706', bg: '#fffbeb', border: '#fde68a', text: '#92400e' };
-    if (v <= 300) return { label: 'Poor', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa', text: '#9a3412' };
-    if (v <= 400) return { label: 'Very Poor', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', text: '#991b1b' };
-    return { label: 'Severe', color: '#9333ea', bg: '#faf5ff', border: '#e9d5ff', text: '#6b21a8' };
+    if (v <= 50) return { label: 'Good', color: '#22c55e', bg: '#ecfdf5', border: '#86efac', text: '#15803d' };
+    if (v <= 100) return { label: 'Moderate', color: '#eab308', bg: '#fef9c3', border: 'rgba(234, 179, 8, 0.45)', text: '#854d0e' };
+    if (v <= 150) return { label: 'Poor', color: '#f97316', bg: '#ffedd5', border: '#fed7aa', text: '#9a3412' };
+    if (v <= 200) return { label: 'Unhealthy', color: '#ef4444', bg: '#fee2e2', border: '#fecaca', text: '#991b1b' };
+    if (v <= 300) return { label: 'Severe', color: '#a855f7', bg: '#f3e8ff', border: '#e9d5ff', text: '#6b21a8' };
+    return { label: 'Hazardous', color: '#f43f5e', bg: '#ffe4e6', border: '#fda4af', text: '#9f1239' };
 };
 
 function toggleTemp() {

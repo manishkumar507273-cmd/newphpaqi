@@ -658,7 +658,7 @@ if (!empty($init_bulk['aqi'])) {
                 <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Good</span>
                 <span style="font-size: 12px; font-weight: 700; color: #22c55e; font-family: var(--font-mono);">(0 to 50)</span>
               </div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Air quality is considered satisfactory, and air pollution poses little or no risk.</div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Air quality is considered moderate, and air pollution poses little or no risk.</div>
             </div>
           </div>
         </div>

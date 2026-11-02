@@ -368,12 +368,12 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         $aqiVal = (int)round($maxSub);
         $allTemps[] = $p_temp;
 
-        $cat = 'Good'; $sev = 'GOOD'; $col = '#00bfa5';
-        if ($aqiVal > 50 && $aqiVal <= 100) { $cat = 'Satisfactory'; $sev = 'SATISFACTORY'; $col = '#84cc16'; }
-        elseif ($aqiVal > 100 && $aqiVal <= 200) { $cat = 'Moderate'; $sev = 'MODERATE'; $col = '#f59e0b'; }
-        elseif ($aqiVal > 200 && $aqiVal <= 300) { $cat = 'Poor'; $sev = 'POOR'; $col = '#f97316'; }
-        elseif ($aqiVal > 300 && $aqiVal <= 400) { $cat = 'Very Poor'; $sev = 'VERY_POOR'; $col = '#ef4444'; }
-        elseif ($aqiVal > 400) { $cat = 'Severe'; $sev = 'SEVERE'; $col = '#7f1d1d'; }
+        $cat = 'Good'; $sev = 'GOOD'; $col = '#22c55e';
+        if ($aqiVal > 50 && $aqiVal <= 100) { $cat = 'Moderate'; $sev = 'MODERATE'; $col = '#eab308'; }
+        elseif ($aqiVal > 100 && $aqiVal <= 150) { $cat = 'Poor'; $sev = 'POOR'; $col = '#f97316'; }
+        elseif ($aqiVal > 150 && $aqiVal <= 200) { $cat = 'Unhealthy'; $sev = 'UNHEALTHY'; $col = '#ef4444'; }
+        elseif ($aqiVal > 200 && $aqiVal <= 300) { $cat = 'Severe'; $sev = 'SEVERE'; $col = '#a855f7'; }
+        elseif ($aqiVal > 300) { $cat = 'Hazardous'; $sev = 'HAZARDOUS'; $col = '#f43f5e'; }
 
         $hour = (int)$dt->format('G');
         $label = $dt->format('g A');
@@ -487,9 +487,9 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         $ventAdv = 'Full campus natural cross-ventilation advised';
         $hydrAdv = 'Standard hydration (2.5L/day recommended)';
     } elseif ($curAqi <= 100) {
-        $advTitle = 'Air Quality Satisfactory · Minor Sensitive Group Impact';
+        $advTitle = 'Air Quality Moderate · Minor Sensitive Group Impact';
         $advDesc = "Predicted ambient AQI is {$curAqi} (Dominant: {$curDom}). Minimal impact on healthy individuals.";
-        $sevLabel = 'SATISFACTORY';
+        $sevLabel = 'MODERATE';
         $sportsAdv = 'Standard outdoor sports and exercise permitted';
         $ventAdv = 'Normal classroom and lab ventilation';
         $hydrAdv = 'Keep hydrated during warm afternoon peaks';

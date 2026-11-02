@@ -2,7 +2,7 @@
 // Retrieve cached bulk telemetry for 0ms instant first-paint on both desktop and mobile
 $cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
 $init_bulk = null;
-if (file_exists($cache_file) && (time() - filemtime($cache_file) < 5)) {
+if (file_exists($cache_file) && (time() - filemtime($cache_file) < 600)) {
     $raw_cache = @file_get_contents($cache_file);
     if ($raw_cache && strlen($raw_cache) > 20) {
         $init_bulk = @json_decode($raw_cache, true);
@@ -11,8 +11,8 @@ if (file_exists($cache_file) && (time() - filemtime($cache_file) < 5)) {
 
 // AQI pre-calculated fields
 $init_aqi = null;
-$init_aqi_color = '#16a34a';
-$init_aqi_bg = '#f0fdf4';
+$init_aqi_color = '#22c55e';
+$init_aqi_bg = '#ecfdf5';
 $init_aqi_border = '#86efac';
 $init_aqi_text = '#15803d';
 $init_aqi_label = 'Good';

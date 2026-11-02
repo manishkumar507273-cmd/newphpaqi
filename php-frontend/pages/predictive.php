@@ -483,11 +483,11 @@ if (file_exists($forecastJsonFile)) {
         }
         const v = Number(aqi);
         if (v <= 50) return { label: 'Good', bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0', dot: '#22c55e' };
-        if (v <= 100) return { label: 'Satisfactory', bg: '#f7fee7', text: '#3f6212', border: '#bef264', dot: '#84cc16' };
-        if (v <= 200) return { label: 'Moderate', bg: '#fffbeb', text: '#92400e', border: '#fde68a', dot: '#eab308' };
-        if (v <= 300) return { label: 'Poor', bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', dot: '#f97316' };
-        if (v <= 400) return { label: 'Very Poor', bg: '#fef2f2', text: '#991b1b', border: '#fca5a5', dot: '#ef4444' };
-        return { label: 'Severe', bg: '#faf5ff', text: '#6b21a8', border: '#e9d5ff', dot: '#a855f7' };
+        if (v <= 100) return { label: 'Moderate', bg: '#fef9c3', text: '#854d0e', border: 'rgba(234, 179, 8, 0.45)', dot: '#eab308' };
+        if (v <= 150) return { label: 'Poor', bg: '#ffedd5', text: '#9a3412', border: '#fed7aa', dot: '#f97316' };
+        if (v <= 200) return { label: 'Unhealthy', bg: '#fee2e2', text: '#991b1b', border: '#fecaca', dot: '#ef4444' };
+        if (v <= 300) return { label: 'Severe', bg: '#faf5ff', text: '#6b21a8', border: '#e9d5ff', dot: '#a855f7' };
+        return { label: 'Hazardous', bg: '#ffe4e6', text: '#9f1239', border: '#fda4af', dot: '#f43f5e' };
     }
 
     // 5-Tier Rainfall Probability Scale & Status Badges Standard

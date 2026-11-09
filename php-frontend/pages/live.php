@@ -31,42 +31,42 @@ if (!empty($init_bulk['aqi'])) {
             $init_aqi_bg = '#ecfdf5';
             $init_aqi_border = 'rgba(34, 197, 94, 0.4)';
             $init_aqi_shadow = 'rgba(34, 197, 94, 0.18)';
-            $init_scale_pct = (4 + ($v / 50) * 9) . '%';
+            $init_scale_pct = round(1 + ($v / 50) * 15.66, 2) . '%';
         } elseif ($v <= 100) {
             $init_aqi_label = 'Moderate';
             $init_aqi_accent = '#eab308';
             $init_aqi_bg = '#fef9c3';
             $init_aqi_border = 'rgba(234, 179, 8, 0.45)';
             $init_aqi_shadow = 'rgba(234, 179, 8, 0.22)';
-            $init_scale_pct = (21 + (($v - 50) / 50) * 8) . '%';
+            $init_scale_pct = round(16.66 + (($v - 50) / 50) * 16.67, 2) . '%';
         } elseif ($v <= 150) {
             $init_aqi_label = 'Poor';
             $init_aqi_accent = '#f97316';
             $init_aqi_bg = '#ffedd5';
             $init_aqi_border = 'rgba(249, 115, 22, 0.45)';
             $init_aqi_shadow = 'rgba(249, 115, 22, 0.22)';
-            $init_scale_pct = (37 + (($v - 100) / 50) * 9) . '%';
+            $init_scale_pct = round(33.33 + (($v - 100) / 50) * 16.67, 2) . '%';
         } elseif ($v <= 200) {
             $init_aqi_label = 'Unhealthy';
             $init_aqi_accent = '#ef4444';
             $init_aqi_bg = '#fee2e2';
             $init_aqi_border = 'rgba(239, 68, 68, 0.45)';
             $init_aqi_shadow = 'rgba(239, 68, 68, 0.22)';
-            $init_scale_pct = (54 + (($v - 150) / 50) * 9) . '%';
+            $init_scale_pct = round(50 + (($v - 150) / 50) * 16.66, 2) . '%';
         } elseif ($v <= 300) {
             $init_aqi_label = 'Severe';
             $init_aqi_accent = '#a855f7';
             $init_aqi_bg = '#f3e8ff';
             $init_aqi_border = 'rgba(168, 85, 247, 0.45)';
             $init_aqi_shadow = 'rgba(168, 85, 247, 0.22)';
-            $init_scale_pct = (71 + (($v - 200) / 100) * 8) . '%';
+            $init_scale_pct = round(66.66 + (($v - 200) / 100) * 16.67, 2) . '%';
         } else {
             $init_aqi_label = 'Hazardous';
             $init_aqi_accent = '#f43f5e';
             $init_aqi_bg = '#ffe4e6';
             $init_aqi_border = 'rgba(244, 63, 94, 0.45)';
             $init_aqi_shadow = 'rgba(244, 63, 94, 0.22)';
-            $init_scale_pct = (87 + min(($v - 300) / 200, 1) * 9) . '%';
+            $init_scale_pct = round(83.33 + min(($v - 300) / 200, 1) * 15.67, 2) . '%';
         }
         if (isset($aqi_d['pm25'])) $init_pm25 = number_format((float)$aqi_d['pm25'], 3) . ' µg/m³';
         if (isset($aqi_d['pm10'])) $init_pm10 = number_format((float)$aqi_d['pm10'], 3) . ' µg/m³';
@@ -985,17 +985,16 @@ async function refreshDashboard() {
 
         // Precision non-overlapping positioning inside each of the 6 color segments
         // Ensures indicator is completely situated inside the matching tier color:
-        // Good (0-50): 3%-14% (green) | Moderate (51-100): 19%-31% (yellow) | Poor (101-150): 36%-48% (orange)
-        // Unhealthy (151-200): 53%-64% (red) | Severe (201-300): 70%-80% (purple) | Hazardous (301+): 86%-97% (rose)
+        // Bar segments (equal 16.66% each): Good 0-16.66% | Moderate 16.66-33.33% | Poor 33.33-50% | Unhealthy 50-66.66% | Severe 66.66-83.33% | Hazardous 83.33-100%
         function getAQIScalePercentage(aqi) {
             const v = Number(aqi);
-            if (isNaN(v) || v <= 0) return 4;
-            if (v <= 50)  return 4 + (v / 50) * 9;             // 4% to 13% (Good - Green)
-            if (v <= 100) return 21 + ((v - 50) / 50) * 8;     // 21% to 29% (Moderate - Yellow)
-            if (v <= 150) return 37 + ((v - 100) / 50) * 9;    // 37% to 46% (Poor - Orange)
-            if (v <= 200) return 54 + ((v - 150) / 50) * 9;    // 54% to 63% (Unhealthy - Red)
-            if (v <= 300) return 71 + ((v - 200) / 100) * 8;   // 71% to 79% (Severe - Purple)
-            return 87 + Math.min((v - 300) / 200, 1) * 9;      // 87% to 96% (Hazardous - Rose)
+            if (isNaN(v) || v <= 0) return 1;
+            if (v <= 50)  return 1 + (v / 50) * 15.66;          // 1% to 16.66% (Good - Green)
+            if (v <= 100) return 16.66 + ((v - 50) / 50) * 16.67; // 16.66% to 33.33% (Moderate - Yellow)
+            if (v <= 150) return 33.33 + ((v - 100) / 50) * 16.67;// 33.33% to 50% (Poor - Orange)
+            if (v <= 200) return 50 + ((v - 150) / 50) * 16.66;  // 50% to 66.66% (Unhealthy - Red)
+            if (v <= 300) return 66.66 + ((v - 200) / 100) * 16.67;// 66.66% to 83.33% (Severe - Purple)
+            return 83.33 + Math.min((v - 300) / 200, 1) * 15.67; // 83.33% to 99% (Hazardous - Rose)
         }
 
         // AQI category themes matching the exact bar colors and labels

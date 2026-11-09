@@ -58,11 +58,45 @@ $init_wind_kmh = 0.0;
 $init_live_rain = '--';
 $init_today_rain = '--';
 
+if (!function_exists('adjustTemperatureOverview')) {
+    function adjustTemperatureOverview($temp, $tsRaw) {
+        if ($temp === null || $temp === '') return null;
+        $temp = (float)$temp;
+        if (!$tsRaw) return round($temp, 1);
+        try {
+            $tsStr = trim((string)$tsRaw);
+            if (strpos($tsStr, '+00') !== false || substr($tsStr, -1) === 'Z') {
+                $dt = new DateTime($tsStr);
+                $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+            } elseif (preg_match('/([+-]\d{2}):?(\d{2})$/', $tsStr)) {
+                $dt = new DateTime($tsStr);
+                $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+            } else {
+                $dt = new DateTime($tsStr, new DateTimeZone('Asia/Kolkata'));
+            }
+            $hour = (int)$dt->format('G');
+            $offset = 0.0;
+            if ($hour === 8)                    $offset = -0.5;
+            elseif ($hour === 9)                $offset = -1.0;
+            elseif ($hour === 10)               $offset = -1.5;
+            elseif ($hour >= 11 && $hour <= 16) $offset = -2.0;
+            elseif ($hour === 17)               $offset = -1.5;
+            elseif ($hour === 18)               $offset = -1.0;
+            elseif ($hour === 19)               $offset = -0.5;
+            return round($temp + $offset, 1);
+        } catch (Exception $e) {
+            return round($temp, 1);
+        }
+    }
+}
+
 if (!empty($init_bulk['weather'])) {
     $w = $init_bulk['weather'];
     if (isset($w['temperature']) && $w['temperature'] !== null) {
-        $init_temp = number_format((float)$w['temperature'], 1, '.', '');
-        $init_temp_bar_width = min(100, max(5, round((((float)$w['temperature'] - 10) / 35) * 100))) . '%';
+        $w_ts = $w['timestamp'] ?? $w['created_at'] ?? null;
+        $adj_t = adjustTemperatureOverview($w['temperature'], $w_ts);
+        $init_temp = number_format((float)$adj_t, 1, '.', '');
+        $init_temp_bar_width = min(100, max(5, round((((float)$adj_t - 10) / 35) * 100))) . '%';
     }
     if (isset($w['humidity']) && $w['humidity'] !== null) {
         $init_hum = number_format((float)$w['humidity'], 1, '.', '');
@@ -727,7 +761,7 @@ if ($latest_epoch > 0) {
 var tempUnit = 'C';
 var windUnit = 'kmh';
 var rainUnit = 'mm';
-var rawTemp = <?= isset($init_bulk['weather']['temperature']) && $init_bulk['weather']['temperature'] !== null ? json_encode((float)$init_bulk['weather']['temperature']) : 'null' ?>;
+var rawTemp = <?= isset($init_bulk['weather']['temperature']) && $init_bulk['weather']['temperature'] !== null ? json_encode((float)adjustTemperatureOverview($init_bulk['weather']['temperature'], $init_bulk['weather']['timestamp'] ?? $init_bulk['weather']['created_at'] ?? null)) : 'null' ?>;
 var rawWind = <?= isset($init_bulk['weather']['wind_speed']) && $init_bulk['weather']['wind_speed'] !== null ? json_encode((float)$init_bulk['weather']['wind_speed']) : 'null' ?>;
 var rawLiveRain = <?= isset($init_bulk['weather']['rain_gauge']) && $init_bulk['weather']['rain_gauge'] !== null ? json_encode((float)$init_bulk['weather']['rain_gauge']) : '0' ?>;
 var rawTodayRain = <?= isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null ? json_encode((float)$init_bulk['today_rain_total']) : '0' ?>;

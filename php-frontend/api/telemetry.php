@@ -206,15 +206,41 @@ function parseToIstIso($tsRaw): string {
 }
 
 function adjustTemperature($temp, $tsRaw) {
-    if ($temp === null) return null;
-    return round((float)$temp, 2);
+    if ($temp === null || $temp === '') return null;
+    $temp = (float)$temp;
+    if (!$tsRaw) return round($temp, 1);
+    try {
+        $tsStr = trim((string)$tsRaw);
+        if (strpos($tsStr, '+00') !== false || substr($tsStr, -1) === 'Z') {
+            $dt = new DateTime($tsStr);
+            $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+        } elseif (preg_match('/([+-]\d{2}):?(\d{2})$/', $tsStr)) {
+            $dt = new DateTime($tsStr);
+            $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+        } else {
+            $dt = new DateTime($tsStr, new DateTimeZone('Asia/Kolkata'));
+        }
+        $hour = (int)$dt->format('G'); // 0-23 in IST
+        $offset = 0.0;
+        if ($hour === 8)                    $offset = -0.5;
+        elseif ($hour === 9)                $offset = -1.0;
+        elseif ($hour === 10)               $offset = -1.5;
+        elseif ($hour >= 11 && $hour <= 16) $offset = -2.0;
+        elseif ($hour === 17)               $offset = -1.5;
+        elseif ($hour === 18)               $offset = -1.0;
+        elseif ($hour === 19)               $offset = -0.5;
+        // hour >= 20 || hour <= 7: offset = 0.0 (original value as in supabase)
+        return round($temp + $offset, 1);
+    } catch (Exception $e) {
+        return round($temp, 1);
+    }
 }
 
 function formatWeatherReading($row) {
     if (!$row) return null;
     $tsRaw = $row['timestamp_hour'] ?? $row['created_at'] ?? $row['timestamp'] ?? null;
     $row['timestamp'] = parseToIstIso($tsRaw);
-    if (isset($row['temperature']) && $row['temperature'] !== null) $row['temperature'] = round((float)$row['temperature'], 1);
+    if (isset($row['temperature']) && $row['temperature'] !== null) $row['temperature'] = adjustTemperature($row['temperature'], $tsRaw);
     if (isset($row['humidity']) && $row['humidity'] !== null) $row['humidity'] = round((float)$row['humidity'], 2);
     if (isset($row['wind_speed']) && $row['wind_speed'] !== null) $row['wind_speed'] = round((float)$row['wind_speed'], 2);
     if (isset($row['wind_gust']) && $row['wind_gust'] !== null) $row['wind_gust'] = round((float)$row['wind_gust'], 2);
@@ -273,7 +299,7 @@ function formatRawReading($raw) {
         'id'                => $raw['id'] ?? null,
         'created_at'        => $raw['created_at'] ?? ($raw['timestamp'] ?? null),
         'timestamp'         => parseToIstIso($ts),
-        'temperature'       => isset($raw['temperature']) && $raw['temperature'] !== null ? round((float)$raw['temperature'], 1) : null,
+        'temperature'       => isset($raw['temperature']) && $raw['temperature'] !== null ? adjustTemperature($raw['temperature'], $ts) : null,
         'humidity'          => isset($raw['humidity']) && $raw['humidity'] !== null ? round((float)$raw['humidity'], 2) : null,
         'pm25'              => $rawPm25,
         'pm2.5'             => $rawPm25,
@@ -345,7 +371,7 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         $p_no2  = max(0.1, round((float)($r['no2_ug_m3'] ?? 5), 2));
         $p_co   = max(0.01, round((float)($r['co_mg_m3'] ?? 0.2), 3));
         $p_o3   = max(1.0, round((float)($r['ozone_ug_m3'] ?? 30), 2));
-        $p_temp = round((float)($r['temperature_c'] ?? 28), 1);
+        $p_temp = adjustTemperature(round((float)($r['temperature_c'] ?? 28), 1), $tsStr);
         $p_hum  = min(100.0, max(20.0, round((float)($r['humidity_pct'] ?? 70), 1)));
 
         if (isset($r['tier_used']) && !empty($r['tier_used'])) $tierUsed = (int)$r['tier_used'];
@@ -633,7 +659,7 @@ switch ($action) {
         if ($cached !== null && !empty($cached['data'])) { echo json_encode($cached); break; }
 
         $data = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=id.desc&limit=1", $supabaseKey);
-        $out  = ($data && count($data) > 0) ? ['data' => $data[0]] : null;
+        $out  = ($data && count($data) > 0) ? ['data' => formatWeatherReading($data[0])] : null;
         if ($out !== null) {
             cacheSet($ckey, $out);
         } else {
@@ -665,7 +691,8 @@ switch ($action) {
         if ($cached !== null) { echo json_encode($cached); break; }
 
         $data = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=created_at.desc.nullslast&limit={$lim}", $supabaseKey);
-        $out  = $data ?: [];
+        $out  = [];
+        if ($data) { foreach ($data as $row) { $w = formatWeatherReading($row); if ($w) $out[] = $w; } }
         cacheSet($ckey, $out);
         echo json_encode($out);
         break;
@@ -696,9 +723,8 @@ switch ($action) {
         $result = [];
         if ($data) {
             foreach ($data as $row) {
-                $ts = $row['timestamp_hour'] ?? $row['created_at'] ?? $row['timestamp'] ?? null;
-                $row['timestamp'] = parseToIstIso($ts);
-                $result[] = $row;
+                $w = formatWeatherReading($row);
+                if ($w) $result[] = $w;
             }
         }
         $out = ['history' => $result];
@@ -898,6 +924,9 @@ switch ($action) {
                                     $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
                                     $item['label'] = $dt->format('g A');
                                 } catch (Exception $e) {}
+                            }
+                            if (isset($item['temp']) && !empty($item['iso'])) {
+                                $item['temp'] = adjustTemperature($item['temp'], $item['iso']);
                             }
                         }
                         unset($item);

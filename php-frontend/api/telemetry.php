@@ -371,7 +371,7 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         $p_no2  = max(0.1, round((float)($r['no2_ug_m3'] ?? 5), 2));
         $p_co   = max(0.01, round((float)($r['co_mg_m3'] ?? 0.2), 3));
         $p_o3   = max(1.0, round((float)($r['ozone_ug_m3'] ?? 30), 2));
-        $p_temp = adjustTemperature(round((float)($r['temperature_c'] ?? 28), 1), $tsStr);
+        $p_temp = round((float)($r['temperature_c'] ?? 28), 1);
         $p_hum  = min(100.0, max(20.0, round((float)($r['humidity_pct'] ?? 70), 1)));
 
         if (isset($r['tier_used']) && !empty($r['tier_used'])) $tierUsed = (int)$r['tier_used'];
@@ -924,9 +924,6 @@ switch ($action) {
                                     $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
                                     $item['label'] = $dt->format('g A');
                                 } catch (Exception $e) {}
-                            }
-                            if (isset($item['temp']) && !empty($item['iso'])) {
-                                $item['temp'] = adjustTemperature($item['temp'], $item['iso']);
                             }
                         }
                         unset($item);

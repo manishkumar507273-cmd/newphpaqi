@@ -728,25 +728,25 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
         <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet" style="width: 100%; height: 100%; object-fit: contain;" />
       </div>
 
-      <div style="margin: 0; font-size: 13.5px; font-weight: 600; color: #475569; display: flex; flex-direction: column; gap: 6px; align-items: center;">
-        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; font-weight: 700;">Developed by</span>
-        <a href="https://www.linkedin.com/in/manish-kumar-129b53330?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+      <div style="margin: 0 auto; width: fit-content; max-width: 100%; font-size: 13.5px; font-weight: 600; color: #475569; display: flex; flex-direction: column; gap: 7px; align-items: flex-start; text-align: left;">
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; font-weight: 700; align-self: center; margin-bottom: 2px;">Developed by</span>
+        <a href="https://www.linkedin.com/in/manish-kumar-129b53330?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
           <span>Manish Kumar</span>
           <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
         </a>
-        <a href="https://www.linkedin.com/in/prathvish-kumar-037b60294?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+        <a href="https://www.linkedin.com/in/prathvish-kumar-037b60294?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
           <span>Prathvish Kumar</span>
           <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
         </a>
-        <a href="https://www.linkedin.com/in/manikanta-ch-2027935815035727046?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+        <a href="https://www.linkedin.com/in/manikanta-ch-2027935815035727046?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
           <span>Manikanta CH</span>
           <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
         </a>
-        <a href="https://www.linkedin.com/in/madan-k-19412b33b?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+        <a href="https://www.linkedin.com/in/madan-k-19412b33b?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
           <span>Madan K</span>
           <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
         </a>
-        <a href="https://www.linkedin.com/in/aditya-thunga-k-365a1033a?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+        <a href="https://www.linkedin.com/in/aditya-thunga-k-365a1033a?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" target="_blank" rel="noopener noreferrer" style="color: #00bfa5; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
           <span>Aditya Thunga K</span>
           <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
         </a>

@@ -163,12 +163,12 @@
       <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full lg:w-auto">
         <!-- Chart Type Toggle -->
         <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 999px; border: 1px solid #e2e8f0;">
-          <button onclick="setChartType('line')" id="btn-type-line" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: all 0.15s ease; min-height: 36px;">
-            <i data-lucide="trending-up" style="width: 13px; height: 13px; color: #00bfa5;" id="icon-type-line"></i>
+          <button onclick="setChartType('line')" id="btn-type-line" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: transparent; color: #64748b; box-shadow: none; transition: all 0.15s ease; min-height: 36px;">
+            <i data-lucide="trending-up" style="width: 13px; height: 13px; color: #64748b;" id="icon-type-line"></i>
             <span>Curve</span>
           </button>
-          <button onclick="setChartType('bar')" id="btn-type-bar" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: transparent; color: #64748b; box-shadow: none; transition: all 0.15s ease; min-height: 36px;">
-            <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #64748b;" id="icon-type-bar"></i>
+          <button onclick="setChartType('bar')" id="btn-type-bar" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: all 0.15s ease; min-height: 36px;">
+            <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #00bfa5;" id="icon-type-bar"></i>
             <span>Bars</span>
           </button>
         </div>
@@ -421,7 +421,7 @@
 <script>
 var currentSubTab = 'aqi';
 var currentParam = 'cpcb_aqi';
-var currentChartType = 'line';
+var currentChartType = 'bar';
 var currentRangeDays = 1;
 var historicalDataAqi = [];
 var historicalDataWeather = [];
@@ -1021,8 +1021,33 @@ function renderUI(skipDayFilter = false) {
         }
         return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
     });
+
+    function getAQIColor(val) {
+        const v = Number(val);
+        if (isNaN(v) || v == null) return '#94a3b8';
+        if (v <= 50) return '#22c55e';   // Good (Green)
+        if (v <= 100) return '#eab308';  // Moderate (Yellow)
+        if (v <= 200) return '#f97316';  // Poor (Orange)
+        if (v <= 300) return '#e11d48';  // Unhealthy (Red/Pink)
+        if (v <= 400) return '#9333ea';  // Severe (Purple)
+        return '#b91c1c';                // Hazardous (Crimson)
+    }
+
+    function getAQITierInfo(val) {
+        const v = Number(val);
+        if (isNaN(v) || v == null) return { label: 'Unknown', color: '#94a3b8' };
+        if (v <= 50) return { label: 'Good', color: '#16a34a' };
+        if (v <= 100) return { label: 'Moderate', color: '#ca8a04' };
+        if (v <= 200) return { label: 'Poor', color: '#ea580c' };
+        if (v <= 300) return { label: 'Unhealthy', color: '#e11d48' };
+        if (v <= 400) return { label: 'Severe', color: '#9333ea' };
+        return { label: 'Hazardous', color: '#b91c1c' };
+    }
+
     // Preserve valid 0 values so Supabase zeros are displayed
     const dataPoints = filteredDayData.map(d => (d[currentParam] != null ? d[currentParam] : null));
+    const isAqi = (currentParam === 'cpcb_aqi' || currentParam === 'aqi');
+    const aqiColors = isAqi ? dataPoints.map(v => getAQIColor(v)) : null;
     const color = PARAM_COLORS[currentParam] || '#00bfa5';
 
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
@@ -1039,12 +1064,15 @@ function renderUI(skipDayFilter = false) {
                 const x = activePoint.element.x;
                 const topY = chart.scales.y.top;
                 const bottomY = chart.scales.y.bottom;
+                const idx = activePoint.index;
+                const activeVal = dataPoints[idx];
+                const activeColor = isAqi ? getAQIColor(activeVal) : color;
                 ctx.save();
                 ctx.beginPath();
                 ctx.moveTo(x, topY);
                 ctx.lineTo(x, bottomY);
                 ctx.lineWidth = 1.5;
-                ctx.strokeStyle = color || '#00bfa5';
+                ctx.strokeStyle = activeColor || '#00bfa5';
                 ctx.globalAlpha = 0.55;
                 ctx.setLineDash([4, 4]);
                 ctx.stroke();
@@ -1062,13 +1090,21 @@ function renderUI(skipDayFilter = false) {
         if (chartInstance.data.datasets && chartInstance.data.datasets[0]) {
             chartInstance.data.datasets[0].label = currentParam.toUpperCase();
             chartInstance.data.datasets[0].data = dataPoints;
-            chartInstance.data.datasets[0].borderColor = color;
-            chartInstance.data.datasets[0].backgroundColor = currentChartType === 'line' ? gradient : color;
+            chartInstance.data.datasets[0].borderColor = (isAqi && currentChartType === 'bar') ? aqiColors : color;
+            chartInstance.data.datasets[0].backgroundColor = currentChartType === 'line' ? gradient : (isAqi ? aqiColors : color);
             chartInstance.data.datasets[0].borderWidth = currentChartType === 'line' ? 2.5 : 0;
-            chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? 4 : 0;
-            chartInstance.data.datasets[0].pointBackgroundColor = color;
+            chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0;
+            chartInstance.data.datasets[0].borderSkipped = false;
+            chartInstance.data.datasets[0].pointBackgroundColor = isAqi ? aqiColors : color;
             chartInstance.data.datasets[0].pointHoverRadius = 6;
             chartInstance.data.datasets[0].pointHitRadius = 28;
+            if (isAqi && currentChartType === 'line') {
+                chartInstance.data.datasets[0].segment = {
+                    borderColor: ctx => getAQIColor(ctx.p1?.parsed?.y)
+                };
+            } else {
+                delete chartInstance.data.datasets[0].segment;
+            }
         }
         chartInstance.update({
             duration: 320,
@@ -1084,16 +1120,22 @@ function renderUI(skipDayFilter = false) {
                 datasets: [{
                     label: currentParam.toUpperCase(),
                     data: dataPoints,
-                    borderColor: color,
-                    backgroundColor: currentChartType === 'line' ? gradient : color,
+                    borderColor: (isAqi && currentChartType === 'bar') ? aqiColors : color,
+                    backgroundColor: currentChartType === 'line' ? gradient : (isAqi ? aqiColors : color),
                     borderWidth: currentChartType === 'line' ? 2.5 : 0,
-                    borderRadius: currentChartType === 'bar' ? 4 : 0,
-                    fill: true,
+                    borderRadius: currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0,
+                    borderSkipped: false,
+                    barPercentage: days > 7 ? 0.9 : 0.72,
+                    categoryPercentage: 0.88,
+                    segment: isAqi && currentChartType === 'line' ? {
+                        borderColor: ctx => getAQIColor(ctx.p1?.parsed?.y)
+                    } : undefined,
+                    fill: currentChartType === 'line',
                     tension: 0.4,
-                    pointBackgroundColor: color,
+                    pointBackgroundColor: isAqi ? aqiColors : color,
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
-                    pointRadius: 0,
+                    pointRadius: isAqi && currentChartType === 'line' ? (dataPoints.length <= 40 ? 3.5 : 0) : 0,
                     pointHoverRadius: 6,
                     pointHitRadius: 28,
                     spanGaps: false
@@ -1117,11 +1159,14 @@ function renderUI(skipDayFilter = false) {
                     tooltip: {
                         backgroundColor: '#0f172a',
                         titleColor: '#94a3b8',
-                        bodyColor: color,
+                        bodyColor: '#ffffff',
                         bodyFont: { size: 14, weight: 'bold', family: 'monospace' },
                         padding: 10,
                         cornerRadius: 12,
-                        displayColors: false,
+                        displayColors: isAqi,
+                        boxWidth: 9,
+                        boxHeight: 9,
+                        usePointStyle: true,
                         callbacks: {
                             title: function(items) {
                                 if (!items.length) return '';
@@ -1136,6 +1181,24 @@ function renderUI(skipDayFilter = false) {
                                     return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')}/${yr} • ${dt.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}`;
                                 }
                                 return items[0].label;
+                            },
+                            label: function(item) {
+                                const val = item.parsed.y;
+                                if (val == null) return '';
+                                if (isAqi) {
+                                    const tier = getAQITierInfo(val);
+                                    return ` AQI: ${Math.round(val)} (${tier.label})`;
+                                }
+                                return ` ${currentParam.toUpperCase()}: ${val}`;
+                            },
+                            labelColor: function(item) {
+                                const val = item.parsed.y;
+                                const c = isAqi ? getAQIColor(val) : color;
+                                return {
+                                    borderColor: c,
+                                    backgroundColor: c,
+                                    borderWidth: 1
+                                };
                             }
                         }
                     }

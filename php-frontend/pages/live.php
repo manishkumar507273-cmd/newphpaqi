@@ -9,16 +9,19 @@ if (file_exists($cache_file)) {
     }
 }
 
-// AQI pre-calculated fields matching the exact 6 tiers
+// AQI pre-calculated fields matching the exact 6 tiers with high light-and-dark gradient contrast
 $init_aqi_val = '--';
 $init_aqi_label = 'Good';
-$init_aqi_accent = '#59b61f';
-$init_aqi_bg = '#f0fdf4';
-$init_aqi_border = 'rgba(89, 182, 31, 0.45)';
-$init_aqi_shadow = 'rgba(89, 182, 31, 0.20)';
+$init_aqi_accent = '#16a34a';
+$init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #86efac 80%, #34d399 92%, #10b981 100%)';
+$init_aqi_border = 'rgba(22, 163, 74, 0.35)';
+$init_aqi_shadow = 'rgba(16, 185, 129, 0.20)';
+$init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
+$init_aqi_badge_border = 'rgba(22, 163, 74, 0.35)';
+$init_aqi_badge_text = '#15803d';
 $init_scale_pct = '8px';
-$init_pm25 = '-- µg/m³';
-$init_pm10 = '-- µg/m³';
+$init_pm25 = '--';
+$init_pm10 = '--';
 
 if (!empty($init_bulk['aqi'])) {
     $aqi_d = $init_bulk['aqi'];
@@ -27,49 +30,75 @@ if (!empty($init_bulk['aqi'])) {
         $init_aqi_val = (string)$v;
         if ($v <= 50) {
             $init_aqi_label = 'Good';
-            $init_aqi_accent = '#59b61f';
-            $init_aqi_bg = '#f0fdf4';
-            $init_aqi_border = 'rgba(89, 182, 31, 0.45)';
-            $init_aqi_shadow = 'rgba(89, 182, 31, 0.20)';
+            $init_aqi_accent = '#16a34a';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #86efac 80%, #34d399 92%, #10b981 100%)';
+            $init_aqi_border = 'rgba(22, 163, 74, 0.35)';
+            $init_aqi_shadow = 'rgba(16, 185, 129, 0.20)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
+            $init_aqi_badge_border = 'rgba(22, 163, 74, 0.35)';
+            $init_aqi_badge_text = '#15803d';
             $init_scale_pct = round(max(2, ($v / 50) * 16.66), 2) . '%';
         } elseif ($v <= 100) {
             $init_aqi_label = 'Moderate';
-            $init_aqi_accent = '#eec732';
-            $init_aqi_bg = '#fef9c3';
-            $init_aqi_border = 'rgba(238, 199, 50, 0.50)';
-            $init_aqi_shadow = 'rgba(238, 199, 50, 0.22)';
+            $init_aqi_accent = '#ca8a04';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)';
+            $init_aqi_border = 'rgba(202, 138, 4, 0.35)';
+            $init_aqi_shadow = 'rgba(234, 179, 8, 0.20)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
+            $init_aqi_badge_border = 'rgba(202, 138, 4, 0.38)';
+            $init_aqi_badge_text = '#854d0e';
             $init_scale_pct = round(16.66 + (($v - 50) / 50) * 16.67, 2) . '%';
         } elseif ($v <= 200) {
             $init_aqi_label = 'Poor';
-            $init_aqi_accent = '#ea8c34';
-            $init_aqi_bg = '#ffedd5';
-            $init_aqi_border = 'rgba(234, 140, 52, 0.50)';
-            $init_aqi_shadow = 'rgba(234, 140, 52, 0.22)';
+            $init_aqi_accent = '#ea580c';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)';
+            $init_aqi_border = 'rgba(234, 88, 12, 0.38)';
+            $init_aqi_shadow = 'rgba(249, 115, 22, 0.22)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
+            $init_aqi_badge_border = 'rgba(234, 88, 12, 0.38)';
+            $init_aqi_badge_text = '#c2410c';
             $init_scale_pct = round(33.33 + (($v - 100) / 100) * 16.67, 2) . '%';
         } elseif ($v <= 300) {
             $init_aqi_label = 'Unhealthy';
-            $init_aqi_accent = '#e95478';
-            $init_aqi_bg = '#fee2e2';
-            $init_aqi_border = 'rgba(233, 84, 120, 0.50)';
-            $init_aqi_shadow = 'rgba(233, 84, 120, 0.22)';
+            $init_aqi_accent = '#e11d48';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)';
+            $init_aqi_border = 'rgba(225, 29, 72, 0.38)';
+            $init_aqi_shadow = 'rgba(225, 29, 72, 0.22)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
+            $init_aqi_badge_border = 'rgba(225, 29, 72, 0.38)';
+            $init_aqi_badge_text = '#9f1239';
             $init_scale_pct = round(50 + (($v - 200) / 100) * 16.66, 2) . '%';
         } elseif ($v <= 400) {
             $init_aqi_label = 'Severe';
-            $init_aqi_accent = '#b33fba';
-            $init_aqi_bg = '#f3e8ff';
-            $init_aqi_border = 'rgba(179, 63, 186, 0.50)';
-            $init_aqi_shadow = 'rgba(179, 63, 186, 0.22)';
+            $init_aqi_accent = '#9333ea';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #faf5ff 22%, #f3e8ff 48%, #e9d5ff 72%, #c084fc 90%, #9333ea 100%)';
+            $init_aqi_border = 'rgba(147, 51, 234, 0.38)';
+            $init_aqi_shadow = 'rgba(147, 51, 234, 0.22)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
+            $init_aqi_badge_border = 'rgba(147, 51, 234, 0.38)';
+            $init_aqi_badge_text = '#6b21a8';
             $init_scale_pct = round(66.66 + (($v - 300) / 100) * 16.67, 2) . '%';
         } else {
             $init_aqi_label = 'Hazardous';
-            $init_aqi_accent = '#c92033';
-            $init_aqi_bg = '#ffe4e6';
-            $init_aqi_border = 'rgba(201, 32, 51, 0.50)';
-            $init_aqi_shadow = 'rgba(201, 32, 51, 0.22)';
+            $init_aqi_accent = '#b91c1c';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fef2f2 22%, #fee2e2 48%, #fca5a5 72%, #f87171 90%, #b91c1c 100%)';
+            $init_aqi_border = 'rgba(185, 28, 28, 0.40)';
+            $init_aqi_shadow = 'rgba(185, 28, 28, 0.25)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
+            $init_aqi_badge_border = 'rgba(185, 28, 28, 0.40)';
+            $init_aqi_badge_text = '#881337';
             $init_scale_pct = round(min(98, 83.33 + min(1, ($v - 400) / 100) * 15.67), 2) . '%';
         }
-        if (isset($aqi_d['pm25'])) $init_pm25 = number_format((float)$aqi_d['pm25'], 3) . ' µg/m³';
-        if (isset($aqi_d['pm10'])) $init_pm10 = number_format((float)$aqi_d['pm10'], 3) . ' µg/m³';
+        if (isset($aqi_d['pm25'])) $init_pm25 = is_numeric($aqi_d['pm25']) ? (string)round((float)$aqi_d['pm25']) : (string)$aqi_d['pm25'];
+        if (isset($aqi_d['pm10'])) $init_pm10 = is_numeric($aqi_d['pm10']) ? (string)round((float)$aqi_d['pm10']) : (string)$aqi_d['pm10'];
+    }
+}
+
+$init_is_aqi_offline = false;
+if (!empty($init_bulk['aqi']['timestamp'])) {
+    $ts = strtotime($init_bulk['aqi']['timestamp']);
+    if ($ts > 0 && (time() - $ts) > 5400) {
+        $init_is_aqi_offline = true;
     }
 }
 
@@ -153,17 +182,21 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
 @media (max-width: 768px) {
   /* Mobile compact layout for Live Telemetry */
   #hero-card {
-    padding: 10px 12px !important;
-    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    border-radius: 16px !important;
     margin-bottom: 8px !important;
+  }
+  .hero-skyline-silhouette {
+    height: 48px !important;
+    opacity: 0.12 !important;
   }
   .hero-header-row {
     margin-bottom: 10px !important;
-    gap: 18px !important;
+    gap: 16px !important;
     align-items: flex-end !important;
   }
   #hero-aqi-val {
-    font-size: 42px !important;
+    font-size: 46px !important;
     line-height: 1 !important;
   }
   #hero-aqi-subtext {
@@ -171,28 +204,29 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
     margin-bottom: 4px !important;
   }
   #hero-aqi-badge {
-    min-width: 75px !important;
-    padding: 3px 10px !important;
-    border-radius: 8px !important;
+    min-width: 80px !important;
+    padding: 4px 12px !important;
+    border-radius: 9px !important;
   }
   #hero-aqi-label {
-    font-size: 13px !important;
+    font-size: 14px !important;
   }
   #hero-aqi-title {
-    font-size: 10.5px !important;
+    font-size: 11px !important;
     margin-bottom: 3px !important;
   }
-  #hero-card [style*="margin-bottom: 14px"] {
-    margin-bottom: 6px !important;
-    gap: 6px !important;
+  .hero-pm-row {
+    margin-bottom: 10px !important;
+    font-size: 12px !important;
   }
-  #hero-card [style*="margin-bottom: 14px"] > div {
-    padding: 2px 7px !important;
-    font-size: 10px !important;
-    border-radius: 6px !important;
+  .hero-pm-row strong {
+    font-size: 13.5px !important;
+  }
+  .hero-pm-row span.hero-pm-unit {
+    font-size: 9.5px !important;
   }
   #hero-pm25, #hero-pm10 {
-    font-size: 10.5px !important;
+    font-size: 13.5px !important;
   }
   /* Scale Bar Layout & Overlap Prevention */
   .hero-scale-labels {
@@ -480,6 +514,39 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
     height: 15px;
   }
 }
+
+/* Live AQI Beacon Glow Animation (Glows when Online, Static when Offline) */
+.status-dot-glowing #status-dot-halo {
+  position: relative;
+  animation: aqiHaloBreath 2s ease-in-out infinite;
+}
+
+.status-dot-glowing #status-dot {
+  box-shadow: 0 0 3px currentColor;
+}
+
+@keyframes aqiHaloBreath {
+  0%, 100% {
+    transform: scale(0.96);
+    opacity: 0.75;
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+    box-shadow: 0 0 3px currentColor;
+  }
+}
+
+/* Offline: No glow, no pulse animations, static flat state */
+.status-dot-offline #status-dot-halo,
+.status-dot-offline #status-dot {
+  animation: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
 </style>
 
 <div style="display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-2.5 sm:p-6">
@@ -524,19 +591,40 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
   </div>
 
   <!-- HERO AQI CARD -->
-  <div id="hero-card" class="hero-card-responsive" style="background-color: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 28px 32px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 8px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
-    <div id="hero-left-bar" style="position: absolute; top: 0; left: 0; bottom: 0; width: 6px; background-color: <?= $init_aqi_accent ?>; transition: background-color 0.5s ease;"></div>
+  <div id="hero-card" class="hero-card-responsive" style="background: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 26px 30px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 10px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background 0.6s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
+    <!-- Indian Monuments Silhouette Watermark (Matching AQI Target Visual) -->
+    <div class="hero-skyline-silhouette" style="position: absolute; bottom: 0; left: 0; right: 0; height: 68px; pointer-events: none; z-index: 0; opacity: 0.16; overflow: hidden; display: flex; align-items: flex-end;">
+      <svg id="hero-skyline-svg" viewBox="0 0 1000 90" preserveAspectRatio="none" style="width: 100%; height: 100%; fill: <?= $init_aqi_accent ?>; transition: fill 0.5s ease;">
+        <!-- India Gate (Left) -->
+        <path d="M40 90 L40 38 L48 38 L48 30 L55 30 L55 24 L105 24 L105 30 L112 30 L112 38 L120 38 L120 90 L98 90 L98 52 C98 42 62 42 62 52 L62 90 Z" />
+        <!-- Taj Mahal (Center-Left) -->
+        <path d="M190 90 L190 32 L193 32 L193 25 L190 25 L192 18 L194 25 L195 90 Z" />
+        <path d="M210 90 L210 50 L242 50 C242 42 248 36 254 36 C260 36 266 42 266 50 L274 50 C274 38 282 28 290 14 C290 8 291 8 291 14 C299 28 307 38 307 50 L315 50 C315 42 321 36 327 36 C333 36 339 42 339 50 L370 50 L370 90 L318 90 L318 64 C318 56 262 56 262 64 L262 90 Z" />
+        <path d="M390 90 L390 32 L393 32 L393 25 L390 25 L392 18 L394 25 L395 90 Z" />
+        <!-- Lotus Temple (Center-Right) -->
+        <path d="M500 90 C520 62 548 38 565 24 C582 38 610 62 630 90 L595 90 C585 72 575 50 565 42 C555 50 545 72 535 90 Z" />
+        <path d="M480 90 C495 72 515 55 532 46 C525 60 520 75 515 90 Z" />
+        <path d="M650 90 C635 72 615 55 598 46 C605 60 610 75 615 90 Z" />
+        <!-- Charminar (Right) -->
+        <path d="M740 90 L740 22 L744 22 L744 14 L741 14 L743 8 L745 14 L746 90 Z" />
+        <path d="M840 90 L840 22 L844 22 L844 14 L841 14 L843 8 L845 14 L846 90 Z" />
+        <path d="M750 90 L750 42 L836 42 L836 90 L812 90 L812 60 C812 52 774 52 774 60 L774 90 Z" />
+        <!-- Distant Birds -->
+        <path d="M890 28 Q894 24 898 28 Q902 24 906 28 Q902 26 898 29 Q894 26 890 28 Z" />
+        <path d="M915 22 Q918 19 922 22 Q925 19 929 22 Q925 20 922 23 Q918 20 915 22 Z" />
+      </svg>
+    </div>
 
     <div style="position: relative; z-index: 1;">
       <!-- Live AQI & Air Quality Status Row (Matching Target Design) -->
-      <div class="hero-header-row" style="display: flex; align-items: flex-end; justify-content: flex-start; gap: clamp(24px, 6vw, 64px); margin-bottom: 20px; flex-wrap: wrap;">
+      <div class="hero-header-row" style="display: flex; align-items: flex-end; justify-content: flex-start; gap: clamp(24px, 6vw, 64px); margin-bottom: 18px; flex-wrap: wrap;">
         <!-- Left: Live AQI & Big Value -->
         <div style="display: flex; flex-direction: column;">
-          <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 6px;">
-            <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background-color: <?= $init_aqi_accent ?>33; transition: background-color 0.5s ease;">
-              <span id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: <?= $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease;"></span>
+          <div id="status-dot-container" class="<?= $init_is_aqi_offline ? 'status-dot-offline' : 'status-dot-glowing' ?>" style="display: flex; align-items: center; gap: 7px; margin-bottom: 6px; color: <?= $init_aqi_accent ?>;">
+            <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background-color: <?= $init_is_aqi_offline ? 'rgba(148, 163, 184, 0.20)' : $init_aqi_accent . '33' ?>; color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; transition: background-color 0.5s ease, color 0.5s ease;">
+              <span id="status-dot" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease, color 0.5s ease;"></span>
             </span>
-            <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;">Live AQI</span>
+            <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;"><?= $init_is_aqi_offline ? 'Cached AQI' : 'Live AQI' ?></span>
           </div>
           <div style="display: flex; align-items: baseline; gap: 8px;">
             <div id="hero-aqi-val" style="font-family: var(--font-mono); font-size: 74px; font-weight: 900; line-height: 0.95; letter-spacing: -0.04em; color: <?= $init_aqi_accent ?>; transition: color 0.5s ease;">
@@ -548,49 +636,51 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
 
         <!-- Right: Air Quality is & Rounded Status Box -->
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
-          <div id="hero-aqi-title" style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 4px; font-family: var(--font-sans); text-align: center;">Air Quality is</div>
-          <div id="hero-aqi-badge" style="display: inline-flex; align-items: center; justify-content: center; min-width: 85px; padding: 4px 14px; border-radius: 9px; background-color: <?= $init_aqi_accent ?>20; border: 1px solid <?= $init_aqi_accent ?>35; transition: background-color 0.5s ease, border-color 0.5s ease;">
-            <span id="hero-aqi-label" style="font-size: 15px; font-weight: 800; color: <?= $init_aqi_accent ?>; font-family: var(--font-sans); line-height: 1.15; transition: color 0.5s ease;"><?= $init_aqi_label ?></span>
+          <div id="hero-aqi-title" style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 5px; font-family: var(--font-sans); text-align: center;">Air Quality is</div>
+          <div id="hero-aqi-badge" style="display: inline-flex; align-items: center; justify-content: center; min-width: 100px; padding: 6px 16px; border-radius: 12px; background: <?= $init_aqi_badge_bg ?>; border: 1.5px solid <?= $init_aqi_badge_border ?>; box-shadow: 0 2px 8px rgba(0,0,0,0.03); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background 0.5s ease, border-color 0.5s ease;">
+            <span id="hero-aqi-label" style="font-size: 18px; font-weight: 800; color: <?= $init_aqi_badge_text ?>; font-family: var(--font-sans); line-height: 1.15; letter-spacing: -0.01em; transition: color 0.5s ease;"><?= $init_aqi_label ?></span>
           </div>
         </div>
       </div>
 
-      <!-- Quick PM2.5 & PM10 Summary -->
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; background-color: #ffffff; border: 1px solid rgba(0, 0, 0, 0.07); font-size: 12px; color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-          <span style="color: #64748b; font-weight: 600;">PM₂.₅:</span>
-          <strong id="hero-pm25" style="color: #0f172a; font-family: var(--font-mono);"><?= $init_pm25 ?></strong>
+      <!-- Quick PM2.5 & PM10 Row (Matching Target Visual) -->
+      <div class="hero-pm-row" style="display: flex; align-items: baseline; justify-content: space-between; max-width: 440px; width: 100%; margin-bottom: 16px; font-size: 14px; font-weight: 700;">
+        <div style="display: flex; align-items: baseline; gap: 6px;">
+          <span style="color: #1e3a5f; font-weight: 800; letter-spacing: -0.01em;">PM2.5 :</span>
+          <strong id="hero-pm25" style="color: #0f172a; font-size: 16px; font-family: var(--font-mono); font-weight: 800;"><?= $init_pm25 ?></strong>
+          <span class="hero-pm-unit" style="font-size: 11px; color: #475569; font-weight: 600;">µg/m³</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; background-color: #ffffff; border: 1px solid rgba(0, 0, 0, 0.07); font-size: 12px; color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-          <span style="color: #64748b; font-weight: 600;">PM₁₀:</span>
-          <strong id="hero-pm10" style="color: #0f172a; font-family: var(--font-mono);"><?= $init_pm10 ?></strong>
+        <div style="display: flex; align-items: baseline; gap: 6px;">
+          <span style="color: #1e3a5f; font-weight: 800; letter-spacing: -0.01em;">PM10 :</span>
+          <strong id="hero-pm10" style="color: #0f172a; font-size: 16px; font-family: var(--font-mono); font-weight: 800;"><?= $init_pm10 ?></strong>
+          <span class="hero-pm-unit" style="font-size: 11px; color: #475569; font-weight: 600;">µg/m³</span>
         </div>
       </div>
 
       <!-- Overall AQI Scale Bar -->
       <div class="hero-scale-bar-container" style="max-width: 440px; width: 100%;">
         <div class="hero-scale-labels" style="display: grid; grid-template-columns: repeat(6, 1fr); padding: 0; margin-bottom: 8px;">
-          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Good</span>
-          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Moderate</span>
-          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Poor</span>
-          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Unhealthy</span>
-          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Severe</span>
-          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Hazardous</span>
+          <span class="scale-label" style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.1; text-align: center; white-space: nowrap;">Good</span>
+          <span class="scale-label" style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.1; text-align: center; white-space: nowrap;">Moderate</span>
+          <span class="scale-label" style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.1; text-align: center; white-space: nowrap;">Poor</span>
+          <span class="scale-label" style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.1; text-align: center; white-space: nowrap;">Unhealthy</span>
+          <span class="scale-label" style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.1; text-align: center; white-space: nowrap;">Severe</span>
+          <span class="scale-label" style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.1; text-align: center; white-space: nowrap;">Hazardous</span>
         </div>
 
-        <div class="hero-scale-bar-track" style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
-          <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
-          <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: <?= $init_scale_pct ?>; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background-color: #ffffff; border: 3.5px solid <?= $init_aqi_accent ?>; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
+        <div class="hero-scale-bar-track" style="position: relative; height: 7px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+          <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #22c55e 16.666%, #eab308 16.666%, #eab308 33.333%, #f97316 33.333%, #f97316 50%, #ef4444 50%, #ef4444 66.666%, #a855f7 66.666%, #a855f7 83.333%, #b91c1c 83.333%, #b91c1c 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
+          <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: <?= $init_scale_pct ?>; transform: translate(-50%, -50%); width: 17px; height: 17px; border-radius: 50%; background-color: #ffffff; border: 3.5px solid <?= $init_aqi_accent ?>; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
         </div>
 
         <div class="hero-scale-ticks" style="position: relative; height: 16px;">
-          <span style="position: absolute; left: 0%; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">0</span>
-          <span style="position: absolute; left: 16.666%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">50</span>
-          <span style="position: absolute; left: 33.333%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">100</span>
-          <span style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">200</span>
-          <span style="position: absolute; left: 66.666%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">300</span>
-          <span style="position: absolute; left: 83.333%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">400</span>
-          <span style="position: absolute; right: 0%; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">500+</span>
+          <span style="position: absolute; left: 0%; font-size: 10.5px; font-weight: 700; color: #475569; font-family: var(--font-mono); line-height: 1;">0</span>
+          <span style="position: absolute; left: 16.666%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; color: #475569; font-family: var(--font-mono); line-height: 1;">50</span>
+          <span style="position: absolute; left: 33.333%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; color: #475569; font-family: var(--font-mono); line-height: 1;">100</span>
+          <span style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; color: #475569; font-family: var(--font-mono); line-height: 1;">200</span>
+          <span style="position: absolute; left: 66.666%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; color: #475569; font-family: var(--font-mono); line-height: 1;">300</span>
+          <span style="position: absolute; left: 83.333%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; color: #475569; font-family: var(--font-mono); line-height: 1;">400</span>
+          <span style="position: absolute; right: 0%; font-size: 10.5px; font-weight: 700; color: #475569; font-family: var(--font-mono); line-height: 1;">500+</span>
         </div>
       </div>
     </div>
@@ -1296,30 +1386,84 @@ async function refreshDashboard() {
             return Math.min(98, 83.333 + Math.min((v - 400) / 100, 1) * 15.667);   // 401-500+ -> 83.333% to 98% (Hazardous - Crimson)
         }
 
-        // AQI category themes matching the exact bar colors and labels
+        // AQI category themes matching the exact bar colors and labels with light-to-dark contrast
         function getAQITheme(aqi) {
             const v = Number(aqi);
             if (isNaN(v) || v <= 50) {
-                return { label: 'Good', bg: '#f0fdf4', border: 'rgba(89, 182, 31, 0.45)', shadow: 'rgba(89, 182, 31, 0.20)', accent: '#59b61f' };
+                return {
+                    label: 'Good',
+                    bg: 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #86efac 80%, #34d399 92%, #10b981 100%)',
+                    border: 'rgba(22, 163, 74, 0.35)',
+                    shadow: 'rgba(16, 185, 129, 0.20)',
+                    accent: '#16a34a',
+                    badgeBg: 'rgba(255, 255, 255, 0.75)',
+                    badgeBorder: 'rgba(22, 163, 74, 0.35)',
+                    badgeText: '#15803d'
+                };
             }
             if (v <= 100) {
-                return { label: 'Moderate', bg: '#fef9c3', border: 'rgba(238, 199, 50, 0.50)', shadow: 'rgba(238, 199, 50, 0.22)', accent: '#eec732' };
+                return {
+                    label: 'Moderate',
+                    bg: 'linear-gradient(155deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)',
+                    border: 'rgba(202, 138, 4, 0.35)',
+                    shadow: 'rgba(234, 179, 8, 0.20)',
+                    accent: '#ca8a04',
+                    badgeBg: 'rgba(255, 255, 255, 0.75)',
+                    badgeBorder: 'rgba(202, 138, 4, 0.38)',
+                    badgeText: '#854d0e'
+                };
             }
             if (v <= 200) {
-                return { label: 'Poor', bg: '#ffedd5', border: 'rgba(234, 140, 52, 0.50)', shadow: 'rgba(234, 140, 52, 0.22)', accent: '#ea8c34' };
+                return {
+                    label: 'Poor',
+                    bg: 'linear-gradient(155deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)',
+                    border: 'rgba(234, 88, 12, 0.38)',
+                    shadow: 'rgba(249, 115, 22, 0.22)',
+                    accent: '#ea580c',
+                    badgeBg: 'rgba(255, 255, 255, 0.72)',
+                    badgeBorder: 'rgba(234, 88, 12, 0.38)',
+                    badgeText: '#c2410c'
+                };
             }
             if (v <= 300) {
-                return { label: 'Unhealthy', bg: '#fee2e2', border: 'rgba(233, 84, 120, 0.50)', shadow: 'rgba(233, 84, 120, 0.22)', accent: '#e95478' };
+                return {
+                    label: 'Unhealthy',
+                    bg: 'linear-gradient(155deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)',
+                    border: 'rgba(225, 29, 72, 0.38)',
+                    shadow: 'rgba(225, 29, 72, 0.22)',
+                    accent: '#e11d48',
+                    badgeBg: 'rgba(255, 255, 255, 0.72)',
+                    badgeBorder: 'rgba(225, 29, 72, 0.38)',
+                    badgeText: '#9f1239'
+                };
             }
             if (v <= 400) {
-                return { label: 'Severe', bg: '#f3e8ff', border: 'rgba(179, 63, 186, 0.50)', shadow: 'rgba(179, 63, 186, 0.22)', accent: '#b33fba' };
+                return {
+                    label: 'Severe',
+                    bg: 'linear-gradient(155deg, #ffffff 0%, #faf5ff 22%, #f3e8ff 48%, #e9d5ff 72%, #c084fc 90%, #9333ea 100%)',
+                    border: 'rgba(147, 51, 234, 0.38)',
+                    shadow: 'rgba(147, 51, 234, 0.22)',
+                    accent: '#9333ea',
+                    badgeBg: 'rgba(255, 255, 255, 0.72)',
+                    badgeBorder: 'rgba(147, 51, 234, 0.38)',
+                    badgeText: '#6b21a8'
+                };
             }
-            return { label: 'Hazardous', bg: '#ffe4e6', border: 'rgba(201, 32, 51, 0.50)', shadow: 'rgba(201, 32, 51, 0.22)', accent: '#c92033' };
+            return {
+                label: 'Hazardous',
+                bg: 'linear-gradient(155deg, #ffffff 0%, #fef2f2 22%, #fee2e2 48%, #fca5a5 72%, #f87171 90%, #b91c1c 100%)',
+                border: 'rgba(185, 28, 28, 0.40)',
+                shadow: 'rgba(185, 28, 28, 0.25)',
+                accent: '#b91c1c',
+                badgeBg: 'rgba(255, 255, 255, 0.72)',
+                badgeBorder: 'rgba(185, 28, 28, 0.40)',
+                badgeText: '#881337'
+            };
         }
         
         if (aqiData) {
             const d = aqiData;
-            const aqiValue = d.cpcb_aqi != null ? d.cpcb_aqi : (d.aqi_info && d.aqi_info.value != null ? d.aqi_info.value : '--');
+            const aqiValue = d.cpcb_aqi != null ? Math.round(Number(d.cpcb_aqi)) : (d.aqi_info && d.aqi_info.value != null ? Math.round(Number(d.aqi_info.value)) : '--');
             // AQI Panel Theme & Colors (dynamically changes according to AQI bar)
             const theme = getAQITheme(aqiValue);
             currentAQITheme = theme;
@@ -1335,28 +1479,39 @@ async function refreshDashboard() {
             const badge = document.getElementById('hero-aqi-badge');
 
             if (hero) {
-                hero.style.backgroundColor = theme.bg;
-                hero.style.borderColor     = theme.border;
-                hero.style.boxShadow       = `0 8px 30px ${theme.shadow}, 0 1px 3px rgba(15,23,42,0.04)`;
+                hero.style.background  = theme.bg;
+                hero.style.borderColor = theme.border;
+                hero.style.boxShadow   = `0 10px 30px ${theme.shadow}, 0 1px 3px rgba(15,23,42,0.04)`;
             }
 
-            const heroLeftBar = document.getElementById('hero-left-bar');
-            if (heroLeftBar) heroLeftBar.style.backgroundColor = theme.accent;
+            const heroSkyline = document.getElementById('hero-skyline-svg');
+            if (heroSkyline) heroSkyline.style.fill = theme.accent;
 
             const statusDot = document.getElementById('status-dot');
-            if (statusDot) statusDot.style.backgroundColor = theme.accent;
+            if (statusDot) {
+                statusDot.style.backgroundColor = theme.accent;
+                statusDot.style.color = theme.accent;
+            }
 
             const statusDotHalo = document.getElementById('status-dot-halo');
-            if (statusDotHalo) statusDotHalo.style.backgroundColor = theme.accent + '33';
+            if (statusDotHalo) {
+                statusDotHalo.style.backgroundColor = theme.accent + '33';
+                statusDotHalo.style.color = theme.accent;
+            }
+
+            const statusDotContainer = document.getElementById('status-dot-container');
+            if (statusDotContainer) {
+                statusDotContainer.style.color = theme.accent;
+            }
 
             if (badge) {
-                badge.style.backgroundColor = theme.accent + '20';
-                badge.style.borderColor     = theme.accent + '35';
+                badge.style.background  = theme.badgeBg;
+                badge.style.borderColor = theme.badgeBorder;
             }
             const badgeLabel = document.getElementById('hero-aqi-label');
             if (badgeLabel) {
                 badgeLabel.innerText = theme.label;
-                badgeLabel.style.color = theme.accent;
+                badgeLabel.style.color = theme.badgeText;
             }
 
             const pct = Math.min(Math.max(getAQIScalePercentage(aqiValue), 0), 100);
@@ -1370,16 +1525,18 @@ async function refreshDashboard() {
             const weatherAqiBadge = document.getElementById('weather-hero-aqi-label');
             if (weatherAqiBadge) {
                 weatherAqiBadge.innerText = `AQI ${aqiValue} · ${theme.label}`;
-                weatherAqiBadge.style.color           = theme.accent;
-                weatherAqiBadge.style.borderColor     = theme.accent + '50';
-                weatherAqiBadge.style.backgroundColor = theme.bg;
+                weatherAqiBadge.style.color           = theme.badgeText;
+                weatherAqiBadge.style.borderColor     = theme.badgeBorder;
+                weatherAqiBadge.style.background      = theme.badgeBg;
             }
 
             // Quick PM Summary
             const heroPm25 = document.getElementById('hero-pm25');
-            if (heroPm25) heroPm25.innerText = `${formatSupabaseValue(d.pm25 ?? d['pm2.5'])} µg/m³`;
+            const pm25Raw = d.pm25 ?? d['pm2.5'];
+            if (heroPm25) heroPm25.innerText = pm25Raw != null && !isNaN(pm25Raw) ? Math.round(Number(pm25Raw)) : '--';
             const heroPm10 = document.getElementById('hero-pm10');
-            if (heroPm10) heroPm10.innerText = `${formatSupabaseValue(d.pm10)} µg/m³`;
+            const pm10Raw = d.pm10;
+            if (heroPm10) heroPm10.innerText = pm10Raw != null && !isNaN(pm10Raw) ? Math.round(Number(pm10Raw)) : '--';
 
             // Cards: Display exact raw values from Supabase without forcing 0 for null
             const cardPm25 = document.getElementById('card-pm25');
@@ -1551,10 +1708,48 @@ async function refreshDashboard() {
             }
         }
         const liveAccent = (currentAQITheme && currentAQITheme.accent) ? currentAQITheme.accent : '#59b61f';
-        if (heroDot) heroDot.style.backgroundColor = isAqiOffline ? '#f97316' : liveAccent;
-        const heroDotHalo = document.getElementById('status-dot-halo');
-        if (heroDotHalo) heroDotHalo.style.backgroundColor = isAqiOffline ? '#f9731633' : liveAccent + '33';
-        if (heroStreamText) heroStreamText.innerText = isAqiOffline ? 'Cached AQI' : 'Live AQI';
+        const statusDotContainer = document.getElementById('status-dot-container');
+        if (isAqiOffline) {
+            // OFFLINE: DO NOT GLOW! Static muted dot, no pulse, no shadow
+            if (statusDotContainer) {
+                statusDotContainer.classList.remove('status-dot-glowing');
+                statusDotContainer.classList.add('status-dot-offline');
+                statusDotContainer.style.color = '#94a3b8';
+            }
+            if (heroDot) {
+                heroDot.style.backgroundColor = '#94a3b8';
+                heroDot.style.color = '#94a3b8';
+                heroDot.style.boxShadow = 'none';
+                heroDot.style.filter = 'none';
+            }
+            if (heroDotHalo) {
+                heroDotHalo.style.backgroundColor = 'rgba(148, 163, 184, 0.20)';
+                heroDotHalo.style.color = '#94a3b8';
+                heroDotHalo.style.boxShadow = 'none';
+                heroDotHalo.style.animation = 'none';
+            }
+            if (heroStreamText) heroStreamText.innerText = 'Cached AQI';
+        } else {
+            // ONLINE: GLOW! Luminous pulsing beacon in active tier color
+            if (statusDotContainer) {
+                statusDotContainer.classList.remove('status-dot-offline');
+                statusDotContainer.classList.add('status-dot-glowing');
+                statusDotContainer.style.color = liveAccent;
+            }
+            if (heroDot) {
+                heroDot.style.backgroundColor = liveAccent;
+                heroDot.style.color = liveAccent;
+                heroDot.style.boxShadow = '';
+                heroDot.style.filter = '';
+            }
+            if (heroDotHalo) {
+                heroDotHalo.style.backgroundColor = liveAccent + '33';
+                heroDotHalo.style.color = liveAccent;
+                heroDotHalo.style.boxShadow = '';
+                heroDotHalo.style.animation = '';
+            }
+            if (heroStreamText) heroStreamText.innerText = 'Live AQI';
+        }
         if (heroAqiSubtext) {
             heroAqiSubtext.innerText = 'AQI (IN)';
             heroAqiSubtext.style.color = '#64748b';

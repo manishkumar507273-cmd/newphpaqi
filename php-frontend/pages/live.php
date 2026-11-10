@@ -187,15 +187,6 @@ $init_pollutant_bars = [
   .hero-scale-ticks span {
     font-size: 8.5px !important;
   }
-  @media (max-width: 380px) {
-    .hero-scale-labels .scale-label {
-      font-size: 7.2px !important;
-      letter-spacing: -0.03em !important;
-    }
-    .hero-scale-ticks span {
-      font-size: 7.5px !important;
-    }
-  }
   
   /* Pollutants Grid Mobile Refinements */
   .pollutants-grid-responsive {
@@ -248,9 +239,153 @@ $init_pollutant_bars = [
     width: 4px !important;
     height: 4px !important;
   }
+
+  /* Pollutant Mini Scale Bar Responsive */
+  .pollutant-mini-bar {
+    margin-top: 3px !important;
+  }
+  .pollutant-mini-track {
+    height: 4px !important;
+  }
+  .pollutant-mini-indicator, [id^="bar-indicator-"] {
+    width: 7.5px !important;
+    height: 7.5px !important;
+    border-width: 1.5px !important;
+  }
+
+  /* Pollutant Detail Modal Mobile Optimization */
+  #pollutant-modal {
+    padding: 10px !important;
+  }
+  .pollutant-modal-card {
+    border-radius: 18px !important;
+    max-height: 92vh !important;
+    width: 100% !important;
+  }
+  .pollutant-modal-scroll {
+    padding: 16px 14px !important;
+  }
+  .pollutant-modal-close {
+    top: 12px !important;
+    right: 12px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+  #pm-modal-icon-bg {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+    border-radius: 12px !important;
+  }
+  #pm-modal-title {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+  }
+  #pm-modal-limit {
+    font-size: 12px !important;
+  }
+  .pm-reading-box {
+    padding: 12px 14px !important;
+    margin-bottom: 14px !important;
+    border-radius: 12px !important;
+    gap: 10px !important;
+  }
+  #pm-modal-val {
+    font-size: 28px !important;
+  }
+  #pm-modal-unit {
+    font-size: 15px !important;
+  }
+  #pm-modal-status {
+    font-size: 11px !important;
+    padding: 5px 10px !important;
+    border-radius: 6px !important;
+  }
+  .pm-scale-box {
+    padding: 12px 14px !important;
+    margin-bottom: 16px !important;
+    border-radius: 12px !important;
+  }
+  .pm-scale-title {
+    font-size: 10px !important;
+  }
+  .pm-scale-badge {
+    font-size: 10px !important;
+  }
+  .pm-scale-labels {
+    margin-bottom: 6px !important;
+  }
+  .pm-scale-labels > div {
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+  .pm-scale-track {
+    height: 5px !important;
+    margin-bottom: 6px !important;
+  }
+  #pm-modal-marker {
+    width: 13px !important;
+    height: 13px !important;
+    border-width: 2.5px !important;
+  }
+  #pm-modal-ticks {
+    height: 14px !important;
+  }
+  #pm-modal-ticks span {
+    font-size: 8.5px !important;
+  }
+
+  /* AQI Reference Scale List Responsive */
+  .aqi-scale-item {
+    padding: 9px 12px !important;
+    border-radius: 12px !important;
+    gap: 8px !important;
+  }
+  .aqi-scale-item .scale-dot {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  .aqi-scale-item .scale-title {
+    font-size: 13px !important;
+  }
+  .aqi-scale-item .scale-range {
+    font-size: 11px !important;
+  }
+  .aqi-scale-item .scale-desc {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
   
   .page-heading {
     font-size: 18px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-scale-labels .scale-label {
+    font-size: 7.2px !important;
+    letter-spacing: -0.03em !important;
+  }
+  .hero-scale-ticks span {
+    font-size: 7.5px !important;
+  }
+  .pm-scale-labels > div {
+    font-size: 7.2px !important;
+    letter-spacing: -0.03em !important;
+  }
+  #pm-modal-ticks span {
+    font-size: 7.5px !important;
+  }
+  #pm-modal-val {
+    font-size: 24px !important;
+  }
+  .pollutant-mini-indicator, [id^="bar-indicator-"] {
+    width: 6.5px !important;
+    height: 6.5px !important;
+    border-width: 1.2px !important;
   }
 }
 
@@ -479,9 +614,9 @@ $init_pollutant_bars = [
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
-        <div class="w-full mt-1.5" style="position: relative;">
-          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-pm25" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['pm25']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['pm25']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
+          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-pm25" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['pm25']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['pm25']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
           </div>
         </div>
       </div>
@@ -511,9 +646,9 @@ $init_pollutant_bars = [
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
-        <div class="w-full mt-1.5" style="position: relative;">
-          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-pm10" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['pm10']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['pm10']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
+          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-pm10" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['pm10']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['pm10']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
           </div>
         </div>
       </div>
@@ -543,9 +678,9 @@ $init_pollutant_bars = [
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
-        <div class="w-full mt-1.5" style="position: relative;">
-          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-co" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['co']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['co']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
+          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-co" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['co']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['co']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
           </div>
         </div>
       </div>
@@ -575,9 +710,9 @@ $init_pollutant_bars = [
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
-        <div class="w-full mt-1.5" style="position: relative;">
-          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-no2" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['no2']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['no2']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
+          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-no2" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['no2']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['no2']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
           </div>
         </div>
       </div>
@@ -607,9 +742,9 @@ $init_pollutant_bars = [
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
-        <div class="w-full mt-1.5" style="position: relative;">
-          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-o3" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['o3']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['o3']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
+          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-o3" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['o3']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['o3']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
           </div>
         </div>
       </div>
@@ -728,80 +863,80 @@ $init_pollutant_bars = [
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <!-- Scale Items -->
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #f0fdf4; border: 1px solid #bbf7d0; gap: 12px; flex-wrap: wrap;">
+        <div class="aqi-scale-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #f0fdf4; border: 1px solid #bbf7d0; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #59b61f; flex-shrink: 0;"></span>
+            <span class="scale-dot" style="width: 12px; height: 12px; border-radius: 4px; background-color: #59b61f; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Good</span>
-                <span style="font-size: 12px; font-weight: 700; color: #59b61f; font-family: var(--font-mono);">(0 to 50)</span>
+                <span class="scale-title" style="font-size: 14px; font-weight: 700; color: #0f172a;">Good</span>
+                <span class="scale-range" style="font-size: 12px; font-weight: 700; color: #59b61f; font-family: var(--font-mono);">(0 to 50)</span>
               </div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Air quality is considered moderate, and air pollution poses little or no risk.</div>
+              <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px;">Air quality is considered satisfactory, and air pollution poses little or no risk.</div>
             </div>
           </div>
         </div>
         
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fefce8; border: 1px solid #fef08a; gap: 12px; flex-wrap: wrap;">
+        <div class="aqi-scale-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fefce8; border: 1px solid #fef08a; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #eec732; flex-shrink: 0;"></span>
+            <span class="scale-dot" style="width: 12px; height: 12px; border-radius: 4px; background-color: #eec732; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Moderate</span>
-                <span style="font-size: 12px; font-weight: 700; color: #854d0e; font-family: var(--font-mono);">(51 to 100)</span>
+                <span class="scale-title" style="font-size: 14px; font-weight: 700; color: #0f172a;">Moderate</span>
+                <span class="scale-range" style="font-size: 12px; font-weight: 700; color: #854d0e; font-family: var(--font-mono);">(51 to 100)</span>
               </div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.</div>
+              <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px;">Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.</div>
             </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fff7ed; border: 1px solid #fed7aa; gap: 12px; flex-wrap: wrap;">
+        <div class="aqi-scale-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fff7ed; border: 1px solid #fed7aa; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #ea8c34; flex-shrink: 0;"></span>
+            <span class="scale-dot" style="width: 12px; height: 12px; border-radius: 4px; background-color: #ea8c34; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Poor</span>
-                <span style="font-size: 12px; font-weight: 700; color: #ea8c34; font-family: var(--font-mono);">(101 to 200)</span>
+                <span class="scale-title" style="font-size: 14px; font-weight: 700; color: #0f172a;">Poor</span>
+                <span class="scale-range" style="font-size: 12px; font-weight: 700; color: #ea8c34; font-family: var(--font-mono);">(101 to 200)</span>
               </div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Breathing discomfort to people with lungs, asthma, and heart diseases.</div>
+              <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px;">Breathing discomfort to people with lungs, asthma, and heart diseases.</div>
             </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fef2f2; border: 1px solid #fecaca; gap: 12px; flex-wrap: wrap;">
+        <div class="aqi-scale-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fef2f2; border: 1px solid #fecaca; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #e95478; flex-shrink: 0;"></span>
+            <span class="scale-dot" style="width: 12px; height: 12px; border-radius: 4px; background-color: #e95478; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Unhealthy</span>
-                <span style="font-size: 12px; font-weight: 700; color: #e95478; font-family: var(--font-mono);">(201 to 300)</span>
+                <span class="scale-title" style="font-size: 14px; font-weight: 700; color: #0f172a;">Unhealthy</span>
+                <span class="scale-range" style="font-size: 12px; font-weight: 700; color: #e95478; font-family: var(--font-mono);">(201 to 300)</span>
               </div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.</div>
+              <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px;">Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.</div>
             </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #faf5ff; border: 1px solid #e9d5ff; gap: 12px; flex-wrap: wrap;">
+        <div class="aqi-scale-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #faf5ff; border: 1px solid #e9d5ff; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #b33fba; flex-shrink: 0;"></span>
+            <span class="scale-dot" style="width: 12px; height: 12px; border-radius: 4px; background-color: #b33fba; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Severe</span>
-                <span style="font-size: 12px; font-weight: 700; color: #b33fba; font-family: var(--font-mono);">(301 to 400)</span>
+                <span class="scale-title" style="font-size: 14px; font-weight: 700; color: #0f172a;">Severe</span>
+                <span class="scale-range" style="font-size: 12px; font-weight: 700; color: #b33fba; font-family: var(--font-mono);">(301 to 400)</span>
               </div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.</div>
+              <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px;">Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.</div>
             </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fff1f2; border: 1px solid #fecdd3; gap: 12px; flex-wrap: wrap;">
+        <div class="aqi-scale-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fff1f2; border: 1px solid #fecdd3; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #c92033; flex-shrink: 0;"></span>
+            <span class="scale-dot" style="width: 12px; height: 12px; border-radius: 4px; background-color: #c92033; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Hazardous</span>
-                <span style="font-size: 12px; font-weight: 700; color: #c92033; font-family: var(--font-mono);">(401+)</span>
+                <span class="scale-title" style="font-size: 14px; font-weight: 700; color: #0f172a;">Hazardous</span>
+                <span class="scale-range" style="font-size: 12px; font-weight: 700; color: #c92033; font-family: var(--font-mono);">(401+)</span>
               </div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">May cause serious health impacts on entire population. Wear N95 masks and stay indoors.</div>
+              <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px;">May cause serious health impacts on entire population. Wear N95 masks and stay indoors.</div>
             </div>
           </div>
         </div>
@@ -1593,19 +1728,6 @@ function openPollutantModal(type) {
     }
     if (window.lucide && lucide.createIcons) lucide.createIcons();
 }
-    
-    const modal = document.getElementById('pollutant-modal');
-    if (modal) {
-        if (modal.parentElement !== document.body) {
-            document.body.appendChild(modal);
-        }
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        const scrollBox = modal.querySelector('.pollutant-modal-scroll');
-        if (scrollBox) scrollBox.scrollTop = 0;
-    }
-    if (window.lucide && lucide.createIcons) lucide.createIcons();
-}
 
 function closePollutantModal() {
     const modal = document.getElementById('pollutant-modal');
@@ -1624,8 +1746,8 @@ document.addEventListener('keydown', function(e) {
   <div style="position: absolute; inset: 0; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);" onclick="closePollutantModal()"></div>
 
   <!-- Modal Dialog Card -->
-  <div style="position: relative; z-index: 1; background: #ffffff; width: 100%; max-width: 580px; max-height: min(88vh, 720px); border-radius: 24px; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3); border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; margin: auto; animation: modal-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
-    <button type="button" onclick="closePollutantModal()" title="Close details" style="position: absolute; top: 16px; right: 16px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e2e8f0; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: all 0.2s ease;" onmouseover="this.style.background='#f8fafc'; this.style.color='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#64748b';">
+  <div class="pollutant-modal-card" style="position: relative; z-index: 1; background: #ffffff; width: 100%; max-width: 580px; max-height: min(88vh, 720px); border-radius: 24px; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3); border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; margin: auto; animation: modal-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+    <button type="button" class="pollutant-modal-close" onclick="closePollutantModal()" title="Close details" style="position: absolute; top: 16px; right: 16px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e2e8f0; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: all 0.2s ease;" onmouseover="this.style.background='#f8fafc'; this.style.color='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#64748b';">
       <i data-lucide="x" style="width: 17px; height: 17px;"></i>
     </button>
     
@@ -1640,7 +1762,7 @@ document.addEventListener('keydown', function(e) {
         </div>
 
         <!-- Current Reading Box -->
-        <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
+        <div class="pm-reading-box" style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
             <div>
                 <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">CURRENT READING</div>
                 <div style="display: flex; align-items: baseline; gap: 8px;">
@@ -1654,14 +1776,14 @@ document.addEventListener('keydown', function(e) {
         </div>
 
         <!-- Concentration Scale Box -->
-        <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                <div style="font-size: 11.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);"><span id="pm-modal-short">PM2.5</span> CONCENTRATION SCALE (CPCB)</div>
-                <div style="font-size: 11.5px; font-weight: 700; color: #00bfa5;">Indian NAQI Standard</div>
+        <div class="pm-scale-box" style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
+            <div class="pm-scale-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; flex-wrap: wrap;">
+                <div class="pm-scale-title" style="font-size: 11.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);"><span id="pm-modal-short">PM2.5</span> CONCENTRATION SCALE (CPCB)</div>
+                <div class="pm-scale-badge" style="font-size: 11.5px; font-weight: 700; color: #00bfa5;">Indian NAQI Standard</div>
             </div>
             
             <div style="position: relative; width: 100%;">
-                <div style="display: grid; grid-template-columns: repeat(6, 1fr); margin-bottom: 8px; font-size: 9.5px; font-weight: 700; line-height: 1;">
+                <div class="pm-scale-labels" style="display: grid; grid-template-columns: repeat(6, 1fr); margin-bottom: 8px; font-size: 9.5px; font-weight: 700; line-height: 1;">
                     <div style="color: #475569; text-align: left;">Good</div>
                     <div style="color: #475569; text-align: center;">Moderate</div>
                     <div style="color: #475569; text-align: center;">Poor</div>
@@ -1670,12 +1792,12 @@ document.addEventListener('keydown', function(e) {
                     <div style="color: #475569; text-align: right;">Hazardous</div>
                 </div>
                 
-                <div style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+                <div class="pm-scale-track" style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
                     <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
                     <div id="pm-modal-marker" style="position: absolute; top: 50%; left: 10%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: #ffffff; border: 3.5px solid #59b61f; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
                 </div>
                 
-                <div id="pm-modal-ticks" style="position: relative; height: 16px; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">
+                <div id="pm-modal-ticks" class="pm-scale-ticks" style="position: relative; height: 16px; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">
                     <span style="position: absolute; left: 0%; line-height: 1;">0</span>
                     <span id="pm-t1" style="position: absolute; left: 16.666%; transform: translateX(-50%); line-height: 1;">30</span>
                     <span id="pm-t2" style="position: absolute; left: 33.333%; transform: translateX(-50%); line-height: 1;">60</span>

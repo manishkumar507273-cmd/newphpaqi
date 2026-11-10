@@ -120,6 +120,34 @@ $init_pollutant_bars = [
     'no2'  => getPollutantScalePhp('no2', isset($aqi_d_sub['no2']) ? $aqi_d_sub['no2'] : null),
     'o3'   => getPollutantScalePhp('o3', isset($aqi_d_sub['o3']) ? $aqi_d_sub['o3'] : null),
 ];
+
+$init_pollutants = [
+    'pm25' => isset($aqi_d_sub['pm25']) ? number_format((float)$aqi_d_sub['pm25'], 3) : (isset($aqi_d_sub['pm2.5']) ? number_format((float)$aqi_d_sub['pm2.5'], 3) : '--'),
+    'pm10' => isset($aqi_d_sub['pm10']) ? number_format((float)$aqi_d_sub['pm10'], 3) : '--',
+    'co'   => isset($aqi_d_sub['co']) && $aqi_d_sub['co'] !== null ? number_format((float)$aqi_d_sub['co'], 3) : '--',
+    'no2'  => isset($aqi_d_sub['no2']) && $aqi_d_sub['no2'] !== null ? number_format((float)$aqi_d_sub['no2'], 3) : '--',
+    'o3'   => isset($aqi_d_sub['o3']) && $aqi_d_sub['o3'] !== null ? number_format((float)$aqi_d_sub['o3'], 3) : '--',
+];
+
+$init_tags = [];
+$pollutant_limits = ['pm25' => 60, 'pm10' => 100, 'co' => 2, 'no2' => 80, 'o3' => 100];
+foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
+    $rawVal = $aqi_d_sub[$p] ?? ($p === 'pm25' ? ($aqi_d_sub['pm2.5'] ?? null) : null);
+    if ($rawVal !== null && is_numeric($rawVal)) {
+        $isSafe = (float)$rawVal <= $pollutant_limits[$p];
+        $init_tags[$p] = [
+            'show' => true,
+            'isSafe' => $isSafe,
+            'text' => $isSafe ? 'Normal' : 'High',
+            'bg' => $isSafe ? '#dcfce7' : '#fee2e2',
+            'border' => $isSafe ? '#bbf7d0' : '#fecaca',
+            'color' => $isSafe ? '#15803d' : '#b91c1c',
+            'dot' => $isSafe ? '#16a34a' : '#dc2626'
+        ];
+    } else {
+        $init_tags[$p] = ['show' => false, 'text' => 'Load', 'bg' => '#f1f5f9', 'border' => '#e2e8f0', 'color' => '#64748b', 'dot' => '#94a3b8'];
+    }
+}
 ?>
 <style>
 @media (max-width: 768px) {
@@ -605,12 +633,12 @@ $init_pollutant_bars = [
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-pm25" class="font-mono text-lg sm:text-2xl font-extrabold text-sky-500 leading-none">--</div>
+            <div id="card-pm25" class="font-mono text-lg sm:text-2xl font-extrabold text-sky-500 leading-none"><?= $init_pollutants['pm25'] ?></div>
             <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
-          <div id="tag-pm25" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-            <span>Load</span>
+          <div id="tag-pm25" class="px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="<?= $init_tags['pm25']['show'] ? '' : 'display: none;' ?> background-color: <?= $init_tags['pm25']['bg'] ?>; border: 1px solid <?= $init_tags['pm25']['border'] ?>; color: <?= $init_tags['pm25']['color'] ?>;">
+            <span class="w-1.5 h-1.5 rounded-full" style="background-color: <?= $init_tags['pm25']['dot'] ?>;"></span>
+            <span><?= $init_tags['pm25']['text'] ?></span>
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
@@ -637,12 +665,12 @@ $init_pollutant_bars = [
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-pm10" class="font-mono text-lg sm:text-2xl font-extrabold text-indigo-500 leading-none">--</div>
+            <div id="card-pm10" class="font-mono text-lg sm:text-2xl font-extrabold text-indigo-500 leading-none"><?= $init_pollutants['pm10'] ?></div>
             <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
-          <div id="tag-pm10" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-            <span>Load</span>
+          <div id="tag-pm10" class="px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="<?= $init_tags['pm10']['show'] ? '' : 'display: none;' ?> background-color: <?= $init_tags['pm10']['bg'] ?>; border: 1px solid <?= $init_tags['pm10']['border'] ?>; color: <?= $init_tags['pm10']['color'] ?>;">
+            <span class="w-1.5 h-1.5 rounded-full" style="background-color: <?= $init_tags['pm10']['dot'] ?>;"></span>
+            <span><?= $init_tags['pm10']['text'] ?></span>
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
@@ -669,12 +697,12 @@ $init_pollutant_bars = [
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-co" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-600 leading-none">--</div>
+            <div id="card-co" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-600 leading-none"><?= $init_pollutants['co'] ?></div>
             <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">mg/m³</div>
           </div>
-          <div id="tag-co" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-            <span>Load</span>
+          <div id="tag-co" class="px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="<?= $init_tags['co']['show'] ? '' : 'display: none;' ?> background-color: <?= $init_tags['co']['bg'] ?>; border: 1px solid <?= $init_tags['co']['border'] ?>; color: <?= $init_tags['co']['color'] ?>;">
+            <span class="w-1.5 h-1.5 rounded-full" style="background-color: <?= $init_tags['co']['dot'] ?>;"></span>
+            <span><?= $init_tags['co']['text'] ?></span>
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
@@ -701,12 +729,12 @@ $init_pollutant_bars = [
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-no2" class="font-mono text-lg sm:text-2xl font-extrabold text-purple-500 leading-none">--</div>
+            <div id="card-no2" class="font-mono text-lg sm:text-2xl font-extrabold text-purple-500 leading-none"><?= $init_pollutants['no2'] ?></div>
             <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
-          <div id="tag-no2" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-            <span>Load</span>
+          <div id="tag-no2" class="px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="<?= $init_tags['no2']['show'] ? '' : 'display: none;' ?> background-color: <?= $init_tags['no2']['bg'] ?>; border: 1px solid <?= $init_tags['no2']['border'] ?>; color: <?= $init_tags['no2']['color'] ?>;">
+            <span class="w-1.5 h-1.5 rounded-full" style="background-color: <?= $init_tags['no2']['dot'] ?>;"></span>
+            <span><?= $init_tags['no2']['text'] ?></span>
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
@@ -733,12 +761,12 @@ $init_pollutant_bars = [
         </div>
         <div class="flex items-end justify-between w-full mt-1">
           <div>
-            <div id="card-o3" class="font-mono text-lg sm:text-2xl font-extrabold text-amber-500 leading-none">--</div>
+            <div id="card-o3" class="font-mono text-lg sm:text-2xl font-extrabold text-amber-500 leading-none"><?= $init_pollutants['o3'] ?></div>
             <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
           </div>
-          <div id="tag-o3" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-            <span>Load</span>
+          <div id="tag-o3" class="px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="<?= $init_tags['o3']['show'] ? '' : 'display: none;' ?> background-color: <?= $init_tags['o3']['bg'] ?>; border: 1px solid <?= $init_tags['o3']['border'] ?>; color: <?= $init_tags['o3']['color'] ?>;">
+            <span class="w-1.5 h-1.5 rounded-full" style="background-color: <?= $init_tags['o3']['dot'] ?>;"></span>
+            <span><?= $init_tags['o3']['text'] ?></span>
           </div>
         </div>
         <!-- CPCB Standard Scale Bar -->
@@ -945,8 +973,6 @@ $init_pollutant_bars = [
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <?php include __DIR__ . '/weather.php'; ?>
 
 </div>
@@ -1123,12 +1149,17 @@ function togglePollutant(key) {
 }
 
 function renderComparisonChart() {
-    const ctx = document.getElementById('comparison-chart');
-    if (!ctx) return;
+    const canvas = document.getElementById('comparison-chart');
+    if (!canvas) return;
+
+    if (typeof Chart === 'undefined') {
+        setTimeout(renderComparisonChart, 150);
+        return;
+    }
     
     if (liveDataStream.length === 0) {
         if (comparisonChartInstance) {
-            comparisonChartInstance.destroy();
+            try { comparisonChartInstance.destroy(); } catch(e) {}
             comparisonChartInstance = null;
         }
         const emptyEl = document.getElementById('comparison-chart-empty');
@@ -1140,7 +1171,6 @@ function renderComparisonChart() {
     }
     const emptyEl = document.getElementById('comparison-chart-empty');
     if (emptyEl) emptyEl.style.display = 'none';
-    document.getElementById('comparison-chart-empty').style.display = 'none';
 
     // Reverse the array to show chronological order (left to right)
     const sortedData = [...liveDataStream].reverse();
@@ -1149,47 +1179,71 @@ function renderComparisonChart() {
         return dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
     });
 
+    const isSinglePoint = sortedData.length === 1;
     const datasets = [];
-    if (visiblePollutants.pm25) datasets.push({ label: 'PM2.5', data: sortedData.map(d => d.pm25), borderColor: pollutantColors.pm25, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
-    if (visiblePollutants.pm10) datasets.push({ label: 'PM10', data: sortedData.map(d => d.pm10), borderColor: pollutantColors.pm10, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
-    if (visiblePollutants.co) datasets.push({ label: 'CO', data: sortedData.map(d => d.co), borderColor: pollutantColors.co, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
-    if (visiblePollutants.no2) datasets.push({ label: 'NO2', data: sortedData.map(d => d.no2), borderColor: pollutantColors.no2, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
-    if (visiblePollutants.o3) datasets.push({ label: 'O3', data: sortedData.map(d => d.o3), borderColor: pollutantColors.o3, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.pm25) datasets.push({ label: 'PM2.5', data: sortedData.map(d => d.pm25), borderColor: pollutantColors.pm25, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.pm10) datasets.push({ label: 'PM10', data: sortedData.map(d => d.pm10), borderColor: pollutantColors.pm10, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.co) datasets.push({ label: 'CO', data: sortedData.map(d => d.co), borderColor: pollutantColors.co, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.no2) datasets.push({ label: 'NO2', data: sortedData.map(d => d.no2), borderColor: pollutantColors.no2, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.o3) datasets.push({ label: 'O3', data: sortedData.map(d => d.o3), borderColor: pollutantColors.o3, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
 
-    if (comparisonChartInstance) {
-        comparisonChartInstance.data.labels = labels;
-        comparisonChartInstance.data.datasets = datasets;
-        comparisonChartInstance.update('none');
-        return;
+    if (comparisonChartInstance && comparisonChartInstance.data && comparisonChartInstance.update) {
+        try {
+            comparisonChartInstance.data.labels = labels;
+            comparisonChartInstance.data.datasets = datasets;
+            comparisonChartInstance.update('none');
+            return;
+        } catch (chartErr) {
+            console.warn('Chart update failed, recreating:', chartErr);
+            try { comparisonChartInstance.destroy(); } catch(e) {}
+            comparisonChartInstance = null;
+        }
+    } else if (comparisonChartInstance) {
+        try { comparisonChartInstance.destroy(); } catch(e) {}
+        comparisonChartInstance = null;
     }
 
-    comparisonChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#ffffff',
-                    titleColor: '#64748b',
-                    bodyColor: '#0f172a',
-                    bodyFont: { size: 12, weight: 'bold' },
-                    borderColor: '#cbd5e1',
-                    borderWidth: 1,
-                    padding: 10,
-                    cornerRadius: 10,
-                    displayColors: true
-                }
-            },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 8 } },
-                y: { grid: { color: '#e2e8f0', borderDash: [3, 3] }, ticks: { color: '#64748b', font: { size: 10 } }, beginAtZero: true }
+    // Safely destroy existing chart attached to canvas if any
+    try {
+        if (typeof Chart.getChart === 'function') {
+            const attached = Chart.getChart(canvas);
+            if (attached) {
+                attached.destroy();
             }
         }
-    });
+    } catch(e) {}
+
+    try {
+        comparisonChartInstance = new Chart(canvas, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#ffffff',
+                        titleColor: '#64748b',
+                        bodyColor: '#0f172a',
+                        bodyFont: { size: 12, weight: 'bold' },
+                        borderColor: '#cbd5e1',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 10,
+                        displayColors: true
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 8 } },
+                    y: { grid: { color: '#e2e8f0', borderDash: [3, 3] }, ticks: { color: '#64748b', font: { size: 10 } }, beginAtZero: true }
+                }
+            }
+        });
+    } catch (createErr) {
+        console.error('Failed to create comparisonChartInstance:', createErr);
+    }
 }
 
 function formatSupabaseValue(val, suffix = '', defaultVal = '--', decimals = 3) {
@@ -1255,7 +1309,7 @@ function renderLiveTable() {
 async function refreshDashboard() {
     try {
         let bulkData;
-        if (window.INITIAL_DATA && window.INITIAL_DATA.aqi_history) {
+        if (window.INITIAL_DATA && window.INITIAL_DATA.aqi_history && window.INITIAL_DATA.aqi_history.length >= 10) {
             bulkData = window.INITIAL_DATA;
             window.INITIAL_DATA = null;
         } else {
@@ -1307,7 +1361,8 @@ async function refreshDashboard() {
         if (aqiData) {
             const d = aqiData;
             const aqiValue = d.cpcb_aqi != null ? d.cpcb_aqi : (d.aqi_info && d.aqi_info.value != null ? d.aqi_info.value : '--');
-            document.getElementById('hero-aqi-val').innerText = aqiValue;
+            const heroAqiVal = document.getElementById('hero-aqi-val');
+            if (heroAqiVal) heroAqiVal.innerText = aqiValue;
 
             // AQI Panel Theme & Colors (dynamically changes according to AQI bar)
             const theme = getAQITheme(aqiValue);
@@ -1352,15 +1407,22 @@ async function refreshDashboard() {
             }
 
             // Quick PM Summary
-            document.getElementById('hero-pm25').innerText = `${formatSupabaseValue(d.pm25 ?? d['pm2.5'])} µg/m³`;
-            document.getElementById('hero-pm10').innerText = `${formatSupabaseValue(d.pm10)} µg/m³`;
+            const heroPm25 = document.getElementById('hero-pm25');
+            if (heroPm25) heroPm25.innerText = `${formatSupabaseValue(d.pm25 ?? d['pm2.5'])} µg/m³`;
+            const heroPm10 = document.getElementById('hero-pm10');
+            if (heroPm10) heroPm10.innerText = `${formatSupabaseValue(d.pm10)} µg/m³`;
 
             // Cards: Display exact raw values from Supabase without forcing 0 for null
-            document.getElementById('card-pm25').innerText = formatSupabaseValue(d.pm25 ?? d['pm2.5']);
-            document.getElementById('card-pm10').innerText = formatSupabaseValue(d.pm10);
-            document.getElementById('card-co').innerText = formatSupabaseValue(d.co);
-            document.getElementById('card-no2').innerText = formatSupabaseValue(d.no2);
-            document.getElementById('card-o3').innerText = formatSupabaseValue(d.o3);
+            const cardPm25 = document.getElementById('card-pm25');
+            if (cardPm25) cardPm25.innerText = formatSupabaseValue(d.pm25 ?? d['pm2.5']);
+            const cardPm10 = document.getElementById('card-pm10');
+            if (cardPm10) cardPm10.innerText = formatSupabaseValue(d.pm10);
+            const cardCo = document.getElementById('card-co');
+            if (cardCo) cardCo.innerText = formatSupabaseValue(d.co);
+            const cardNo2 = document.getElementById('card-no2');
+            if (cardNo2) cardNo2.innerText = formatSupabaseValue(d.no2);
+            const cardO3 = document.getElementById('card-o3');
+            if (cardO3) cardO3.innerText = formatSupabaseValue(d.o3);
 
             updateTag('tag-pm25', d.pm25 ?? d['pm2.5'], 60);
             updateTag('tag-pm10', d.pm10, 100);
@@ -1384,12 +1446,18 @@ async function refreshDashboard() {
         if (weatherData) {
             const w = weatherData;
             
-            document.getElementById('weather-hero-temp').innerText = formatWeatherOneDecimal(w.temperature);
-            document.getElementById('card-temp').innerText = formatWeatherOneDecimal(w.temperature, '°C');
-            document.getElementById('card-hum').innerText = formatWeatherOneDecimal(w.humidity, '%');
-            document.getElementById('card-wind').innerText = formatWeatherOneDecimal(w.wind_speed, ' km/h');
-            document.getElementById('card-gust').innerText = formatWeatherOneDecimal(w.wind_gust, ' km/h');
-            document.getElementById('card-rain').innerText = formatWeatherOneDecimal(w.rain_gauge, ' mm');
+            const wHeroTemp = document.getElementById('weather-hero-temp');
+            if (wHeroTemp) wHeroTemp.innerText = formatWeatherOneDecimal(w.temperature);
+            const cardTemp = document.getElementById('card-temp');
+            if (cardTemp) cardTemp.innerText = formatWeatherOneDecimal(w.temperature, '°C');
+            const cardHum = document.getElementById('card-hum');
+            if (cardHum) cardHum.innerText = formatWeatherOneDecimal(w.humidity, '%');
+            const cardWind = document.getElementById('card-wind');
+            if (cardWind) cardWind.innerText = formatWeatherOneDecimal(w.wind_speed, ' km/h');
+            const cardGust = document.getElementById('card-gust');
+            if (cardGust) cardGust.innerText = formatWeatherOneDecimal(w.wind_gust, ' km/h');
+            const cardRain = document.getElementById('card-rain');
+            if (cardRain) cardRain.innerText = formatWeatherOneDecimal(w.rain_gauge, ' mm');
             
             // Today's rainfall synchronized with overview page
             const todayRainEl = document.getElementById('card-today-rain');
@@ -1427,9 +1495,8 @@ async function refreshDashboard() {
               return dirs[Math.round(deg / 22.5) % 16];
             };
             const dir = (w.wind_direction != null && isNaN(Number(w.wind_direction))) ? w.wind_direction : getCompassDir(w.wind_direction);
-            document.getElementById('card-dir').innerText = dir;
-
-            const weatherIcon = isRaining ? '🌧️' : (isCloudy ? '☁️' : '☀️');
+            const cardDir = document.getElementById('card-dir');
+            if (cardDir) cardDir.innerText = dir;
 
             const tempIconEl = document.getElementById('weather-temp-icon');
             if (tempIconEl) tempIconEl.remove();
@@ -1439,52 +1506,58 @@ async function refreshDashboard() {
             
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' });
-            document.getElementById('weather-date-str').innerText = dateStr;
+            const wDateStr = document.getElementById('weather-date-str');
+            if (wDateStr) wDateStr.innerText = dateStr;
         }
         
         // WEATHER HISTORY TABLE & TODAY'S TEMP RANGE
         const tbody = document.getElementById('weather-tbody');
-        if (weatherHistory && weatherHistory.length > 0) {
-            tbody.innerHTML = '';
-            let temps = [];
-            
-            weatherHistory.forEach((row, i) => {
-                const timeStr = formatStreamTimestamp(row);
-                const temp = formatWeatherOneDecimal(row.temperature);
-                const hum = formatWeatherOneDecimal(row.humidity);
-                const wind = formatWeatherOneDecimal(row.wind_speed);
-                const gust = formatWeatherOneDecimal(row.wind_gust);
-                const dir = row.wind_direction || '--';
-                const rain = formatWeatherOneDecimal(row.rain_gauge);
+        if (tbody) {
+            if (weatherHistory && weatherHistory.length > 0) {
+                tbody.innerHTML = '';
+                let temps = [];
+                
+                weatherHistory.forEach((row, i) => {
+                    const timeStr = formatStreamTimestamp(row);
+                    const temp = formatWeatherOneDecimal(row.temperature);
+                    const hum = formatWeatherOneDecimal(row.humidity);
+                    const wind = formatWeatherOneDecimal(row.wind_speed);
+                    const gust = formatWeatherOneDecimal(row.wind_gust);
+                    const dir = row.wind_direction || '--';
+                    const rain = formatWeatherOneDecimal(row.rain_gauge);
 
-                if (row.temperature != null) temps.push(Number(row.temperature));
+                    if (row.temperature != null) temps.push(Number(row.temperature));
+                    
+                    const tr = document.createElement('tr');
+                    tr.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+                    tr.style.borderBottom = '1px solid #f1f5f9';
+                    
+                    tr.innerHTML = `
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${temp}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${hum}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${wind}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${gust}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${dir}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${rain}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
                 
-                const tr = document.createElement('tr');
-                tr.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc';
-                tr.style.borderBottom = '1px solid #f1f5f9';
-                
-                tr.innerHTML = `
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${temp}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${hum}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${wind}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${gust}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${dir}</td>
-                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${rain}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            
-            if (temps.length > 0) {
-                const min = Math.min(...temps).toFixed(1);
-                const max = Math.max(...temps).toFixed(1);
-                const avg = (temps.reduce((a,b) => a+b, 0) / temps.length).toFixed(1);
-                document.getElementById('weather-low-temp').innerText = min + '°';
-                document.getElementById('weather-avg-temp').innerText = avg + '°';
-                document.getElementById('weather-high-temp').innerText = max + '°';
+                if (temps.length > 0) {
+                    const min = Math.min(...temps).toFixed(1);
+                    const max = Math.max(...temps).toFixed(1);
+                    const avg = (temps.reduce((a,b) => a+b, 0) / temps.length).toFixed(1);
+                    const wLow = document.getElementById('weather-low-temp');
+                    if (wLow) wLow.innerText = min + '°';
+                    const wAvg = document.getElementById('weather-avg-temp');
+                    if (wAvg) wAvg.innerText = avg + '°';
+                    const wHigh = document.getElementById('weather-high-temp');
+                    if (wHigh) wHigh.innerText = max + '°';
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
             }
-        } else {
-            tbody.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
         }
 
         // LIVE AQI HISTORY (for chart and table)

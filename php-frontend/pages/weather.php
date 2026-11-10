@@ -85,12 +85,7 @@
           <div class="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 whitespace-nowrap font-medium">Live Telemetry</div>
         </div>
       </div>
-      <div class="flex items-end justify-between w-full mt-2 gap-1.5 flex-wrap">
-        <div id="card-hum" class="font-mono text-[18px] sm:text-[26px] font-extrabold text-sky-600 leading-none tracking-tight">--</div>
-        <span id="weather-hum-badge" style="padding: 2px 6px; border-radius: 6px; font-size: 9.5px; font-weight: 700; display: none; align-items: center; gap: 3px; border: 1px solid #cbd5e1; background-color: #f1f5f9; color: #475569; white-space: nowrap; margin-bottom: 1px; flex-shrink: 0;">
-          ☁️ Cloudy
-        </span>
-      </div>
+      <div id="card-hum" class="font-mono text-[18px] sm:text-[26px] font-extrabold text-sky-600 mt-2 leading-none tracking-tight">--</div>
     </div>
 
     <!-- 3. Wind Speed -->

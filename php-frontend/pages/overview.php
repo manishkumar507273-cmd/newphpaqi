@@ -100,7 +100,6 @@ if (!empty($init_bulk['weather'])) {
     }
     if (isset($w['humidity']) && $w['humidity'] !== null) {
         $init_hum = number_format((float)$w['humidity'], 1, '.', '');
-        $init_hum_badge = ((float)$w['humidity'] >= 60) ? '☁️ Cloudy' : '☀️ Sunny';
         $init_hum_bar_width = min(100, max(5, round((float)$w['humidity']))) . '%';
     }
     if (isset($w['wind_speed']) && $w['wind_speed'] !== null) {
@@ -112,6 +111,13 @@ if (!empty($init_bulk['weather'])) {
     if (isset($w['rain_gauge']) && $w['rain_gauge'] !== null) {
         $init_live_rain = number_format((float)$w['rain_gauge'], 1, '.', '');
     }
+}
+
+$init_is_raining = (!empty($init_bulk['weather']['rain_gauge']) && (float)$init_bulk['weather']['rain_gauge'] > 0);
+$init_rain_bar_width = '0%';
+if ($init_is_raining) {
+    $init_rain_val = (float)$init_bulk['weather']['rain_gauge'];
+    $init_rain_bar_width = min(100, max(8, round(($init_rain_val / 15) * 100))) . '%';
 }
 
 if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null) {
@@ -169,34 +175,37 @@ if ($latest_epoch > 0) {
     </div>
 
     <!-- Core Telemetry Cards Grid (5 Cards: AQI, Temp, Humidity, Wind, Rain) -->
-    <div class="overview-grid">
+    <div class="overview-grid <?= $init_is_raining ? 'rain-active' : '' ?>">
       
       <!-- CARD 1: AIR QUALITY INDEX (HERO ON MOBILE) -->
       <div class="overview-core-card overview-card-hero" id="card-aqi" style="border-color: <?= $init_aqi_border ?>;">
         <div id="aqi-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, <?= $init_aqi_color ?>, #06b6d4);"></div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 7px;">
-            <div id="aqi-icon-bg" class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: <?= $init_aqi_bg ?>; display: flex; align-items: center; justify-content: center; color: <?= $init_aqi_color ?>; border: 1px solid <?= $init_aqi_border ?>;">
+        <div class="overview-aqi-header-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 7px; min-width: 0;">
+            <div id="aqi-icon-bg" class="overview-card-icon" style="width: 28px; height: 28px; border-radius: 8px; background-color: <?= $init_aqi_bg ?>; display: flex; align-items: center; justify-content: center; color: <?= $init_aqi_color ?>; border: 1px solid <?= $init_aqi_border ?>; flex-shrink: 0;">
               <i data-lucide="gauge" style="width: 15px; height: 15px;"></i>
             </div>
-            <h4 class="overview-card-title" style="margin: 0; font-size: 13.5px; font-weight: 700; color: #0f172a; line-height: 1.15;">Air Quality Index</h4>
+            <h4 class="overview-card-title" style="margin: 0; font-size: 13.5px; font-weight: 700; color: #0f172a; line-height: 1.15;">
+              <span class="aqi-title-long">Air Quality Index</span>
+              <span class="aqi-title-short" style="display: none;">Air Quality</span>
+            </h4>
           </div>
-          <span id="aqi-badge" class="overview-card-badge" style="padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: <?= $init_aqi_bg ?>; color: <?= $init_aqi_text ?>; border: 1px solid <?= $init_aqi_border ?>; display: inline-flex; align-items: center; gap: 5px;">
+          <span id="aqi-badge" class="overview-card-badge" style="padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: <?= $init_aqi_bg ?>; color: <?= $init_aqi_text ?>; border: 1px solid <?= $init_aqi_border ?>; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;">
             <span id="aqi-badge-dot" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $init_aqi_color ?>;"></span>
             <span id="aqi-badge-text"><?= $init_aqi_label ?></span>
           </span>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin: 6px 0; flex-wrap: wrap; gap: 8px;">
+        <div class="overview-aqi-val-row" style="display: flex; align-items: center; justify-content: space-between; margin: 6px 0; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; align-items: baseline; gap: 4px;">
             <span id="aqi-val" class="overview-card-val" style="font-size: 34px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: <?= $init_aqi_color ?>; font-family: var(--font-mono);"><?= $init_aqi !== null ? $init_aqi : '--' ?></span>
             <span style="font-size: 12px; font-weight: 700; color: #94a3b8;">/ 500</span>
           </div>
-          <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+          <div class="overview-aqi-dom-wrap" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
             <span>Dominant:</span>
             <strong id="aqi-dom" style="color: #0f172a; font-family: var(--font-mono); font-weight: 800;"><?= $init_aqi_dom ?></strong>
           </div>
         </div>
-        <div style="margin-top: auto; padding-top: 8px;">
+        <div class="overview-aqi-bar-cont" style="margin-top: auto; padding-top: 8px;">
           <div style="height: 6px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
             <div id="aqi-bar" style="height: 100%; width: <?= $init_aqi_bar_width ?>; background: linear-gradient(90deg, #10b981 0%, #eab308 40%, <?= $init_aqi_color ?> 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
           </div>
@@ -247,9 +256,6 @@ if ($latest_epoch > 0) {
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15; white-space: nowrap;">Humidity</h4>
           </div>
-          <span id="hum-badge" class="overview-card-badge" style="display: <?= !empty($init_hum_badge) ? 'inline-flex' : 'none' ?>; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#f1f5f9' : '#fef9c3' ?>; color: <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#475569' : '#854d0e' ?>; border: 1px solid <?= ($init_hum !== '--' && (float)$init_hum >= 60) ? '#cbd5e1' : '#fde047' ?>; flex-shrink: 0;">
-            <?= $init_hum_badge ?>
-          </span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin: 4px 0;">
           <div style="display: flex; align-items: baseline; gap: 2px;">
@@ -262,7 +268,7 @@ if ($latest_epoch > 0) {
             <div id="hum-bar" style="height: 100%; width: <?= $init_hum_bar_width ?>; background: linear-gradient(90deg, #38bdf8 0%, #0284c7 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
           </div>
           <div class="overview-bar-scale">
-            <span>&lt; 60% Sunny</span><span style="color: #cbd5e1;">•</span><span>60%</span><span style="color: #cbd5e1;">•</span><span>≥ 60% Cloudy</span>
+            <span>0%</span><span style="color: #cbd5e1;">•</span><span>50%</span><span style="color: #cbd5e1;">•</span><span>100%</span>
           </div>
         </div>
       </div>
@@ -304,16 +310,20 @@ if ($latest_epoch > 0) {
       </div>
 
       <!-- CARD 5: RAINFALL (LIVE & TODAY'S RAIN) -->
-      <div class="overview-core-card" id="card-rain" style="border-color: #c7d2fe;">
-        <div id="rain-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #6366f1, #0284c7);"></div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+      <div class="overview-core-card" id="card-rain" style="border-color: <?= $init_is_raining ? '#7dd3fc' : '#c7d2fe' ?>;">
+        <div id="rain-grad" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: <?= $init_is_raining ? 'linear-gradient(90deg, #0284c7, #38bdf8)' : 'linear-gradient(90deg, #6366f1, #0284c7)' ?>;"></div>
+        <div class="overview-rain-header-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
-            <div id="rain-icon-bg" class="overview-card-icon" style="width: 26px; height: 26px; border-radius: 8px; background-color: #eef2ff; display: flex; align-items: center; justify-content: center; color: #4f46e5; border: 1px solid #c7d2fe; flex-shrink: 0;">
+            <div id="rain-icon-bg" class="overview-card-icon" style="width: 26px; height: 26px; border-radius: 8px; background-color: <?= $init_is_raining ? '#f0f9ff' : '#eef2ff' ?>; display: flex; align-items: center; justify-content: center; color: <?= $init_is_raining ? '#0284c7' : '#4f46e5' ?>; border: 1px solid <?= $init_is_raining ? '#bae6fd' : '#c7d2fe' ?>; flex-shrink: 0;">
               <i data-lucide="cloud-rain" style="width: 14px; height: 14px;"></i>
             </div>
             <h4 class="overview-card-title" style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.15; white-space: nowrap;">Rainfall</h4>
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
+            <span id="rain-live-badge" class="overview-card-badge" style="display: none; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; background-color: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; align-items: center; gap: 4px;">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background-color: #0284c7; display: inline-block;"></span>
+              <span>Raining Now</span>
+            </span>
             <button type="button" id="btn-rain" onclick="toggleRain()" title="Switch rainfall unit: mm / cm" class="segmented-unit-btn" style="background-color: #eef2ff; border-color: #c7d2fe; color: #4338ca;">
               <span class="unit-opt active" id="unit-opt-mm">mm</span>
               <span class="unit-opt" id="unit-opt-cm">cm</span>
@@ -335,6 +345,14 @@ if ($latest_epoch > 0) {
               <span id="total-rain-val" class="overview-card-val overview-card-val-sm" style="font-size: 24px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0284c7; font-family: var(--font-mono);"><?= $init_today_rain ?></span>
               <span id="rain-unit-total" class="overview-rain-unit" style="font-size: 11px; font-weight: 700; color: #38bdf8;">mm</span>
             </div>
+          </div>
+        </div>
+        <div id="rain-bar-container" style="display: none; margin-top: auto; padding-top: 8px;">
+          <div style="height: 5px; border-radius: 999px; background: #f1f5f9; overflow: hidden; position: relative; margin-bottom: 4px;">
+            <div id="rain-bar" style="height: 100%; width: <?= $init_rain_bar_width ?>; background: linear-gradient(90deg, #38bdf8 0%, #0284c7 50%, #4f46e5 100%); border-radius: 999px; transition: width 0.8s ease;"></div>
+          </div>
+          <div class="overview-bar-scale" style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #64748b; font-family: var(--font-mono); margin-top: 4px;">
+            <span>0 Light</span><span style="color: #cbd5e1;">•</span><span>5 Mod</span><span style="color: #cbd5e1;">•</span><span>15+ Heavy mm/h</span>
           </div>
         </div>
       </div>
@@ -508,6 +526,10 @@ if ($latest_epoch > 0) {
       gap: 12px !important;
       margin-bottom: 8px !important;
     }
+    #rain-live-badge,
+    #rain-bar-container {
+      display: none !important;
+    }
     @media (max-width: 1024px) {
       .overview-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -647,6 +669,108 @@ if ($latest_epoch > 0) {
       }
       .overview-rain-unit {
         font-size: 9px !important;
+      }
+      /* Rain Active (Raining Mode: Only on Mobile, Rainfall switches with AQI to take hero slot 1) */
+      .overview-grid.rain-active #card-rain {
+        order: -1 !important;
+        grid-column: span 2 !important;
+        padding: 9px 11px 9px !important;
+        min-height: auto !important;
+        border-radius: 14px !important;
+      }
+      .overview-grid.rain-active #card-rain .overview-card-val-sm {
+        font-size: 24px !important;
+        line-height: 1 !important;
+      }
+      .overview-grid.rain-active #card-rain .overview-rain-unit {
+        font-size: 11px !important;
+      }
+      .overview-grid.rain-active #card-rain .overview-rain-label {
+        font-size: 9.5px !important;
+      }
+      .overview-grid.rain-active #card-rain .overview-rain-divider {
+        height: 28px !important;
+      }
+      .overview-grid.rain-active #card-rain #rain-bar {
+        height: 4px !important;
+      }
+      .overview-grid.rain-active #card-rain #rain-live-badge {
+        display: inline-flex !important;
+      }
+      .overview-grid.rain-active #card-rain #rain-bar-container {
+        display: block !important;
+      }
+
+      .overview-grid.rain-active #card-temp { order: 1 !important; }
+      .overview-grid.rain-active #card-hum  { order: 2 !important; }
+      .overview-grid.rain-active #card-wind { order: 3 !important; }
+
+      .overview-grid.rain-active #card-aqi {
+        order: 5 !important;
+        grid-column: span 1 !important;
+        padding: 7px 9px 7px !important;
+        min-height: 80px !important;
+        border-radius: 13px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-aqi-header-row {
+        margin-bottom: 4px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-card-title {
+        font-size: 11px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 65px !important;
+      }
+      .overview-grid.rain-active #card-aqi .aqi-title-long {
+        display: none !important;
+      }
+      .overview-grid.rain-active #card-aqi .aqi-title-short {
+        display: inline !important;
+        font-size: 11px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-card-icon {
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 6px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-card-icon svg {
+        width: 11px !important;
+        height: 11px !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-badge {
+        padding: 1.5px 5px !important;
+        font-size: 8px !important;
+        gap: 3px !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-badge-dot {
+        width: 4px !important;
+        height: 4px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-aqi-val-row {
+        margin: 3px 0 !important;
+        gap: 4px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-card-val {
+        font-size: 19px !important;
+        line-height: 1 !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-val + span {
+        font-size: 8.5px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-aqi-dom-wrap {
+        padding: 1.5px 4px !important;
+        font-size: 8px !important;
+        gap: 2px !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-dom {
+        font-size: 8.5px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-aqi-bar-cont {
+        padding-top: 4px !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-bar {
+        height: 3px !important;
       }
       /* Microclimate trends carousel adjustments */
       .overview-chart-carousel-section {
@@ -834,6 +958,12 @@ function updateRainDisplay() {
         if (liveEl) liveEl.innerText = rawLiveRain != null ? (Number(rawLiveRain) / 10).toFixed(2) : '--';
         if (totalEl) totalEl.innerText = rawTodayRain != null ? (Number(rawTodayRain) / 10).toFixed(2) : '--';
     }
+
+    const rainBar = document.getElementById('rain-bar');
+    if (rainBar && typeof isRainingGlobal !== 'undefined' && isRainingGlobal) {
+        const pct = Math.min(100, Math.max(8, Math.round(((rawLiveRain || 0) / 15) * 100)));
+        rainBar.style.width = pct + '%';
+    }
 }
 
 function updateTempDisplay() {
@@ -985,8 +1115,27 @@ function resizeActiveChart() {
     }
 }
 
+function applyRainHeroSwitch(isRaining) {
+    const grid = document.querySelector('.overview-grid');
+    if (!grid) return;
+
+    if (isRaining) {
+        grid.classList.add('rain-active');
+        const rainBar = document.getElementById('rain-bar');
+        if (rainBar) {
+            const rainVal = (typeof rawLiveRain !== 'undefined' && rawLiveRain != null) ? Number(rawLiveRain) : 0;
+            const pct = Math.min(100, Math.max(8, Math.round((rainVal / 15) * 100)));
+            rainBar.style.width = pct + '%';
+        }
+    } else {
+        grid.classList.remove('rain-active');
+    }
+}
+
 function updateMobileHero() {
-    // Standby no-op (mobile hero removed per user request)
+    if (typeof isRainingGlobal !== 'undefined') {
+        applyRainHeroSwitch(isRainingGlobal);
+    }
 }
 
 async function refreshData(isSilent = false) {
@@ -1109,19 +1258,6 @@ async function refreshData(isSilent = false) {
             // Hum
             document.getElementById('hum-val').innerText = hum != null ? Number(hum).toFixed(1) : '--';
             document.getElementById('hum-bar').style.width = hum != null ? Math.min(100, Math.max(5, Number(hum))) + '%' : '0%';
-            const isCloudy = hum != null && Number(hum) >= 60;
-            const humBadge = document.getElementById('hum-badge');
-            if (humBadge) {
-                if (hum != null && !isNaN(Number(hum))) {
-                    humBadge.style.display = 'inline-flex';
-                    humBadge.innerHTML = isCloudy ? '☁️ Cloudy' : '☀️ Sunny';
-                    humBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
-                    humBadge.style.color = isCloudy ? '#475569' : '#854d0e';
-                    humBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
-                } else {
-                    humBadge.style.display = 'none';
-                }
-            }
             
             // Wind EQ
             const wkmh = Number(rawWind || 0);
@@ -1147,6 +1283,8 @@ async function refreshData(isSilent = false) {
             document.getElementById('rain-icon-bg').style.backgroundColor = isRaining ? '#f0f9ff' : '#eef2ff';
             document.getElementById('rain-icon-bg').style.color = isRaining ? '#0284c7' : '#4f46e5';
             document.getElementById('rain-icon-bg').style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
+
+            applyRainHeroSwitch(isRaining);
 
         }
 
@@ -1529,11 +1667,13 @@ window.__cleanupCurrentPage = function() {
 
 if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", () => {
+        applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
         setupCarouselScrollListener();
         refreshData(false);
         startAutoRefreshOverview();
     });
 } else {
+    applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
     setupCarouselScrollListener();
     refreshData(false);
     startAutoRefreshOverview();

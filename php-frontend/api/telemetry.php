@@ -844,12 +844,19 @@ switch ($action) {
     }
 
     case 'history_bulk': {
+        $days = isset($_GET['days']) ? max(1, min(60, intval($_GET['days']))) : 1;
         $date = isset($_GET['date']) ? $_GET['date'] : null;
         $today_ist = (new DateTime('now', new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
-        $is_today = (!$date || $date === $today_ist);
+        if (!$date) $date = $today_ist;
+        $is_today = (!$date || ($date === $today_ist && $days === 1));
         $filter = '';
 
-        if ($date) {
+        if ($days > 1) {
+            $start_date = date('Y-m-d', strtotime($date . ' -' . $days . ' days'));
+            $end_date   = date('Y-m-d', strtotime($date . ' +2 days'));
+            $filter = "&timestamp_hour=gte.{$start_date}T00:00:00&timestamp_hour=lt.{$end_date}T00:00:00";
+            $lim = min(1500, max(150, ($days * 35)));
+        } else if ($date) {
             $start_date = date('Y-m-d', strtotime($date . ' -1 day'));
             $end_date   = date('Y-m-d', strtotime($date . ' +2 days'));
             $filter = "&timestamp_hour=gte.{$start_date}T00:00:00&timestamp_hour=lt.{$end_date}T00:00:00";
@@ -858,7 +865,7 @@ switch ($action) {
             $lim = isset($_GET['limit']) ? intval($_GET['limit']) : 500;
         }
 
-        $ckey   = "history_bulk_" . md5($date . $lim);
+        $ckey   = "history_bulk_" . md5($date . '_' . $days . '_' . $lim);
         $ttl    = $is_today ? 15 : 300; // 15s TTL for today so live telemetry updates dynamically
         $cached = cacheGet($ckey, $ttl);
         if ($cached !== null) { echo json_encode($cached); break; }

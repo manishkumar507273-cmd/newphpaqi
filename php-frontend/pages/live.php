@@ -157,24 +157,30 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
     border-radius: 14px !important;
     margin-bottom: 8px !important;
   }
-  #hero-card [style*="margin-bottom: 12px"] {
-    margin-bottom: 4px !important;
-  }
-  #hero-card [style*="margin-bottom: 20px"] {
-    margin-bottom: 6px !important;
-    gap: 12px !important;
+  .hero-header-row {
+    margin-bottom: 10px !important;
+    gap: 18px !important;
+    align-items: flex-end !important;
   }
   #hero-aqi-val {
-    font-size: 32px !important;
+    font-size: 42px !important;
     line-height: 1 !important;
   }
   #hero-aqi-subtext {
-    font-size: 8.5px !important;
-    margin-top: 2px !important;
+    font-size: 11px !important;
+    margin-bottom: 4px !important;
   }
   #hero-aqi-badge {
+    min-width: 75px !important;
     padding: 3px 10px !important;
-    font-size: 11px !important;
+    border-radius: 8px !important;
+  }
+  #hero-aqi-label {
+    font-size: 13px !important;
+  }
+  #hero-aqi-title {
+    font-size: 10.5px !important;
+    margin-bottom: 3px !important;
   }
   #hero-card [style*="margin-bottom: 14px"] {
     margin-bottom: 6px !important;
@@ -268,19 +274,6 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
     height: 4px !important;
   }
 
-  /* Pollutant Mini Scale Bar Responsive */
-  .pollutant-mini-bar {
-    margin-top: 3px !important;
-  }
-  .pollutant-mini-track {
-    height: 4px !important;
-  }
-  .pollutant-mini-indicator, [id^="bar-indicator-"] {
-    width: 7.5px !important;
-    height: 7.5px !important;
-    border-width: 1.5px !important;
-  }
-
   /* Pollutant Detail Modal Mobile Optimization */
   #pollutant-modal {
     padding: 10px !important;
@@ -294,10 +287,14 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
     padding: 16px 14px !important;
   }
   .pollutant-modal-close {
-    top: 12px !important;
-    right: 12px !important;
-    width: 30px !important;
-    height: 30px !important;
+    top: 14px !important;
+    right: 14px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    z-index: 50 !important;
+    cursor: pointer !important;
   }
   #pm-modal-icon-bg {
     width: 44px !important;
@@ -409,11 +406,6 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
   }
   #pm-modal-val {
     font-size: 24px !important;
-  }
-  .pollutant-mini-indicator, [id^="bar-indicator-"] {
-    width: 6.5px !important;
-    height: 6.5px !important;
-    border-width: 1.2px !important;
   }
 }
 
@@ -536,28 +528,29 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
     <div id="hero-left-bar" style="position: absolute; top: 0; left: 0; bottom: 0; width: 6px; background-color: <?= $init_aqi_accent ?>; transition: background-color 0.5s ease;"></div>
 
     <div style="position: relative; z-index: 1;">
-      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-        <span id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: <?= $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease;"></span>
-        <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
-          <span>Status Panel • </span><span id="hero-stream-text">Live Stream</span>
-        </span>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 20px; flex-wrap: wrap;">
-        <div>
-          <div id="hero-aqi-val" style="font-family: var(--font-mono); font-size: 72px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: #0f172a;">
-            <?= $init_aqi_val ?>
+      <!-- Live AQI & Air Quality Status Row (Matching Target Design) -->
+      <div class="hero-header-row" style="display: flex; align-items: flex-end; justify-content: flex-start; gap: clamp(24px, 6vw, 64px); margin-bottom: 20px; flex-wrap: wrap;">
+        <!-- Left: Live AQI & Big Value -->
+        <div style="display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 6px;">
+            <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background-color: <?= $init_aqi_accent ?>33; transition: background-color 0.5s ease;">
+              <span id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: <?= $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease;"></span>
+            </span>
+            <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;">Live AQI</span>
           </div>
-          <div id="hero-aqi-subtext" style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--font-mono);">
-            LIVE AQI
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <div id="hero-aqi-val" style="font-family: var(--font-mono); font-size: 74px; font-weight: 900; line-height: 0.95; letter-spacing: -0.04em; color: <?= $init_aqi_accent ?>; transition: color 0.5s ease;">
+              <?= $init_aqi_val ?>
+            </div>
+            <span id="hero-aqi-subtext" style="font-size: 13px; font-weight: 700; color: #64748b; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap;">AQI (IN)</span>
           </div>
         </div>
 
-        <div>
-          <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">Air Quality is</div>
-          <div id="hero-aqi-badge" style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 18px; border-radius: 999px; background-color: #ffffff; border: 1.5px solid <?= $init_aqi_accent ?>60; color: #0f172a; font-size: 16px; font-weight: 800; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05); transition: border-color 0.5s ease;">
-            <span id="hero-aqi-badge-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: <?= $init_aqi_accent ?>; transition: background-color 0.5s ease;"></span>
-            <span id="hero-aqi-label"><?= $init_aqi_label ?></span>
+        <!-- Right: Air Quality is & Rounded Status Box -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+          <div id="hero-aqi-title" style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 4px; font-family: var(--font-sans); text-align: center;">Air Quality is</div>
+          <div id="hero-aqi-badge" style="display: inline-flex; align-items: center; justify-content: center; min-width: 85px; padding: 4px 14px; border-radius: 9px; background-color: <?= $init_aqi_accent ?>20; border: 1px solid <?= $init_aqi_accent ?>35; transition: background-color 0.5s ease, border-color 0.5s ease;">
+            <span id="hero-aqi-label" style="font-size: 15px; font-weight: 800; color: <?= $init_aqi_accent ?>; font-family: var(--font-sans); line-height: 1.15; transition: color 0.5s ease;"><?= $init_aqi_label ?></span>
           </div>
         </div>
       </div>
@@ -641,12 +634,6 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
             <span><?= $init_tags['pm25']['text'] ?></span>
           </div>
         </div>
-        <!-- CPCB Standard Scale Bar -->
-        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
-          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-pm25" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['pm25']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['pm25']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
-          </div>
-        </div>
       </div>
 
       <!-- PM10 -->
@@ -671,12 +658,6 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
           <div id="tag-pm10" class="px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="<?= $init_tags['pm10']['show'] ? '' : 'display: none;' ?> background-color: <?= $init_tags['pm10']['bg'] ?>; border: 1px solid <?= $init_tags['pm10']['border'] ?>; color: <?= $init_tags['pm10']['color'] ?>;">
             <span class="w-1.5 h-1.5 rounded-full" style="background-color: <?= $init_tags['pm10']['dot'] ?>;"></span>
             <span><?= $init_tags['pm10']['text'] ?></span>
-          </div>
-        </div>
-        <!-- CPCB Standard Scale Bar -->
-        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
-          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-pm10" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['pm10']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['pm10']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
           </div>
         </div>
       </div>
@@ -705,12 +686,6 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
             <span><?= $init_tags['co']['text'] ?></span>
           </div>
         </div>
-        <!-- CPCB Standard Scale Bar -->
-        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
-          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-co" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['co']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['co']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
-          </div>
-        </div>
       </div>
 
       <!-- NO2 -->
@@ -737,12 +712,6 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
             <span><?= $init_tags['no2']['text'] ?></span>
           </div>
         </div>
-        <!-- CPCB Standard Scale Bar -->
-        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
-          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-no2" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['no2']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['no2']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
-          </div>
-        </div>
       </div>
 
       <!-- O3 -->
@@ -767,12 +736,6 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
           <div id="tag-o3" class="px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="<?= $init_tags['o3']['show'] ? '' : 'display: none;' ?> background-color: <?= $init_tags['o3']['bg'] ?>; border: 1px solid <?= $init_tags['o3']['border'] ?>; color: <?= $init_tags['o3']['color'] ?>;">
             <span class="w-1.5 h-1.5 rounded-full" style="background-color: <?= $init_tags['o3']['dot'] ?>;"></span>
             <span><?= $init_tags['o3']['text'] ?></span>
-          </div>
-        </div>
-        <!-- CPCB Standard Scale Bar -->
-        <div class="pollutant-mini-bar w-full mt-1.5" style="position: relative;">
-          <div class="pollutant-mini-track" style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
-            <div id="bar-indicator-o3" class="pollutant-mini-indicator" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['o3']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['o3']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
           </div>
         </div>
       </div>
@@ -1260,18 +1223,14 @@ function formatWeatherOneDecimal(val, suffix = '', defaultVal = '--') {
     return num.toFixed(1) + suffix;
 }
 
-function formatTempOneDecimal(val, suffix = '', defaultVal = '--') {
-    return formatWeatherOneDecimal(val, suffix, defaultVal);
-}
-
 function formatStreamTimestamp(row) {
     const rawTs = row.created_at || row.timestamp;
     if (!rawTs) return '--';
     const dt = new Date(rawTs);
     
-    // Strict IST formatting: "22/10/2026, 06:49:58 pm" regardless of viewer's device timezone
+    // Strict IST formatting: "22/10/2026, 06:49 pm" without seconds
     const istDate = dt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
-    const istTime = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit' }).toLowerCase();
+    const istTime = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }).toLowerCase();
     
     return `${istDate}, ${istTime}`;
 }
@@ -1361,12 +1320,15 @@ async function refreshDashboard() {
         if (aqiData) {
             const d = aqiData;
             const aqiValue = d.cpcb_aqi != null ? d.cpcb_aqi : (d.aqi_info && d.aqi_info.value != null ? d.aqi_info.value : '--');
-            const heroAqiVal = document.getElementById('hero-aqi-val');
-            if (heroAqiVal) heroAqiVal.innerText = aqiValue;
-
             // AQI Panel Theme & Colors (dynamically changes according to AQI bar)
             const theme = getAQITheme(aqiValue);
             currentAQITheme = theme;
+
+            const heroAqiVal = document.getElementById('hero-aqi-val');
+            if (heroAqiVal) {
+                heroAqiVal.innerText = aqiValue;
+                heroAqiVal.style.color = theme.accent;
+            }
 
             // Hero card — entire block changes to matching AQI bar category color
             const hero = document.getElementById('hero-card');
@@ -1384,11 +1346,18 @@ async function refreshDashboard() {
             const statusDot = document.getElementById('status-dot');
             if (statusDot) statusDot.style.backgroundColor = theme.accent;
 
-            if (badge) badge.style.borderColor = theme.accent + '60';
-            const badgeDot = document.getElementById('hero-aqi-badge-dot');
-            if (badgeDot) badgeDot.style.backgroundColor = theme.accent;
+            const statusDotHalo = document.getElementById('status-dot-halo');
+            if (statusDotHalo) statusDotHalo.style.backgroundColor = theme.accent + '33';
+
+            if (badge) {
+                badge.style.backgroundColor = theme.accent + '20';
+                badge.style.borderColor     = theme.accent + '35';
+            }
             const badgeLabel = document.getElementById('hero-aqi-label');
-            if (badgeLabel) badgeLabel.innerText = theme.label;
+            if (badgeLabel) {
+                badgeLabel.innerText = theme.label;
+                badgeLabel.style.color = theme.accent;
+            }
 
             const pct = Math.min(Math.max(getAQIScalePercentage(aqiValue), 0), 100);
             const indicator = document.getElementById('hero-scale-indicator');
@@ -1429,17 +1398,6 @@ async function refreshDashboard() {
             updateTag('tag-co', d.co, 2);
             updateTag('tag-no2', d.no2, 80);
             updateTag('tag-o3', d.o3, 100);
-
-            // Update CPCB Mini Scale Bars on pollutant cards
-            ['pm25', 'pm10', 'co', 'no2', 'o3'].forEach(param => {
-                const rawVal = param === 'pm25' ? (d.pm25 ?? d['pm2.5']) : d[param];
-                const info = getPollutantScaleInfo(param, rawVal);
-                const ind = document.getElementById(`bar-indicator-${param}`);
-                if (ind) {
-                    ind.style.left = `clamp(5px, ${info.pct}%, calc(100% - 5px))`;
-                    ind.style.borderColor = info.color;
-                }
-            });
         }
         
         // WEATHER DATA POPULATION
@@ -1469,23 +1427,6 @@ async function refreshDashboard() {
                 todayRainEl.innerText = trVal.toFixed(1) + ' mm';
             }
 
-            // Humidity condition: Low (< 60%) = Sunny, High (>= 60%) = Cloudy
-            const humVal = (w.humidity != null && !isNaN(Number(w.humidity))) ? Number(w.humidity) : null;
-            const isCloudy = humVal != null && humVal >= 60;
-            const isRaining = w.rain_gauge != null && Number(w.rain_gauge) > 0;
-
-            const wHumBadge = document.getElementById('weather-hum-badge');
-            if (wHumBadge) {
-                if (humVal != null) {
-                    wHumBadge.style.display = 'inline-flex';
-                    wHumBadge.innerHTML = isCloudy ? '☁️ Cloudy' : '☀️ Sunny';
-                    wHumBadge.style.backgroundColor = isCloudy ? '#f1f5f9' : '#fef9c3';
-                    wHumBadge.style.color = isCloudy ? '#475569' : '#854d0e';
-                    wHumBadge.style.borderColor = isCloudy ? '#cbd5e1' : '#fde047';
-                } else {
-                    wHumBadge.style.display = 'none';
-                }
-            }
             
             const getCompassDir = (val) => {
               if (val == null) return 'N/A';
@@ -1568,33 +1509,6 @@ async function refreshDashboard() {
         renderLiveTable();
 
         const now = new Date();
-
-        function formatOfflineDuration(mins) {
-            const minutes = Math.max(0, Math.floor(Number(mins) || 0));
-            if (minutes < 60) {
-                return {
-                    badge: `${minutes}M AGO`,
-                    pill: `${minutes}m ago`,
-                    timeAgo: `${minutes}m ago`
-                };
-            } else if (minutes < 1440) { // Between 1 hour and 24 hours: show in hours
-                const hours = Math.floor(minutes / 60);
-                const remMins = minutes % 60;
-                return {
-                    badge: `${hours}H AGO`,
-                    pill: `${hours}h ago`,
-                    timeAgo: remMins > 0 ? `${hours}h ${remMins}m ago` : `${hours}h ago`
-                };
-            } else { // 24 hours or more: show in days
-                const days = Math.floor(minutes / 1440);
-                const remHours = Math.floor((minutes % 1440) / 60);
-                return {
-                    badge: `${days}D AGO`,
-                    pill: `${days}d ago`,
-                    timeAgo: remHours > 0 ? `${days}d ${remHours}h ago` : `${days}d ago`
-                };
-            }
-        }
         
         // --- AQI Offline Check (Sensors log hourly; healthy threshold is 90 mins) ---
         let isAqiOffline = true;
@@ -1637,11 +1551,13 @@ async function refreshDashboard() {
             }
         }
         const liveAccent = (currentAQITheme && currentAQITheme.accent) ? currentAQITheme.accent : '#59b61f';
-        if (heroDot) heroDot.style.backgroundColor = liveAccent;
-        if (heroStreamText) heroStreamText.innerText = isAqiOffline ? 'Cached Stream' : 'Live Stream';
+        if (heroDot) heroDot.style.backgroundColor = isAqiOffline ? '#f97316' : liveAccent;
+        const heroDotHalo = document.getElementById('status-dot-halo');
+        if (heroDotHalo) heroDotHalo.style.backgroundColor = isAqiOffline ? '#f9731633' : liveAccent + '33';
+        if (heroStreamText) heroStreamText.innerText = isAqiOffline ? 'Cached AQI' : 'Live AQI';
         if (heroAqiSubtext) {
-            heroAqiSubtext.innerText = isAqiOffline ? 'CACHED AQI' : 'LIVE AQI';
-            heroAqiSubtext.style.color = isAqiOffline ? '#c2410c' : '#64748b';
+            heroAqiSubtext.innerText = 'AQI (IN)';
+            heroAqiSubtext.style.color = '#64748b';
         }
         if (heroLeftBar) heroLeftBar.style.backgroundColor = liveAccent;
         const latestTimeEl = document.getElementById('latest-time');
@@ -1725,6 +1641,10 @@ window.__cleanupCurrentPage = function() {
         comparisonChartInstance.destroy();
         comparisonChartInstance = null;
     }
+    // Remove any reparented pollutant modal from document.body to prevent duplicate modal leaks
+    const bodyModals = document.querySelectorAll('body > #pollutant-modal');
+    bodyModals.forEach(m => m.remove());
+    document.body.style.overflow = '';
 };
 
 setTimeout(() => {
@@ -1749,85 +1669,143 @@ setTimeout(() => {
     document.addEventListener('visibilitychange', onLiveVisibilityChange);
 }, 0);
 
-function openPollutantModal(type) {
+window.openPollutantModal = function(type) {
     const data = pollutantDetails[type];
     if(!data) return;
     
-    document.getElementById('pm-modal-icon-bg').innerText = data.icon;
-    document.getElementById('pm-modal-title').innerText = data.title;
-    document.getElementById('pm-modal-limit').innerText = `${data.limit} ${data.unit}`;
+    // Clean up any stray duplicate modals to avoid ID collisions
+    const allModals = document.querySelectorAll('#pollutant-modal');
+    if (allModals.length > 1) {
+        for (let i = 0; i < allModals.length - 1; i++) {
+            allModals[i].remove();
+        }
+    }
     
-    const currentValStr = document.getElementById(`card-${type}`).innerText;
+    const modal = document.getElementById('pollutant-modal');
+    if (!modal) return;
+    
+    const iconBg = modal.querySelector('#pm-modal-icon-bg');
+    if (iconBg) iconBg.innerText = data.icon;
+    const titleEl = modal.querySelector('#pm-modal-title');
+    if (titleEl) titleEl.innerText = data.title;
+    const limitEl = modal.querySelector('#pm-modal-limit');
+    if (limitEl) limitEl.innerText = `${data.limit} ${data.unit}`;
+    
+    const cardEl = document.getElementById(`card-${type}`);
+    const currentValStr = cardEl ? cardEl.innerText : '--';
     const currentVal = parseFloat(currentValStr);
     
-    document.getElementById('pm-modal-val').innerText = isNaN(currentVal) ? '--' : currentVal.toFixed(3);
-    document.getElementById('pm-modal-unit').innerText = data.unit;
-    document.getElementById('pm-modal-short').innerText = data.id.toUpperCase();
-    document.getElementById('pm-modal-q').innerText = data.id.toUpperCase();
-    document.getElementById('pm-modal-desc').innerText = data.desc;
-    document.getElementById('pm-modal-health').innerText = data.health;
+    const valEl = modal.querySelector('#pm-modal-val');
+    if (valEl) valEl.innerText = isNaN(currentVal) ? '--' : currentVal.toFixed(3);
+    const unitEl = modal.querySelector('#pm-modal-unit');
+    if (unitEl) unitEl.innerText = data.unit;
+    const shortEl = modal.querySelector('#pm-modal-short');
+    if (shortEl) shortEl.innerText = data.id.toUpperCase();
+    const qEl = modal.querySelector('#pm-modal-q');
+    if (qEl) qEl.innerText = data.id.toUpperCase();
+    const descEl = modal.querySelector('#pm-modal-desc');
+    if (descEl) descEl.innerText = data.desc;
+    const healthEl = modal.querySelector('#pm-modal-health');
+    if (healthEl) healthEl.innerText = data.health;
     
-    document.getElementById('pm-t1').innerText = data.scale[0];
-    document.getElementById('pm-t2').innerText = data.scale[1];
-    document.getElementById('pm-t3').innerText = data.scale[2];
-    document.getElementById('pm-t4').innerText = data.scale[3];
-    document.getElementById('pm-t5').innerText = data.scale[4];
-    document.getElementById('pm-t6').innerText = data.maxTick;
+    const t1 = modal.querySelector('#pm-t1'); if (t1) t1.innerText = data.scale[0];
+    const t2 = modal.querySelector('#pm-t2'); if (t2) t2.innerText = data.scale[1];
+    const t3 = modal.querySelector('#pm-t3'); if (t3) t3.innerText = data.scale[2];
+    const t4 = modal.querySelector('#pm-t4'); if (t4) t4.innerText = data.scale[3];
+    const t5 = modal.querySelector('#pm-t5'); if (t5) t5.innerText = data.scale[4];
+    const t6 = modal.querySelector('#pm-t6'); if (t6) t6.innerText = data.maxTick;
     
-    const statusBox = document.getElementById('pm-modal-status');
-    if(isNaN(currentVal)) {
-        statusBox.style.display = 'none';
-    } else {
-        statusBox.style.display = 'flex';
-        if(currentVal <= data.limit) {
-            statusBox.innerHTML = '<i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Within Indian CPCB Limit';
-            statusBox.style.background = '#dcfce7';
-            statusBox.style.color = '#16a34a';
+    const statusBox = modal.querySelector('#pm-modal-status');
+    if (statusBox) {
+        if(isNaN(currentVal)) {
+            statusBox.style.display = 'none';
         } else {
-            statusBox.innerHTML = '<i data-lucide="alert-triangle" style="width: 17px; height: 17px;"></i> Exceeds Indian CPCB Limit';
-            statusBox.style.background = '#fee2e2';
-            statusBox.style.color = '#dc2626';
+            statusBox.style.display = 'flex';
+            if(currentVal <= data.limit) {
+                statusBox.innerHTML = '<i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Within Indian CPCB Limit';
+                statusBox.style.background = '#dcfce7';
+                statusBox.style.color = '#16a34a';
+            } else {
+                statusBox.innerHTML = '<i data-lucide="alert-triangle" style="width: 17px; height: 17px;"></i> Exceeds Indian CPCB Limit';
+                statusBox.style.background = '#fee2e2';
+                statusBox.style.color = '#dc2626';
+            }
         }
     }
     
-    const marker = document.getElementById('pm-modal-marker');
+    const marker = modal.querySelector('#pm-modal-marker');
     const scaleInfo = getPollutantScaleInfo(type, currentVal);
-    marker.style.left = `clamp(8px, ${scaleInfo.pct}%, calc(100% - 8px))`;
-    marker.style.borderColor = scaleInfo.color;
-    
-    const modal = document.getElementById('pollutant-modal');
-    if (modal) {
-        if (modal.parentElement !== document.body) {
-            document.body.appendChild(modal);
-        }
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        const scrollBox = modal.querySelector('.pollutant-modal-scroll');
-        if (scrollBox) scrollBox.scrollTop = 0;
+    if (marker) {
+        marker.style.left = `clamp(8px, ${scaleInfo.pct}%, calc(100% - 8px))`;
+        marker.style.borderColor = scaleInfo.color;
     }
-    if (window.lucide && lucide.createIcons) lucide.createIcons();
-}
+    
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    const scrollBox = modal.querySelector('.pollutant-modal-scroll');
+    if (scrollBox) scrollBox.scrollTop = 0;
+    
+    if (window.lucide && lucide.createIcons) lucide.createIcons({ root: modal });
+};
+var openPollutantModal = window.openPollutantModal;
 
-function closePollutantModal() {
-    const modal = document.getElementById('pollutant-modal');
-    if (modal) modal.style.display = 'none';
+window.closePollutantModal = function(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    const modals = document.querySelectorAll('#pollutant-modal');
+    modals.forEach(m => {
+        m.style.display = 'none';
+    });
     document.body.style.overflow = '';
-}
+};
+var closePollutantModal = window.closePollutantModal;
 
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closePollutantModal();
-});
+// Global delegated capture listeners ensuring close button, backdrop, and Escape always work
+if (!window.__pollutantModalListenersBound) {
+    window.__pollutantModalListenersBound = true;
+    
+    const handlePollutantCloseTrigger = function(e) {
+        const closeBtn = e.target && e.target.closest && e.target.closest('.pollutant-modal-close');
+        const backdrop = e.target && (
+            (e.target.classList && e.target.classList.contains('pollutant-modal-backdrop')) ||
+            e.target.id === 'pollutant-modal-backdrop'
+        );
+        if (closeBtn || backdrop) {
+            if (typeof e.preventDefault === 'function') e.preventDefault();
+            if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (typeof window.closePollutantModal === 'function') {
+                window.closePollutantModal(e);
+            }
+        }
+    };
+
+    document.addEventListener('click', handlePollutantCloseTrigger, true);
+    document.addEventListener('touchend', handlePollutantCloseTrigger, { capture: true, passive: false });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            if (typeof window.closePollutantModal === 'function') {
+                window.closePollutantModal(e);
+            }
+        }
+    });
+}
 </script>
 
 <!-- Pollutant Detail Modal (Mounted directly to viewport) -->
 <div id="pollutant-modal" style="display: none; position: fixed; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; z-index: 99999; align-items: center; justify-content: center; padding: clamp(12px, 3vw, 24px); box-sizing: border-box;">
   <!-- Backdrop Click to Close -->
-  <div style="position: absolute; inset: 0; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);" onclick="closePollutantModal()"></div>
+  <div id="pollutant-modal-backdrop" class="pollutant-modal-backdrop" style="position: absolute; inset: 0; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer;" onclick="window.closePollutantModal(event)"></div>
 
   <!-- Modal Dialog Card -->
   <div class="pollutant-modal-card" style="position: relative; z-index: 1; background: #ffffff; width: 100%; max-width: 580px; max-height: min(88vh, 720px); border-radius: 24px; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3); border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; margin: auto; animation: modal-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
-    <button type="button" class="pollutant-modal-close" onclick="closePollutantModal()" title="Close details" style="position: absolute; top: 16px; right: 16px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e2e8f0; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: all 0.2s ease;" onmouseover="this.style.background='#f8fafc'; this.style.color='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#64748b';">
-      <i data-lucide="x" style="width: 17px; height: 17px;"></i>
+    <button type="button" class="pollutant-modal-close" onclick="window.closePollutantModal(event)" title="Close details" aria-label="Close" style="position: absolute; top: 16px; right: 16px; z-index: 50; width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 50%; border: 1px solid #e2e8f0; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.2s ease; touch-action: manipulation; -webkit-tap-highlight-color: transparent; pointer-events: auto;" onmouseover="this.style.background='#f8fafc'; this.style.color='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#64748b';">
+      <i data-lucide="x" style="width: 18px; height: 18px; pointer-events: none;"></i>
     </button>
     
     <div class="pollutant-modal-scroll" style="padding: clamp(20px, 4vw, 32px); overflow-y: auto; overscroll-behavior: contain; flex: 1;">

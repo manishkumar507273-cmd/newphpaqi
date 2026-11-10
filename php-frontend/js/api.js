@@ -1,25 +1,9 @@
-const DEFAULT_KEY = window.ENV_CONFIG?.supabaseKey || '';
-const SUPABASE_URL = window.ENV_CONFIG?.supabaseUrl || '';
-const HEADERS = {
-    'apikey': DEFAULT_KEY,
-    'Authorization': `Bearer ${DEFAULT_KEY}`,
-    'Content-Type': 'application/json'
-};
-
-// In-memory cache to prevent redundant network requests across page navigations
+// In-memory cache for live status evaluation
 const apiCache = {
     aqiLive: null,
-    weatherLive: null,
-    aqiHistory: null,
-    weatherHistory: null,
     lastFetchTime: 0
 };
 const CACHE_TTL = 30000; // 30 seconds cache
-
-const TABLE_AQI_LIVE = 'AQI_LIVE_NODE1';
-const TABLE_AQI_HISTORICAL = 'AQI_NODE1';
-const TABLE_WEATHER_LIVE = 'WEATHER_LIVE_NODE1';
-const TABLE_WEATHER_HISTORICAL = 'WEATHER_NODE1';
 
 // CPCB Calibration Logic
 const CPCB_BREAKPOINTS = {
@@ -90,100 +74,6 @@ function parseToIstIso(tsRaw) {
     }
     return tsStr;
 }
-
-function formatRawReading(raw) {
-  if (!raw) return null;
-  if (raw.cpcb_aqi != null) {
-    const rawPm25 = raw.pm25 != null ? Number(raw.pm25) : (raw['pm2.5'] != null ? Number(raw['pm2.5']) : null);
-    const ts = raw.timestamp_hour || raw.created_at || raw.timestamp;
-    const cpcb_aqi = Math.round(Number(raw.cpcb_aqi));
-    let label = "Good", color = "#59b61f";
-    if (cpcb_aqi > 50 && cpcb_aqi <= 100) { label = "Moderate"; color = "#eec732"; }
-    else if (cpcb_aqi > 100 && cpcb_aqi <= 200) { label = "Poor"; color = "#ea8c34"; }
-    else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = "Unhealthy"; color = "#e95478"; }
-    else if (cpcb_aqi > 300 && cpcb_aqi <= 400) { label = "Severe"; color = "#b33fba"; }
-    else if (cpcb_aqi > 400) { label = "Hazardous"; color = "#c92033"; }
-
-    let dom = raw.dominant_pollutant || 'O₃';
-    if (dom === 'O3') dom = 'O₃';
-    if (dom === 'NO2') dom = 'NO₂';
-
-    return {
-      id: raw.id,
-      timestamp: parseToIstIso(ts),
-      temperature: adjustTempByHour(raw.temperature, ts),
-      humidity: raw.humidity,
-      pm25: rawPm25,
-      pm10: raw.pm10,
-      co: raw.co,
-      o3: raw.o3,
-      no2: raw.no2,
-      cpcb_aqi,
-      dominant_pollutant: dom,
-      aqi_info: { value: cpcb_aqi, label, color, standard: "CPCB (India)" },
-      wind_speed: raw.wind_speed,
-      wind_gust: raw.wind_gust ?? raw.gust,
-      wind_direction: raw.wind_direction,
-      rain_gauge: raw.rain_gauge ?? raw.rain,
-    };
-  }
-
-  const tempVal = raw.temperature != null ? Number(raw.temperature) : 27.0;
-  const humVal = raw.humidity != null ? Number(raw.humidity) : 60.0;
-
-  const rawPm25 = raw.pm25 != null ? Number(raw.pm25) : (raw['pm2.5'] != null ? Number(raw['pm2.5']) : null);
-  const rawPm10 = raw.pm10 != null ? Number(raw.pm10) : null;
-  const rawCo = raw.co != null ? Number(raw.co) : null;
-  const rawO3 = raw.o3 != null ? Number(raw.o3) : null;
-  const rawNo2 = raw.no2 != null ? Number(raw.no2) : null;
-
-  const calPm25 = rawPm25 != null ? Math.max(0.0, Number((0.12532894 * rawPm25 - 0.7801631 * tempVal - 0.15188749 * humVal + 41.495258).toFixed(3))) : null;
-  const calPm10 = rawPm10 != null ? Math.max(0.0, Number((0.10855827 * rawPm10 - 0.6390711 * tempVal - 0.11117823 * humVal + 34.034309).toFixed(3))) : null;
-  const calCo = rawCo != null ? Math.max(0.0, Number((0.24370718 * rawCo + 0.02763672 * tempVal + 0.00444147 * humVal - 0.96570843).toFixed(3))) : null;
-  const calNo2 = rawNo2 != null ? Math.max(0.0, Number((0.00920961 * rawNo2 + 0.06749354 * tempVal + 0.00777269 * humVal + 2.903467).toFixed(3))) : null;
-  const calO3 = rawO3 != null ? Math.max(0.0, Number((0.05187092 * rawO3 - 1.4830095 * tempVal - 0.23912878 * humVal + 91.72351).toFixed(3))) : null;
-
-  const subIndices = {
-    pm25: calcSubindex('pm25', calPm25 ?? rawPm25),
-    pm10: calcSubindex('pm10', calPm10 ?? rawPm10),
-    co: calcSubindex('co', calCo ?? rawCo),
-    no2: calcSubindex('no2', calNo2 ?? rawNo2),
-    o3: calcSubindex('o3', calO3 ?? rawO3),
-  };
-
-  const domKey = Object.keys(subIndices).reduce((a, b) => subIndices[a] >= subIndices[b] ? a : b);
-  const domNames = { pm25: 'PM2.5', pm10: 'PM10', co: 'CO', no2: 'NO₂', o3: 'O₃' };
-  const cpcb_aqi = Math.round(subIndices[domKey] || 0);
-
-  let label = "Good", color = "#59b61f";
-  if (cpcb_aqi > 50 && cpcb_aqi <= 100) { label = "Moderate"; color = "#eec732"; }
-  else if (cpcb_aqi > 100 && cpcb_aqi <= 200) { label = "Poor"; color = "#ea8c34"; }
-  else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = "Unhealthy"; color = "#e95478"; }
-  else if (cpcb_aqi > 300 && cpcb_aqi <= 400) { label = "Severe"; color = "#b33fba"; }
-  else if (cpcb_aqi > 400) { label = "Hazardous"; color = "#c92033"; }
-
-  const ts = raw.timestamp_hour || raw.created_at || raw.timestamp;
-
-  return {
-    id: raw.id,
-    timestamp: parseToIstIso(ts),
-    temperature: adjustTempByHour(raw.temperature, ts),
-    humidity: raw.humidity,
-    pm25: calPm25 ?? rawPm25,
-    pm10: calPm10 ?? rawPm10,
-    co: calCo ?? rawCo,
-    o3: calO3 ?? rawO3,
-    no2: calNo2 ?? rawNo2,
-    cpcb_aqi,
-    dominant_pollutant: domNames[domKey] || 'N/A',
-    aqi_info: { value: cpcb_aqi, label, color, standard: 'CPCB (India)' },
-    wind_speed: raw.wind_speed,
-    wind_gust: raw.wind_gust ?? raw.gust,
-    wind_direction: raw.wind_direction,
-    rain_gauge: raw.rain_gauge ?? raw.rain
-  };
-}
-
 
 function safeParseDate(ts) {
     if (!ts) return null;
@@ -258,96 +148,6 @@ async function getLiveAqi() {
         return null;
     }
 }
-
-async function getLiveWeather() {
-    if (apiCache.weatherLive && (Date.now() - apiCache.lastFetchTime < CACHE_TTL)) {
-        evaluateAndSyncLiveBadge(apiCache.weatherLive.data);
-        return apiCache.weatherLive;
-    }
-    try {
-        const response = await fetch(`api/telemetry.php?action=weather_live`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        if (data && data.data) {
-            apiCache.weatherLive = data;
-            apiCache.lastFetchTime = Date.now();
-            evaluateAndSyncLiveBadge(data.data);
-            return data;
-        }
-        evaluateAndSyncLiveBadge(null);
-        return null;
-    } catch (error) {
-        console.error('Error fetching live weather:', error);
-        evaluateAndSyncLiveBadge(null);
-        return null;
-    }
-}
-
-async function getLiveAqiHistory(limit = 50) {
-    try {
-        const response = await fetch(`api/telemetry.php?action=aqi_live_history&limit=${limit}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        return data || [];
-    } catch (error) {
-        console.error('Error fetching live AQI history:', error);
-        return [];
-    }
-}
-
-async function getLiveWeatherHistory(limit = 50) {
-    try {
-        const response = await fetch(`api/telemetry.php?action=weather_live_history&limit=${limit}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        return data || [];
-    } catch (error) {
-        console.error('Error fetching live weather history:', error);
-        return [];
-    }
-}
-
-async function getHistoricalData() {
-    if (apiCache.aqiHistory && (Date.now() - apiCache.lastFetchTime < CACHE_TTL)) {
-        return apiCache.aqiHistory;
-    }
-    try {
-        const limit = 500;
-        const response = await fetch(`api/telemetry.php?action=aqi_history&limit=${limit}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        
-        apiCache.aqiHistory = data;
-        apiCache.lastFetchTime = Date.now();
-        return data;
-    } catch (error) {
-        console.error('Error fetching historical AQI:', error);
-        return { history: [] };
-    }
-}
-
-async function getHistoricalWeatherData() {
-    if (apiCache.weatherHistory && (Date.now() - apiCache.lastFetchTime < CACHE_TTL)) {
-        return apiCache.weatherHistory;
-    }
-    try {
-        const limit = 500;
-        const response = await fetch(`api/telemetry.php?action=weather_history&limit=${limit}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        
-        apiCache.weatherHistory = data;
-        apiCache.lastFetchTime = Date.now();
-        return data;
-    } catch (error) {
-        console.error('Error fetching historical Weather:', error);
-        return { history: [] };
-    }
-}
-
-
-// Ensure the endpoint in historical.php uses the new function
-window.API_BASE_URL = 'superseded';
 
 // Ensure initial sync and icons
 document.addEventListener("DOMContentLoaded", () => {

@@ -22,11 +22,11 @@
     </div>
   </div>
 
-  <!-- ── Analytics Date Picker Card ── -->
-  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-6 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
+  <!-- ── Analytics Date & Range Picker Card ── -->
+  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-5 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
 
-    <!-- Top Header Row: Date Selector & Controls -->
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <!-- Top Header Row: Date & Range Selector Controls -->
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
       
       <!-- Left Title & Status -->
       <div style="display: flex; align-items: center; gap: 12px;">
@@ -35,7 +35,7 @@
         </div>
         <div>
           <div style="font-size: 14px; sm:font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-            <span>Select Date (24-Hour Telemetry)</span>
+            <span id="range-header-title">Select Date (24-Hour Telemetry)</span>
           </div>
           <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
             <span id="date-subtitle-desktop">Hourly records: 12:00 AM – 12:00 AM</span>
@@ -43,17 +43,26 @@
         </div>
       </div>
 
-      <!-- Right Action Controls: Native Calendar Input -->
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <!-- Right Action Controls: Range Pills (1D, 3D, 7D, 30D) & Date Picker -->
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
+        <!-- Range Selector Pills -->
+        <div id="range-pills" class="inline-flex items-center bg-slate-100 p-1 rounded-full border border-slate-200 gap-1 overflow-x-auto shadow-inner">
+          <button type="button" onclick="setRangeDays(1)" id="btn-range-1" class="px-3 sm:px-3.5 py-1.5 rounded-full font-bold text-xs cursor-pointer transition-all duration-200 ease-out bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02] min-h-[34px]">1 Day</button>
+          <button type="button" onclick="setRangeDays(3)" id="btn-range-3" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95 min-h-[34px]">3 Days</button>
+          <button type="button" onclick="setRangeDays(7)" id="btn-range-7" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95 min-h-[34px]">7 Days</button>
+          <button type="button" onclick="setRangeDays(30)" id="btn-range-30" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95 min-h-[34px]">30 Days</button>
+        </div>
+
+        <!-- Date Picker Input -->
         <div style="position: relative; display: inline-flex; align-items: center;">
-          <input type="date" id="history-date-picker" class="min-h-[42px]" style="padding: 8px 14px 8px 34px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background-color: #f8fafc; cursor: pointer; font-family: var(--font-sans); outline: none;">
-          <i data-lucide="calendar" style="position: absolute; left: 11px; width: 15px; height: 15px; color: #00bfa5; pointer-events: none;"></i>
+          <input type="date" id="history-date-picker" class="min-h-[38px] sm:min-h-[42px]" style="padding: 7px 12px 7px 32px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background-color: #f8fafc; cursor: pointer; font-family: var(--font-sans); outline: none;">
+          <i data-lucide="calendar" style="position: absolute; left: 10px; width: 14px; height: 14px; color: #00bfa5; pointer-events: none;"></i>
         </div>
       </div>
     </div>
 
-    <!-- Bottom Integrated Section: 24-Hour Dynamic Metrics -->
-    <div id="summary-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <!-- Bottom Integrated Section: 24-Hour Dynamic Metrics (Shown for 1 Day range) -->
+    <div id="summary-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; transition: max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, margin 0.25s ease, padding 0.25s ease; overflow: hidden; max-height: 380px; opacity: 1;">
       
       <!-- Left: Date & Logged Count -->
       <div style="display: flex; align-items: center; gap: 12px;">
@@ -187,7 +196,7 @@
 
     <!-- Chart Canvas Container -->
     <div style="width: 100%; height: 300px; position: relative;">
-      <canvas id="historical-chart"></canvas>
+      <canvas id="historical-chart" style="transition: opacity 0.2s ease-in-out;"></canvas>
       <div id="chart-empty" style="display: none; position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); gap: 8px; color: #64748b;">
         <i data-lucide="info" style="width: 24px; height: 24px; color: #94a3b8;"></i>
         <p style="margin: 0; font-size: 13.5px; font-weight: 600;" id="chart-empty-text">No records found.</p>
@@ -218,7 +227,7 @@
     <!-- Mobile swipe indicator -->
     <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
       <span>👈 Swipe horizontally to view all hourly readings</span>
-      <span class="font-mono text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">24 HRS</span>
+      <span id="mobile-table-badge" class="font-mono text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">24 HRS</span>
     </div>
 
     <div style="overflow-x: auto; max-height: 440px; -webkit-overflow-scrolling: touch;">
@@ -413,16 +422,86 @@
 var currentSubTab = 'aqi';
 var currentParam = 'cpcb_aqi';
 var currentChartType = 'line';
+var currentRangeDays = 1;
 var historicalDataAqi = [];
 var historicalDataWeather = [];
 var chartInstance = null;
 var filteredDayData = [];
 
+// High-performance in-memory cache for instant 0ms range switching
+const clientRangeCache = {};
+const pendingRangeFetches = {};
+let summaryCollapseTimer = null;
 
-function updateMobileStatChips() {
-    // Stat chips removed per user request
+function getCacheKey(date, days) {
+    return `${date}_${days}`;
 }
 
+function animateSummarySection(show) {
+    const summarySection = document.getElementById('summary-section');
+    if (!summarySection) return;
+    if (summaryCollapseTimer) {
+        clearTimeout(summaryCollapseTimer);
+        summaryCollapseTimer = null;
+    }
+    if (show) {
+        summarySection.style.display = 'flex';
+        requestAnimationFrame(() => {
+            summarySection.style.maxHeight = '380px';
+            summarySection.style.opacity = '1';
+            summarySection.style.marginTop = '18px';
+            summarySection.style.paddingTop = '16px';
+            summarySection.style.borderTopWidth = '1px';
+            summarySection.style.pointerEvents = 'auto';
+        });
+    } else {
+        summarySection.style.maxHeight = '0px';
+        summarySection.style.opacity = '0';
+        summarySection.style.marginTop = '0px';
+        summarySection.style.paddingTop = '0px';
+        summarySection.style.borderTopWidth = '0px';
+        summarySection.style.pointerEvents = 'none';
+        summaryCollapseTimer = setTimeout(() => {
+            if (currentRangeDays > 1 && summarySection) {
+                summarySection.style.display = 'none';
+            }
+        }, 320);
+    }
+}
+
+function setRangeDays(days) {
+    currentRangeDays = Number(days) || 1;
+    
+    // Tactile & smooth pill transitions
+    [1, 3, 7, 30].forEach(d => {
+        const btn = document.getElementById(`btn-range-${d}`);
+        if (btn) {
+            if (d === currentRangeDays) {
+                btn.className = 'px-3 sm:px-3.5 py-1.5 rounded-full font-bold text-xs cursor-pointer transition-all duration-200 ease-out bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02] min-h-[34px]';
+            } else {
+                btn.className = 'px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95 min-h-[34px]';
+            }
+        }
+    });
+
+    const headerTitle = document.getElementById('range-header-title');
+    if (headerTitle) {
+        if (currentRangeDays === 1) {
+            headerTitle.innerText = 'Select Date (24-Hour Telemetry)';
+        } else {
+            headerTitle.innerText = `Telemetry Trend (${currentRangeDays}-Day Historical)`;
+        }
+    }
+    
+    const mobileBadge = document.getElementById('mobile-table-badge');
+    if (mobileBadge) {
+        mobileBadge.innerText = currentRangeDays === 1 ? '24 HRS' : `${currentRangeDays} DAYS`;
+    }
+
+    animateSummarySection(currentRangeDays === 1);
+
+    fetchAllHistory();
+}
 
 var PARAM_COLORS = {
     cpcb_aqi: '#00bfa5', pm25: '#0284c7', pm10: '#6366f1',
@@ -457,26 +536,96 @@ var getLocalDateStr = function(d = new Date()) {
     return `${yr}-${mo}-${da}`;
 };
 
-async function fetchAllHistory(forcedDate = null) {
+async function fetchRangeData(queryDate, days) {
+    const key = getCacheKey(queryDate, days);
+    if (clientRangeCache[key]) {
+        return clientRangeCache[key];
+    }
+    if (pendingRangeFetches[key]) {
+        return pendingRangeFetches[key];
+    }
+    const fetchPromise = (async () => {
+        try {
+            const response = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}&days=${days}`);
+            const data = await response.json();
+            const payload = {
+                aqi: data.aqi || [],
+                weather: data.weather || [],
+                fetchedAt: Date.now()
+            };
+            clientRangeCache[key] = payload;
+            return payload;
+        } catch(e) {
+            console.error(`Failed to fetch history for ${key}:`, e);
+            return { aqi: [], weather: [], fetchedAt: Date.now() };
+        } finally {
+            delete pendingRangeFetches[key];
+        }
+    })();
+    pendingRangeFetches[key] = fetchPromise;
+    return fetchPromise;
+}
+
+function prefetchOtherRanges(queryDate) {
+    if (!queryDate) return;
+    const ranges = [1, 3, 7, 30];
+    ranges.forEach((d, idx) => {
+        const key = getCacheKey(queryDate, d);
+        if (d !== currentRangeDays && !clientRangeCache[key] && !pendingRangeFetches[key]) {
+            setTimeout(() => {
+                if (!clientRangeCache[key] && !pendingRangeFetches[key]) {
+                    fetchRangeData(queryDate, d).catch(() => {});
+                }
+            }, (idx + 1) * 100);
+        }
+    });
+}
+
+async function fetchAllHistory(forcedDate = null, skipCache = false) {
     try {
         const datePicker = document.getElementById('history-date-picker');
-        let queryDate = forcedDate || datePicker.value;
+        let queryDate = forcedDate || (datePicker ? datePicker.value : null);
         
         // Default date if none selected (use local date YYYY-MM-DD)
         if (!queryDate) {
             queryDate = getLocalDateStr();
-            datePicker.value = queryDate;
+            if (datePicker) {
+                datePicker.value = queryDate;
+                datePicker.max = queryDate;
+            }
+        } else if (datePicker && !datePicker.max) {
+            datePicker.max = getLocalDateStr();
         }
 
-        const response = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}`);
-        const data = await response.json();
+        const days = currentRangeDays || 1;
+        const key = getCacheKey(queryDate, days);
+
+        // Instant render from cache (0ms latency!)
+        if (!skipCache && clientRangeCache[key]) {
+            const cached = clientRangeCache[key];
+            historicalDataAqi = cached.aqi || [];
+            historicalDataWeather = cached.weather || [];
+            renderUI();
+            prefetchOtherRanges(queryDate);
+            return;
+        }
+
+        const chartCanvas = document.getElementById('historical-chart');
+        if (chartCanvas) chartCanvas.style.opacity = '0.7';
+
+        const data = await fetchRangeData(queryDate, days);
         
         historicalDataAqi = data.aqi || [];
         historicalDataWeather = data.weather || [];
         
+        if (chartCanvas) chartCanvas.style.opacity = '1';
+
         renderUI();
+        prefetchOtherRanges(queryDate);
     } catch(e) {
         console.error("Error fetching historical data", e);
+        const chartCanvas = document.getElementById('historical-chart');
+        if (chartCanvas) chartCanvas.style.opacity = '1';
     }
 }
 
@@ -487,6 +636,7 @@ function switchHistTab(tab) {
     // Switch styles
     const tabAqi = document.getElementById('tab-aqi');
     const tabWeather = document.getElementById('tab-weather');
+    const days = currentRangeDays || 1;
     if(tab === 'aqi') {
         tabAqi.style.backgroundColor = '#00bfa5';
         tabAqi.style.color = '#ffffff';
@@ -496,11 +646,13 @@ function switchHistTab(tab) {
         document.getElementById('chips-aqi').style.display = 'flex';
         document.getElementById('chips-weather').style.display = 'none';
         
-        document.getElementById('summary-aqi-block').style.display = 'flex';
-        document.getElementById('summary-weather-block').style.display = 'none';
-        
-        document.getElementById('chart-main-title').innerText = 'Air Quality Hourly Trend Analysis (12:00 AM – 12:00 AM)';
-        document.getElementById('table-title').innerText = 'AQI Historical Telemetry Table (12:00 AM – 12:00 AM)';
+        const aqiBlock = document.getElementById('summary-aqi-block');
+        const weatherBlock = document.getElementById('summary-weather-block');
+        if (aqiBlock) aqiBlock.style.display = 'flex';
+        if (weatherBlock) weatherBlock.style.display = 'none';
+
+        document.getElementById('chart-main-title').innerText = days === 1 ? 'Air Quality Hourly Trend Analysis (12:00 AM – 12:00 AM)' : `Air Quality ${days}-Day Trend Analysis`;
+        document.getElementById('table-title').innerText = days === 1 ? 'AQI Historical Telemetry Table (12:00 AM – 12:00 AM)' : `AQI Historical Telemetry Table (${days} Days)`;
     } else {
         tabWeather.style.backgroundColor = '#00bfa5';
         tabWeather.style.color = '#ffffff';
@@ -510,11 +662,13 @@ function switchHistTab(tab) {
         document.getElementById('chips-aqi').style.display = 'none';
         document.getElementById('chips-weather').style.display = 'flex';
         
-        document.getElementById('summary-aqi-block').style.display = 'none';
-        document.getElementById('summary-weather-block').style.display = 'flex';
-        
-        document.getElementById('chart-main-title').innerText = 'Weather Hourly Trend Analysis (12:00 AM – 12:00 AM)';
-        document.getElementById('table-title').innerText = 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)';
+        const aqiBlock = document.getElementById('summary-aqi-block');
+        const weatherBlock = document.getElementById('summary-weather-block');
+        if (aqiBlock) aqiBlock.style.display = 'none';
+        if (weatherBlock) weatherBlock.style.display = 'flex';
+
+        document.getElementById('chart-main-title').innerText = days === 1 ? 'Weather Hourly Trend Analysis (12:00 AM – 12:00 AM)' : `Weather ${days}-Day Trend Analysis`;
+        document.getElementById('table-title').innerText = days === 1 ? 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)' : `Weather Historical Telemetry Table (${days} Days)`;
     }
     
     setParam(currentParam);
@@ -574,7 +728,11 @@ function setParam(param) {
 }
 
 function renderUI(skipDayFilter = false) {
-    if (!document.getElementById('history-date-picker')) return;
+    const datePicker = document.getElementById('history-date-picker');
+    if (!datePicker) return;
+    const dateInput = datePicker.value;
+    if (!dateInput) return;
+
     const parseIsoLocal = (str) => {
         if (!str) return 0;
         const cleanStr = String(str).replace(/[Zz]|[+-]\d{2}(:\d{2})?$/, '');
@@ -589,28 +747,36 @@ function renderUI(skipDayFilter = false) {
     };
 
     let rangeLabel = '';
+    const days = currentRangeDays || 1;
     if (!skipDayFilter) {
-        const dateInput = document.getElementById('history-date-picker').value;
-        if (!dateInput) return;
-        
         const sourceData = currentSubTab === 'aqi' ? historicalDataAqi : historicalDataWeather;
 
-        // Both AQI and Weather display full calendar day from midnight to midnight (12:00 AM – 12:00 AM)
         const [y, m, d] = dateInput.split('-').map(Number);
-        const startHour = 0;
-        const startWindow = new Date(y, m - 1, d, startHour, 0, 0, 0).getTime();
-        const endWindow = startWindow + (24 * 60 * 60 * 1000);
-        const nextDateObj = new Date(endWindow);
-        const startDateObj = new Date(y, m - 1, d);
+        let startWindow, endWindow;
+        if (days === 1) {
+            startWindow = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+            endWindow = startWindow + (24 * 60 * 60 * 1000);
+            const startDateObj = new Date(y, m - 1, d);
+            const dateStrLong = startDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+            rangeLabel = `${dateStrLong} (12:00 AM – 12:00 AM)`;
+        } else {
+            const startD = new Date(y, m - 1, d - (days - 1), 0, 0, 0, 0);
+            const endD = new Date(y, m - 1, d, 23, 59, 59, 999);
+            startWindow = startD.getTime();
+            endWindow = endD.getTime();
+            const startStr = startD.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            const endStr = new Date(y, m - 1, d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+            rangeLabel = `${startStr} – ${endStr}`;
+        }
         
-        // Filter data strictly within [startWindow, endWindow)
+        // Filter data strictly within [startWindow, endWindow]
         filteredDayData = sourceData.filter(item => {
             if (!item.timestamp) return false;
             const t = parseIsoLocal(item.timestamp);
-            return t >= startWindow && t < endWindow;
+            return t >= startWindow && t <= endWindow;
         });
 
-        // Sort ascending by time and deduplicate any points sharing the same hour
+        // Deduplicate any points sharing the same hour
         const hourlyMap = new Map();
         filteredDayData.forEach(item => {
             const parts = (item.timestamp || '').split('T');
@@ -626,127 +792,213 @@ function renderUI(skipDayFilter = false) {
         filteredDayData = Array.from(hourlyMap.values());
         filteredDayData.sort((a,b) => parseIsoLocal(a.timestamp) - parseIsoLocal(b.timestamp));
         
-        const dateStrLong = startDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        const subtitleEl = document.getElementById('date-subtitle-desktop');
+        if (subtitleEl) {
+            subtitleEl.innerText = `Showing ${filteredDayData.length} records (${rangeLabel})`;
+        }
         
-        rangeLabel = `${dateStrLong} (12:00 AM – 12:00 AM)`;
+        const isAqi = currentSubTab === 'aqi';
+        const chartTitle = document.getElementById('chart-main-title');
+        if (chartTitle) {
+            chartTitle.innerText = days === 1
+                ? (isAqi ? 'Air Quality Hourly Trend Analysis (12:00 AM – 12:00 AM)' : 'Weather Hourly Trend Analysis (12:00 AM – 12:00 AM)')
+                : (isAqi ? `Air Quality ${days}-Day Trend Analysis (${rangeLabel})` : `Weather ${days}-Day Trend Analysis (${rangeLabel})`);
+        }
         
-        document.getElementById('date-subtitle-desktop').innerText = `Showing ${filteredDayData.length} hourly data points (${rangeLabel})`;
-        document.getElementById('summary-date-display').innerText = dateStrLong;
-        document.getElementById('log-count').innerText = filteredDayData.length;
+        const chartSubTitle = document.getElementById('chart-sub-title');
+        if (chartSubTitle) {
+            chartSubTitle.innerText = `${days === 1 ? '24-Hour progression' : days + '-Day progression'}: ${rangeLabel}`;
+        }
         
-        document.getElementById('chart-sub-title').innerText = `24-Hour progression: ${rangeLabel}`;
-        document.getElementById('table-subtitle').innerText = `24 Hourly Telemetry Rows (${rangeLabel}) — ${filteredDayData.length} Logged Readings`;
+        const tableTitle = document.getElementById('table-title');
+        if (tableTitle) {
+            tableTitle.innerText = days === 1
+                ? (isAqi ? 'AQI Historical Telemetry Table (12:00 AM – 12:00 AM)' : 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)')
+                : (isAqi ? `AQI Historical Telemetry Table (${days} Days: ${rangeLabel})` : `Weather Historical Telemetry Table (${days} Days: ${rangeLabel})`);
+        }
+        
+        const tableSubtitle = document.getElementById('table-subtitle');
+        if (tableSubtitle) {
+            tableSubtitle.innerText = `${days === 1 ? '24 Hourly Telemetry Rows' : days + '-Day Telemetry Rows'} (${rangeLabel}) — ${filteredDayData.length} Logged Readings`;
+        }
+    }
+    
+    const summarySection = document.getElementById('summary-section');
+    if (summarySection) {
+        animateSummarySection(days === 1);
     }
     
     if (filteredDayData.length === 0) {
+        if (days === 1) {
+            const logCountEl = document.getElementById('log-count');
+            if (logCountEl) logCountEl.innerText = '0';
+            const avgAqiVal = document.getElementById('avg-aqi-val');
+            if (avgAqiVal) avgAqiVal.innerText = '--';
+            const label = document.getElementById('avg-aqi-label');
+            if (label) label.style.display = 'none';
+            const minMaxAqi = document.getElementById('min-max-aqi');
+            if (minMaxAqi) minMaxAqi.style.display = 'none';
+            const miniChips = document.getElementById('mini-chips-container');
+            if (miniChips) miniChips.style.display = 'none';
+            const elTemp = document.getElementById('w-avg-temp');
+            if (elTemp) elTemp.innerText = '--';
+            const elHum = document.getElementById('w-avg-hum');
+            if (elHum) elHum.innerText = '--';
+            const elWind = document.getElementById('w-avg-wind');
+            if (elWind) elWind.innerText = '--';
+            const elGust = document.getElementById('w-max-gust');
+            if (elGust) elGust.innerText = '--';
+            const elDir = document.getElementById('w-mode-dir');
+            if (elDir) elDir.innerText = '--';
+            const elRain = document.getElementById('w-total-rain');
+            if (elRain) elRain.innerText = '--';
+        }
         document.getElementById('chart-empty').style.display = 'flex';
         document.getElementById('chart-empty-text').innerText = `No records found for ${rangeLabel}.`;
         if (chartInstance) {
             chartInstance.destroy();
             chartInstance = null;
         }
-        document.getElementById('avg-aqi-val').innerText = '--';
-        document.getElementById('avg-aqi-label').style.display = 'none';
-        document.getElementById('min-max-aqi').style.display = 'none';
-        document.getElementById('mini-chips-container').style.display = 'none';
-        
-        document.getElementById('w-avg-temp').innerText = '--';
-        document.getElementById('w-avg-hum').innerText = '--';
-        document.getElementById('w-avg-wind').innerText = '--';
-        document.getElementById('w-max-gust').innerText = '--';
-        document.getElementById('w-mode-dir').innerText = '--';
-        document.getElementById('w-total-rain').innerText = '--';
-        
         document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 36px 20px; color: #64748b;">No telemetry records available for ${rangeLabel}.</td></tr>`;
         return;
     }
 
     document.getElementById('chart-empty').style.display = 'none';
-    
-    // Summary calculations — track valid (non-null) counts per field
-    let sumAqi = 0, countAqi = 0;
-    let sumPm25 = 0, countPm25 = 0;
-    let sumPm10 = 0, countPm10 = 0;
-    let sumCo = 0, countCo = 0;
-    let sumNo2 = 0, countNo2 = 0;
-    let sumO3 = 0, countO3 = 0;
-    let minAqi = 9999, maxAqi = -1;
-    let sumTemp = 0, countTemp = 0;
-    let sumHum = 0, countHum = 0;
-    let sumWind = 0, countWind = 0;
-    let maxGust = -1, sumRain = 0;
-    let windDirs = [];
 
-    filteredDayData.forEach(d => {
-        if (currentSubTab === 'aqi') {
-            if (d.cpcb_aqi != null) { sumAqi += d.cpcb_aqi; countAqi++; if (d.cpcb_aqi < minAqi) minAqi = d.cpcb_aqi; if (d.cpcb_aqi > maxAqi) maxAqi = d.cpcb_aqi; }
-            if (d.pm25 != null)    { sumPm25 += d.pm25; countPm25++; }
-            if (d.pm10 != null)    { sumPm10 += d.pm10; countPm10++; }
-            if (d.co != null)      { sumCo   += d.co;   countCo++;   }
-            if (d.no2 != null)     { sumNo2  += d.no2;  countNo2++;  }
-            if (d.o3 != null)      { sumO3   += d.o3;   countO3++;   }
-        } else {
-            if (d.temperature != null) { sumTemp += d.temperature; countTemp++; }
-            if (d.humidity != null)    { sumHum  += d.humidity;    countHum++;  }
-            if (d.wind_speed != null)  { sumWind += d.wind_speed;  countWind++; }
-            if (d.wind_gust != null && d.wind_gust > maxGust) maxGust = d.wind_gust;
-            if (d.rain_gauge != null)  sumRain += d.rain_gauge;
-            if (d.wind_direction != null) windDirs.push(d.wind_direction);
+    // ── Summary Calculations for 1-Day View ──
+    if (days === 1) {
+        let sumAqi = 0, countAqi = 0;
+        let sumPm25 = 0, countPm25 = 0;
+        let sumPm10 = 0, countPm10 = 0;
+        let sumCo = 0, countCo = 0;
+        let sumNo2 = 0, countNo2 = 0;
+        let sumO3 = 0, countO3 = 0;
+        let minAqi = 9999, maxAqi = -1;
+        let sumTemp = 0, countTemp = 0;
+        let sumHum = 0, countHum = 0;
+        let sumWind = 0, countWind = 0;
+        let maxGust = -1, sumRain = 0;
+        let windDirs = [];
+
+        filteredDayData.forEach(d => {
+            if (currentSubTab === 'aqi') {
+                if (d.cpcb_aqi != null) { sumAqi += d.cpcb_aqi; countAqi++; if (d.cpcb_aqi < minAqi) minAqi = d.cpcb_aqi; if (d.cpcb_aqi > maxAqi) maxAqi = d.cpcb_aqi; }
+                if (d.pm25 != null)    { sumPm25 += d.pm25; countPm25++; }
+                if (d.pm10 != null)    { sumPm10 += d.pm10; countPm10++; }
+                if (d.co != null)      { sumCo   += d.co;   countCo++;   }
+                if (d.no2 != null)     { sumNo2  += d.no2;  countNo2++;  }
+                if (d.o3 != null)      { sumO3   += d.o3;   countO3++;   }
+            } else {
+                if (d.temperature != null) { sumTemp += d.temperature; countTemp++; }
+                if (d.humidity != null)    { sumHum  += d.humidity;    countHum++;  }
+                if (d.wind_speed != null)  { sumWind += d.wind_speed;  countWind++; }
+                if (d.wind_gust != null && d.wind_gust > maxGust) maxGust = d.wind_gust;
+                if (d.rain_gauge != null)  sumRain += d.rain_gauge;
+                if (d.wind_direction != null) windDirs.push(d.wind_direction);
+            }
+        });
+
+        const summaryDateEl = document.getElementById('summary-date-display');
+        if (summaryDateEl) {
+            const [y, m, d] = dateInput.split('-').map(Number);
+            const dtObj = new Date(y, m - 1, d);
+            summaryDateEl.innerText = dtObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
         }
-    });
+        const logCountEl = document.getElementById('log-count');
+        if (logCountEl) {
+            logCountEl.innerText = filteredDayData.length;
+        }
 
-    if (currentSubTab === 'aqi') {
-        const avgAqi = countAqi > 0 ? Math.round(sumAqi / countAqi) : 0;
-        const aqiCat = getAqiCategory(avgAqi);
-        document.getElementById('avg-aqi-val').innerText = avgAqi;
-        document.getElementById('avg-aqi-val').style.color = aqiCat.text;
+        const aqiBlock = document.getElementById('summary-aqi-block');
+        const weatherBlock = document.getElementById('summary-weather-block');
+        if (aqiBlock) aqiBlock.style.display = currentSubTab === 'aqi' ? 'flex' : 'none';
+        if (weatherBlock) weatherBlock.style.display = currentSubTab === 'weather' ? 'flex' : 'none';
 
-        const label = document.getElementById('avg-aqi-label');
-        label.innerText = aqiCat.label;
-        label.style.display = 'inline-block';
-        label.style.backgroundColor = aqiCat.badgeBg;
-        label.style.color = aqiCat.badgeText;
+        if (currentSubTab === 'aqi') {
+            const avgAqi = countAqi > 0 ? Math.round(sumAqi / countAqi) : 0;
+            const aqiCat = getAqiCategory(avgAqi);
+            const avgAqiVal = document.getElementById('avg-aqi-val');
+            if (avgAqiVal) {
+                avgAqiVal.innerText = countAqi > 0 ? avgAqi : '--';
+                avgAqiVal.style.color = countAqi > 0 ? aqiCat.text : '#64748b';
+            }
 
-        document.getElementById('min-aqi-val').innerText = countAqi > 0 ? minAqi : '--';
-        document.getElementById('max-aqi-val').innerText = countAqi > 0 ? maxAqi : '--';
-        document.getElementById('min-max-aqi').style.display = 'flex';
-
-        const badge = document.getElementById('avg-aqi-badge-container');
-        badge.style.backgroundColor = aqiCat.bg;
-        badge.style.borderColor = aqiCat.border;
-        document.getElementById('avg-aqi-dot').style.backgroundColor = aqiCat.color;
-        document.getElementById('avg-aqi-title').style.color = aqiCat.text;
-
-        document.getElementById('mini-chips-container').style.display = 'flex';
-        document.getElementById('avg-pm25').innerText = countPm25 > 0 ? (sumPm25/countPm25).toFixed(3) : '0.000';
-        document.getElementById('avg-pm10').innerText = countPm10 > 0 ? (sumPm10/countPm10).toFixed(3) : '0.000';
-        document.getElementById('avg-co').innerText   = countCo   > 0 ? (sumCo/countCo).toFixed(3)     : '0.000';
-        document.getElementById('avg-no2').innerText  = countNo2  > 0 ? (sumNo2/countNo2).toFixed(3)   : '0.000';
-        document.getElementById('avg-o3').innerText   = countO3   > 0 ? (sumO3/countO3).toFixed(3)     : '0.000';
-    } else {
-        document.getElementById('w-avg-temp').innerText = countTemp > 0 ? (sumTemp/countTemp).toFixed(1) + '°C' : '--';
-        document.getElementById('w-avg-hum').innerText = countHum > 0 ? (sumHum/countHum).toFixed(1) + '%' : '--';
-        document.getElementById('w-avg-wind').innerText = countWind > 0 ? (sumWind/countWind).toFixed(1) + ' km/h' : '--';
-        document.getElementById('w-max-gust').innerText = maxGust > -1 ? maxGust.toFixed(1) + ' km/h' : '--';
-        document.getElementById('w-total-rain').innerText = sumRain.toFixed(1) + ' mm';
-        
-        let modeDir = '--';
-        if (windDirs.length > 0) {
-            const counts = {};
-            windDirs.forEach(w => {
-                const d = getCompassDir(w);
-                if (d && d !== '--') counts[d] = (counts[d] || 0) + 1;
-            });
-            let bestDir = '--', maxC = 0;
-            for (const [dir, c] of Object.entries(counts)) {
-                if (c > maxC) {
-                    maxC = c;
-                    bestDir = dir;
+            const label = document.getElementById('avg-aqi-label');
+            if (label) {
+                if (countAqi > 0) {
+                    label.innerText = aqiCat.label;
+                    label.style.display = 'inline-block';
+                    label.style.backgroundColor = aqiCat.badgeBg;
+                    label.style.color = aqiCat.badgeText;
+                } else {
+                    label.style.display = 'none';
                 }
             }
-            modeDir = bestDir;
+
+            const minAqiVal = document.getElementById('min-aqi-val');
+            const maxAqiVal = document.getElementById('max-aqi-val');
+            const minMaxAqi = document.getElementById('min-max-aqi');
+            if (minAqiVal) minAqiVal.innerText = countAqi > 0 ? minAqi : '--';
+            if (maxAqiVal) maxAqiVal.innerText = countAqi > 0 ? maxAqi : '--';
+            if (minMaxAqi) minMaxAqi.style.display = countAqi > 0 ? 'flex' : 'none';
+
+            const badge = document.getElementById('avg-aqi-badge-container');
+            if (badge) {
+                badge.style.backgroundColor = countAqi > 0 ? aqiCat.bg : '#f8fafc';
+                badge.style.borderColor = countAqi > 0 ? aqiCat.border : '#e2e8f0';
+            }
+            const avgAqiDot = document.getElementById('avg-aqi-dot');
+            if (avgAqiDot) avgAqiDot.style.backgroundColor = countAqi > 0 ? aqiCat.color : '#94a3b8';
+            const avgAqiTitle = document.getElementById('avg-aqi-title');
+            if (avgAqiTitle) avgAqiTitle.style.color = countAqi > 0 ? aqiCat.text : '#64748b';
+
+            const miniChips = document.getElementById('mini-chips-container');
+            if (miniChips) miniChips.style.display = countAqi > 0 ? 'flex' : 'none';
+            const elPm25 = document.getElementById('avg-pm25');
+            const elPm10 = document.getElementById('avg-pm10');
+            const elCo = document.getElementById('avg-co');
+            const elNo2 = document.getElementById('avg-no2');
+            const elO3 = document.getElementById('avg-o3');
+            if (elPm25) elPm25.innerText = countPm25 > 0 ? (sumPm25/countPm25).toFixed(3) : '0.000';
+            if (elPm10) elPm10.innerText = countPm10 > 0 ? (sumPm10/countPm10).toFixed(3) : '0.000';
+            if (elCo)   elCo.innerText   = countCo   > 0 ? (sumCo/countCo).toFixed(3)     : '0.000';
+            if (elNo2)  elNo2.innerText  = countNo2  > 0 ? (sumNo2/countNo2).toFixed(3)   : '0.000';
+            if (elO3)   elO3.innerText   = countO3   > 0 ? (sumO3/countO3).toFixed(3)     : '0.000';
+        } else {
+            const elTemp = document.getElementById('w-avg-temp');
+            const elHum = document.getElementById('w-avg-hum');
+            const elWind = document.getElementById('w-avg-wind');
+            const elGust = document.getElementById('w-max-gust');
+            const elRain = document.getElementById('w-total-rain');
+            if (elTemp) elTemp.innerText = countTemp > 0 ? (sumTemp/countTemp).toFixed(1) + '°C' : '--';
+            if (elHum)  elHum.innerText = countHum > 0 ? (sumHum/countHum).toFixed(1) + '%' : '--';
+            if (elWind) elWind.innerText = countWind > 0 ? (sumWind/countWind).toFixed(1) + ' km/h' : '--';
+            if (elGust) elGust.innerText = maxGust > -1 ? maxGust.toFixed(1) + ' km/h' : '--';
+            if (elRain) elRain.innerText = sumRain.toFixed(1) + ' mm';
+            
+            let modeDir = '--';
+            if (windDirs.length > 0) {
+                const counts = {};
+                windDirs.forEach(w => {
+                    const d = getCompassDir(w);
+                    if (d && d !== '--') counts[d] = (counts[d] || 0) + 1;
+                });
+                let bestDir = '--', maxC = 0;
+                for (const [dir, c] of Object.entries(counts)) {
+                    if (c > maxC) {
+                        maxC = c;
+                        bestDir = dir;
+                    }
+                }
+                modeDir = bestDir;
+            }
+            const elDir = document.getElementById('w-mode-dir');
+            if (elDir) elDir.innerText = modeDir;
         }
-        document.getElementById('w-mode-dir').innerText = modeDir;
+
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
 
     // Chart Render
@@ -758,14 +1010,20 @@ function renderUI(skipDayFilter = false) {
             const [yr, mo, da] = parts[0].split('-').map(Number);
             const [hr, mn] = parts[1].split(':').map(Number);
             const dt = new Date(yr, mo - 1, da, hr, mn || 0);
+            if (days > 1) {
+                return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')} ${dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true})}`;
+            }
             return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
         }
         const dt = new Date(d.timestamp);
+        if (days > 1) {
+            return `${dt.getDate()}/${dt.getMonth()+1} ${dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true})}`;
+        }
         return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
     });
     // Preserve valid 0 values so Supabase zeros are displayed
     const dataPoints = filteredDayData.map(d => (d[currentParam] != null ? d[currentParam] : null));
-    const color = PARAM_COLORS[currentParam];
+    const color = PARAM_COLORS[currentParam] || '#00bfa5';
 
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
     gradient.addColorStop(0, color + '66');
@@ -812,7 +1070,10 @@ function renderUI(skipDayFilter = false) {
             chartInstance.data.datasets[0].pointHoverRadius = 6;
             chartInstance.data.datasets[0].pointHitRadius = 28;
         }
-        chartInstance.update('none');
+        chartInstance.update({
+            duration: 320,
+            easing: 'easeOutQuart'
+        });
     } else {
         if (chartInstance) { chartInstance.destroy(); }
         chartInstance = new Chart(ctx, {
@@ -839,6 +1100,10 @@ function renderUI(skipDayFilter = false) {
                 }]
             },
             options: {
+                animation: {
+                    duration: 320,
+                    easing: 'easeOutQuart'
+                },
                 responsive: true,
                 maintainAspectRatio: false,
                 events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
@@ -962,11 +1227,6 @@ function renderUI(skipDayFilter = false) {
             </tr>`;
         }).join('');
     }
-    updateMobileStatChips();
-}
-
-function renderChartAndTable() {
-    renderUI(true);
 }
 
 function getPreviousDayDateStr() {
@@ -1411,7 +1671,7 @@ function downloadCSV() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${currentSubTab}_history_${document.getElementById('history-date-picker').value}.csv`;
+    a.download = `${currentSubTab}_history_${document.getElementById('history-date-picker').value}_${currentRangeDays}d.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
 }
@@ -1425,8 +1685,8 @@ function startAutoRefreshHist() {
         const dp = document.getElementById('history-date-picker');
         if (!dp) return;
         const todayStr = getLocalDateStr();
-        if (dp.value === todayStr) {
-            fetchAllHistory(todayStr);
+        if (dp.value === todayStr && currentRangeDays === 1) {
+            fetchAllHistory(todayStr, true);
         }
     }, 12000);
 }

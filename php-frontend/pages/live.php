@@ -1,11 +1,25 @@
 <?php
+$req_live_tab = (isset($_GET['tab']) && $_GET['tab'] === 'weather') ? 'weather' : 'aqi';
 // Retrieve cached bulk telemetry for 0ms instant first-paint on both desktop and mobile
-$cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
+$cache_candidates = [
+    sys_get_temp_dir() . '/smartairnet_cache/' . md5('live_bulk_60') . '.json',
+    sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json',
+];
 $init_bulk = null;
-if (file_exists($cache_file)) {
-    $raw_cache = @file_get_contents($cache_file);
-    if ($raw_cache && strlen($raw_cache) > 20) {
-        $init_bulk = @json_decode($raw_cache, true);
+$best_epoch = 0;
+foreach ($cache_candidates as $cf) {
+    if (file_exists($cf)) {
+        $raw_cache = @file_get_contents($cf);
+        if ($raw_cache && strlen($raw_cache) > 20) {
+            $parsed = @json_decode($raw_cache, true);
+            if ($parsed && !empty($parsed['aqi']['timestamp'])) {
+                $e = strtotime($parsed['aqi']['timestamp']);
+                if ($e > $best_epoch) {
+                    $best_epoch = $e;
+                    $init_bulk = $parsed;
+                }
+            }
+        }
     }
 }
 
@@ -95,10 +109,26 @@ if (!empty($init_bulk['aqi'])) {
 }
 
 $init_is_aqi_offline = false;
+$init_time_str = 'Syncing...';
 if (!empty($init_bulk['aqi']['timestamp'])) {
     $ts = strtotime($init_bulk['aqi']['timestamp']);
-    if ($ts > 0 && (time() - $ts) > 5400) {
-        $init_is_aqi_offline = true;
+    if ($ts > 0) {
+        $init_time_str = date('h:i A', $ts);
+        if ((time() - $ts) > 300) {
+            $init_is_aqi_offline = true;
+        }
+    }
+}
+
+$init_is_weather_offline = false;
+$init_weather_time_str = 'Syncing...';
+if (!empty($init_bulk['weather']['timestamp'])) {
+    $w_ts = strtotime($init_bulk['weather']['timestamp']);
+    if ($w_ts > 0) {
+        $init_weather_time_str = date('h:i A', $w_ts);
+        if ((time() - $w_ts) > 300) {
+            $init_is_weather_offline = true;
+        }
     }
 }
 
@@ -554,21 +584,21 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
   <!-- Sub-Navigation Selector (Compact Mobile Responsive) -->
   <div class="live-tab-wrapper">
     <div class="live-tab-container">
-      <button id="tab-aqi" onclick="switchLiveTab('aqi')" class="live-tab-btn live-tab-active" style="background-color: #00bfa5; color: #ffffff;">
+      <button id="tab-aqi" onclick="switchLiveTab('aqi')" class="live-tab-btn <?= $req_live_tab === 'weather' ? 'live-tab-inactive' : 'live-tab-active' ?>" style="<?= $req_live_tab === 'weather' ? 'background-color: transparent; color: #64748b;' : 'background-color: #00bfa5; color: #ffffff;' ?>">
         <i data-lucide="activity"></i>
         <span>AQI Telemetry</span>
       </button>
-      <button id="tab-weather" onclick="switchLiveTab('weather')" class="live-tab-btn live-tab-inactive" style="background-color: transparent; color: #64748b;">
+      <button id="tab-weather" onclick="switchLiveTab('weather')" class="live-tab-btn <?= $req_live_tab === 'weather' ? 'live-tab-active' : 'live-tab-inactive' ?>" style="<?= $req_live_tab === 'weather' ? 'background-color: #00bfa5; color: #ffffff;' : 'background-color: transparent; color: #64748b;' ?>">
         <i data-lucide="cloud-sun"></i>
         <span>Weather Telemetry</span>
       </button>
     </div>
   </div>
 
-<div id="aqi-view" style="display: block; animation: fade-in 0.4s ease-out;">
+<div id="aqi-view" style="display: <?= $req_live_tab === 'weather' ? 'none' : 'block' ?>; animation: fade-in 0.4s ease-out;">
 
 <!-- Offline Banner -->
-<div id="aqi-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+<div id="aqi-offline-banner" style="display: <?= $init_is_aqi_offline ? 'flex' : 'none' ?>; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
   <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569;">
     <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f97316; margin-top: 2px; flex-shrink: 0;"></i>
     <span><strong style="color: #c2410c;">AQI Sensor Node Offline:</strong> No new live telemetry received in cloud for >5 mins (Last update: <strong style="color: #f97316;" id="aqi-offline-last-update">--</strong>). Showing last recorded cloud values below.</span>
@@ -582,10 +612,10 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
       Real-time Air Quality Index
     </h1>
     <div style="font-size: 12.5px; color: #64748b; margin-top: 6px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-      <span>Last Updated: <span id="latest-time" style="color: #00bfa5; font-weight: 600;">Syncing...</span></span>
-      <span id="aqi-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
-        <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
-        LIVE
+      <span>Last Updated: <span id="latest-time" style="color: #00bfa5; font-weight: 600;"><?= htmlspecialchars($init_time_str) ?></span></span>
+      <span id="aqi-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: <?= $init_is_aqi_offline ? '#fff7ed' : '#ecfdf5' ?>; color: <?= $init_is_aqi_offline ? '#c2410c' : '#059669' ?>; border: 1px solid <?= $init_is_aqi_offline ? '#fed7aa' : '#a7f3d0' ?>;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $init_is_aqi_offline ? '#f97316' : '#10b981' ?>;"></span>
+        <?= $init_is_aqi_offline ? 'OFFLINE' : 'LIVE' ?>
       </span>
     </div>
   </div>
@@ -1038,6 +1068,13 @@ function switchLiveTab(tab) {
     const aqiView = document.getElementById('aqi-view');
     const weatherView = document.getElementById('weather-view');
 
+    try {
+        sessionStorage.setItem('live_active_tab', tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        history.replaceState(null, '', url.toString());
+    } catch(e) {}
+
     if (tab === 'aqi') {
         if (aqiBtn) { 
             aqiBtn.classList.add('live-tab-active');
@@ -1053,11 +1090,6 @@ function switchLiveTab(tab) {
         }
         if (aqiView) aqiView.style.display = 'block';
         if (weatherView) weatherView.style.display = 'none';
-        try {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', 'aqi');
-            history.replaceState(null, '', url.toString());
-        } catch(e) {}
     } else {
         if (weatherBtn) { 
             weatherBtn.classList.add('live-tab-active');
@@ -1073,11 +1105,6 @@ function switchLiveTab(tab) {
         }
         if (weatherView) weatherView.style.display = 'block';
         if (aqiView) aqiView.style.display = 'none';
-        try {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', 'weather');
-            history.replaceState(null, '', url.toString());
-        } catch(e) {}
     }
     if (window.lucide) lucide.createIcons();
 }
@@ -1234,11 +1261,11 @@ function renderComparisonChart() {
 
     const isSinglePoint = sortedData.length === 1;
     const datasets = [];
-    if (visiblePollutants.pm25) datasets.push({ label: 'PM2.5', data: sortedData.map(d => d.pm25), borderColor: pollutantColors.pm25, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
-    if (visiblePollutants.pm10) datasets.push({ label: 'PM10', data: sortedData.map(d => d.pm10), borderColor: pollutantColors.pm10, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
-    if (visiblePollutants.co) datasets.push({ label: 'CO', data: sortedData.map(d => d.co), borderColor: pollutantColors.co, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
-    if (visiblePollutants.no2) datasets.push({ label: 'NO2', data: sortedData.map(d => d.no2), borderColor: pollutantColors.no2, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
-    if (visiblePollutants.o3) datasets.push({ label: 'O3', data: sortedData.map(d => d.o3), borderColor: pollutantColors.o3, backgroundColor: 'transparent', pointRadius: isSinglePoint ? 4 : 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.pm25) datasets.push({ label: 'PM2.5', data: sortedData.map(d => d.pm25), borderColor: pollutantColors.pm25, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.pm10) datasets.push({ label: 'PM10', data: sortedData.map(d => d.pm10), borderColor: pollutantColors.pm10, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.co) datasets.push({ label: 'CO', data: sortedData.map(d => d.co), borderColor: pollutantColors.co, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.no2) datasets.push({ label: 'NO2', data: sortedData.map(d => d.no2), borderColor: pollutantColors.no2, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
+    if (visiblePollutants.o3) datasets.push({ label: 'O3', data: sortedData.map(d => d.o3), borderColor: pollutantColors.o3, backgroundColor: 'transparent', pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 });
 
     if (comparisonChartInstance && comparisonChartInstance.data && comparisonChartInstance.update) {
         try {
@@ -1362,7 +1389,9 @@ async function refreshDashboard() {
             bulkData = window.INITIAL_DATA;
             window.INITIAL_DATA = null;
         } else {
-            const res = await fetch('api/telemetry.php?action=live_bulk&limit=60&_t=' + Date.now());
+            const endpoint = 'telemetry.php?action=live_bulk&limit=60&_t=' + Date.now();
+            const fetchUrl = (typeof window.getApiUrl === 'function') ? window.getApiUrl(endpoint) : ('api/' + endpoint);
+            const res = await fetch(fetchUrl);
             bulkData = await res.json();
         }
         
@@ -1667,24 +1696,29 @@ async function refreshDashboard() {
 
         const now = new Date();
         
-        // --- AQI Offline Check (Sensors log hourly; healthy threshold is 90 mins) ---
+        // --- AQI Offline Check (Sensors log every 60s; healthy threshold is 5 mins) ---
         let isAqiOffline = true;
         let aqiOfflineMinutes = 0;
         let aqiLastUpdateTimeStr = "Unknown";
         
-        if (aqiData && aqiData.timestamp) {
-            const lastUpdate = new Date(aqiData.timestamp);
-            const diffMs = now - lastUpdate;
-            aqiOfflineMinutes = Math.floor(diffMs / 60000);
-            isAqiOffline = aqiOfflineMinutes > 90;
-            const timePart = lastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
-            aqiLastUpdateTimeStr = aqiOfflineMinutes >= 1440
-                ? lastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + timePart
-                : timePart;
+        if (aqiData && (aqiData.timestamp || aqiData.created_at)) {
+            const rawTs = aqiData.timestamp || aqiData.created_at;
+            const lastUpdate = (typeof safeParseDate === 'function') ? safeParseDate(rawTs) : new Date(rawTs);
+            if (lastUpdate && !isNaN(lastUpdate.getTime())) {
+                const diffMs = now - lastUpdate;
+                aqiOfflineMinutes = Math.floor(diffMs / 60000);
+                // Stating offline only when no data arrives for > 5 minutes
+                isAqiOffline = aqiOfflineMinutes > 5;
+                const timePart = lastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+                aqiLastUpdateTimeStr = aqiOfflineMinutes >= 1440
+                    ? lastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + timePart
+                    : timePart;
+            }
         }
 
         const aqiBanner = document.getElementById('aqi-offline-banner');
         const heroDot = document.getElementById('status-dot');
+        const heroDotHalo = document.getElementById('status-dot-halo');
         const heroStreamText = document.getElementById('hero-stream-text');
         const heroAqiSubtext = document.getElementById('hero-aqi-subtext');
         const heroLeftBar = document.getElementById('hero-left-bar');
@@ -1758,20 +1792,24 @@ async function refreshDashboard() {
         const latestTimeEl = document.getElementById('latest-time');
         if (latestTimeEl) latestTimeEl.innerText = aqiLastUpdateTimeStr;
 
-        // --- Weather Offline Check (Sensors log hourly; healthy threshold is 90 mins) ---
+        // --- Weather Offline Check (Sensors log every 60s; healthy threshold is 5 mins) ---
         let isWeatherOffline = true;
         let weatherOfflineMinutes = 0;
         let weatherLastUpdateTimeStr = "Unknown";
 
-        if (weatherData && weatherData.timestamp) {
-            const wLastUpdate = new Date(weatherData.timestamp);
-            const wDiffMs = now - wLastUpdate;
-            weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
-            isWeatherOffline = weatherOfflineMinutes > 90;
-            const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
-            weatherLastUpdateTimeStr = weatherOfflineMinutes >= 1440
-                ? wLastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + wTimePart
-                : wTimePart;
+        if (weatherData && (weatherData.timestamp || weatherData.created_at)) {
+            const wRawTs = weatherData.timestamp || weatherData.created_at;
+            const wLastUpdate = (typeof safeParseDate === 'function') ? safeParseDate(wRawTs) : new Date(wRawTs);
+            if (wLastUpdate && !isNaN(wLastUpdate.getTime())) {
+                const wDiffMs = now - wLastUpdate;
+                weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
+                // Stating offline only when no data arrives for > 5 minutes
+                isWeatherOffline = weatherOfflineMinutes > 5;
+                const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+                weatherLastUpdateTimeStr = weatherOfflineMinutes >= 1440
+                    ? wLastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + wTimePart
+                    : wTimePart;
+            }
         }
 
         const weatherBanner = document.getElementById('weather-offline-banner');
@@ -1799,8 +1837,8 @@ async function refreshDashboard() {
 
         const isOverallLive = (!isAqiOffline || !isWeatherOffline);
         const minOfflineMins = Math.min(
-            (aqiData && aqiData.timestamp) ? aqiOfflineMinutes : 99999,
-            (weatherData && weatherData.timestamp) ? weatherOfflineMinutes : 99999
+            (aqiData && (aqiData.timestamp || aqiData.created_at)) ? aqiOfflineMinutes : 99999,
+            (weatherData && (weatherData.timestamp || weatherData.created_at)) ? weatherOfflineMinutes : 99999
         );
         const tip = isOverallLive
             ? 'Live telemetry streaming from cloud'
@@ -1812,8 +1850,19 @@ async function refreshDashboard() {
         lucide.createIcons();
     } catch (e) {
         console.error("Live page error:", e);
-        if (window.updateGlobalLiveBadge) {
-            window.updateGlobalLiveBadge(false, 'Unable to connect to cloud telemetry');
+        const latestTimeEl = document.getElementById('latest-time');
+        if (latestTimeEl && latestTimeEl.innerText === 'Syncing...') {
+            latestTimeEl.innerText = 'Unable to sync';
+            const aqiLiveBadge = document.getElementById('aqi-live-badge');
+            if (aqiLiveBadge) {
+                aqiLiveBadge.style.backgroundColor = '#fff7ed';
+                aqiLiveBadge.style.color = '#c2410c';
+                aqiLiveBadge.style.borderColor = '#fed7aa';
+                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE`;
+            }
+            if (window.updateGlobalLiveBadge) {
+                window.updateGlobalLiveBadge(false, 'Unable to connect to cloud telemetry');
+            }
         }
     }
 }
@@ -1845,8 +1894,11 @@ window.__cleanupCurrentPage = function() {
 setTimeout(() => {
     try {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('tab') === 'weather') {
+        const savedTab = urlParams.get('tab') || sessionStorage.getItem('live_active_tab');
+        if (savedTab === 'weather') {
             switchLiveTab('weather');
+        } else if (savedTab === 'aqi') {
+            switchLiveTab('aqi');
         }
     } catch(e) {}
 

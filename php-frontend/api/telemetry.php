@@ -780,6 +780,7 @@ switch ($action) {
         $res['today_rain_total'] = round($today_rain_sum, 2);
 
         cacheSet($ckey, $res);
+        cacheSet('overview_bulk', $res);
         echo json_encode($res);
         break;
     }
@@ -883,6 +884,7 @@ switch ($action) {
         if ($raw['weather']) { foreach ($raw['weather'] as $row) { $f = formatWeatherReading($row); if ($f) $res['weather'][] = $f; } }
 
         cacheSet($ckey, $res);
+        cacheSet('overview_bulk', $res);
         echo json_encode($res);
         break;
     }

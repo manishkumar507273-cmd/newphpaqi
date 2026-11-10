@@ -882,9 +882,9 @@ if ($latest_epoch > 0) {
   </style>
 
 <script>
-var tempUnit = 'C';
-var windUnit = 'kmh';
-var rainUnit = 'mm';
+var tempUnit = (function() { try { return localStorage.getItem('aqi_temp_unit') || 'C'; } catch(e) { return 'C'; } })();
+var windUnit = (function() { try { return localStorage.getItem('aqi_wind_unit') || 'kmh'; } catch(e) { return 'kmh'; } })();
+var rainUnit = (function() { try { return localStorage.getItem('aqi_rain_unit') || 'mm'; } catch(e) { return 'mm'; } })();
 var rawTemp = <?= isset($init_bulk['weather']['temperature']) && $init_bulk['weather']['temperature'] !== null ? json_encode((float)adjustTemperatureOverview($init_bulk['weather']['temperature'], $init_bulk['weather']['timestamp'] ?? $init_bulk['weather']['created_at'] ?? null)) : 'null' ?>;
 var rawWind = <?= isset($init_bulk['weather']['wind_speed']) && $init_bulk['weather']['wind_speed'] !== null ? json_encode((float)$init_bulk['weather']['wind_speed']) : 'null' ?>;
 var rawLiveRain = <?= isset($init_bulk['weather']['rain_gauge']) && $init_bulk['weather']['rain_gauge'] !== null ? json_encode((float)$init_bulk['weather']['rain_gauge']) : '0' ?>;
@@ -910,6 +910,7 @@ var getAqiCategory = function(val) {
 
 function toggleTemp() {
     tempUnit = tempUnit === 'C' ? 'F' : 'C';
+    try { localStorage.setItem('aqi_temp_unit', tempUnit); } catch(e) {}
     updateTempDisplay();
     if (typeof updateMobileHero === 'function') updateMobileHero();
     if (cachedWeatherHistory) {
@@ -919,6 +920,7 @@ function toggleTemp() {
 
 function toggleWind() {
     windUnit = windUnit === 'kmh' ? 'ms' : 'kmh';
+    try { localStorage.setItem('aqi_wind_unit', windUnit); } catch(e) {}
     updateWindDisplay();
     if (typeof updateMobileHero === 'function') updateMobileHero();
     if (cachedWeatherHistory) {
@@ -928,6 +930,7 @@ function toggleWind() {
 
 function toggleRain() {
     rainUnit = rainUnit === 'mm' ? 'cm' : 'mm';
+    try { localStorage.setItem('aqi_rain_unit', rainUnit); } catch(e) {}
     updateRainDisplay();
     if (typeof updateMobileHero === 'function') updateMobileHero();
     if (cachedWeatherHistory) {
@@ -1020,14 +1023,14 @@ function updateWindDisplay() {
 window.currentChartSlideIndex = 0;
 window.TOTAL_CHART_SLIDES = 5;
 
-function scrollChartTo(index) {
+function scrollChartTo(index, smooth = true) {
     const carousel = document.getElementById('overview-chart-carousel');
     if (!carousel) return;
     const slides = carousel.querySelectorAll('.chart-slide-card');
     if (slides && slides[index]) {
         updateChartCarouselIndicators(index);
         const slideLeft = slides[index].offsetLeft - (slides[0] ? slides[0].offsetLeft : 0);
-        carousel.scrollTo({ left: slideLeft, behavior: 'smooth' });
+        carousel.scrollTo({ left: slideLeft, behavior: smooth ? 'smooth' : 'auto' });
         setTimeout(resizeActiveChart, 150);
     }
 }
@@ -1047,6 +1050,16 @@ function navChartNext() {
 function updateChartCarouselIndicators(activeIdx) {
     if (activeIdx < 0 || activeIdx >= window.TOTAL_CHART_SLIDES) return;
     window.currentChartSlideIndex = activeIdx;
+    try {
+        sessionStorage.setItem('overview_active_slide', String(activeIdx));
+        const url = new URL(window.location.href);
+        if (activeIdx > 0) {
+            url.searchParams.set('slide', activeIdx);
+        } else {
+            url.searchParams.delete('slide');
+        }
+        history.replaceState(null, '', url.toString());
+    } catch(e) {}
     const counter = document.getElementById('chart-slide-counter');
     if (counter) counter.innerText = `${activeIdx + 1} / ${window.TOTAL_CHART_SLIDES}`;
     for (let i = 0; i < window.TOTAL_CHART_SLIDES; i++) {
@@ -1665,16 +1678,47 @@ window.__cleanupCurrentPage = function() {
     chartInstances = {};
 };
 
+function restoreOverviewState() {
+    try {
+        updateTempDisplay();
+        updateWindDisplay();
+        updateRainDisplay();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let slideIdx = parseInt(urlParams.get('slide'), 10);
+        if (isNaN(slideIdx)) {
+            slideIdx = parseInt(sessionStorage.getItem('overview_active_slide'), 10);
+        }
+        if (!isNaN(slideIdx) && slideIdx >= 0 && slideIdx < window.TOTAL_CHART_SLIDES) {
+            window.currentChartSlideIndex = slideIdx;
+            setTimeout(() => {
+                scrollChartTo(slideIdx, false);
+            }, 60);
+            setTimeout(() => {
+                scrollChartTo(slideIdx, false);
+            }, 260);
+        }
+    } catch(e) {}
+}
+
+window.addEventListener('resize', () => {
+    if (typeof window.currentChartSlideIndex === 'number' && window.currentChartSlideIndex > 0) {
+        scrollChartTo(window.currentChartSlideIndex, false);
+    }
+});
+
 if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", () => {
         applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
         setupCarouselScrollListener();
+        restoreOverviewState();
         refreshData(false);
         startAutoRefreshOverview();
     });
 } else {
     applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
     setupCarouselScrollListener();
+    restoreOverviewState();
     refreshData(false);
     startAutoRefreshOverview();
 }

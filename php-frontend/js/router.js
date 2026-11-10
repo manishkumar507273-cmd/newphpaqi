@@ -405,7 +405,7 @@
     // Handle browser Back / Forward buttons
     window.addEventListener('popstate', (e) => {
         const page = (e.state && e.state.page) || new URLSearchParams(window.location.search).get('page') || 'overview';
-        navigateToPage(`?page=${page}`, false);
+        navigateToPage(window.location.search || `?page=${page}`, false);
     });
 
     // Initial setup on page load

@@ -1,3 +1,11 @@
+<?php
+$req_subtab = (isset($_GET['tab']) && in_array($_GET['tab'], ['aqi', 'weather'])) ? $_GET['tab'] : 'aqi';
+$req_range_days = (isset($_GET['days']) && in_array((int)$_GET['days'], [1, 3, 7, 30])) ? (int)$_GET['days'] : 1;
+$valid_params = ['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge'];
+$req_param = (isset($_GET['param']) && in_array($_GET['param'], $valid_params)) ? $_GET['param'] : ($req_subtab === 'weather' ? 'temperature' : 'cpcb_aqi');
+$req_type = (isset($_GET['type']) && in_array($_GET['type'], ['bar', 'line'])) ? $_GET['type'] : 'bar';
+$req_date = (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) ? $_GET['date'] : '';
+?>
 <div class="p-2.5 sm:p-6 flex flex-col gap-3.5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
   
   <!-- Header -->
@@ -11,11 +19,11 @@
   <!-- Sub-Navigation Selector: AQI Historical vs Weather Historical -->
   <div class="flex items-center justify-center mb-1">
     <div class="w-full sm:w-auto grid grid-cols-2 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
-      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[42px]">
+      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'aqi' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[42px]">
         <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
         <span>AQI <span class="hidden min-[400px]:inline">Historical</span></span>
       </button>
-      <button id="tab-weather" onclick="switchHistTab('weather')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[42px]">
+      <button id="tab-weather" onclick="switchHistTab('weather')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'weather' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[42px]">
         <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
         <span>Weather <span class="hidden min-[400px]:inline">Historical</span></span>
       </button>
@@ -47,10 +55,10 @@
       <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
         <!-- Range Selector Pills -->
         <div id="range-pills" class="inline-flex items-center bg-slate-100 p-1 rounded-full border border-slate-200 gap-1 overflow-x-auto shadow-inner">
-          <button type="button" onclick="setRangeDays(1)" id="btn-range-1" class="px-3 sm:px-3.5 py-1.5 rounded-full font-bold text-xs cursor-pointer transition-all duration-200 ease-out bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02] min-h-[34px]">1 Day</button>
-          <button type="button" onclick="setRangeDays(3)" id="btn-range-3" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95 min-h-[34px]">3 Days</button>
-          <button type="button" onclick="setRangeDays(7)" id="btn-range-7" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95 min-h-[34px]">7 Days</button>
-          <button type="button" onclick="setRangeDays(30)" id="btn-range-30" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95 min-h-[34px]">30 Days</button>
+          <button type="button" onclick="setRangeDays(1)" id="btn-range-1" class="px-3 sm:px-3.5 py-1.5 rounded-full font-bold text-xs cursor-pointer transition-all duration-200 ease-out <?= $req_range_days === 1 ? 'bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02]' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95' ?> min-h-[34px]">1 Day</button>
+          <button type="button" onclick="setRangeDays(3)" id="btn-range-3" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out <?= $req_range_days === 3 ? 'bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02]' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95' ?> min-h-[34px]">3 Days</button>
+          <button type="button" onclick="setRangeDays(7)" id="btn-range-7" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out <?= $req_range_days === 7 ? 'bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02]' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95' ?> min-h-[34px]">7 Days</button>
+          <button type="button" onclick="setRangeDays(30)" id="btn-range-30" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out <?= $req_range_days === 30 ? 'bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02]' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95' ?> min-h-[34px]">30 Days</button>
         </div>
 
         <!-- Date Picker Input -->
@@ -78,7 +86,7 @@
       </div>
 
       <!-- Right: Dynamic Average Section -->
-      <div id="summary-aqi-block" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <div id="summary-aqi-block" style="display: <?= $req_subtab === 'weather' ? 'none' : 'flex' ?>; align-items: center; gap: 12px; flex-wrap: wrap;">
         <!-- Avg AQI Card Badge -->
         <div id="avg-aqi-badge-container" style="display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-radius: 16px; background-color: #f8fafc; border: 1.5px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: all 0.25s ease;">
           <div style="display: flex; flex-direction: column;">
@@ -117,7 +125,7 @@
         </div>
       </div>
 
-      <div id="summary-weather-block" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div id="summary-weather-block" style="display: <?= $req_subtab === 'weather' ? 'flex' : 'none' ?>; align-items: center; gap: 8px; flex-wrap: wrap;">
         <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
           <span style="color: #9a3412; font-weight: 600;">Avg Temp: </span>
           <strong id="w-avg-temp" style="color: #ea580c; font-family: var(--font-mono);">--</strong>
@@ -163,33 +171,33 @@
       <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full lg:w-auto">
         <!-- Chart Type Toggle -->
         <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 999px; border: 1px solid #e2e8f0;">
-          <button onclick="setChartType('line')" id="btn-type-line" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: transparent; color: #64748b; box-shadow: none; transition: all 0.15s ease; min-height: 36px;">
-            <i data-lucide="trending-up" style="width: 13px; height: 13px; color: #64748b;" id="icon-type-line"></i>
+          <button onclick="setChartType('line')" id="btn-type-line" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; <?= $req_type === 'line' ? 'background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06);' : 'background-color: transparent; color: #64748b; box-shadow: none;' ?> transition: all 0.15s ease; min-height: 36px;">
+            <i data-lucide="trending-up" style="width: 13px; height: 13px; color: <?= $req_type === 'line' ? '#00bfa5' : '#64748b' ?>;" id="icon-type-line"></i>
             <span>Curve</span>
           </button>
-          <button onclick="setChartType('bar')" id="btn-type-bar" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: all 0.15s ease; min-height: 36px;">
-            <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #00bfa5;" id="icon-type-bar"></i>
+          <button onclick="setChartType('bar')" id="btn-type-bar" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; <?= $req_type === 'bar' ? 'background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06);' : 'background-color: transparent; color: #64748b; box-shadow: none;' ?> transition: all 0.15s ease; min-height: 36px;">
+            <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: <?= $req_type === 'bar' ? '#00bfa5' : '#64748b' ?>;" id="icon-type-bar"></i>
             <span>Bars</span>
           </button>
         </div>
 
         <!-- Parameter Filter Chips (AQI) - horizontally scrollable on mobile -->
-        <div id="chips-aqi" class="flex gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
-          <button onclick="setParam('cpcb_aqi')" id="btn-cpcb_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-[#00bfa5] text-white transition-all">AQI</button>
-          <button onclick="setParam('pm25')" id="btn-pm25" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">PM2.5</button>
-          <button onclick="setParam('pm10')" id="btn-pm10" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">PM10</button>
-          <button onclick="setParam('co')" id="btn-co" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">CO</button>
-          <button onclick="setParam('no2')" id="btn-no2" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">NO₂</button>
-          <button onclick="setParam('o3')" id="btn-o3" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">O₃</button>
+        <div id="chips-aqi" class="<?= $req_subtab === 'weather' ? 'hidden' : 'flex' ?> gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
+          <button onclick="setParam('cpcb_aqi')" id="btn-cpcb_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'cpcb_aqi' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">AQI</button>
+          <button onclick="setParam('pm25')" id="btn-pm25" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'pm25' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">PM2.5</button>
+          <button onclick="setParam('pm10')" id="btn-pm10" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'pm10' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">PM10</button>
+          <button onclick="setParam('co')" id="btn-co" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'co' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">CO</button>
+          <button onclick="setParam('no2')" id="btn-no2" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'no2' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">NO₂</button>
+          <button onclick="setParam('o3')" id="btn-o3" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'o3' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">O₃</button>
         </div>
 
         <!-- Parameter Filter Chips (Weather) - horizontally scrollable on mobile -->
-        <div id="chips-weather" class="hidden gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
-          <button onclick="setParam('temperature')" id="btn-temperature" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-[#00bfa5] text-white transition-all">Temp</button>
-          <button onclick="setParam('humidity')" id="btn-humidity" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Hum.</button>
-          <button onclick="setParam('wind_speed')" id="btn-wind_speed" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Wind Spd</button>
-          <button onclick="setParam('wind_gust')" id="btn-wind_gust" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Wind Gust</button>
-          <button onclick="setParam('rain_gauge')" id="btn-rain_gauge" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Rain</button>
+        <div id="chips-weather" class="<?= $req_subtab === 'weather' ? 'flex' : 'hidden' ?> gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
+          <button onclick="setParam('temperature')" id="btn-temperature" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'temperature' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Temp</button>
+          <button onclick="setParam('humidity')" id="btn-humidity" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'humidity' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Hum.</button>
+          <button onclick="setParam('wind_speed')" id="btn-wind_speed" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'wind_speed' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Wind Spd</button>
+          <button onclick="setParam('wind_gust')" id="btn-wind_gust" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'wind_gust' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Wind Gust</button>
+          <button onclick="setParam('rain_gauge')" id="btn-rain_gauge" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'rain_gauge' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Rain</button>
         </div>
       </div>
     </div>
@@ -419,14 +427,71 @@
 
 
 <script>
-var currentSubTab = 'aqi';
-var currentParam = 'cpcb_aqi';
-var currentChartType = 'bar';
-var currentRangeDays = 1;
+function getHistoricalInitialState() {
+    let tab = '<?= $req_subtab ?>';
+    let param = tab === 'aqi' ? 'cpcb_aqi' : 'temperature';
+    let days = <?= $req_range_days ?>;
+    let type = 'bar';
+    let date = '';
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        let saved = null;
+        try {
+            const raw = sessionStorage.getItem('historical_view_state');
+            if (raw) saved = JSON.parse(raw);
+        } catch(e) {}
+
+        const candidateTab = urlParams.get('tab') || saved?.tab;
+        if (candidateTab && ['aqi', 'weather'].includes(candidateTab)) tab = candidateTab;
+
+        const candidateDays = Number(urlParams.get('days') || saved?.days);
+        if ([1, 3, 7, 30].includes(candidateDays)) days = candidateDays;
+
+        const candidateParam = urlParams.get('param') || saved?.param;
+        if (candidateParam) param = candidateParam;
+
+        const candidateType = urlParams.get('type') || saved?.type;
+        if (candidateType && ['bar', 'line'].includes(candidateType)) type = candidateType;
+
+        date = urlParams.get('date') || saved?.date || '';
+    } catch(e) {}
+    return { tab, param, days, type, date };
+}
+
+const _initState = getHistoricalInitialState();
+var currentSubTab = _initState.tab;
+var currentParam = _initState.param;
+var currentChartType = _initState.type;
+var currentRangeDays = _initState.days;
 var historicalDataAqi = [];
 var historicalDataWeather = [];
 var chartInstance = null;
 var filteredDayData = [];
+
+function persistHistoricalState() {
+    try {
+        const dp = document.getElementById('history-date-picker');
+        const state = {
+            tab: currentSubTab || 'aqi',
+            param: currentParam || 'cpcb_aqi',
+            days: currentRangeDays || 1,
+            type: currentChartType || 'bar',
+            date: dp ? dp.value : ''
+        };
+        sessionStorage.setItem('historical_view_state', JSON.stringify(state));
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', state.tab);
+        url.searchParams.set('param', state.param);
+        url.searchParams.set('days', state.days);
+        url.searchParams.set('type', state.type);
+        if (state.date) {
+            url.searchParams.set('date', state.date);
+        } else {
+            url.searchParams.delete('date');
+        }
+        history.replaceState(null, '', url.toString());
+    } catch(e) {}
+}
 
 // High-performance in-memory cache for instant 0ms range switching
 const clientRangeCache = {};
@@ -469,7 +534,7 @@ function animateSummarySection(show) {
     }
 }
 
-function setRangeDays(days) {
+function setRangeDays(days, skipFetch = false) {
     currentRangeDays = Number(days) || 1;
     
     // Tactile & smooth pill transitions
@@ -500,7 +565,8 @@ function setRangeDays(days) {
 
     animateSummarySection(currentRangeDays === 1);
 
-    fetchAllHistory();
+    persistHistoricalState();
+    if (!skipFetch) fetchAllHistory();
 }
 
 var PARAM_COLORS = {
@@ -629,9 +695,17 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
     }
 }
 
-function switchHistTab(tab) {
+function switchHistTab(tab, skipRender = false) {
     currentSubTab = tab;
-    currentParam = tab === 'aqi' ? 'cpcb_aqi' : 'temperature';
+    if (tab === 'aqi') {
+        if (!['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3'].includes(currentParam)) {
+            currentParam = 'cpcb_aqi';
+        }
+    } else {
+        if (!['temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge'].includes(currentParam)) {
+            currentParam = 'temperature';
+        }
+    }
     
     // Switch styles
     const tabAqi = document.getElementById('tab-aqi');
@@ -671,10 +745,11 @@ function switchHistTab(tab) {
         document.getElementById('table-title').innerText = days === 1 ? 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)' : `Weather Historical Telemetry Table (${days} Days)`;
     }
     
-    setParam(currentParam);
+    setParam(currentParam, skipRender);
+    persistHistoricalState();
 }
 
-function setChartType(type) {
+function setChartType(type, skipRender = false) {
     currentChartType = type;
     const btnLine = document.getElementById('btn-type-line');
     const iconLine = document.getElementById('icon-type-line');
@@ -702,10 +777,11 @@ function setChartType(type) {
         btnLine.style.boxShadow = 'none';
         iconLine.style.color = '#64748b';
     }
-    renderUI();
+    persistHistoricalState();
+    if (!skipRender) renderUI();
 }
 
-function setParam(param) {
+function setParam(param, skipRender = false) {
     currentParam = param;
     const allBtns = ['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge'];
     allBtns.forEach(b => {
@@ -724,7 +800,8 @@ function setParam(param) {
     if (titleIcon && PARAM_COLORS[param]) {
         titleIcon.style.color = PARAM_COLORS[param];
     }
-    renderUI();
+    persistHistoricalState();
+    if (!skipRender) renderUI();
 }
 
 function renderUI(skipDayFilter = false) {
@@ -1095,8 +1172,9 @@ function renderUI(skipDayFilter = false) {
             chartInstance.data.datasets[0].borderWidth = currentChartType === 'line' ? 2.5 : 0;
             chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0;
             chartInstance.data.datasets[0].borderSkipped = false;
+            chartInstance.data.datasets[0].pointRadius = 0;
             chartInstance.data.datasets[0].pointBackgroundColor = isAqi ? aqiColors : color;
-            chartInstance.data.datasets[0].pointHoverRadius = 6;
+            chartInstance.data.datasets[0].pointHoverRadius = 5;
             chartInstance.data.datasets[0].pointHitRadius = 28;
             if (isAqi && currentChartType === 'line') {
                 chartInstance.data.datasets[0].segment = {
@@ -1135,8 +1213,8 @@ function renderUI(skipDayFilter = false) {
                     pointBackgroundColor: isAqi ? aqiColors : color,
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
-                    pointRadius: isAqi && currentChartType === 'line' ? (dataPoints.length <= 40 ? 3.5 : 0) : 0,
-                    pointHoverRadius: 6,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
                     pointHitRadius: 28,
                     spanGaps: false
                 }]
@@ -1768,8 +1846,25 @@ window.__cleanupCurrentPage = function() {
 setTimeout(() => {
     const dp = document.getElementById('history-date-picker');
     if (dp) {
-        dp.onchange = () => fetchAllHistory();
+        if (_initState.date) dp.value = _initState.date;
+        dp.onchange = () => {
+            persistHistoricalState();
+            fetchAllHistory();
+        };
     }
+    if (_initState.days && _initState.days !== 1) {
+        setRangeDays(_initState.days, true);
+    }
+    if (_initState.tab && _initState.tab !== 'aqi') {
+        switchHistTab(_initState.tab, true);
+    }
+    if (_initState.param) {
+        setParam(_initState.param, true);
+    }
+    if (_initState.type && _initState.type !== 'bar') {
+        setChartType(_initState.type, true);
+    }
+    persistHistoricalState();
     fetchAllHistory();
     startAutoRefreshHist();
 }, 0);

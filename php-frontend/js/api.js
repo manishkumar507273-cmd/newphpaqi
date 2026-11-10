@@ -115,7 +115,7 @@ function evaluateAndSyncLiveBadge(reading) {
         return;
     }
     const diffMins = Math.floor((Date.now() - parsedDate.getTime()) / 60000);
-    const isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 90;
+    const isLive = !isNaN(diffMins) && diffMins >= -10 && diffMins <= 5;
     const timeFormatted = parsedDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
     const tip = isLive 
         ? `Live telemetry streaming from cloud (Updated: ${timeFormatted})` 

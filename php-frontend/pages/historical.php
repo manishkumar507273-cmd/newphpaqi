@@ -167,8 +167,6 @@
         <!-- Parameter Filter Chips (AQI) - horizontally scrollable on mobile -->
         <div id="chips-aqi" class="flex gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
           <button onclick="setParam('cpcb_aqi')" id="btn-cpcb_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-[#00bfa5] text-white transition-all">AQI</button>
-          <button onclick="setParam('temperature')" id="btn-temperature_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Temp</button>
-          <button onclick="setParam('humidity')" id="btn-humidity_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">Hum.</button>
           <button onclick="setParam('pm25')" id="btn-pm25" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">PM2.5</button>
           <button onclick="setParam('pm10')" id="btn-pm10" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">PM10</button>
           <button onclick="setParam('co')" id="btn-co" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer bg-transparent text-slate-500 hover:text-slate-800 transition-all">CO</button>
@@ -568,22 +566,10 @@ function setParam(param) {
             }
         }
     });
-    
-    // Also handle duplicate chips for temp/hum in AQI tab
-    ['temperature_aqi', 'humidity_aqi'].forEach(b => {
-        const el = document.getElementById(`btn-${b}`);
-        const realParam = b.split('_')[0];
-        if(el) {
-            if(realParam === param) {
-                el.style.background = PARAM_COLORS[realParam];
-                el.style.color = '#ffffff';
-                document.getElementById('chart-title-icon').style.color = PARAM_COLORS[realParam];
-            } else {
-                el.style.background = 'transparent';
-                el.style.color = '#64748b';
-            }
-        }
-    });
+    const titleIcon = document.getElementById('chart-title-icon');
+    if (titleIcon && PARAM_COLORS[param]) {
+        titleIcon.style.color = PARAM_COLORS[param];
+    }
     renderUI();
 }
 

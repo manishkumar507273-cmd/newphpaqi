@@ -523,15 +523,15 @@ img, svg, video, canvas {
   }
   .hero-scale-bar-track,
   #hero-card [style*="height: 12px"] {
-    height: 8px !important;
-    margin-bottom: 10px !important;
+    height: 5px !important;
+    margin-bottom: 8px !important;
   }
 
   .hero-scale-bar-indicator,
   #hero-scale-indicator {
     width: 14px !important;
     height: 14px !important;
-    border-width: 2.5px !important;
+    border-width: 3px !important;
   }
   .hero-scale-ticks span {
     font-size: 8.5px !important;

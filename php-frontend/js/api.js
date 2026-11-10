@@ -97,12 +97,12 @@ function formatRawReading(raw) {
     const rawPm25 = raw.pm25 != null ? Number(raw.pm25) : (raw['pm2.5'] != null ? Number(raw['pm2.5']) : null);
     const ts = raw.timestamp_hour || raw.created_at || raw.timestamp;
     const cpcb_aqi = Math.round(Number(raw.cpcb_aqi));
-    let label = "Good", color = "#22c55e";
-    if (cpcb_aqi > 50 && cpcb_aqi <= 100) { label = "Moderate"; color = "#eab308"; }
-    else if (cpcb_aqi > 100 && cpcb_aqi <= 150) { label = "Poor"; color = "#f97316"; }
-    else if (cpcb_aqi > 150 && cpcb_aqi <= 200) { label = "Unhealthy"; color = "#ef4444"; }
-    else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = "Severe"; color = "#a855f7"; }
-    else if (cpcb_aqi > 300) { label = "Hazardous"; color = "#f43f5e"; }
+    let label = "Good", color = "#59b61f";
+    if (cpcb_aqi > 50 && cpcb_aqi <= 100) { label = "Moderate"; color = "#eec732"; }
+    else if (cpcb_aqi > 100 && cpcb_aqi <= 200) { label = "Poor"; color = "#ea8c34"; }
+    else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = "Unhealthy"; color = "#e95478"; }
+    else if (cpcb_aqi > 300 && cpcb_aqi <= 400) { label = "Severe"; color = "#b33fba"; }
+    else if (cpcb_aqi > 400) { label = "Hazardous"; color = "#c92033"; }
 
     let dom = raw.dominant_pollutant || 'O₃';
     if (dom === 'O3') dom = 'O₃';
@@ -155,12 +155,12 @@ function formatRawReading(raw) {
   const domNames = { pm25: 'PM2.5', pm10: 'PM10', co: 'CO', no2: 'NO₂', o3: 'O₃' };
   const cpcb_aqi = Math.round(subIndices[domKey] || 0);
 
-  let label = "Good", color = "#22c55e";
-  if (cpcb_aqi > 50 && cpcb_aqi <= 100) { label = "Moderate"; color = "#eab308"; }
-  else if (cpcb_aqi > 100 && cpcb_aqi <= 150) { label = "Poor"; color = "#f97316"; }
-  else if (cpcb_aqi > 150 && cpcb_aqi <= 200) { label = "Unhealthy"; color = "#ef4444"; }
-  else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = "Severe"; color = "#a855f7"; }
-  else if (cpcb_aqi > 300) { label = "Hazardous"; color = "#f43f5e"; }
+  let label = "Good", color = "#59b61f";
+  if (cpcb_aqi > 50 && cpcb_aqi <= 100) { label = "Moderate"; color = "#eec732"; }
+  else if (cpcb_aqi > 100 && cpcb_aqi <= 200) { label = "Poor"; color = "#ea8c34"; }
+  else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = "Unhealthy"; color = "#e95478"; }
+  else if (cpcb_aqi > 300 && cpcb_aqi <= 400) { label = "Severe"; color = "#b33fba"; }
+  else if (cpcb_aqi > 400) { label = "Hazardous"; color = "#c92033"; }
 
   const ts = raw.timestamp_hour || raw.created_at || raw.timestamp;
 

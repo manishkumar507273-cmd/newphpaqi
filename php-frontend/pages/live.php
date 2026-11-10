@@ -27,46 +27,46 @@ if (!empty($init_bulk['aqi'])) {
         $init_aqi_val = (string)$v;
         if ($v <= 50) {
             $init_aqi_label = 'Good';
-            $init_aqi_accent = '#22c55e';
+            $init_aqi_accent = '#59b61f';
             $init_aqi_bg = '#ecfdf5';
-            $init_aqi_border = 'rgba(34, 197, 94, 0.4)';
-            $init_aqi_shadow = 'rgba(34, 197, 94, 0.18)';
-            $init_scale_pct = round(1 + ($v / 50) * 15.66, 2) . '%';
+            $init_aqi_border = 'rgba(89, 182, 31, 0.4)';
+            $init_aqi_shadow = 'rgba(89, 182, 31, 0.18)';
+            $init_scale_pct = round(max(2, ($v / 50) * 16.66), 2) . '%';
         } elseif ($v <= 100) {
             $init_aqi_label = 'Moderate';
-            $init_aqi_accent = '#eab308';
+            $init_aqi_accent = '#eec732';
             $init_aqi_bg = '#fef9c3';
-            $init_aqi_border = 'rgba(234, 179, 8, 0.45)';
-            $init_aqi_shadow = 'rgba(234, 179, 8, 0.22)';
+            $init_aqi_border = 'rgba(238, 199, 50, 0.45)';
+            $init_aqi_shadow = 'rgba(238, 199, 50, 0.22)';
             $init_scale_pct = round(16.66 + (($v - 50) / 50) * 16.67, 2) . '%';
-        } elseif ($v <= 150) {
-            $init_aqi_label = 'Poor';
-            $init_aqi_accent = '#f97316';
-            $init_aqi_bg = '#ffedd5';
-            $init_aqi_border = 'rgba(249, 115, 22, 0.45)';
-            $init_aqi_shadow = 'rgba(249, 115, 22, 0.22)';
-            $init_scale_pct = round(33.33 + (($v - 100) / 50) * 16.67, 2) . '%';
         } elseif ($v <= 200) {
-            $init_aqi_label = 'Unhealthy';
-            $init_aqi_accent = '#ef4444';
-            $init_aqi_bg = '#fee2e2';
-            $init_aqi_border = 'rgba(239, 68, 68, 0.45)';
-            $init_aqi_shadow = 'rgba(239, 68, 68, 0.22)';
-            $init_scale_pct = round(50 + (($v - 150) / 50) * 16.66, 2) . '%';
+            $init_aqi_label = 'Poor';
+            $init_aqi_accent = '#ea8c34';
+            $init_aqi_bg = '#ffedd5';
+            $init_aqi_border = 'rgba(234, 140, 52, 0.45)';
+            $init_aqi_shadow = 'rgba(234, 140, 52, 0.22)';
+            $init_scale_pct = round(33.33 + (($v - 100) / 100) * 16.67, 2) . '%';
         } elseif ($v <= 300) {
+            $init_aqi_label = 'Unhealthy';
+            $init_aqi_accent = '#e95478';
+            $init_aqi_bg = '#fee2e2';
+            $init_aqi_border = 'rgba(233, 84, 120, 0.45)';
+            $init_aqi_shadow = 'rgba(233, 84, 120, 0.22)';
+            $init_scale_pct = round(50 + (($v - 200) / 100) * 16.66, 2) . '%';
+        } elseif ($v <= 400) {
             $init_aqi_label = 'Severe';
-            $init_aqi_accent = '#a855f7';
+            $init_aqi_accent = '#b33fba';
             $init_aqi_bg = '#f3e8ff';
-            $init_aqi_border = 'rgba(168, 85, 247, 0.45)';
-            $init_aqi_shadow = 'rgba(168, 85, 247, 0.22)';
-            $init_scale_pct = round(66.66 + (($v - 200) / 100) * 16.67, 2) . '%';
+            $init_aqi_border = 'rgba(179, 63, 186, 0.45)';
+            $init_aqi_shadow = 'rgba(179, 63, 186, 0.22)';
+            $init_scale_pct = round(66.66 + (($v - 300) / 100) * 16.67, 2) . '%';
         } else {
             $init_aqi_label = 'Hazardous';
-            $init_aqi_accent = '#f43f5e';
+            $init_aqi_accent = '#c92033';
             $init_aqi_bg = '#ffe4e6';
-            $init_aqi_border = 'rgba(244, 63, 94, 0.45)';
-            $init_aqi_shadow = 'rgba(244, 63, 94, 0.22)';
-            $init_scale_pct = round(83.33 + min(($v - 300) / 200, 1) * 15.67, 2) . '%';
+            $init_aqi_border = 'rgba(201, 32, 51, 0.45)';
+            $init_aqi_shadow = 'rgba(201, 32, 51, 0.22)';
+            $init_scale_pct = round(min(98, 83.33 + min(1, ($v - 400) / 100) * 15.67), 2) . '%';
         }
         if (isset($aqi_d['pm25'])) $init_pm25 = number_format((float)$aqi_d['pm25'], 3) . ' µg/m³';
         if (isset($aqi_d['pm10'])) $init_pm10 = number_format((float)$aqi_d['pm10'], 3) . ' µg/m³';
@@ -128,13 +128,13 @@ if (!empty($init_bulk['aqi'])) {
     white-space: nowrap !important;
   }
   .hero-scale-bar-track {
-    height: 8px !important;
-    margin-bottom: 10px !important;
+    height: 5px !important;
+    margin-bottom: 8px !important;
   }
   #hero-scale-indicator {
     width: 14px !important;
     height: 14px !important;
-    border-width: 2.5px !important;
+    border-width: 3px !important;
   }
   .hero-scale-ticks span {
     font-size: 8.5px !important;
@@ -364,29 +364,29 @@ if (!empty($init_bulk['aqi'])) {
       </div>
 
       <!-- Overall AQI Scale Bar -->
-      <div class="hero-scale-bar-container" style="max-width: 400px; width: 100%;">
-        <div class="hero-scale-labels" style="display: grid; grid-template-columns: repeat(6, 1fr); padding: 0 1px; margin-bottom: 12px; gap: 2px;">
-          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #22c55e; line-height: 1.1; text-align: left; white-space: nowrap;">Good</span>
-          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #eab308; line-height: 1.1; text-align: center; white-space: nowrap;">Moderate</span>
-          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #f97316; line-height: 1.1; text-align: center; white-space: nowrap;">Poor</span>
-          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #ef4444; line-height: 1.1; text-align: center; white-space: nowrap;">Unhealthy</span>
-          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #a855f7; line-height: 1.1; text-align: center; white-space: nowrap;">Severe</span>
-          <span class="scale-label" style="font-size: 9.5px; font-weight: 700; color: #f43f5e; line-height: 1.1; text-align: right; white-space: nowrap;">Hazardous</span>
+      <div class="hero-scale-bar-container" style="max-width: 440px; width: 100%;">
+        <div class="hero-scale-labels" style="display: grid; grid-template-columns: repeat(6, 1fr); padding: 0; margin-bottom: 8px;">
+          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Good</span>
+          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Moderate</span>
+          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Poor</span>
+          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Unhealthy</span>
+          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Severe</span>
+          <span class="scale-label" style="font-size: 10.5px; font-weight: 700; color: #475569; line-height: 1.1; text-align: center; white-space: nowrap;">Hazardous</span>
         </div>
 
-        <div class="hero-scale-bar-track" style="position: relative; height: 10px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 10px;">
-          <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #22c55e 16.66%, #eab308 16.66%, #eab308 33.33%, #f97316 33.33%, #f97316 50%, #ef4444 50%, #ef4444 66.66%, #a855f7 66.66%, #a855f7 83.33%, #f43f5e 83.33%, #f43f5e 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
-          <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: <?= $init_scale_pct ?>; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background-color: #ffffff; border: 3px solid <?= $init_aqi_accent ?>; box-shadow: 0 2px 6px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s ease-out;"></div>
+        <div class="hero-scale-bar-track" style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+          <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
+          <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: <?= $init_scale_pct ?>; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background-color: #ffffff; border: 3.5px solid <?= $init_aqi_accent ?>; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
         </div>
 
-        <div class="hero-scale-ticks" style="display: flex; justify-content: space-between; padding: 0 2px;">
-          <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">0</span>
-          <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">50</span>
-          <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">100</span>
-          <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">150</span>
-          <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">200</span>
-          <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">300</span>
-          <span style="font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">301+</span>
+        <div class="hero-scale-ticks" style="position: relative; height: 16px;">
+          <span style="position: absolute; left: 0%; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">0</span>
+          <span style="position: absolute; left: 16.666%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">50</span>
+          <span style="position: absolute; left: 33.333%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">100</span>
+          <span style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">200</span>
+          <span style="position: absolute; left: 66.666%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">300</span>
+          <span style="position: absolute; left: 83.333%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">400</span>
+          <span style="position: absolute; right: 0%; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono); line-height: 1;">500+</span>
         </div>
       </div>
     </div>
@@ -985,42 +985,37 @@ async function refreshDashboard() {
 
         // Precision non-overlapping positioning inside each of the 6 color segments
         // Ensures indicator is completely situated inside the matching tier color:
-        // Bar segments (equal 16.66% each): Good 0-16.66% | Moderate 16.66-33.33% | Poor 33.33-50% | Unhealthy 50-66.66% | Severe 66.66-83.33% | Hazardous 83.33-100%
+        // Bar segments (equal 16.666% each): Good 0-50 | Moderate 51-100 | Poor 101-200 | Unhealthy 201-300 | Severe 301-400 | Hazardous 401-500+
         function getAQIScalePercentage(aqi) {
             const v = Number(aqi);
-            if (isNaN(v) || v <= 0) return 1;
-            if (v <= 50)  return 1 + (v / 50) * 15.66;          // 1% to 16.66% (Good - Green)
-            if (v <= 100) return 16.66 + ((v - 50) / 50) * 16.67; // 16.66% to 33.33% (Moderate - Yellow)
-            if (v <= 150) return 33.33 + ((v - 100) / 50) * 16.67;// 33.33% to 50% (Poor - Orange)
-            if (v <= 200) return 50 + ((v - 150) / 50) * 16.66;  // 50% to 66.66% (Unhealthy - Red)
-            if (v <= 300) return 66.66 + ((v - 200) / 100) * 16.67;// 66.66% to 83.33% (Severe - Purple)
-            return 83.33 + Math.min((v - 300) / 200, 1) * 15.67; // 83.33% to 99% (Hazardous - Rose)
+            if (isNaN(v) || v <= 0) return 2;
+            if (v <= 50)  return Math.max(2, (v / 50) * 16.666);                    // 0-50 -> 0% to 16.666% (Good - Green)
+            if (v <= 100) return 16.666 + ((v - 50) / 50) * 16.667;                // 51-100 -> 16.666% to 33.333% (Moderate - Yellow)
+            if (v <= 200) return 33.333 + ((v - 100) / 100) * 16.667;              // 101-200 -> 33.333% to 50.0% (Poor - Orange)
+            if (v <= 300) return 50.0 + ((v - 200) / 100) * 16.666;                // 201-300 -> 50.0% to 66.666% (Unhealthy - Rose/Red)
+            if (v <= 400) return 66.666 + ((v - 300) / 100) * 16.667;              // 301-400 -> 66.666% to 83.333% (Severe - Purple)
+            return Math.min(98, 83.333 + Math.min((v - 400) / 100, 1) * 15.667);   // 401-500+ -> 83.333% to 98% (Hazardous - Crimson)
         }
 
         // AQI category themes matching the exact bar colors and labels
         function getAQITheme(aqi) {
             const v = Number(aqi);
             if (isNaN(v) || v <= 50) {
-                return { label: 'Good', bg: '#ecfdf5', border: 'rgba(34, 197, 94, 0.4)', shadow: 'rgba(34, 197, 94, 0.18)', accent: '#22c55e' };
+                return { label: 'Good', bg: '#f0fdf4', border: 'rgba(89, 182, 31, 0.4)', shadow: 'rgba(89, 182, 31, 0.18)', accent: '#59b61f' };
             }
             if (v <= 100) {
-                // Moderate: Warm rich yellow matching bar segment (#eab308)
-                return { label: 'Moderate', bg: '#fef9c3', border: 'rgba(234, 179, 8, 0.45)', shadow: 'rgba(234, 179, 8, 0.22)', accent: '#eab308' };
-            }
-            if (v <= 150) {
-                // Poor: Orange matching bar segment (#f97316)
-                return { label: 'Poor', bg: '#ffedd5', border: 'rgba(249, 115, 22, 0.45)', shadow: 'rgba(249, 115, 22, 0.22)', accent: '#f97316' };
+                return { label: 'Moderate', bg: '#fefce8', border: 'rgba(238, 199, 50, 0.45)', shadow: 'rgba(238, 199, 50, 0.22)', accent: '#eec732' };
             }
             if (v <= 200) {
-                // Unhealthy: Red matching bar segment (#ef4444)
-                return { label: 'Unhealthy', bg: '#fee2e2', border: 'rgba(239, 68, 68, 0.45)', shadow: 'rgba(239, 68, 68, 0.22)', accent: '#ef4444' };
+                return { label: 'Poor', bg: '#fff7ed', border: 'rgba(234, 140, 52, 0.45)', shadow: 'rgba(234, 140, 52, 0.22)', accent: '#ea8c34' };
             }
             if (v <= 300) {
-                // Severe: Purple matching bar segment (#a855f7)
-                return { label: 'Severe', bg: '#f3e8ff', border: 'rgba(168, 85, 247, 0.45)', shadow: 'rgba(168, 85, 247, 0.22)', accent: '#a855f7' };
+                return { label: 'Unhealthy', bg: '#fff1f2', border: 'rgba(233, 84, 120, 0.45)', shadow: 'rgba(233, 84, 120, 0.22)', accent: '#e95478' };
             }
-            // Hazardous: Pink/Dark Red matching bar segment (#f43f5e)
-            return { label: 'Hazardous', bg: '#ffe4e6', border: 'rgba(244, 63, 94, 0.45)', shadow: 'rgba(244, 63, 94, 0.22)', accent: '#f43f5e' };
+            if (v <= 400) {
+                return { label: 'Severe', bg: '#faf5ff', border: 'rgba(179, 63, 186, 0.45)', shadow: 'rgba(179, 63, 186, 0.22)', accent: '#b33fba' };
+            }
+            return { label: 'Hazardous', bg: '#fef2f2', border: 'rgba(201, 32, 51, 0.45)', shadow: 'rgba(201, 32, 51, 0.22)', accent: '#c92033' };
         }
         
         if (aqiData) {

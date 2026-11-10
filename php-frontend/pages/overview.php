@@ -26,17 +26,17 @@ if (!empty($init_bulk['aqi'])) {
         $init_aqi_dom = !empty($aqi_data['dominant_pollutant']) ? htmlspecialchars($aqi_data['dominant_pollutant']) : 'O₃';
         
         if ($init_aqi <= 50) {
-            $init_aqi_label = 'Good'; $init_aqi_color = '#22c55e'; $init_aqi_bg = '#ecfdf5'; $init_aqi_border = '#86efac'; $init_aqi_text = '#15803d';
+            $init_aqi_label = 'Good'; $init_aqi_color = '#59b61f'; $init_aqi_bg = '#f0fdf4'; $init_aqi_border = 'rgba(89, 182, 31, 0.4)'; $init_aqi_text = '#15803d';
         } elseif ($init_aqi <= 100) {
-            $init_aqi_label = 'Moderate'; $init_aqi_color = '#eab308'; $init_aqi_bg = '#fef9c3'; $init_aqi_border = 'rgba(234, 179, 8, 0.45)'; $init_aqi_text = '#854d0e';
-        } elseif ($init_aqi <= 150) {
-            $init_aqi_label = 'Poor'; $init_aqi_color = '#f97316'; $init_aqi_bg = '#ffedd5'; $init_aqi_border = '#fed7aa'; $init_aqi_text = '#9a3412';
+            $init_aqi_label = 'Moderate'; $init_aqi_color = '#eec732'; $init_aqi_bg = '#fefce8'; $init_aqi_border = 'rgba(238, 199, 50, 0.45)'; $init_aqi_text = '#854d0e';
         } elseif ($init_aqi <= 200) {
-            $init_aqi_label = 'Unhealthy'; $init_aqi_color = '#ef4444'; $init_aqi_bg = '#fee2e2'; $init_aqi_border = '#fecaca'; $init_aqi_text = '#991b1b';
+            $init_aqi_label = 'Poor'; $init_aqi_color = '#ea8c34'; $init_aqi_bg = '#fff7ed'; $init_aqi_border = 'rgba(234, 140, 52, 0.45)'; $init_aqi_text = '#9a3412';
         } elseif ($init_aqi <= 300) {
-            $init_aqi_label = 'Severe'; $init_aqi_color = '#a855f7'; $init_aqi_bg = '#f3e8ff'; $init_aqi_border = '#e9d5ff'; $init_aqi_text = '#6b21a8';
+            $init_aqi_label = 'Unhealthy'; $init_aqi_color = '#e95478'; $init_aqi_bg = '#fff1f2'; $init_aqi_border = 'rgba(233, 84, 120, 0.45)'; $init_aqi_text = '#991b1b';
+        } elseif ($init_aqi <= 400) {
+            $init_aqi_label = 'Severe'; $init_aqi_color = '#b33fba'; $init_aqi_bg = '#faf5ff'; $init_aqi_border = 'rgba(179, 63, 186, 0.45)'; $init_aqi_text = '#6b21a8';
         } else {
-            $init_aqi_label = 'Hazardous'; $init_aqi_color = '#f43f5e'; $init_aqi_bg = '#ffe4e6'; $init_aqi_border = '#fda4af'; $init_aqi_text = '#9f1239';
+            $init_aqi_label = 'Hazardous'; $init_aqi_color = '#c92033'; $init_aqi_bg = '#fef2f2'; $init_aqi_border = 'rgba(201, 32, 51, 0.45)'; $init_aqi_text = '#9f1239';
         }
         $init_aqi_bar_width = min(100, max(4, round(($init_aqi / 500) * 100))) . '%';
     }
@@ -776,12 +776,12 @@ if (!window.INITIAL_DATA && <?= $init_bulk ? 'true' : 'false' ?>) {
 
 var getAqiCategory = function(val) {
     const v = Number(val);
-    if (v <= 50) return { label: 'Good', color: '#22c55e', bg: '#ecfdf5', border: '#86efac', text: '#15803d' };
-    if (v <= 100) return { label: 'Moderate', color: '#eab308', bg: '#fef9c3', border: 'rgba(234, 179, 8, 0.45)', text: '#854d0e' };
-    if (v <= 150) return { label: 'Poor', color: '#f97316', bg: '#ffedd5', border: '#fed7aa', text: '#9a3412' };
-    if (v <= 200) return { label: 'Unhealthy', color: '#ef4444', bg: '#fee2e2', border: '#fecaca', text: '#991b1b' };
-    if (v <= 300) return { label: 'Severe', color: '#a855f7', bg: '#f3e8ff', border: '#e9d5ff', text: '#6b21a8' };
-    return { label: 'Hazardous', color: '#f43f5e', bg: '#ffe4e6', border: '#fda4af', text: '#9f1239' };
+    if (v <= 50) return { label: 'Good', color: '#59b61f', bg: '#f0fdf4', border: 'rgba(89, 182, 31, 0.4)', text: '#15803d' };
+    if (v <= 100) return { label: 'Moderate', color: '#eec732', bg: '#fefce8', border: 'rgba(238, 199, 50, 0.45)', text: '#854d0e' };
+    if (v <= 200) return { label: 'Poor', color: '#ea8c34', bg: '#fff7ed', border: 'rgba(234, 140, 52, 0.45)', text: '#9a3412' };
+    if (v <= 300) return { label: 'Unhealthy', color: '#e95478', bg: '#fff1f2', border: 'rgba(233, 84, 120, 0.45)', text: '#991b1b' };
+    if (v <= 400) return { label: 'Severe', color: '#b33fba', bg: '#faf5ff', border: 'rgba(179, 63, 186, 0.45)', text: '#6b21a8' };
+    return { label: 'Hazardous', color: '#c92033', bg: '#fef2f2', border: 'rgba(201, 32, 51, 0.45)', text: '#9f1239' };
 };
 
 function toggleTemp() {

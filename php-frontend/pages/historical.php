@@ -436,12 +436,12 @@ var PARAM_COLORS = {
 
 var getAqiCategory = function(val) {
     const v = Number(val);
-    if (v <= 50) return { label: 'Good', color: '#22c55e', bg: '#ecfdf5', border: '#86efac', text: '#15803d', badgeBg: '#22c55e', badgeText: '#ffffff' };
-    if (v <= 100) return { label: 'Moderate', color: '#eab308', bg: '#fef9c3', border: 'rgba(234, 179, 8, 0.45)', text: '#854d0e', badgeBg: '#eab308', badgeText: '#ffffff' };
-    if (v <= 150) return { label: 'Poor', color: '#f97316', bg: '#ffedd5', border: '#fed7aa', text: '#9a3412', badgeBg: '#f97316', badgeText: '#ffffff' };
-    if (v <= 200) return { label: 'Unhealthy', color: '#ef4444', bg: '#fee2e2', border: '#fecaca', text: '#991b1b', badgeBg: '#ef4444', badgeText: '#ffffff' };
-    if (v <= 300) return { label: 'Severe', color: '#a855f7', bg: '#f3e8ff', border: '#e9d5ff', text: '#6b21a8', badgeBg: '#a855f7', badgeText: '#ffffff' };
-    return { label: 'Hazardous', color: '#f43f5e', bg: '#ffe4e6', border: '#fda4af', text: '#9f1239', badgeBg: '#f43f5e', badgeText: '#ffffff' };
+    if (v <= 50) return { label: 'Good', color: '#59b61f', bg: '#f0fdf4', border: 'rgba(89, 182, 31, 0.4)', text: '#15803d', badgeBg: '#59b61f', badgeText: '#ffffff' };
+    if (v <= 100) return { label: 'Moderate', color: '#eec732', bg: '#fefce8', border: 'rgba(238, 199, 50, 0.45)', text: '#854d0e', badgeBg: '#eec732', badgeText: '#ffffff' };
+    if (v <= 200) return { label: 'Poor', color: '#ea8c34', bg: '#fff7ed', border: 'rgba(234, 140, 52, 0.45)', text: '#9a3412', badgeBg: '#ea8c34', badgeText: '#ffffff' };
+    if (v <= 300) return { label: 'Unhealthy', color: '#e95478', bg: '#fff1f2', border: 'rgba(233, 84, 120, 0.45)', text: '#991b1b', badgeBg: '#e95478', badgeText: '#ffffff' };
+    if (v <= 400) return { label: 'Severe', color: '#b33fba', bg: '#faf5ff', border: 'rgba(179, 63, 186, 0.45)', text: '#6b21a8', badgeBg: '#b33fba', badgeText: '#ffffff' };
+    return { label: 'Hazardous', color: '#c92033', bg: '#fef2f2', border: 'rgba(201, 32, 51, 0.45)', text: '#9f1239', badgeBg: '#c92033', badgeText: '#ffffff' };
 };
 
 var getCompassDir = function(val) {

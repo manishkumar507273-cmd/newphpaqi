@@ -72,6 +72,54 @@ if (!empty($init_bulk['aqi'])) {
         if (isset($aqi_d['pm10'])) $init_pm10 = number_format((float)$aqi_d['pm10'], 3) . ' µg/m³';
     }
 }
+
+if (!function_exists('getPollutantScalePhp')) {
+    function getPollutantScalePhp($param, $val) {
+        $scales = [
+            'pm25' => [30, 60, 90, 120, 250],
+            'pm10' => [50, 100, 250, 350, 430],
+            'co'   => [1, 2, 10, 17, 34],
+            'no2'  => [40, 80, 180, 280, 400],
+            'o3'   => [50, 100, 168, 208, 748]
+        ];
+        $colors = ['#59b61f', '#eec732', '#ea8c34', '#e95478', '#b33fba', '#c92033'];
+        if ($val === null || !is_numeric($val) || !isset($scales[$param])) {
+            return ['pct' => '8px', 'color' => '#59b61f'];
+        }
+        $v = (float)$val;
+        $s = $scales[$param];
+        if ($v <= $s[0]) {
+            $pct = ($v / $s[0]) * 16.666;
+            $tier = 0;
+        } elseif ($v <= $s[1]) {
+            $pct = 16.666 + (($v - $s[0]) / ($s[1] - $s[0])) * 16.667;
+            $tier = 1;
+        } elseif ($v <= $s[2]) {
+            $pct = 33.333 + (($v - $s[1]) / ($s[2] - $s[1])) * 16.667;
+            $tier = 2;
+        } elseif ($v <= $s[3]) {
+            $pct = 50.0 + (($v - $s[2]) / ($s[3] - $s[2])) * 16.666;
+            $tier = 3;
+        } elseif ($v <= $s[4]) {
+            $pct = 66.666 + (($v - $s[3]) / ($s[4] - $s[3])) * 16.667;
+            $tier = 4;
+        } else {
+            $pct = 83.333 + min(1.0, ($v - $s[4]) / $s[4]) * 15.667;
+            $tier = 5;
+        }
+        $pct = round(min(98.0, max(2.0, $pct)), 2) . '%';
+        return ['pct' => $pct, 'color' => $colors[$tier]];
+    }
+}
+
+$aqi_d_sub = !empty($init_bulk['aqi']) ? $init_bulk['aqi'] : [];
+$init_pollutant_bars = [
+    'pm25' => getPollutantScalePhp('pm25', isset($aqi_d_sub['pm25']) ? $aqi_d_sub['pm25'] : (isset($aqi_d_sub['pm2.5']) ? $aqi_d_sub['pm2.5'] : null)),
+    'pm10' => getPollutantScalePhp('pm10', isset($aqi_d_sub['pm10']) ? $aqi_d_sub['pm10'] : null),
+    'co'   => getPollutantScalePhp('co', isset($aqi_d_sub['co']) ? $aqi_d_sub['co'] : null),
+    'no2'  => getPollutantScalePhp('no2', isset($aqi_d_sub['no2']) ? $aqi_d_sub['no2'] : null),
+    'o3'   => getPollutantScalePhp('o3', isset($aqi_d_sub['o3']) ? $aqi_d_sub['o3'] : null),
+];
 ?>
 <style>
 @media (max-width: 768px) {
@@ -157,7 +205,7 @@ if (!empty($init_bulk['aqi'])) {
     padding: 7px 8px !important;
     border-radius: 12px !important;
     gap: 4px !important;
-    min-height: 68px !important;
+    min-height: 84px !important;
   }
   .pollutant-card .pollutant-icon-box {
     width: 24px !important;
@@ -407,13 +455,13 @@ if (!empty($init_bulk['aqi'])) {
     <div class="pollutants-grid-responsive grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
       
       <!-- PM2.5 -->
-      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('pm25')">
+      <div class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('pm25')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🌫️</div>
             <div>
               <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₂.₅</div>
-              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤15</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤60</div>
             </div>
           </div>
           <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
@@ -430,16 +478,22 @@ if (!empty($init_bulk['aqi'])) {
             <span>Load</span>
           </div>
         </div>
+        <!-- CPCB Standard Scale Bar -->
+        <div class="w-full mt-1.5" style="position: relative;">
+          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-pm25" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['pm25']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['pm25']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+          </div>
+        </div>
       </div>
 
       <!-- PM10 -->
-      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('pm10')">
+      <div class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('pm10')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☁️</div>
             <div>
               <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₁₀</div>
-              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤45</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤100</div>
             </div>
           </div>
           <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
@@ -456,16 +510,22 @@ if (!empty($init_bulk['aqi'])) {
             <span>Load</span>
           </div>
         </div>
+        <!-- CPCB Standard Scale Bar -->
+        <div class="w-full mt-1.5" style="position: relative;">
+          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-pm10" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['pm10']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['pm10']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+          </div>
+        </div>
       </div>
 
       <!-- CO -->
-      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('co')">
+      <div class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('co')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center text-sm sm:text-lg shrink-0">💨</div>
             <div>
               <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">CO</div>
-              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤4</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤2</div>
             </div>
           </div>
           <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
@@ -482,16 +542,22 @@ if (!empty($init_bulk['aqi'])) {
             <span>Load</span>
           </div>
         </div>
+        <!-- CPCB Standard Scale Bar -->
+        <div class="w-full mt-1.5" style="position: relative;">
+          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-co" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['co']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['co']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+          </div>
+        </div>
       </div>
 
       <!-- NO2 -->
-      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('no2')">
+      <div class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('no2')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🏭</div>
             <div>
               <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">NO₂</div>
-              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤25</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤80</div>
             </div>
           </div>
           <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
@@ -508,16 +574,22 @@ if (!empty($init_bulk['aqi'])) {
             <span>Load</span>
           </div>
         </div>
+        <!-- CPCB Standard Scale Bar -->
+        <div class="w-full mt-1.5" style="position: relative;">
+          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-no2" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['no2']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['no2']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+          </div>
+        </div>
       </div>
 
       <!-- O3 -->
-      <div class="pollutant-card flex flex-col justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('o3')">
+      <div class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:border-[#00bfa5] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" onclick="openPollutantModal('o3')">
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☀️</div>
             <div>
               <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">O₃</div>
-              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">WHO: ≤100</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤100</div>
             </div>
           </div>
           <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
@@ -532,6 +604,12 @@ if (!empty($init_bulk['aqi'])) {
           <div id="tag-o3" class="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-bold flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
             <span>Load</span>
+          </div>
+        </div>
+        <!-- CPCB Standard Scale Bar -->
+        <div class="w-full mt-1.5" style="position: relative;">
+          <div style="position: relative; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%);">
+            <div id="bar-indicator-o3" style="position: absolute; top: 50%; left: <?= $init_pollutant_bars['o3']['pct'] ?>; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #ffffff; border: 2px solid <?= $init_pollutant_bars['o3']['color'] ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
           </div>
         </div>
       </div>
@@ -652,11 +730,11 @@ if (!empty($init_bulk['aqi'])) {
         <!-- Scale Items -->
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #f0fdf4; border: 1px solid #bbf7d0; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #22c55e; flex-shrink: 0;"></span>
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #59b61f; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Good</span>
-                <span style="font-size: 12px; font-weight: 700; color: #22c55e; font-family: var(--font-mono);">(0 to 50)</span>
+                <span style="font-size: 12px; font-weight: 700; color: #59b61f; font-family: var(--font-mono);">(0 to 50)</span>
               </div>
               <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Air quality is considered moderate, and air pollution poses little or no risk.</div>
             </div>
@@ -665,11 +743,11 @@ if (!empty($init_bulk['aqi'])) {
         
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fefce8; border: 1px solid #fef08a; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #eab308; flex-shrink: 0;"></span>
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #eec732; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Moderate</span>
-                <span style="font-size: 12px; font-weight: 700; color: #eab308; font-family: var(--font-mono);">(51 to 100)</span>
+                <span style="font-size: 12px; font-weight: 700; color: #854d0e; font-family: var(--font-mono);">(51 to 100)</span>
               </div>
               <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.</div>
             </div>
@@ -678,11 +756,11 @@ if (!empty($init_bulk['aqi'])) {
 
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fff7ed; border: 1px solid #fed7aa; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #f97316; flex-shrink: 0;"></span>
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #ea8c34; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Poor</span>
-                <span style="font-size: 12px; font-weight: 700; color: #f97316; font-family: var(--font-mono);">(101 to 200)</span>
+                <span style="font-size: 12px; font-weight: 700; color: #ea8c34; font-family: var(--font-mono);">(101 to 200)</span>
               </div>
               <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Breathing discomfort to people with lungs, asthma, and heart diseases.</div>
             </div>
@@ -691,11 +769,11 @@ if (!empty($init_bulk['aqi'])) {
 
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fef2f2; border: 1px solid #fecaca; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #ef4444; flex-shrink: 0;"></span>
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #e95478; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Unhealthy</span>
-                <span style="font-size: 12px; font-weight: 700; color: #ef4444; font-family: var(--font-mono);">(201 to 300)</span>
+                <span style="font-size: 12px; font-weight: 700; color: #e95478; font-family: var(--font-mono);">(201 to 300)</span>
               </div>
               <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.</div>
             </div>
@@ -704,11 +782,11 @@ if (!empty($init_bulk['aqi'])) {
 
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #faf5ff; border: 1px solid #e9d5ff; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #a855f7; flex-shrink: 0;"></span>
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #b33fba; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Severe</span>
-                <span style="font-size: 12px; font-weight: 700; color: #a855f7; font-family: var(--font-mono);">(301 to 400)</span>
+                <span style="font-size: 12px; font-weight: 700; color: #b33fba; font-family: var(--font-mono);">(301 to 400)</span>
               </div>
               <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.</div>
             </div>
@@ -717,11 +795,11 @@ if (!empty($init_bulk['aqi'])) {
 
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #fff1f2; border: 1px solid #fecdd3; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #f43f5e; flex-shrink: 0;"></span>
+            <span style="width: 12px; height: 12px; border-radius: 4px; background-color: #c92033; flex-shrink: 0;"></span>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Hazardous</span>
-                <span style="font-size: 12px; font-weight: 700; color: #f43f5e; font-family: var(--font-mono);">(401+)</span>
+                <span style="font-size: 12px; font-weight: 700; color: #c92033; font-family: var(--font-mono);">(401+)</span>
               </div>
               <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">May cause serious health impacts on entire population. Wear N95 masks and stay indoors.</div>
             </div>
@@ -811,6 +889,79 @@ function updateTag(elementId, value, limit) {
         el.style.color = '#b91c1c';
         el.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #dc2626;"></span><span>High</span>`;
     }
+}
+
+var pollutantDetails = {
+    pm25: {
+        id: 'pm25', title: 'Particulate Matter 2.5 (PM2.5)', icon: '🌫️', limit: 60, unit: 'µg/m³',
+        scale: [30, 60, 90, 120, 250],
+        maxTick: '250+',
+        desc: 'Fine inhalable particles with diameters 2.5 micrometers or smaller (about 30 times smaller than a human hair). Due to their minute size, they penetrate deep into lung alveoli and enter the circulatory system.',
+        health: 'Causes respiratory inflammation, triggers asthma attacks, increases risk of heart disease, stroke, and lung cancer. Short-term exposure causes eye, nose, and throat irritation.'
+    },
+    pm10: {
+        id: 'pm10', title: 'Particulate Matter 10 (PM10)', icon: '☁️', limit: 100, unit: 'µg/m³',
+        scale: [50, 100, 250, 350, 430],
+        maxTick: '430+',
+        desc: 'Inhalable particles with diameters that are generally 10 micrometers and smaller. Sources include crushing or grinding operations and dust stirred up by vehicles on roads.',
+        health: 'Can irritate the eyes, nose, and throat. Reduces lung function, exacerbates asthma and other respiratory diseases, and increases susceptibility to respiratory infections.'
+    },
+    co: {
+        id: 'co', title: 'Carbon Monoxide (CO)', icon: '💨', limit: 2, unit: 'mg/m³',
+        scale: [1, 2, 10, 17, 34],
+        maxTick: '34+',
+        desc: 'A colorless, odorless gas that can be harmful when inhaled in large amounts. CO is released when something is burned, primarily from vehicle exhaust.',
+        health: 'Reduces oxygen delivery to the body\'s organs (like the heart and brain). Can cause headaches, dizziness, vomiting, and nausea. High levels can cause unconsciousness or death.'
+    },
+    no2: {
+        id: 'no2', title: 'Nitrogen Dioxide (NO₂)', icon: '🏭', limit: 80, unit: 'µg/m³',
+        scale: [40, 80, 180, 280, 400],
+        maxTick: '400+',
+        desc: 'A highly reactive gas that forms quickly from emissions from cars, trucks and buses, power plants, and off-road equipment.',
+        health: 'Irritates airways in the human respiratory system. Aggravates respiratory diseases, particularly asthma, leading to coughing, wheezing or difficulty breathing.'
+    },
+    o3: {
+        id: 'o3', title: 'Ground-level Ozone (O₃)', icon: '☀️', limit: 100, unit: 'µg/m³',
+        scale: [50, 100, 168, 208, 748],
+        maxTick: '748+',
+        desc: 'Not emitted directly into the air, but created by chemical reactions between oxides of nitrogen (NOx) and volatile organic compounds (VOC) in the presence of sunlight.',
+        health: 'Can trigger a variety of health problems including chest pain, coughing, throat irritation, and airway inflammation. It can worsen bronchitis, emphysema, and asthma.'
+    }
+};
+
+function getPollutantScaleInfo(param, value) {
+    const data = pollutantDetails[param];
+    if (!data || value == null || isNaN(parseFloat(value))) {
+        return { pct: 8, color: '#59b61f', label: 'Good' };
+    }
+    const v = parseFloat(value);
+    const s = data.scale;
+    const colors = ['#59b61f', '#eec732', '#ea8c34', '#e95478', '#b33fba', '#c92033'];
+    const labels = ['Good', 'Moderate', 'Poor', 'Unhealthy', 'Severe', 'Hazardous'];
+    let pct = 0;
+    let tier = 0;
+    
+    if (v <= s[0]) {
+        pct = (v / s[0]) * 16.666;
+        tier = 0;
+    } else if (v <= s[1]) {
+        pct = 16.666 + ((v - s[0]) / (s[1] - s[0])) * 16.667;
+        tier = 1;
+    } else if (v <= s[2]) {
+        pct = 33.333 + ((v - s[1]) / (s[2] - s[1])) * 16.667;
+        tier = 2;
+    } else if (v <= s[3]) {
+        pct = 50.0 + ((v - s[2]) / (s[3] - s[2])) * 16.666;
+        tier = 3;
+    } else if (v <= s[4]) {
+        pct = 66.666 + ((v - s[3]) / (s[4] - s[3])) * 16.667;
+        tier = 4;
+    } else {
+        pct = 83.333 + Math.min(1.0, (v - s[4]) / s[4]) * 15.667;
+        tier = 5;
+    }
+    pct = Math.min(Math.max(pct, 2), 98);
+    return { pct, color: colors[tier], label: labels[tier] };
 }
 
 var liveDataStream = [];
@@ -1070,11 +1221,22 @@ async function refreshDashboard() {
             document.getElementById('card-no2').innerText = formatSupabaseValue(d.no2);
             document.getElementById('card-o3').innerText = formatSupabaseValue(d.o3);
 
-            updateTag('tag-pm25', d.pm25 ?? d['pm2.5'], 15);
-            updateTag('tag-pm10', d.pm10, 45);
-            updateTag('tag-co', d.co, 4);
-            updateTag('tag-no2', d.no2, 25);
+            updateTag('tag-pm25', d.pm25 ?? d['pm2.5'], 60);
+            updateTag('tag-pm10', d.pm10, 100);
+            updateTag('tag-co', d.co, 2);
+            updateTag('tag-no2', d.no2, 80);
             updateTag('tag-o3', d.o3, 100);
+
+            // Update CPCB Mini Scale Bars on pollutant cards
+            ['pm25', 'pm10', 'co', 'no2', 'o3'].forEach(param => {
+                const rawVal = param === 'pm25' ? (d.pm25 ?? d['pm2.5']) : d[param];
+                const info = getPollutantScaleInfo(param, rawVal);
+                const ind = document.getElementById(`bar-indicator-${param}`);
+                if (ind) {
+                    ind.style.left = `clamp(5px, ${info.pct}%, calc(100% - 5px))`;
+                    ind.style.borderColor = info.color;
+                }
+            });
         }
         
         // WEATHER DATA POPULATION
@@ -1373,39 +1535,6 @@ setTimeout(() => {
     document.addEventListener('visibilitychange', onLiveVisibilityChange);
 }, 0);
 
-var pollutantDetails = {
-    pm25: {
-        id: 'pm25', title: 'Particulate Matter 2.5 (PM2.5)', icon: '🌫️', limit: 15, unit: 'µg/m³',
-        scale: [30, 60, 90, 120, 250],
-        desc: 'Fine inhalable particles with diameters 2.5 micrometers or smaller (about 30 times smaller than a human hair). Due to their minute size, they penetrate deep into lung alveoli and enter the circulatory system.',
-        health: 'Causes respiratory inflammation, triggers asthma attacks, increases risk of heart disease, stroke, and lung cancer. Short-term exposure causes eye, nose, and throat irritation.'
-    },
-    pm10: {
-        id: 'pm10', title: 'Particulate Matter 10 (PM10)', icon: '☁️', limit: 45, unit: 'µg/m³',
-        scale: [50, 100, 250, 350, 430],
-        desc: 'Inhalable particles with diameters that are generally 10 micrometers and smaller. Sources include crushing or grinding operations and dust stirred up by vehicles on roads.',
-        health: 'Can irritate the eyes, nose, and throat. Reduces lung function, exacerbates asthma and other respiratory diseases, and increases susceptibility to respiratory infections.'
-    },
-    co: {
-        id: 'co', title: 'Carbon Monoxide (CO)', icon: '💨', limit: 4, unit: 'mg/m³',
-        scale: [1, 2, 10, 17, 34],
-        desc: 'A colorless, odorless gas that can be harmful when inhaled in large amounts. CO is released when something is burned, primarily from vehicle exhaust.',
-        health: 'Reduces oxygen delivery to the body\'s organs (like the heart and brain). Can cause headaches, dizziness, vomiting, and nausea. High levels can cause unconsciousness or death.'
-    },
-    no2: {
-        id: 'no2', title: 'Nitrogen Dioxide (NO₂)', icon: '🏭', limit: 25, unit: 'µg/m³',
-        scale: [40, 80, 180, 280, 400],
-        desc: 'A highly reactive gas that forms quickly from emissions from cars, trucks and buses, power plants, and off-road equipment.',
-        health: 'Irritates airways in the human respiratory system. Aggravates respiratory diseases, particularly asthma, leading to coughing, wheezing or difficulty breathing.'
-    },
-    o3: {
-        id: 'o3', title: 'Ground-level Ozone (O₃)', icon: '☀️', limit: 100, unit: 'µg/m³',
-        scale: [50, 100, 168, 208, 748],
-        desc: 'Not emitted directly into the air, but created by chemical reactions between oxides of nitrogen (NOx) and volatile organic compounds (VOC) in the presence of sunlight.',
-        health: 'Can trigger a variety of health problems including chest pain, coughing, throat irritation, and airway inflammation. It can worsen bronchitis, emphysema, and asthma.'
-    }
-};
-
 function openPollutantModal(type) {
     const data = pollutantDetails[type];
     if(!data) return;
@@ -1428,7 +1557,8 @@ function openPollutantModal(type) {
     document.getElementById('pm-t2').innerText = data.scale[1];
     document.getElementById('pm-t3').innerText = data.scale[2];
     document.getElementById('pm-t4').innerText = data.scale[3];
-    document.getElementById('pm-t5').innerText = data.scale[4] + '+';
+    document.getElementById('pm-t5').innerText = data.scale[4];
+    document.getElementById('pm-t6').innerText = data.maxTick;
     
     const statusBox = document.getElementById('pm-modal-status');
     if(isNaN(currentVal)) {
@@ -1436,42 +1566,33 @@ function openPollutantModal(type) {
     } else {
         statusBox.style.display = 'flex';
         if(currentVal <= data.limit) {
-            statusBox.innerHTML = '<i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Within Safe Limit';
+            statusBox.innerHTML = '<i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Within Indian CPCB Limit';
             statusBox.style.background = '#dcfce7';
             statusBox.style.color = '#16a34a';
         } else {
-            statusBox.innerHTML = '<i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i> Exceeds Safe Limit';
+            statusBox.innerHTML = '<i data-lucide="alert-triangle" style="width: 17px; height: 17px;"></i> Exceeds Indian CPCB Limit';
             statusBox.style.background = '#fee2e2';
             statusBox.style.color = '#dc2626';
         }
     }
     
     const marker = document.getElementById('pm-modal-marker');
-    let pct = 0;
-    let color = '#22c55e';
-    if(!isNaN(currentVal)) {
-        if(currentVal <= data.scale[0]) {
-            pct = (currentVal / data.scale[0]) * (100/6);
-            color = '#22c55e';
-        } else if(currentVal <= data.scale[1]) {
-            pct = (100/6) + ((currentVal - data.scale[0]) / (data.scale[1] - data.scale[0])) * (100/6);
-            color = '#eab308';
-        } else if(currentVal <= data.scale[2]) {
-            pct = (200/6) + ((currentVal - data.scale[1]) / (data.scale[2] - data.scale[1])) * (100/6);
-            color = '#00bfa5';
-        } else if(currentVal <= data.scale[3]) {
-            pct = (300/6) + ((currentVal - data.scale[2]) / (data.scale[3] - data.scale[2])) * (100/6);
-            color = '#ef4444';
-        } else if(currentVal <= data.scale[4]) {
-            pct = (400/6) + ((currentVal - data.scale[3]) / (data.scale[4] - data.scale[3])) * (100/6);
-            color = '#a855f7';
-        } else {
-            pct = (500/6) + Math.min((100/6), ((currentVal - data.scale[4]) / data.scale[4]) * (100/6));
-            color = '#f43f5e';
+    const scaleInfo = getPollutantScaleInfo(type, currentVal);
+    marker.style.left = `clamp(8px, ${scaleInfo.pct}%, calc(100% - 8px))`;
+    marker.style.borderColor = scaleInfo.color;
+    
+    const modal = document.getElementById('pollutant-modal');
+    if (modal) {
+        if (modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
         }
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        const scrollBox = modal.querySelector('.pollutant-modal-scroll');
+        if (scrollBox) scrollBox.scrollTop = 0;
     }
-    marker.style.left = `clamp(8px, ${pct}%, calc(100% - 8px))`;
-    marker.style.borderColor = color;
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
+}
     
     const modal = document.getElementById('pollutant-modal');
     if (modal) {
@@ -1514,7 +1635,7 @@ document.addEventListener('keydown', function(e) {
             <div id="pm-modal-icon-bg" style="width: 54px; height: 54px; border-radius: 16px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5); border: 1px solid #e2e8f0;">🌫️</div>
             <div>
                 <h2 id="pm-modal-title" style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #0f172a; font-family: var(--font-sans); line-height: 1.25;">Particulate Matter 2.5 (PM2.5)</h2>
-                <div style="font-size: 13.5px; font-weight: 600; color: #64748b;">WHO Safe Limit: <span id="pm-modal-limit" style="color: #00bfa5;">15 µg/m³</span></div>
+                <div style="font-size: 13.5px; font-weight: 600; color: #64748b;">Indian Standard (CPCB Limit): <span id="pm-modal-limit" style="color: #00bfa5;">60 µg/m³</span></div>
             </div>
         </div>
 
@@ -1528,46 +1649,40 @@ document.addEventListener('keydown', function(e) {
                 </div>
             </div>
             <div id="pm-modal-status" style="display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; background: #dcfce7; color: #16a34a; font-size: 13px; font-weight: 700;">
-                <i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Within Safe Limit
+                <i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Within Indian CPCB Limit
             </div>
         </div>
 
         <!-- Concentration Scale Box -->
         <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                <div style="font-size: 11.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);"><span id="pm-modal-short">PM2.5</span> CONCENTRATION SCALE</div>
-                <div style="font-size: 11.5px; font-weight: 700; color: #00bfa5;">Real-time Level</div>
+                <div style="font-size: 11.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);"><span id="pm-modal-short">PM2.5</span> CONCENTRATION SCALE (CPCB)</div>
+                <div style="font-size: 11.5px; font-weight: 700; color: #00bfa5;">Indian NAQI Standard</div>
             </div>
             
             <div style="position: relative; width: 100%;">
-                <div style="display: grid; grid-template-columns: repeat(6, 1fr); margin-bottom: 10px; font-size: 9.5px; font-weight: 700; line-height: 1;">
-                    <div style="color: #22c55e; text-align: left;">Good</div>
-                    <div style="color: #eab308; text-align: center;">Moderate</div>
-                    <div style="color: #f97316; text-align: center;">Poor</div>
-                    <div style="color: #ef4444; text-align: center;">Unhealthy</div>
-                    <div style="color: #a855f7; text-align: center;">Severe</div>
-                    <div style="color: #f43f5e; text-align: right;">Hazardous</div>
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); margin-bottom: 8px; font-size: 9.5px; font-weight: 700; line-height: 1;">
+                    <div style="color: #475569; text-align: left;">Good</div>
+                    <div style="color: #475569; text-align: center;">Moderate</div>
+                    <div style="color: #475569; text-align: center;">Poor</div>
+                    <div style="color: #475569; text-align: center;">Unhealthy</div>
+                    <div style="color: #475569; text-align: center;">Severe</div>
+                    <div style="color: #475569; text-align: right;">Hazardous</div>
                 </div>
                 
-                <div style="position: relative; height: 10px; border-radius: 999px; margin-bottom: 8px;">
-                    <div style="width: 100%; height: 100%; border-radius: 999px; display: flex; overflow: hidden; background: #f1f5f9;">
-                        <div style="flex: 1; background: #22c55e;"></div>
-                        <div style="flex: 1; background: #eab308;"></div>
-                        <div style="flex: 1; background: #f97316;"></div>
-                        <div style="flex: 1; background: #ef4444;"></div>
-                        <div style="flex: 1; background: #a855f7;"></div>
-                        <div style="flex: 1; background: #f43f5e;"></div>
-                    </div>
-                    <div id="pm-modal-marker" style="position: absolute; top: 50%; left: 10%; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background: #ffffff; border: 3px solid #22c55e; box-shadow: 0 2px 5px rgba(0,0,0,0.25); transition: left 0.4s ease, border-color 0.4s ease;"></div>
+                <div style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+                    <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
+                    <div id="pm-modal-marker" style="position: absolute; top: 50%; left: 10%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: #ffffff; border: 3.5px solid #59b61f; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
                 </div>
                 
-                <div id="pm-modal-ticks" style="display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; color: #64748b; font-family: var(--font-mono); padding: 0 2px;">
-                    <div>0</div>
-                    <div id="pm-t1">30</div>
-                    <div id="pm-t2">60</div>
-                    <div id="pm-t3">90</div>
-                    <div id="pm-t4">120</div>
-                    <div id="pm-t5">250+</div>
+                <div id="pm-modal-ticks" style="position: relative; height: 16px; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">
+                    <span style="position: absolute; left: 0%; line-height: 1;">0</span>
+                    <span id="pm-t1" style="position: absolute; left: 16.666%; transform: translateX(-50%); line-height: 1;">30</span>
+                    <span id="pm-t2" style="position: absolute; left: 33.333%; transform: translateX(-50%); line-height: 1;">60</span>
+                    <span id="pm-t3" style="position: absolute; left: 50%; transform: translateX(-50%); line-height: 1;">90</span>
+                    <span id="pm-t4" style="position: absolute; left: 66.666%; transform: translateX(-50%); line-height: 1;">120</span>
+                    <span id="pm-t5" style="position: absolute; left: 83.333%; transform: translateX(-50%); line-height: 1;">250</span>
+                    <span id="pm-t6" style="position: absolute; right: 0%; line-height: 1;">250+</span>
                 </div>
             </div>
         </div>

@@ -394,12 +394,12 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         $aqiVal = (int)round($maxSub);
         $allTemps[] = $p_temp;
 
-        $cat = 'Good'; $sev = 'GOOD'; $col = '#22c55e';
-        if ($aqiVal > 50 && $aqiVal <= 100) { $cat = 'Moderate'; $sev = 'MODERATE'; $col = '#eab308'; }
-        elseif ($aqiVal > 100 && $aqiVal <= 150) { $cat = 'Poor'; $sev = 'POOR'; $col = '#f97316'; }
-        elseif ($aqiVal > 150 && $aqiVal <= 200) { $cat = 'Unhealthy'; $sev = 'UNHEALTHY'; $col = '#ef4444'; }
-        elseif ($aqiVal > 200 && $aqiVal <= 300) { $cat = 'Severe'; $sev = 'SEVERE'; $col = '#a855f7'; }
-        elseif ($aqiVal > 300) { $cat = 'Hazardous'; $sev = 'HAZARDOUS'; $col = '#f43f5e'; }
+        $cat = 'Good'; $sev = 'GOOD'; $col = '#16a34a';
+        if ($aqiVal > 50 && $aqiVal <= 100) { $cat = 'Moderate'; $sev = 'MODERATE'; $col = '#ca8a04'; }
+        elseif ($aqiVal > 100 && $aqiVal <= 200) { $cat = 'Poor'; $sev = 'POOR'; $col = '#ea580c'; }
+        elseif ($aqiVal > 200 && $aqiVal <= 300) { $cat = 'Unhealthy'; $sev = 'UNHEALTHY'; $col = '#e11d48'; }
+        elseif ($aqiVal > 300 && $aqiVal <= 400) { $cat = 'Severe'; $sev = 'SEVERE'; $col = '#9333ea'; }
+        elseif ($aqiVal > 400) { $cat = 'Hazardous'; $sev = 'HAZARDOUS'; $col = '#b91c1c'; }
 
         $hour = (int)$dt->format('G');
         $label = $dt->format('g A');
@@ -509,6 +509,7 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         $advTitle = 'Air Quality Ideal (Good) · Minimal Health Impact';
         $advDesc = "Predicted ambient AQI is {$curAqi} (Dominant: {$curDom}). All criteria pollutant concentrations are within safe limits.";
         $sevLabel = 'GOOD';
+        $healthImpact = 'Minimal impact';
         $sportsAdv = 'Optimal for athletic training and sports';
         $ventAdv = 'Full campus natural cross-ventilation advised';
         $hydrAdv = 'Standard hydration (2.5L/day recommended)';
@@ -516,16 +517,42 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
         $advTitle = 'Air Quality Moderate · Minor Sensitive Group Impact';
         $advDesc = "Predicted ambient AQI is {$curAqi} (Dominant: {$curDom}). Minimal impact on healthy individuals.";
         $sevLabel = 'MODERATE';
+        $healthImpact = 'Minor breathing discomfort to sensitive people';
         $sportsAdv = 'Standard outdoor sports and exercise permitted';
         $ventAdv = 'Normal classroom and lab ventilation';
         $hydrAdv = 'Keep hydrated during warm afternoon peaks';
-    } else {
-        $advTitle = 'Air Quality Moderate · Sensitive Group Advisory';
-        $advDesc = "Predicted ambient AQI is {$curAqi} dominated by {$curDom}. Moderate prolonged outdoor exposure if sensitive.";
-        $sevLabel = 'MODERATE';
+    } elseif ($curAqi <= 200) {
+        $advTitle = 'Air Quality Poor · Breathing Discomfort Advisory';
+        $advDesc = "Predicted ambient AQI is {$curAqi} dominated by {$curDom}. Breathing discomfort to people with lung, asthma and heart diseases.";
+        $sevLabel = 'POOR';
+        $healthImpact = 'Breathing discomfort to people with lungs, asthma and heart diseases';
         $sportsAdv = 'Consider scheduling strenuous sports in early morning';
         $ventAdv = 'Use filtered ventilation during peak hours';
         $hydrAdv = 'Adequate fluid intake recommended';
+    } elseif ($curAqi <= 300) {
+        $advTitle = 'Air Quality Unhealthy · General Public Advisory';
+        $advDesc = "Predicted ambient AQI is {$curAqi} dominated by {$curDom}. Breathing discomfort to most people on prolonged exposure.";
+        $sevLabel = 'UNHEALTHY';
+        $healthImpact = 'Breathing discomfort to most people on prolonged exposure';
+        $sportsAdv = 'Avoid intense outdoor physical activities';
+        $ventAdv = 'Keep windows closed; operate indoor air purifiers';
+        $hydrAdv = 'Increase fluid intake and avoid prolonged exertion';
+    } elseif ($curAqi <= 400) {
+        $advTitle = 'Air Quality Severe · Respiratory Health Warning';
+        $advDesc = "Predicted ambient AQI is {$curAqi} dominated by {$curDom}. Respiratory illness on prolonged exposure.";
+        $sevLabel = 'SEVERE';
+        $healthImpact = 'Respiratory illness on prolonged exposure';
+        $sportsAdv = 'Suspend outdoor athletic events and training';
+        $ventAdv = 'Seal outdoor air dampers; run high-efficiency filters';
+        $hydrAdv = 'Remain indoors in conditioned spaces';
+    } else {
+        $advTitle = 'Air Quality Hazardous · Emergency Health Warning';
+        $advDesc = "Predicted ambient AQI is {$curAqi} dominated by {$curDom}. Serious risk of respiratory effects in general population.";
+        $sevLabel = 'HAZARDOUS';
+        $healthImpact = 'Affects healthy people and seriously impacts those with existing diseases';
+        $sportsAdv = 'Strictly prohibit outdoor physical activities';
+        $ventAdv = 'Full campus indoor lockdown of ventilation intakes';
+        $hydrAdv = 'Stay indoors and seek medical advice if symptomatic';
     }
 
     // Compute 4 diurnal phases for the 24-hour accordion
@@ -598,7 +625,7 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
             'category' => $h0['category'],
             'severity' => $h0['severity'],
             'color' => $h0['color'],
-            'health_impact' => ($curAqi <= 50 ? 'Minimal Impact' : ($curAqi <= 100 ? 'Minor breathing discomfort to sensitive people' : 'Breathing discomfort to people with lungs, asthma and heart diseases')),
+            'health_impact' => $healthImpact,
             'sub_indices' => $h0['sub_indices'],
             'temp' => $h0['temp'],
             'humidity' => $h0['humidity'],
@@ -738,7 +765,7 @@ switch ($action) {
     case 'live_bulk': {
         $lim   = min($limit, 120);
         $ckey  = "live_bulk_{$lim}";
-        $cached = cacheGet($ckey, 3);
+        $cached = cacheGet($ckey, 8);
         if ($cached !== null) { echo json_encode($cached); break; }
 
         $dtMidnightIst = new DateTime('today midnight', new DateTimeZone('Asia/Kolkata'));
@@ -781,6 +808,15 @@ switch ($action) {
 
         cacheSet($ckey, $res);
         cacheSet('overview_bulk', $res);
+        if ($res['aqi'] && isset($res['aqi']['cpcb_aqi'])) {
+            @file_put_contents($CACHE_DIR . '/last_known_hero.json', json_encode([
+                'cpcb_aqi' => $res['aqi']['cpcb_aqi'],
+                'pm25' => $res['aqi']['pm25'] ?? $res['aqi']['pm2.5'] ?? null,
+                'pm10' => $res['aqi']['pm10'] ?? null,
+                'timestamp' => $res['aqi']['timestamp'] ?? null,
+                'time' => time()
+            ]));
+        }
         echo json_encode($res);
         break;
     }
@@ -788,7 +824,7 @@ switch ($action) {
     case 'overview_bulk': {
         $lim   = 60;
         $ckey  = "overview_bulk";
-        $cached = cacheGet($ckey, 15);
+        $cached = cacheGet($ckey, 30);
         if ($cached !== null && (!empty($cached['aqi']) || !empty($cached['weather']))) { echo json_encode($cached); break; }
 
         $dtMidnightIst = new DateTime('today midnight', new DateTimeZone('Asia/Kolkata'));
@@ -839,6 +875,15 @@ switch ($action) {
 
         if ($res['aqi'] !== null || $res['weather'] !== null) {
             cacheSet($ckey, $res);
+            if ($res['aqi'] && isset($res['aqi']['cpcb_aqi'])) {
+                @file_put_contents($CACHE_DIR . '/last_known_hero.json', json_encode([
+                    'cpcb_aqi' => $res['aqi']['cpcb_aqi'],
+                    'pm25' => $res['aqi']['pm25'] ?? $res['aqi']['pm2.5'] ?? null,
+                    'pm10' => $res['aqi']['pm10'] ?? null,
+                    'timestamp' => $res['aqi']['timestamp'] ?? null,
+                    'time' => time()
+                ]));
+            }
         }
         echo json_encode($res);
         break;
@@ -884,7 +929,6 @@ switch ($action) {
         if ($raw['weather']) { foreach ($raw['weather'] as $row) { $f = formatWeatherReading($row); if ($f) $res['weather'][] = $f; } }
 
         cacheSet($ckey, $res);
-        cacheSet('overview_bulk', $res);
         echo json_encode($res);
         break;
     }
@@ -933,6 +977,23 @@ switch ($action) {
                                     $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
                                     $item['label'] = $dt->format('g A');
                                 } catch (Exception $e) {}
+                            }
+                            // Normalize AQI category and colors as per the Live page bar
+                            if (isset($item['aqi'])) {
+                                $av = (int)round($item['aqi']);
+                                if ($av <= 50) {
+                                    $item['category'] = 'Good'; $item['severity'] = 'GOOD'; $item['color'] = '#16a34a';
+                                } elseif ($av <= 100) {
+                                    $item['category'] = 'Moderate'; $item['severity'] = 'MODERATE'; $item['color'] = '#ca8a04';
+                                } elseif ($av <= 200) {
+                                    $item['category'] = 'Poor'; $item['severity'] = 'POOR'; $item['color'] = '#ea580c';
+                                } elseif ($av <= 300) {
+                                    $item['category'] = 'Unhealthy'; $item['severity'] = 'UNHEALTHY'; $item['color'] = '#e11d48';
+                                } elseif ($av <= 400) {
+                                    $item['category'] = 'Severe'; $item['severity'] = 'SEVERE'; $item['color'] = '#9333ea';
+                                } else {
+                                    $item['category'] = 'Hazardous'; $item['severity'] = 'HAZARDOUS'; $item['color'] = '#b91c1c';
+                                }
                             }
                         }
                         unset($item);

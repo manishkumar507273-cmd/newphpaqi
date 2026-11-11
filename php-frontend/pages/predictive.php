@@ -101,7 +101,7 @@ if (file_exists($forecastJsonFile)) {
     </div>
 
     <!-- Grid of the 8 predicted parameters -->
-    <div id="predicted-parameters-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 sm:gap-3">
+    <div id="predicted-parameters-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-2.5 xl:gap-3">
       <div class="text-xs text-slate-400 py-6 text-center col-span-full">Loading predicted parameters...</div>
     </div>
   </div>
@@ -476,18 +476,60 @@ if (file_exists($forecastJsonFile)) {
 (function() {
     let trainedModelData = <?php echo $preloadedForecastJson ?: 'null'; ?>;
 
-    // AQI Colors and Categories
+    // AQI Colors and Categories as per Live Page Bar Standard
     function getAqiBadge(aqi) {
         if (aqi === null || aqi === undefined || aqi === '--' || isNaN(Number(aqi))) {
-            return { label: 'Standby', bg: '#f8fafc', text: '#64748b', border: '#cbd5e1', dot: '#94a3b8' };
+            return { label: 'Standby', bg: '#f8fafc', text: '#64748b', border: '#cbd5e1', dot: '#94a3b8', color: '#64748b' };
         }
         const v = Number(aqi);
-        if (v <= 50) return { label: 'Good', bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0', dot: '#22c55e' };
-        if (v <= 100) return { label: 'Moderate', bg: '#fef9c3', text: '#854d0e', border: 'rgba(234, 179, 8, 0.45)', dot: '#eab308' };
-        if (v <= 150) return { label: 'Poor', bg: '#ffedd5', text: '#9a3412', border: '#fed7aa', dot: '#f97316' };
-        if (v <= 200) return { label: 'Unhealthy', bg: '#fee2e2', text: '#991b1b', border: '#fecaca', dot: '#ef4444' };
-        if (v <= 300) return { label: 'Severe', bg: '#faf5ff', text: '#6b21a8', border: '#e9d5ff', dot: '#a855f7' };
-        return { label: 'Hazardous', bg: '#ffe4e6', text: '#9f1239', border: '#fda4af', dot: '#f43f5e' };
+        if (v <= 50) return {
+            label: 'Good',
+            bg: '#f0fdf4',
+            text: '#15803d',
+            border: 'rgba(22, 163, 74, 0.35)',
+            dot: '#16a34a',
+            color: '#16a34a'
+        };
+        if (v <= 100) return {
+            label: 'Moderate',
+            bg: '#fefce8',
+            text: '#854d0e',
+            border: 'rgba(202, 138, 4, 0.38)',
+            dot: '#eab308',
+            color: '#ca8a04'
+        };
+        if (v <= 200) return {
+            label: 'Poor',
+            bg: '#fff7ed',
+            text: '#c2410c',
+            border: 'rgba(234, 88, 12, 0.38)',
+            dot: '#f97316',
+            color: '#ea580c'
+        };
+        if (v <= 300) return {
+            label: 'Unhealthy',
+            bg: '#fff1f2',
+            text: '#9f1239',
+            border: 'rgba(225, 29, 72, 0.38)',
+            dot: '#ef4444',
+            color: '#e11d48'
+        };
+        if (v <= 400) return {
+            label: 'Severe',
+            bg: '#faf5ff',
+            text: '#6b21a8',
+            border: 'rgba(147, 51, 234, 0.38)',
+            dot: '#a855f7',
+            color: '#9333ea'
+        };
+        return {
+            label: 'Hazardous',
+            bg: '#fef2f2',
+            text: '#881337',
+            border: 'rgba(185, 28, 28, 0.40)',
+            dot: '#b91c1c',
+            color: '#b91c1c'
+        };
     }
 
     // 5-Tier Rainfall Probability Scale & Status Badges Standard
@@ -745,13 +787,13 @@ if (file_exists($forecastJsonFile)) {
             const heroAqi = document.getElementById('forecast-hero-aqi');
             if (heroAqi) {
                 heroAqi.innerText = curHour.aqi !== undefined ? curHour.aqi : '--';
-                heroAqi.style.color = b.color || b.text;
+                heroAqi.style.color = b.color;
             }
 
-            // Category Badge
+            // Category Badge as per Live Page Bar standard
             const catBadge = document.getElementById('forecast-hero-category-badge');
             if (catBadge) {
-                catBadge.innerText = (curHour.category || b.label).toUpperCase();
+                catBadge.innerText = b.label.toUpperCase();
                 catBadge.style.backgroundColor = b.bg;
                 catBadge.style.borderColor = b.border;
                 catBadge.style.color = b.text;
@@ -832,7 +874,6 @@ if (file_exists($forecastJsonFile)) {
             if (paramsGrid && trainedModelData && trainedModelData.parameters) {
                 const p = trainedModelData.parameters;
                 const curSub = curHour.sub_indices || {};
-                const rfInfo = trainedModelData.rainfall;
                 const curRainMm = hourRainMm;
                 const curRainChance = hourRainProb;
 
@@ -844,47 +885,139 @@ if (file_exists($forecastJsonFile)) {
                     o3:   '≤100 µg/m³'
                 };
 
-                const formatCurVal = (val, key) => {
-                    if (val === null || val === undefined || isNaN(val)) return '--';
-                    if (['pm25', 'pm10', 'no2', 'co', 'o3'].includes(key)) {
-                        return Number(val).toFixed(3);
+                const getSubBadgeStyles = (subVal) => {
+                    if (subVal === null || subVal === undefined || isNaN(subVal)) {
+                        return 'bg-slate-100 text-slate-600 border-slate-200';
                     }
-                    return val;
+                    const v = Number(subVal);
+                    if (v <= 50)  return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                    if (v <= 100) return 'bg-amber-50 text-amber-700 border-amber-200';
+                    if (v <= 200) return 'bg-orange-50 text-orange-700 border-orange-200';
+                    if (v <= 300) return 'bg-rose-50 text-rose-700 border-rose-200';
+                    if (v <= 400) return 'bg-purple-50 text-purple-700 border-purple-200';
+                    return 'bg-red-50 text-red-700 border-red-200';
                 };
 
+                const formatCurVal = (val, key) => {
+                    if (val === null || val === undefined || isNaN(val)) return '--';
+                    const num = Number(val);
+                    if (key === 'co') return num.toFixed(2);
+                    if (['pm25', 'pm10', 'no2', 'o3'].includes(key)) {
+                        return num.toFixed(2);
+                    }
+                    if (key === 'temp' || key === 'humidity') {
+                        return num.toFixed(1);
+                    }
+                    if (key === 'rainfall') {
+                        return Math.round(num);
+                    }
+                    return num.toFixed(1);
+                };
+
+                const pm25Sub = curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex;
+                const pm10Sub = curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex;
+                const no2Sub  = curSub['NO₂'] ?? curSub['no2'] ?? curSub['NO2'] ?? p.no2.current_subindex;
+                const coSub   = curSub['CO'] ?? curSub['co'] ?? p.co.current_subindex;
+                const o3Sub   = curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex;
+
                 const items = [
-                    { key: 'pm25', name: 'PM2.5', icon: '💨', current: formatCurVal(curHour.pm25, 'pm25'), subindex: curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex, unit: 'µg/m³', range: `${p.pm25.min} - ${p.pm25.max}`, mean: p.pm25.mean, limit: whoSafeLimits.pm25 },
-                    { key: 'pm10', name: 'PM10', icon: '🌫️', current: formatCurVal(curHour.pm10, 'pm10'), subindex: curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex, unit: 'µg/m³', range: `${p.pm10.min} - ${p.pm10.max}`, mean: p.pm10.mean, limit: whoSafeLimits.pm10 },
-                    { key: 'no2', name: 'NO₂', icon: '🚦', current: formatCurVal(curHour.no2, 'no2'), subindex: curSub['NO₂'] ?? curSub['no2'] ?? curSub['NO2'] ?? p.no2.current_subindex, unit: 'µg/m³', range: `${p.no2.min} - ${p.no2.max}`, mean: p.no2.mean, limit: whoSafeLimits.no2 },
-                    { key: 'co', name: 'CO', icon: '🏭', current: formatCurVal(curHour.co, 'co'), subindex: curSub['CO'] ?? curSub['co'] ?? p.co.current_subindex, unit: 'mg/m³', range: `${p.co.min} - ${p.co.max}`, mean: p.co.mean, limit: whoSafeLimits.co },
-                    { key: 'o3', name: 'O₃', icon: '☀️', current: formatCurVal(curHour.o3, 'o3'), subindex: curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex, unit: 'µg/m³', range: `${p.o3.min} - ${p.o3.max}`, mean: p.o3.mean, limit: whoSafeLimits.o3 },
-                    { key: 'temp', name: 'Temp', icon: '🌡️', current: curHour.temp, subindex: null, unit: '°C', range: `${p.temp.min}° - ${p.temp.max}°`, mean: `${p.temp.mean}°`, limit: 'Campus Ambient' },
-                    { key: 'humidity', name: 'Humidity', icon: '💧', current: curHour.humidity, subindex: null, unit: '%', range: `${p.humidity.min}% - ${p.humidity.max}%`, mean: `${p.humidity.mean}%`, limit: 'Comfort 40-70%' },
-                    { key: 'rainfall', name: 'Rainfall', icon: '🌧️', current: curRainChance, subindex: null, unit: '%', rainMm: curRainMm, range: `${rfInfo?.total_24h_rainfall_mm ?? p.rainfall?.total_24h ?? 0} mm/24h`, mean: rfInfo ? `Peak: ${rfInfo.peak_hourly_rate_mm} mm/h` : '0 mm/h', limit: `${curRainMm} mm` }
+                    {
+                        key: 'pm25', name: 'PM2.5', icon: '💨',
+                        current: formatCurVal(curHour.pm25, 'pm25'),
+                        unit: 'µg/m³',
+                        badgeText: `Sub: ${pm25Sub != null ? Math.round(pm25Sub) : '--'}`,
+                        badgeClass: getSubBadgeStyles(pm25Sub),
+                        footerLabel: 'WHO:',
+                        footerVal: whoSafeLimits.pm25
+                    },
+                    {
+                        key: 'pm10', name: 'PM10', icon: '🌫️',
+                        current: formatCurVal(curHour.pm10, 'pm10'),
+                        unit: 'µg/m³',
+                        badgeText: `Sub: ${pm10Sub != null ? Math.round(pm10Sub) : '--'}`,
+                        badgeClass: getSubBadgeStyles(pm10Sub),
+                        footerLabel: 'WHO:',
+                        footerVal: whoSafeLimits.pm10
+                    },
+                    {
+                        key: 'no2', name: 'NO₂', icon: '🚦',
+                        current: formatCurVal(curHour.no2, 'no2'),
+                        unit: 'µg/m³',
+                        badgeText: `Sub: ${no2Sub != null ? (Math.round(no2Sub * 10) / 10) : '--'}`,
+                        badgeClass: getSubBadgeStyles(no2Sub),
+                        footerLabel: 'WHO:',
+                        footerVal: whoSafeLimits.no2
+                    },
+                    {
+                        key: 'co', name: 'CO', icon: '🏭',
+                        current: formatCurVal(curHour.co, 'co'),
+                        unit: 'mg/m³',
+                        badgeText: `Sub: ${coSub != null ? (Math.round(coSub * 10) / 10) : '--'}`,
+                        badgeClass: getSubBadgeStyles(coSub),
+                        footerLabel: 'WHO:',
+                        footerVal: whoSafeLimits.co
+                    },
+                    {
+                        key: 'o3', name: 'O₃', icon: '☀️',
+                        current: formatCurVal(curHour.o3, 'o3'),
+                        unit: 'µg/m³',
+                        badgeText: `Sub: ${o3Sub != null ? (Math.round(o3Sub * 10) / 10) : '--'}`,
+                        badgeClass: getSubBadgeStyles(o3Sub),
+                        footerLabel: 'WHO:',
+                        footerVal: whoSafeLimits.o3
+                    },
+                    {
+                        key: 'temp', name: 'Temp', icon: '🌡️',
+                        current: formatCurVal(curHour.temp, 'temp'),
+                        unit: '°C',
+                        badgeText: 'Ambient',
+                        badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+                        footerLabel: 'Range:',
+                        footerVal: `${Math.round(p.temp.min)}° – ${Math.round(p.temp.max)}°`
+                    },
+                    {
+                        key: 'humidity', name: 'Humidity', icon: '💧',
+                        current: formatCurVal(curHour.humidity, 'humidity'),
+                        unit: '%',
+                        badgeText: 'Comfort',
+                        badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
+                        footerLabel: 'Target:',
+                        footerVal: '40% – 70%'
+                    },
+                    {
+                        key: 'rainfall', name: 'Rainfall', icon: '🌧️',
+                        current: curRainChance,
+                        unit: '%',
+                        badgeText: curRainChance > 0 ? `${curRainChance}%` : 'Dry',
+                        badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+                        footerLabel: 'Precip:',
+                        footerVal: `${curRainMm} mm`
+                    }
                 ];
 
                 paramsGrid.innerHTML = items.map((it) => `
-                    <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-teal-500/40 transition-all shadow-xs">
-                      <div class="flex items-center justify-between mb-1 sm:mb-1.5">
-                        <span class="text-xs font-bold text-slate-700 flex items-center gap-1">
-                          <span>${it.icon}</span> <span>${it.name}</span>
+                    <div class="bg-white border border-slate-200/90 rounded-2xl p-2 sm:p-2.5 xl:p-3 flex flex-col justify-between hover:border-teal-500/40 hover:shadow-sm transition-all shadow-2xs h-full min-h-[110px]">
+                      <!-- Top Row: Full Name on left, Badge on right -->
+                      <div class="flex items-center justify-between gap-1 mb-1">
+                        <span class="text-xs font-bold text-slate-800 flex items-center gap-1 shrink-0 whitespace-nowrap">
+                          <span class="shrink-0 text-xs sm:text-sm">${it.icon}</span>
+                          <span class="font-sans font-bold whitespace-nowrap">${it.name}</span>
                         </span>
-                        ${it.subindex !== null && it.subindex !== undefined ? `
-                          <span class="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Sub: ${it.subindex}
-                          </span>
-                        ` : `
-                          <span class="text-[9.5px] font-mono font-bold text-slate-400">${it.unit}</span>
-                        `}
+                        <span class="text-[8.5px] sm:text-[9px] font-mono font-extrabold px-1 sm:px-1.5 py-0.5 rounded border ${it.badgeClass} whitespace-nowrap shrink-0">
+                          ${it.badgeText}
+                        </span>
                       </div>
-                      <div class="my-0.5 sm:my-1">
-                        <div class="text-base sm:text-xl font-extrabold font-mono text-slate-900 leading-none">${it.current} <span class="text-[11px] sm:text-xs font-normal text-slate-400">${it.unit}</span></div>
-                        <div class="text-[9.5px] sm:text-[10px] text-slate-400 mt-1 truncate">
-                          ${it.key === 'rainfall'
-                            ? `<span>Precipitation: <strong class="text-slate-500 font-mono">${it.rainMm} mm</strong></span>`
-                            : `<span>WHO: <strong class="text-slate-500 font-mono">${it.limit}</strong></span>`
-                          }
-                        </div>
+
+                      <!-- Middle Row: Value & Unit on a single aligned line -->
+                      <div class="my-1 flex items-baseline gap-1">
+                        <span class="text-lg sm:text-[21px] font-extrabold font-mono text-slate-900 tracking-tight leading-none">${it.current}</span>
+                        <span class="text-[11px] font-semibold text-slate-400 font-mono shrink-0">${it.unit}</span>
+                      </div>
+
+                      <!-- Bottom Row: Benchmark / Range Footer -->
+                      <div class="text-[9px] sm:text-[9.5px] text-slate-400 flex items-center justify-between gap-1">
+                        <span class="shrink-0">${it.footerLabel}</span>
+                        <strong class="text-slate-600 font-mono font-bold truncate text-right">${it.footerVal}</strong>
                       </div>
                     </div>
                 `).join('');

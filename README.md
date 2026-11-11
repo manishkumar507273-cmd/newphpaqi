@@ -10,7 +10,6 @@ A modern intelligence platform for real-time air quality index (AQI) telemetry a
 | Layer | Technology |
 |---|---|
 | **Frontend/Backend** | PHP 8.x, Vanilla JavaScript, Lucide Icons, Vanilla CSS & Tailwind-like Utility Classes |
-| **Email Dispatch** | PHPMailer (SMTP configuration for dataset delivery) |
 | **Data Source** | Supabase Cloud REST API (`AQI_LIVE_NODE1`, `AQI_NODE1`, `WEATHER_LIVE_NODE1`, `WEATHER_NODE1`) |
 | **Design System** | Dark Slate Theme (`#0f172a`), Space Grotesk & JetBrains Mono typography, Glassmorphism, Micro-animations |
 
@@ -39,23 +38,30 @@ A modern intelligence platform for real-time air quality index (AQI) telemetry a
 
 ```text
 ├── php-frontend/
-│   ├── api/                       # API Handlers for form submissions
-│   │   └── approve_request.php    # Dataset request processing & email dispatcher (PHPMailer)
+│   ├── api/                       # API Handlers for telemetry and requests
+│   │   ├── submit_request.php     # Dataset request processing & webhook forwarder
+│   │   └── telemetry.php          # High-performance parallel telemetry engine
 │   ├── components/                # Reusable PHP UI components
+│   │   ├── auth-modal.php         # Authentication dialog
+│   │   ├── brand-assets.php       # Official SVG/PNG brand assets
 │   │   └── layout.php             # Main site shell, navigation, and mobile menu
+│   ├── css/                       # Custom stylesheets
+│   │   └── index.css              # Custom styling, fonts, and responsive rules
 │   ├── js/                        # Client-side JavaScript
-│   │   └── api.js                 # API client fetching telemetry from Supabase REST API
-│   ├── libs/                      # Third-party PHP libraries
-│   │   └── PHPMailer/             # PHPMailer library for SMTP support
+│   │   ├── api.js                 # API client fetching telemetry from Supabase REST API
+│   │   └── router.js              # SPA client router with prefetching & instant page swaps
 │   ├── pages/                     # Application Views
-│   │   ├── admin.php              # Secure Admin dashboard for dataset requests
-│   │   ├── aqi.php                # (Legacy)
 │   │   ├── historical.php         # Historical analytics, charts, dataset request modal
 │   │   ├── live.php               # Live AQI telemetry dashboard
 │   │   ├── overview.php           # Hardware specifications and system overview
-│   │   ├── predictive.php         # Forecasting tools (under development)
+│   │   ├── predictive.php         # 24-48h AI forecast engine & rainfall probability
 │   │   └── weather.php            # Live weather telemetry dashboard
 │   └── index.php                  # Application entry point and router
+├── php-backend/                   # AI Forecasting and Python models
+│   ├── cpcb_calculator.py         # Indian CPCB AQI sub-index calculator
+│   ├── generate_forecast.py       # Hourly neural forecast inference script
+│   └── rainfall_model_runner.py   # SAPE 24h Wavelet-LSTM rainfall prediction model
+├── forcast/                       # Trained neural network weights (.pt, .keras, .joblib)
 └── README.md                      # Project documentation
 ```
 
@@ -69,16 +75,11 @@ If you have PHP installed on your machine, you can run the project using the bui
 
 ```bash
 cd php-frontend
-php -S localhost:8001
+php -S localhost:8001 router.php
 ```
 - **Application URL**: [http://localhost:8001](http://localhost:8001)
 
 Alternatively, deploy the `php-frontend` directory to any standard Apache/Nginx web server with PHP support (e.g., XAMPP, WAMP, or an Ubuntu VPS).
-
-### 2. Administrator Access & SMTP Configuration
-
-- **Admin Dashboard Code**: Configured securely via `ADMIN_PASSWORD` in `.env`.
-- **Email Configuration**: Update `api/approve_request.php` with your Gmail App Password to enable dataset dispatch.
 
 ---
 

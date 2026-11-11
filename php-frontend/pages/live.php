@@ -4,6 +4,7 @@ $req_live_tab = (isset($_GET['tab']) && $_GET['tab'] === 'weather') ? 'weather' 
 $cache_candidates = [
     sys_get_temp_dir() . '/smartairnet_cache/' . md5('live_bulk_60') . '.json',
     sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json',
+    sys_get_temp_dir() . '/smartairnet_cache/last_known_hero.json',
 ];
 $init_bulk = null;
 $best_epoch = 0;
@@ -12,35 +13,66 @@ foreach ($cache_candidates as $cf) {
         $raw_cache = @file_get_contents($cf);
         if ($raw_cache && strlen($raw_cache) > 20) {
             $parsed = @json_decode($raw_cache, true);
-            if ($parsed && !empty($parsed['aqi']['timestamp'])) {
-                $e = strtotime($parsed['aqi']['timestamp']);
-                if ($e > $best_epoch) {
+            if ($parsed) {
+                if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
+                    $parsed = ['aqi' => $parsed];
+                }
+                $aqi_item = null;
+                if (!empty($parsed['aqi'])) {
+                    if (isset($parsed['aqi'][0]) && is_array($parsed['aqi'][0])) {
+                        $aqi_item = $parsed['aqi'][0];
+                    } elseif (is_array($parsed['aqi'])) {
+                        $aqi_item = $parsed['aqi'];
+                    }
+                }
+                $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
+                $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
+                if ($e > $best_epoch && $aqi_item) {
                     $best_epoch = $e;
                     $init_bulk = $parsed;
+                    if (isset($init_bulk['aqi'][0])) {
+                        $init_bulk['aqi'] = $init_bulk['aqi'][0];
+                    }
                 }
             }
         }
     }
 }
 
+// Fallback to cookie if server disk cache was flushed
+if ($init_bulk === null && !empty($_COOKIE['aqi_last_hero'])) {
+    $c = @json_decode(urldecode($_COOKIE['aqi_last_hero']), true);
+    if ($c && !empty($c['aqi'])) {
+        $init_bulk = [
+            'aqi' => [
+                'cpcb_aqi' => $c['aqi'],
+                'pm25' => $c['pm25'] ?? null,
+                'pm10' => $c['pm10'] ?? null,
+                'timestamp' => $c['timestamp'] ?? date('c'),
+            ]
+        ];
+    }
+}
+
 // AQI pre-calculated fields matching the exact 6 tiers with high light-and-dark gradient contrast
 $init_aqi_val = '--';
-$init_aqi_label = 'Good';
-$init_aqi_accent = '#16a34a';
-$init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #86efac 80%, #34d399 92%, #10b981 100%)';
-$init_aqi_border = 'rgba(22, 163, 74, 0.35)';
-$init_aqi_shadow = 'rgba(16, 185, 129, 0.20)';
+$init_aqi_label = 'Moderate';
+$init_aqi_accent = '#ca8a04';
+$init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)';
+$init_aqi_border = 'rgba(202, 138, 4, 0.35)';
+$init_aqi_shadow = 'rgba(234, 179, 8, 0.20)';
 $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
-$init_aqi_badge_border = 'rgba(22, 163, 74, 0.35)';
-$init_aqi_badge_text = '#15803d';
-$init_scale_pct = '8px';
+$init_aqi_badge_border = 'rgba(202, 138, 4, 0.38)';
+$init_aqi_badge_text = '#854d0e';
+$init_scale_pct = '25%';
 $init_pm25 = '--';
 $init_pm10 = '--';
 
 if (!empty($init_bulk['aqi'])) {
     $aqi_d = $init_bulk['aqi'];
-    if (isset($aqi_d['cpcb_aqi'])) {
-        $v = (int)round($aqi_d['cpcb_aqi']);
+    if (isset($aqi_d[0]) && is_array($aqi_d[0])) $aqi_d = $aqi_d[0];
+    $v = isset($aqi_d['cpcb_aqi']) ? (int)round($aqi_d['cpcb_aqi']) : (isset($aqi_d['aqi_info']['value']) ? (int)round($aqi_d['aqi_info']['value']) : null);
+    if ($v !== null) {
         $init_aqi_val = (string)$v;
         if ($v <= 50) {
             $init_aqi_label = 'Good';
@@ -104,6 +136,7 @@ if (!empty($init_bulk['aqi'])) {
             $init_scale_pct = round(min(98, 83.33 + min(1, ($v - 400) / 100) * 15.67), 2) . '%';
         }
         if (isset($aqi_d['pm25'])) $init_pm25 = is_numeric($aqi_d['pm25']) ? (string)round((float)$aqi_d['pm25']) : (string)$aqi_d['pm25'];
+        elseif (isset($aqi_d['pm2.5'])) $init_pm25 = is_numeric($aqi_d['pm2.5']) ? (string)round((float)$aqi_d['pm2.5']) : (string)$aqi_d['pm2.5'];
         if (isset($aqi_d['pm10'])) $init_pm10 = is_numeric($aqi_d['pm10']) ? (string)round((float)$aqi_d['pm10']) : (string)$aqi_d['pm10'];
     }
 }
@@ -716,6 +749,67 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
     </div>
   </div>
 
+  <!-- Instant Synchronous Hydration from LocalStorage (0ms Shield to guarantee zero flash/shift on mobile) -->
+  <script>
+  (function() {
+    try {
+      var raw = localStorage.getItem('aqi_last_known_hero');
+      if (!raw) return;
+      var h = JSON.parse(raw);
+      if (!h || !h.aqi) return;
+
+      var card = document.getElementById('hero-card');
+      if (card && h.bg) {
+        card.style.background = h.bg;
+        if (h.border) card.style.borderColor = h.border;
+        if (h.shadow) card.style.boxShadow = '0 10px 30px ' + h.shadow + ', 0 1px 3px rgba(15,23,42,0.04)';
+      }
+      var valEl = document.getElementById('hero-aqi-val');
+      if (valEl) {
+        valEl.innerText = h.aqi;
+        if (h.accent) valEl.style.color = h.accent;
+      }
+      var labelEl = document.getElementById('hero-aqi-label');
+      if (labelEl && h.label) {
+        labelEl.innerText = h.label;
+        if (h.badgeText) labelEl.style.color = h.badgeText;
+      }
+      var badgeEl = document.getElementById('hero-aqi-badge');
+      if (badgeEl && h.badgeBg) {
+        badgeEl.style.background = h.badgeBg;
+        if (h.badgeBorder) badgeEl.style.borderColor = h.badgeBorder;
+      }
+      var dot = document.getElementById('status-dot');
+      if (dot && h.accent) {
+        dot.style.backgroundColor = h.accent;
+        dot.style.color = h.accent;
+      }
+      var dotHalo = document.getElementById('status-dot-halo');
+      if (dotHalo && h.accent) {
+        dotHalo.style.backgroundColor = h.accent + '33';
+        dotHalo.style.color = h.accent;
+      }
+      var statusContainer = document.getElementById('status-dot-container');
+      if (statusContainer && h.accent) {
+        statusContainer.style.color = h.accent;
+      }
+      var indicator = document.getElementById('hero-scale-indicator');
+      if (indicator && h.scalePct) {
+        indicator.style.left = h.scalePct;
+        if (h.accent) indicator.style.borderColor = h.accent;
+      }
+      var skyline = document.getElementById('hero-skyline-svg');
+      if (skyline && h.accent) {
+        skyline.style.fill = h.accent;
+      }
+      var pm25El = document.getElementById('hero-pm25');
+      if (pm25El && h.pm25) pm25El.innerText = h.pm25;
+      var pm10El = document.getElementById('hero-pm10');
+      if (pm10El && h.pm10) pm10El.innerText = h.pm10;
+    } catch(e) {}
+  })();
+  </script>
+
   <!-- MAJOR AIR POLLUTANTS -->
   <div style="margin-top: 16px;">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
@@ -1060,6 +1154,12 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
 
 </div>
 
+<?php if (!empty($init_bulk)): ?>
+<script>
+window.INITIAL_DATA = <?= json_encode($init_bulk, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+</script>
+<?php endif; ?>
+
 <script>
 function switchLiveTab(tab) {
     if (window.triggerHaptic) window.triggerHaptic('light');
@@ -1385,8 +1485,11 @@ function renderLiveTable() {
 async function refreshDashboard() {
     try {
         let bulkData;
-        if (window.INITIAL_DATA && window.INITIAL_DATA.aqi_history && window.INITIAL_DATA.aqi_history.length >= 10) {
+        if (window.INITIAL_DATA && window.INITIAL_DATA.aqi) {
             bulkData = window.INITIAL_DATA;
+            if (!bulkData.aqi_history && bulkData.history) {
+                bulkData.aqi_history = bulkData.history;
+            }
             window.INITIAL_DATA = null;
         } else {
             const endpoint = 'telemetry.php?action=live_bulk&limit=60&_t=' + Date.now();
@@ -1566,6 +1669,27 @@ async function refreshDashboard() {
             const heroPm10 = document.getElementById('hero-pm10');
             const pm10Raw = d.pm10;
             if (heroPm10) heroPm10.innerText = pm10Raw != null && !isNaN(pm10Raw) ? Math.round(Number(pm10Raw)) : '--';
+
+            // Cache theme state in localStorage & cookie for instant 0ms restoration on mobile reload/navigation
+            try {
+                const heroState = {
+                    aqi: aqiValue,
+                    label: theme.label,
+                    accent: theme.accent,
+                    bg: theme.bg,
+                    border: theme.border,
+                    shadow: theme.shadow,
+                    badgeBg: theme.badgeBg,
+                    badgeBorder: theme.badgeBorder,
+                    badgeText: theme.badgeText,
+                    scalePct: `clamp(9px, ${pct}%, calc(100% - 9px))`,
+                    pm25: heroPm25 ? heroPm25.innerText : '',
+                    pm10: heroPm10 ? heroPm10.innerText : '',
+                    timestamp: d.timestamp || d.created_at || ''
+                };
+                localStorage.setItem('aqi_last_known_hero', JSON.stringify(heroState));
+                document.cookie = "aqi_last_hero=" + encodeURIComponent(JSON.stringify(heroState)) + "; path=/; max-age=31536000; SameSite=Lax";
+            } catch(e) {}
 
             // Cards: Display exact raw values from Supabase without forcing 0 for null
             const cardPm25 = document.getElementById('card-pm25');
@@ -1847,7 +1971,11 @@ async function refreshDashboard() {
             window.updateGlobalLiveBadge(isOverallLive, tip);
         }
 
-        lucide.createIcons();
+        // Only re-create icons on first load, not on every auto-refresh (icons don't change)
+        if (!window.__liveIconsInitialized) {
+            lucide.createIcons();
+            window.__liveIconsInitialized = true;
+        }
     } catch (e) {
         console.error("Live page error:", e);
         const latestTimeEl = document.getElementById('latest-time');
@@ -1904,13 +2032,13 @@ setTimeout(() => {
 
     refreshDashboard();
     
-    // Auto-refresh every 4 seconds silently in background
+    // Auto-refresh every 7 seconds silently in background (reduced from 4s to lower server load)
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {
         if (!document.hidden) {
             refreshDashboard();
         }
-    }, 4000);
+    }, 7000);
 
     // Immediately refresh when switching back to tab or unlocking screen
     document.addEventListener('visibilitychange', onLiveVisibilityChange);

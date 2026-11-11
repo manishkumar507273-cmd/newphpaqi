@@ -1,29 +1,60 @@
 <?php
 // Retrieve cached bulk telemetry for 0ms instant first-paint on both desktop and mobile
-$cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
+$cache_candidates = [
+    sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json',
+    sys_get_temp_dir() . '/smartairnet_cache/' . md5('live_bulk_60') . '.json',
+    sys_get_temp_dir() . '/smartairnet_cache/last_known_hero.json',
+];
 $init_bulk = null;
-if (file_exists($cache_file) && (time() - filemtime($cache_file) < 600)) {
-    $raw_cache = @file_get_contents($cache_file);
-    if ($raw_cache && strlen($raw_cache) > 20) {
-        $init_bulk = @json_decode($raw_cache, true);
+$best_epoch = 0;
+foreach ($cache_candidates as $cf) {
+    if (file_exists($cf)) {
+        $raw_cache = @file_get_contents($cf);
+        if ($raw_cache && strlen($raw_cache) > 20) {
+            $parsed = @json_decode($raw_cache, true);
+            if ($parsed) {
+                if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
+                    $parsed = ['aqi' => $parsed];
+                }
+                $aqi_item = null;
+                if (!empty($parsed['aqi'])) {
+                    if (isset($parsed['aqi'][0]) && is_array($parsed['aqi'][0])) {
+                        $aqi_item = $parsed['aqi'][0];
+                    } elseif (is_array($parsed['aqi'])) {
+                        $aqi_item = $parsed['aqi'];
+                    }
+                }
+                $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
+                $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
+                if ($e > $best_epoch && $aqi_item) {
+                    $best_epoch = $e;
+                    $init_bulk = $parsed;
+                    if (isset($init_bulk['aqi'][0])) {
+                        $init_bulk['aqi'] = $init_bulk['aqi'][0];
+                    }
+                }
+            }
+        }
     }
 }
 
 // AQI pre-calculated fields
 $init_aqi = null;
-$init_aqi_color = '#22c55e';
-$init_aqi_bg = '#ecfdf5';
-$init_aqi_border = '#86efac';
-$init_aqi_text = '#15803d';
-$init_aqi_label = 'Good';
-$init_aqi_dom = 'O₃';
-$init_aqi_bar_width = '6%';
+$init_aqi_color = '#ea8c34';
+$init_aqi_bg = '#fff7ed';
+$init_aqi_border = 'rgba(234, 140, 52, 0.45)';
+$init_aqi_text = '#9a3412';
+$init_aqi_label = 'Poor';
+$init_aqi_dom = 'PM2.5';
+$init_aqi_bar_width = '30%';
 
 if (!empty($init_bulk['aqi'])) {
     $aqi_data = $init_bulk['aqi'];
-    if (isset($aqi_data['cpcb_aqi'])) {
-        $init_aqi = (int)round($aqi_data['cpcb_aqi']);
-        $init_aqi_dom = !empty($aqi_data['dominant_pollutant']) ? htmlspecialchars($aqi_data['dominant_pollutant']) : 'O₃';
+    if (isset($aqi_data[0]) && is_array($aqi_data[0])) $aqi_data = $aqi_data[0];
+    $calc_v = isset($aqi_data['cpcb_aqi']) ? (int)round($aqi_data['cpcb_aqi']) : (isset($aqi_data['aqi_info']['value']) ? (int)round($aqi_data['aqi_info']['value']) : null);
+    if ($calc_v !== null) {
+        $init_aqi = $calc_v;
+        $init_aqi_dom = !empty($aqi_data['dominant_pollutant']) ? htmlspecialchars($aqi_data['dominant_pollutant']) : 'PM2.5';
         
         if ($init_aqi <= 50) {
             $init_aqi_label = 'Good'; $init_aqi_color = '#59b61f'; $init_aqi_bg = '#f0fdf4'; $init_aqi_border = 'rgba(89, 182, 31, 0.4)'; $init_aqi_text = '#15803d';

@@ -46,7 +46,6 @@ files_for_friend/
 # User Data & Uploaded Verification Documents
 php-frontend/data/proofs/
 !php-frontend/data/requests.json
-!php-frontend/data/requests.example.json
 
 # Local Runtime Caches & Dynamic Forecast JSON
 php-frontend/api/rainfall_forecast_24h.json

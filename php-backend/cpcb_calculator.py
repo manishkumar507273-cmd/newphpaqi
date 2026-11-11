@@ -90,58 +90,58 @@ def calculate_aqi(pm25: float, pm10: float, no2: float, co: float, o3: float):
     return aqi, dominant_key, sub_indices
 
 def get_cpcb_category(aqi: int) -> dict:
-    """Return CPCB official health category and color scheme."""
+    """Return CPCB official health category and color scheme matching the Live page bar."""
     if aqi <= 50:
         return {
             'category': 'Good',
             'severity': 'GOOD',
-            'color': '#00bfa5',
-            'bg': '#e6fcf9',
-            'border': '#99f6e4',
+            'color': '#16a34a',
+            'bg': '#f0fdf4',
+            'border': 'rgba(22, 163, 74, 0.35)',
             'health_impact': 'Minimal impact'
         }
     elif aqi <= 100:
         return {
-            'category': 'Satisfactory',
-            'severity': 'SATISFACTORY',
-            'color': '#16a34a',
-            'bg': '#f0fdf4',
-            'border': '#bbf7d0',
+            'category': 'Moderate',
+            'severity': 'MODERATE',
+            'color': '#ca8a04',
+            'bg': '#fefce8',
+            'border': 'rgba(202, 138, 4, 0.38)',
             'health_impact': 'Minor breathing discomfort to sensitive people'
         }
     elif aqi <= 200:
-        return {
-            'category': 'Moderate',
-            'severity': 'MODERATE',
-            'color': '#d97706',
-            'bg': '#fffbeb',
-            'border': '#fde68a',
-            'health_impact': 'Breathing discomfort to people with lungs, asthma and heart diseases'
-        }
-    elif aqi <= 300:
         return {
             'category': 'Poor',
             'severity': 'POOR',
             'color': '#ea580c',
             'bg': '#fff7ed',
-            'border': '#fed7aa',
+            'border': 'rgba(234, 88, 12, 0.38)',
+            'health_impact': 'Breathing discomfort to people with lungs, asthma and heart diseases'
+        }
+    elif aqi <= 300:
+        return {
+            'category': 'Unhealthy',
+            'severity': 'UNHEALTHY',
+            'color': '#e11d48',
+            'bg': '#fff1f2',
+            'border': 'rgba(225, 29, 72, 0.38)',
             'health_impact': 'Breathing discomfort to most people on prolonged exposure'
         }
     elif aqi <= 400:
         return {
-            'category': 'Very Poor',
-            'severity': 'VERY_POOR',
-            'color': '#dc2626',
-            'bg': '#fef2f2',
-            'border': '#fecaca',
+            'category': 'Severe',
+            'severity': 'SEVERE',
+            'color': '#9333ea',
+            'bg': '#faf5ff',
+            'border': 'rgba(147, 51, 234, 0.38)',
             'health_impact': 'Respiratory illness on prolonged exposure'
         }
     else:
         return {
-            'category': 'Severe',
-            'severity': 'SEVERE',
-            'color': '#7f1d1d',
-            'bg': '#fdf2f2',
-            'border': '#fca5a5',
+            'category': 'Hazardous',
+            'severity': 'HAZARDOUS',
+            'color': '#b91c1c',
+            'bg': '#fef2f2',
+            'border': 'rgba(185, 28, 28, 0.40)',
             'health_impact': 'Affects healthy people and seriously impacts those with existing diseases'
         }

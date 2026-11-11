@@ -11,10 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Parse credentials from .env
 $env_paths = [
     __DIR__ . '/.env',
-    __DIR__ . '/../backend/.env',
     __DIR__ . '/../php-frontend/.env',
-    __DIR__ . '/../.env',
-    __DIR__ . '/../../.env'
+    __DIR__ . '/../.env'
 ];
 
 $supabaseUrl = '';

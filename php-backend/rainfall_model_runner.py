@@ -36,6 +36,9 @@ def parse_wind_direction(val):
         return COMPASS_MAP[val_str]
     try:
         return float(val_str)
+    except Exception:
+        return 225.0
+
 def get_rainfall_status_badge(prob_pct):
     p = round(float(prob_pct or 0.0), 1)
     if p >= 85.0:

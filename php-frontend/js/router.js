@@ -66,7 +66,8 @@
             if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) return;
             if (targetPage === currentPage || pageCache.has(targetPage)) return;
 
-            fetch(`?page=${encodeURIComponent(targetPage)}&_t=${Date.now()}`, {
+            // No cache-buster — allow HTTP cache to work for page HTML
+            fetch(`?page=${encodeURIComponent(targetPage)}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(res => res.json())
@@ -91,7 +92,8 @@
         CORE_PAGES.forEach((pg, idx) => {
             if (PROTECTED_PAGES.includes(pg) && !isUserLoggedIn) return;
             if (pg !== currentPage && !pageCache.has(pg)) {
-                setTimeout(() => prefetchPage(`?page=${pg}`), idx * 80);
+                // Reduced stagger to 30ms (was 80ms) for faster pre-population
+                setTimeout(() => prefetchPage(`?page=${pg}`), idx * 30);
             }
         });
     }
@@ -277,12 +279,13 @@
         }
 
         try {
-            // Check prefetch cache or fetch from server (10s TTL)
+            // Check prefetch cache or fetch from server (120s TTL — instant SPA switching for 2 min)
             let cached = pageCache.get(targetPage);
-            let data = (cached && (Date.now() - cached.time < 10000)) ? cached.data : null;
+            let data = (cached && (Date.now() - cached.time < 120000)) ? cached.data : null;
             if (!data) {
                 setProgressBar(65, 1);
-                const res = await fetch(`?page=${encodeURIComponent(targetPage)}&_t=${Date.now()}`, {
+                // No cache-buster — allow HTTP cache to accelerate repeated loads
+                const res = await fetch(`?page=${encodeURIComponent(targetPage)}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 data = await res.json();
@@ -326,6 +329,15 @@
             // Swap content
             if (wrapper) {
                 wrapper.classList.remove('page-fade-leave');
+
+                // Pre-hydrate INITIAL_DATA from JS API cache so page scripts skip their first fetch
+                // This eliminates the double-fetch (page HTML fetch + telemetry fetch) on SPA navigation
+                try {
+                    if (window.__apiCache && window.__apiCache.aqiLive && window.__apiCache.aqiLive.data) {
+                        window.INITIAL_DATA = window.__apiCache.aqiLive.data;
+                    }
+                } catch (e) {}
+
                 wrapper.innerHTML = data.content;
 
                 // Re-execute scripts inside swapped content safely

@@ -42,9 +42,7 @@ $current_title = $page_titles[$current_page] ?? 'Smart WeatherNet';
 $env_paths = [
     __DIR__ . '/../.env',
     __DIR__ . '/../../.env',
-    __DIR__ . '/../../../.env',
-    __DIR__ . '/../../php-backend/.env',
-    __DIR__ . '/../../backend/.env'
+    __DIR__ . '/../../php-backend/.env'
 ];
 
 $env_config = [
@@ -72,6 +70,14 @@ foreach ($env_paths as $env_path) {
                 if (($name === 'VITE_SUPABASE_URL' || $name === 'SUPABASE_URL') && empty($env_config['supabaseUrl'])) $env_config['supabaseUrl'] = $value;
                 if (($name === 'VITE_SUPABASE_ANON_KEY' || $name === 'SUPABASE_KEY') && empty($env_config['supabaseKey'])) $env_config['supabaseKey'] = $value;
             }
+        }
+        if (!empty($env_config['firebaseApiKey']) &&
+            !empty($env_config['firebaseAuthDomain']) &&
+            !empty($env_config['firebaseProjectId']) &&
+            !empty($env_config['firebaseDatabaseUrl']) &&
+            !empty($env_config['supabaseUrl']) &&
+            !empty($env_config['supabaseKey'])) {
+            break;
         }
     }
 }

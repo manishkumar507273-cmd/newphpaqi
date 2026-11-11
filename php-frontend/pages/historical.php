@@ -587,6 +587,68 @@ var getAqiCategory = function(val) {
     return { label: 'Hazardous', color: '#c92033', bg: '#fef2f2', border: 'rgba(201, 32, 51, 0.45)', text: '#9f1239', badgeBg: '#c92033', badgeText: '#ffffff' };
 };
 
+// 6-Tier scales matching the Live page bar standards for each air pollutant
+var POLLUTANT_SCALES = {
+    cpcb_aqi: [50, 100, 200, 300, 400],
+    aqi:      [50, 100, 200, 300, 400],
+    pm25:     [30, 60, 90, 120, 250],
+    pm10:     [50, 100, 250, 350, 430],
+    co:       [1, 2, 10, 17, 34],
+    no2:      [40, 80, 180, 280, 400],
+    o3:       [50, 100, 168, 208, 748]
+};
+
+var TIER_COLORS = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#a855f7', '#b91c1c'];
+var TIER_LABELS = ['Good', 'Moderate', 'Poor', 'Unhealthy', 'Severe', 'Hazardous'];
+
+var PARAM_UNITS = {
+    cpcb_aqi: '', aqi: '', pm25: 'µg/m³', pm10: 'µg/m³',
+    co: 'mg/m³', no2: 'µg/m³', o3: 'µg/m³',
+    temperature: '°C', humidity: '%',
+    wind_speed: 'km/h', wind_gust: 'km/h', wind_direction: '°', rain_gauge: 'mm'
+};
+
+function getParamTierInfo(param, val) {
+    const v = Number(val);
+    if (isNaN(v) || val == null) return { label: 'Unknown', color: '#94a3b8', tier: -1 };
+    const s = POLLUTANT_SCALES[param];
+    if (!s) {
+        return { label: '', color: PARAM_COLORS[param] || '#00bfa5', tier: -1 };
+    }
+    let tier = 0;
+    if (v <= s[0]) tier = 0;
+    else if (v <= s[1]) tier = 1;
+    else if (v <= s[2]) tier = 2;
+    else if (v <= s[3]) tier = 3;
+    else if (v <= s[4]) tier = 4;
+    else tier = 5;
+
+    return {
+        label: TIER_LABELS[tier],
+        color: TIER_COLORS[tier],
+        tier: tier
+    };
+}
+
+function getParamColor(param, val) {
+    return getParamTierInfo(param, val).color;
+}
+
+function getParamDisplayName(param) {
+    if (param === 'cpcb_aqi' || param === 'aqi') return 'AQI';
+    if (param === 'pm25') return 'PM2.5';
+    if (param === 'pm10') return 'PM10';
+    if (param === 'co') return 'CO';
+    if (param === 'no2') return 'NO₂';
+    if (param === 'o3') return 'O₃';
+    if (param === 'temperature') return 'Temperature';
+    if (param === 'humidity') return 'Humidity';
+    if (param === 'wind_speed') return 'Wind Speed';
+    if (param === 'wind_gust') return 'Wind Gust';
+    if (param === 'rain_gauge') return 'Rainfall';
+    return param ? param.toUpperCase() : '';
+}
+
 var getCompassDir = function(val) {
     if (val == null) return '--';
     const deg = Math.round(Number(val) % 360);
@@ -1036,11 +1098,31 @@ function renderUI(skipDayFilter = false) {
             const elCo = document.getElementById('avg-co');
             const elNo2 = document.getElementById('avg-no2');
             const elO3 = document.getElementById('avg-o3');
-            if (elPm25) elPm25.innerText = countPm25 > 0 ? (sumPm25/countPm25).toFixed(3) : '0.000';
-            if (elPm10) elPm10.innerText = countPm10 > 0 ? (sumPm10/countPm10).toFixed(3) : '0.000';
-            if (elCo)   elCo.innerText   = countCo   > 0 ? (sumCo/countCo).toFixed(3)     : '0.000';
-            if (elNo2)  elNo2.innerText  = countNo2  > 0 ? (sumNo2/countNo2).toFixed(3)   : '0.000';
-            if (elO3)   elO3.innerText   = countO3   > 0 ? (sumO3/countO3).toFixed(3)     : '0.000';
+            if (elPm25) {
+                const avgVal = countPm25 > 0 ? (sumPm25/countPm25) : 0;
+                elPm25.innerText = countPm25 > 0 ? avgVal.toFixed(3) : '0.000';
+                elPm25.style.color = countPm25 > 0 ? getParamColor('pm25', avgVal) : '#0284c7';
+            }
+            if (elPm10) {
+                const avgVal = countPm10 > 0 ? (sumPm10/countPm10) : 0;
+                elPm10.innerText = countPm10 > 0 ? avgVal.toFixed(3) : '0.000';
+                elPm10.style.color = countPm10 > 0 ? getParamColor('pm10', avgVal) : '#6366f1';
+            }
+            if (elCo) {
+                const avgVal = countCo > 0 ? (sumCo/countCo) : 0;
+                elCo.innerText = countCo > 0 ? avgVal.toFixed(3) : '0.000';
+                elCo.style.color = countCo > 0 ? getParamColor('co', avgVal) : '#16a34a';
+            }
+            if (elNo2) {
+                const avgVal = countNo2 > 0 ? (sumNo2/countNo2) : 0;
+                elNo2.innerText = countNo2 > 0 ? avgVal.toFixed(3) : '0.000';
+                elNo2.style.color = countNo2 > 0 ? getParamColor('no2', avgVal) : '#9333ea';
+            }
+            if (elO3) {
+                const avgVal = countO3 > 0 ? (sumO3/countO3) : 0;
+                elO3.innerText = countO3 > 0 ? avgVal.toFixed(3) : '0.000';
+                elO3.style.color = countO3 > 0 ? getParamColor('o3', avgVal) : '#d97706';
+            }
         } else {
             const elTemp = document.getElementById('w-avg-temp');
             const elHum = document.getElementById('w-avg-hum');
@@ -1099,32 +1181,10 @@ function renderUI(skipDayFilter = false) {
         return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
     });
 
-    function getAQIColor(val) {
-        const v = Number(val);
-        if (isNaN(v) || v == null) return '#94a3b8';
-        if (v <= 50) return '#22c55e';   // Good (Green)
-        if (v <= 100) return '#eab308';  // Moderate (Yellow)
-        if (v <= 200) return '#f97316';  // Poor (Orange)
-        if (v <= 300) return '#e11d48';  // Unhealthy (Red/Pink)
-        if (v <= 400) return '#9333ea';  // Severe (Purple)
-        return '#b91c1c';                // Hazardous (Crimson)
-    }
-
-    function getAQITierInfo(val) {
-        const v = Number(val);
-        if (isNaN(v) || v == null) return { label: 'Unknown', color: '#94a3b8' };
-        if (v <= 50) return { label: 'Good', color: '#16a34a' };
-        if (v <= 100) return { label: 'Moderate', color: '#ca8a04' };
-        if (v <= 200) return { label: 'Poor', color: '#ea580c' };
-        if (v <= 300) return { label: 'Unhealthy', color: '#e11d48' };
-        if (v <= 400) return { label: 'Severe', color: '#9333ea' };
-        return { label: 'Hazardous', color: '#b91c1c' };
-    }
-
     // Preserve valid 0 values so Supabase zeros are displayed
     const dataPoints = filteredDayData.map(d => (d[currentParam] != null ? d[currentParam] : null));
-    const isAqi = (currentParam === 'cpcb_aqi' || currentParam === 'aqi');
-    const aqiColors = isAqi ? dataPoints.map(v => getAQIColor(v)) : null;
+    const hasScale = Boolean(POLLUTANT_SCALES[currentParam]);
+    const itemColors = hasScale ? dataPoints.map(v => getParamColor(currentParam, v)) : null;
     const color = PARAM_COLORS[currentParam] || '#00bfa5';
 
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
@@ -1143,7 +1203,7 @@ function renderUI(skipDayFilter = false) {
                 const bottomY = chart.scales.y.bottom;
                 const idx = activePoint.index;
                 const activeVal = dataPoints[idx];
-                const activeColor = isAqi ? getAQIColor(activeVal) : color;
+                const activeColor = hasScale ? getParamColor(currentParam, activeVal) : color;
                 ctx.save();
                 ctx.beginPath();
                 ctx.moveTo(x, topY);
@@ -1165,20 +1225,20 @@ function renderUI(skipDayFilter = false) {
         }
         chartInstance.data.labels = labels;
         if (chartInstance.data.datasets && chartInstance.data.datasets[0]) {
-            chartInstance.data.datasets[0].label = currentParam.toUpperCase();
+            chartInstance.data.datasets[0].label = getParamDisplayName(currentParam);
             chartInstance.data.datasets[0].data = dataPoints;
-            chartInstance.data.datasets[0].borderColor = (isAqi && currentChartType === 'bar') ? aqiColors : color;
-            chartInstance.data.datasets[0].backgroundColor = currentChartType === 'line' ? gradient : (isAqi ? aqiColors : color);
+            chartInstance.data.datasets[0].borderColor = (hasScale && currentChartType === 'bar') ? itemColors : color;
+            chartInstance.data.datasets[0].backgroundColor = currentChartType === 'line' ? gradient : (hasScale ? itemColors : color);
             chartInstance.data.datasets[0].borderWidth = currentChartType === 'line' ? 2.5 : 0;
             chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0;
             chartInstance.data.datasets[0].borderSkipped = false;
             chartInstance.data.datasets[0].pointRadius = 0;
-            chartInstance.data.datasets[0].pointBackgroundColor = isAqi ? aqiColors : color;
+            chartInstance.data.datasets[0].pointBackgroundColor = hasScale ? itemColors : color;
             chartInstance.data.datasets[0].pointHoverRadius = 5;
             chartInstance.data.datasets[0].pointHitRadius = 28;
-            if (isAqi && currentChartType === 'line') {
+            if (hasScale && currentChartType === 'line') {
                 chartInstance.data.datasets[0].segment = {
-                    borderColor: ctx => getAQIColor(ctx.p1?.parsed?.y)
+                    borderColor: ctx => getParamColor(currentParam, ctx.p1?.parsed?.y)
                 };
             } else {
                 delete chartInstance.data.datasets[0].segment;
@@ -1196,21 +1256,21 @@ function renderUI(skipDayFilter = false) {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: currentParam.toUpperCase(),
+                    label: getParamDisplayName(currentParam),
                     data: dataPoints,
-                    borderColor: (isAqi && currentChartType === 'bar') ? aqiColors : color,
-                    backgroundColor: currentChartType === 'line' ? gradient : (isAqi ? aqiColors : color),
+                    borderColor: (hasScale && currentChartType === 'bar') ? itemColors : color,
+                    backgroundColor: currentChartType === 'line' ? gradient : (hasScale ? itemColors : color),
                     borderWidth: currentChartType === 'line' ? 2.5 : 0,
                     borderRadius: currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0,
                     borderSkipped: false,
                     barPercentage: days > 7 ? 0.9 : 0.72,
                     categoryPercentage: 0.88,
-                    segment: isAqi && currentChartType === 'line' ? {
-                        borderColor: ctx => getAQIColor(ctx.p1?.parsed?.y)
+                    segment: hasScale && currentChartType === 'line' ? {
+                        borderColor: ctx => getParamColor(currentParam, ctx.p1?.parsed?.y)
                     } : undefined,
                     fill: currentChartType === 'line',
                     tension: 0.4,
-                    pointBackgroundColor: isAqi ? aqiColors : color,
+                    pointBackgroundColor: hasScale ? itemColors : color,
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
                     pointRadius: 0,
@@ -1241,7 +1301,7 @@ function renderUI(skipDayFilter = false) {
                         bodyFont: { size: 14, weight: 'bold', family: 'monospace' },
                         padding: 10,
                         cornerRadius: 12,
-                        displayColors: isAqi,
+                        displayColors: hasScale,
                         boxWidth: 9,
                         boxHeight: 9,
                         usePointStyle: true,
@@ -1263,15 +1323,20 @@ function renderUI(skipDayFilter = false) {
                             label: function(item) {
                                 const val = item.parsed.y;
                                 if (val == null) return '';
-                                if (isAqi) {
-                                    const tier = getAQITierInfo(val);
-                                    return ` AQI: ${Math.round(val)} (${tier.label})`;
+                                const unit = PARAM_UNITS[currentParam] || '';
+                                const paramName = getParamDisplayName(currentParam);
+                                if (hasScale) {
+                                    const tier = getParamTierInfo(currentParam, val);
+                                    const dispVal = (currentParam === 'cpcb_aqi' || currentParam === 'aqi') 
+                                        ? Math.round(val) 
+                                        : (currentParam === 'co' ? Number(val).toFixed(2) : Number(val).toFixed(1));
+                                    return ` ${paramName}: ${dispVal}${unit ? ' ' + unit : ''} (${tier.label})`;
                                 }
-                                return ` ${currentParam.toUpperCase()}: ${val}`;
+                                return ` ${paramName}: ${val}${unit ? ' ' + unit : ''}`;
                             },
                             labelColor: function(item) {
                                 const val = item.parsed.y;
-                                const c = isAqi ? getAQIColor(val) : color;
+                                const c = hasScale ? getParamColor(currentParam, val) : color;
                                 return {
                                     borderColor: c,
                                     backgroundColor: c,
@@ -1323,11 +1388,11 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>
                 <td style="padding: 10px 16px; color: #00bfa5; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
                 <td style="padding: 10px 16px; font-weight: 800; color: ${getAqiCategory(d.cpcb_aqi).text};">${d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '--'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.pm25 != null ? Number(d.pm25).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.pm10 != null ? Number(d.pm10).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.co != null ? Number(d.co).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.no2 != null ? Number(d.no2).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.o3 != null ? Number(d.o3).toFixed(3) : '0.000'}</td>
+                <td style="padding: 10px 16px; font-weight: 700; color: ${d.pm25 != null ? getParamColor('pm25', d.pm25) : '#475569'};">${d.pm25 != null ? Number(d.pm25).toFixed(3) : '0.000'}</td>
+                <td style="padding: 10px 16px; font-weight: 700; color: ${d.pm10 != null ? getParamColor('pm10', d.pm10) : '#475569'};">${d.pm10 != null ? Number(d.pm10).toFixed(3) : '0.000'}</td>
+                <td style="padding: 10px 16px; font-weight: 700; color: ${d.co != null ? getParamColor('co', d.co) : '#475569'};">${d.co != null ? Number(d.co).toFixed(3) : '0.000'}</td>
+                <td style="padding: 10px 16px; font-weight: 700; color: ${d.no2 != null ? getParamColor('no2', d.no2) : '#475569'};">${d.no2 != null ? Number(d.no2).toFixed(3) : '0.000'}</td>
+                <td style="padding: 10px 16px; font-weight: 700; color: ${d.o3 != null ? getParamColor('o3', d.o3) : '#475569'};">${d.o3 != null ? Number(d.o3).toFixed(3) : '0.000'}</td>
             </tr>`;
         }).join('');
     } else {

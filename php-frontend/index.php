@@ -229,10 +229,24 @@ if ($is_ajax) {
     <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+
+    <!-- CDN Preconnects for faster asset resolution — placed early for maximum benefit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+
+    <!-- Google Fonts: load non-blocking via media=print swap trick -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap"
+          rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    </noscript>
+
     <!-- Tailwind CSS (via CDN for development) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -249,16 +263,11 @@ if ($is_ajax) {
         }
     </script>
 
-    <!-- CDN Preconnects for faster asset resolution -->
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://unpkg.com">
+    <!-- Chart.js — defer to avoid blocking HTML parse -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Lucide Icons — defer; createIcons() called after DOMContentLoaded -->
+    <script src="https://unpkg.com/lucide@latest" defer></script>
 
     <?php
     $css_v = file_exists(__DIR__ . '/css/index.css') ? substr(md5_file(__DIR__ . '/css/index.css'), 0, 8) : '1.1';
@@ -293,8 +302,17 @@ if ($is_ajax) {
     <!-- Load Client Router & Icon Initializer -->
     <script src="js/router.js?v=<?= $router_v ?>"></script>
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
+        // Initialize Lucide icons — wait for deferred script if not yet available
+        function initLucideIcons() {
+            if (window.lucide && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initLucideIcons);
+        } else {
+            initLucideIcons();
+        }
     </script>
 </body>
 </html>

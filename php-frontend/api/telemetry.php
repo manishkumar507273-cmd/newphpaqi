@@ -765,7 +765,7 @@ switch ($action) {
     case 'live_bulk': {
         $lim   = min($limit, 120);
         $ckey  = "live_bulk_{$lim}";
-        $cached = cacheGet($ckey, 8);
+        $cached = cacheGet($ckey, 20);
         if ($cached !== null) { echo json_encode($cached); break; }
 
         $dtMidnightIst = new DateTime('today midnight', new DateTimeZone('Asia/Kolkata'));
@@ -808,6 +808,8 @@ switch ($action) {
 
         cacheSet($ckey, $res);
         cacheSet('overview_bulk', $res);
+        cacheSet('live_bulk_60', $res);
+        cacheSet('live_bulk_50', $res);
         if ($res['aqi'] && isset($res['aqi']['cpcb_aqi'])) {
             @file_put_contents($CACHE_DIR . '/last_known_hero.json', json_encode([
                 'cpcb_aqi' => $res['aqi']['cpcb_aqi'],
@@ -824,7 +826,7 @@ switch ($action) {
     case 'overview_bulk': {
         $lim   = 60;
         $ckey  = "overview_bulk";
-        $cached = cacheGet($ckey, 30);
+        $cached = cacheGet($ckey, 20);
         if ($cached !== null && (!empty($cached['aqi']) || !empty($cached['weather']))) { echo json_encode($cached); break; }
 
         $dtMidnightIst = new DateTime('today midnight', new DateTimeZone('Asia/Kolkata'));
@@ -875,6 +877,8 @@ switch ($action) {
 
         if ($res['aqi'] !== null || $res['weather'] !== null) {
             cacheSet($ckey, $res);
+            cacheSet('live_bulk_60', $res);
+            cacheSet('live_bulk_50', $res);
             if ($res['aqi'] && isset($res['aqi']['cpcb_aqi'])) {
                 @file_put_contents($CACHE_DIR . '/last_known_hero.json', json_encode([
                     'cpcb_aqi' => $res['aqi']['cpcb_aqi'],

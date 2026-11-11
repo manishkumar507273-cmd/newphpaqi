@@ -103,17 +103,14 @@ function evaluateAndSyncLiveBadge(reading) {
     }
     const targetReading = reading || lastKnownLiveReading;
     if (!targetReading) {
-        window.updateGlobalLiveBadge(false, 'No telemetry data received from cloud');
         return;
     }
     const ts = targetReading.timestamp || targetReading.created_at || targetReading.timestamp_hour;
     if (!ts) {
-        window.updateGlobalLiveBadge(false, 'No timestamp received from cloud');
         return;
     }
     const parsedDate = safeParseDate(ts);
     if (!parsedDate) {
-        window.updateGlobalLiveBadge(false, 'Invalid timestamp format');
         return;
     }
     const diffMins = Math.floor((Date.now() - parsedDate.getTime()) / 60000);

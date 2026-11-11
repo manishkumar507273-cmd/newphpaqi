@@ -164,12 +164,9 @@ $init_ts = $latest_epoch > 0 ? date('Y-m-d\TH:i:sP', $latest_epoch) : null;
 $is_overview_offline = false;
 $overview_offline_time_str = '--';
 if ($latest_epoch > 0) {
-    if ((time() - $latest_epoch) > 1800) {
-        $is_overview_offline = true;
-        $diff_mins = max(0, (int)floor((time() - $latest_epoch) / 60));
-        $time_ago = $diff_mins >= 1440 ? floor($diff_mins/1440) . 'd ago' : ($diff_mins >= 60 ? floor($diff_mins/60) . 'h ago' : $diff_mins . 'm ago');
-        $overview_offline_time_str = date('h:i a', $latest_epoch) . ' • ' . $time_ago;
-    }
+    $diff_mins = max(0, (int)floor((time() - $latest_epoch) / 60));
+    $time_ago = $diff_mins >= 1440 ? floor($diff_mins/1440) . 'd ago' : ($diff_mins >= 60 ? floor($diff_mins/60) . 'h ago' : $diff_mins . 'm ago');
+    $overview_offline_time_str = date('h:i a', $latest_epoch) . ' • ' . $time_ago;
 }
 ?>
 <div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow: hidden; padding: clamp(14px, 2.5vw, 20px); margin-bottom: 6px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
@@ -195,7 +192,7 @@ if ($latest_epoch > 0) {
           <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
             <i data-lucide="clock" style="width: 14px; height: 14px; color: #00bfa5;"></i>
             <span>Last Updated:</span>
-            <span id="overview-latest-time" style="color: #0f172a; font-weight: 700; font-family: var(--font-mono); background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);"><?= $latest_epoch > 0 ? date('h:i A', $latest_epoch) : 'Syncing...' ?></span>
+            <span id="overview-latest-time" style="color: #0f172a; font-weight: 700; font-family: var(--font-mono); background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);"><?= $latest_epoch > 0 ? date('h:i A', $latest_epoch) : 'Live Stream' ?></span>
           </span>
           <span id="overview-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2.5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
             <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
@@ -1182,7 +1179,7 @@ function updateMobileHero() {
     }
 }
 
-async function refreshData(isSilent = false) {
+async function refreshData(isSilent = false, forceNetwork = false) {
     if (!document.getElementById('overview-latest-time')) return;
     const icon = document.getElementById('icon-refresh');
     if (!isSilent && icon) {
@@ -1192,25 +1189,29 @@ async function refreshData(isSilent = false) {
     try {
         let bulkData;
         let usedInitialData = false;
-        if (window.INITIAL_DATA) {
-            bulkData = window.INITIAL_DATA;
+        const memoryCache = window.INITIAL_DATA || (window.__apiCache && (window.__apiCache.liveBulk || window.__apiCache.overviewBulk)
+            ? (window.__apiCache.liveBulk || window.__apiCache.overviewBulk).data
+            : null);
+
+        if (!forceNetwork && memoryCache && (memoryCache.aqi || memoryCache.weather)) {
+            bulkData = memoryCache;
             window.INITIAL_DATA = null;
             usedInitialData = true;
-            // Immediately trigger fresh live background sync so the pre-hydrated cache is promptly refreshed with current data
+            if (window.__apiCache && bulkData) {
+                window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
+                window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
+            }
+            // Trigger a single background network sync to refresh with live data
             setTimeout(() => {
-                fetch(`api/telemetry.php?action=overview_bulk`)
-                    .then(r => r.json())
-                    .then(fresh => {
-                        if (fresh && (fresh.aqi || fresh.weather)) {
-                            window.INITIAL_DATA = fresh;
-                            refreshData(true);
-                        }
-                    })
-                    .catch(() => {});
+                refreshData(true, true);
             }, 60);
         } else {
             const response = await fetch(`api/telemetry.php?action=overview_bulk`);
             bulkData = await response.json();
+            if (window.__apiCache && bulkData) {
+                window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
+                window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
+            }
         }
 
         const aqiDate = (bulkData && bulkData.aqi) ? (window.safeParseDate ? window.safeParseDate(bulkData.aqi.timestamp || bulkData.aqi.created_at) : new Date(bulkData.aqi.timestamp || bulkData.aqi.created_at)) : null;

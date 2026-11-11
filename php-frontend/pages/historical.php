@@ -494,8 +494,8 @@ function persistHistoricalState() {
 }
 
 // High-performance in-memory cache for instant 0ms range switching
-const clientRangeCache = {};
-const pendingRangeFetches = {};
+const clientRangeCache = window.__historicalCache = window.__historicalCache || {};
+const pendingRangeFetches = window.__pendingHistFetches = window.__pendingHistFetches || {};
 let summaryCollapseTimer = null;
 
 function getCacheKey(date, days) {

@@ -1293,10 +1293,15 @@ if (file_exists($forecastJsonFile)) {
     // Fetch and load forecast data from backend
     async function loadForecastData(force = false) {
         try {
+            if (!force && window.__forecastCache && window.__forecastCache.hourly) {
+                window.loadTrainedForecastModel(window.__forecastCache);
+                return;
+            }
             const resp = await fetch(`api/telemetry.php?action=forecast${force ? '&force=1' : ''}`);
             if (!resp.ok) throw new Error('Network error loading forecast');
             const data = await resp.json();
             if (data && data.status === 'success' && data.hourly && data.hourly.length > 0) {
+                window.__forecastCache = data;
                 window.loadTrainedForecastModel(data);
                 const syncStatusEl = document.getElementById('forecast-auto-sync-status');
                 if (syncStatusEl) {

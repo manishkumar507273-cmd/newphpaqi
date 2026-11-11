@@ -70,14 +70,14 @@
             fetch(`?page=${encodeURIComponent(targetPage)}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.success) {
-                    pageCache.set(targetPage, { data, time: Date.now() });
-                }
-            })
-            .catch(() => {});
-        } catch (e) {}
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.success) {
+                        pageCache.set(targetPage, { data, time: Date.now() });
+                    }
+                })
+                .catch(() => { });
+        } catch (e) { }
     }
 
     // Eagerly pre-cache all main pages in background so page switching is 0ms instant
@@ -228,7 +228,7 @@
         try {
             const urlObj = new URL(url, window.location.origin);
             targetPage = urlObj.searchParams.get('page') || 'overview';
-        } catch(e) {
+        } catch (e) {
             targetPage = 'overview';
         }
 
@@ -253,6 +253,9 @@
         if (isTransitioning) return;
         isTransitioning = true;
 
+        // Instant 0ms tactile feedback on tabs/dock before network begins
+        updateHeaderUI(targetPage);
+
         // Progress bar start
         setProgressBar(35, 1);
 
@@ -261,21 +264,11 @@
             toggleMobileMenu(false);
         }
 
-        // Smoothly animate out current content
+        // Non-destructive transition: keep existing content visible while loading to eliminate blank flash
         const wrapper = document.getElementById('page-content-wrapper');
         if (wrapper) {
-            wrapper.classList.remove('page-fade-active', 'page-fade-enter');
-            wrapper.classList.add('page-fade-leave');
-        }
-
-        // Cleanup current page handlers (intervals, charts, animation frames)
-        if (typeof window.__cleanupCurrentPage === 'function') {
-            try {
-                window.__cleanupCurrentPage();
-            } catch (err) {
-                console.warn('Page cleanup error:', err);
-            }
-            window.__cleanupCurrentPage = null;
+            wrapper.style.transition = 'opacity 0.12s ease';
+            wrapper.style.opacity = '0.72';
         }
 
         try {
@@ -296,8 +289,7 @@
             if (data.require_login) {
                 resetProgressBar();
                 if (wrapper) {
-                    wrapper.classList.remove('page-fade-leave');
-                    wrapper.classList.add('page-fade-active');
+                    wrapper.style.opacity = '1';
                 }
                 isTransitioning = false;
                 window.__pendingTargetPage = data.target_page || targetPage;
@@ -313,6 +305,16 @@
                 return;
             }
 
+            // Cleanup previous page handlers right before swapping content
+            if (typeof window.__cleanupCurrentPage === 'function') {
+                try {
+                    window.__cleanupCurrentPage();
+                } catch (err) {
+                    console.warn('Page cleanup error:', err);
+                }
+                window.__cleanupCurrentPage = null;
+            }
+
             // Instant content swap (no artificial delays)
             // Push to history
             if (pushState) {
@@ -323,20 +325,22 @@
                 document.title = data.title;
             }
 
-            // Update UI headers & nav pills
+            // Re-verify UI headers & nav pills
             updateHeaderUI(targetPage);
 
             // Swap content
             if (wrapper) {
-                wrapper.classList.remove('page-fade-leave');
-
                 // Pre-hydrate INITIAL_DATA from JS API cache so page scripts skip their first fetch
                 // This eliminates the double-fetch (page HTML fetch + telemetry fetch) on SPA navigation
                 try {
-                    if (window.__apiCache && window.__apiCache.aqiLive && window.__apiCache.aqiLive.data) {
+                    if (window.__apiCache && window.__apiCache.liveBulk && window.__apiCache.liveBulk.data) {
+                        window.INITIAL_DATA = window.__apiCache.liveBulk.data;
+                    } else if (window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
+                        window.INITIAL_DATA = window.__apiCache.overviewBulk.data;
+                    } else if (window.__apiCache && window.__apiCache.aqiLive && window.__apiCache.aqiLive.data) {
                         window.INITIAL_DATA = window.__apiCache.aqiLive.data;
                     }
-                } catch (e) {}
+                } catch (e) { }
 
                 wrapper.innerHTML = data.content;
 
@@ -350,7 +354,7 @@
                         });
                         newScript.textContent = oldScript.textContent;
                         oldScript.parentNode.replaceChild(newScript, oldScript);
-                    } catch(err) {
+                    } catch (err) {
                         console.warn("Script execution warning:", err);
                     }
                 });
@@ -363,6 +367,8 @@
                     lucide.createIcons();
                 }
 
+                wrapper.style.opacity = '1';
+                wrapper.classList.remove('page-fade-leave');
                 wrapper.classList.add('page-fade-active');
             }
 
@@ -407,6 +413,13 @@
         }
     });
 
+    document.addEventListener('pointerdown', (e) => {
+        const link = e.target.closest('a[href*="?page="]');
+        if (link) {
+            prefetchPage(link.getAttribute('href'));
+        }
+    }, { passive: true });
+
     document.addEventListener('touchstart', (e) => {
         const link = e.target.closest('a[href*="?page="]');
         if (link) {
@@ -431,4 +444,5 @@
 
     // Expose router to window for programmatic navigation
     window.navigateToPage = navigateToPage;
+    window.initRouterPrecache = initPrecache;
 })();

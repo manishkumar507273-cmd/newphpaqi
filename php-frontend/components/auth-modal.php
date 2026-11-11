@@ -222,6 +222,9 @@
           if (window.updateUserAccountUI) {
               window.updateUserAccountUI({ email: userEmail, displayName: userName });
           }
+          if (typeof window.initRouterPrecache === 'function') {
+              window.initRouterPrecache();
+          }
 
           const isPhpLoggedIn = window.__currentUser && window.__currentUser.is_logged_in;
           const currentPhpEmail = window.__currentUser ? window.__currentUser.email : '';

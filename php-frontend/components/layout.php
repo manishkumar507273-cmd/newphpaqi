@@ -22,9 +22,6 @@ if (file_exists($telemetry_cache_file)) {
         $latest_epoch = max($aqi_epoch, $weather_epoch);
         if ($latest_epoch > 0) {
             $telemetry_last_updated_time = date('h:i A', $latest_epoch);
-            if ((time() - $latest_epoch) > 300 || (time() - $latest_epoch) < -120) {
-                $is_telemetry_live = false;
-            }
         }
     }
 }

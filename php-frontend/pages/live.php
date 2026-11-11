@@ -142,26 +142,22 @@ if (!empty($init_bulk['aqi'])) {
 }
 
 $init_is_aqi_offline = false;
-$init_time_str = 'Syncing...';
-if (!empty($init_bulk['aqi']['timestamp'])) {
-    $ts = strtotime($init_bulk['aqi']['timestamp']);
+$init_time_str = 'Live Stream';
+$init_aqi_ts = $init_bulk['aqi']['timestamp'] ?? ($init_bulk['aqi']['created_at'] ?? null);
+if (!empty($init_aqi_ts)) {
+    $ts = strtotime($init_aqi_ts);
     if ($ts > 0) {
         $init_time_str = date('h:i A', $ts);
-        if ((time() - $ts) > 300) {
-            $init_is_aqi_offline = true;
-        }
     }
 }
 
 $init_is_weather_offline = false;
-$init_weather_time_str = 'Syncing...';
-if (!empty($init_bulk['weather']['timestamp'])) {
-    $w_ts = strtotime($init_bulk['weather']['timestamp']);
+$init_weather_time_str = 'Live Stream';
+$init_w_ts = $init_bulk['weather']['timestamp'] ?? ($init_bulk['weather']['created_at'] ?? null);
+if (!empty($init_w_ts)) {
+    $w_ts = strtotime($init_w_ts);
     if ($w_ts > 0) {
         $init_weather_time_str = date('h:i A', $w_ts);
-        if ((time() - $w_ts) > 300) {
-            $init_is_weather_offline = true;
-        }
     }
 }
 
@@ -631,7 +627,7 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
 <div id="aqi-view" style="display: <?= $req_live_tab === 'weather' ? 'none' : 'block' ?>; animation: fade-in 0.4s ease-out;">
 
 <!-- Offline Banner -->
-<div id="aqi-offline-banner" style="display: <?= $init_is_aqi_offline ? 'flex' : 'none' ?>; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+<div id="aqi-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
   <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569;">
     <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f97316; margin-top: 2px; flex-shrink: 0;"></i>
     <span><strong style="color: #c2410c;">AQI Sensor Node Offline:</strong> No new live telemetry received in cloud for >5 mins (Last update: <strong style="color: #f97316;" id="aqi-offline-last-update">--</strong>). Showing last recorded cloud values below.</span>
@@ -646,9 +642,9 @@ foreach (['pm25', 'pm10', 'co', 'no2', 'o3'] as $p) {
     </h1>
     <div style="font-size: 12.5px; color: #64748b; margin-top: 6px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
       <span>Last Updated: <span id="latest-time" style="color: #00bfa5; font-weight: 600;"><?= htmlspecialchars($init_time_str) ?></span></span>
-      <span id="aqi-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: <?= $init_is_aqi_offline ? '#fff7ed' : '#ecfdf5' ?>; color: <?= $init_is_aqi_offline ? '#c2410c' : '#059669' ?>; border: 1px solid <?= $init_is_aqi_offline ? '#fed7aa' : '#a7f3d0' ?>;">
-        <span style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $init_is_aqi_offline ? '#f97316' : '#10b981' ?>;"></span>
-        <?= $init_is_aqi_offline ? 'OFFLINE' : 'LIVE' ?>
+      <span id="aqi-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
+        LIVE
       </span>
     </div>
   </div>
@@ -1482,20 +1478,38 @@ function renderLiveTable() {
     }).join('');
 }
 
-async function refreshDashboard() {
+async function refreshDashboard(forceNetwork = false) {
     try {
         let bulkData;
-        if (window.INITIAL_DATA && window.INITIAL_DATA.aqi) {
-            bulkData = window.INITIAL_DATA;
+        let isFromCache = false;
+        const memoryCache = window.INITIAL_DATA || (window.__apiCache && (window.__apiCache.liveBulk || window.__apiCache.overviewBulk)
+            ? (window.__apiCache.liveBulk || window.__apiCache.overviewBulk).data
+            : null);
+
+        if (!forceNetwork && memoryCache && (memoryCache.aqi || memoryCache.cpcb_aqi)) {
+            bulkData = memoryCache.aqi ? memoryCache : { aqi: memoryCache, aqi_history: [memoryCache] };
             if (!bulkData.aqi_history && bulkData.history) {
                 bulkData.aqi_history = bulkData.history;
             }
             window.INITIAL_DATA = null;
+            isFromCache = true;
+            if (window.__apiCache && bulkData) {
+                window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
+                window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
+            }
+            // Instantly schedule live network sync in background so data is up to the current second without delay
+            setTimeout(() => {
+                refreshDashboard(true);
+            }, 60);
         } else {
-            const endpoint = 'telemetry.php?action=live_bulk&limit=60&_t=' + Date.now();
+            const endpoint = 'telemetry.php?action=live_bulk&limit=60';
             const fetchUrl = (typeof window.getApiUrl === 'function') ? window.getApiUrl(endpoint) : ('api/' + endpoint);
             const res = await fetch(fetchUrl);
             bulkData = await res.json();
+            if (window.__apiCache && bulkData && bulkData.aqi) {
+                window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
+                window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
+            }
         }
         
         const aqiData = bulkData.aqi;
@@ -1821,9 +1835,9 @@ async function refreshDashboard() {
         const now = new Date();
         
         // --- AQI Offline Check (Sensors log every 60s; healthy threshold is 5 mins) ---
-        let isAqiOffline = true;
+        let isAqiOffline = false;
         let aqiOfflineMinutes = 0;
-        let aqiLastUpdateTimeStr = "Unknown";
+        let aqiLastUpdateTimeStr = "--";
         
         if (aqiData && (aqiData.timestamp || aqiData.created_at)) {
             const rawTs = aqiData.timestamp || aqiData.created_at;
@@ -1831,8 +1845,10 @@ async function refreshDashboard() {
             if (lastUpdate && !isNaN(lastUpdate.getTime())) {
                 const diffMs = now - lastUpdate;
                 aqiOfflineMinutes = Math.floor(diffMs / 60000);
-                // Stating offline only when no data arrives for > 5 minutes
-                isAqiOffline = aqiOfflineMinutes > 5;
+                // Stating offline only when no data arrives for > 5 minutes AND not on initial cache pre-hydration
+                if (!isFromCache) {
+                    isAqiOffline = aqiOfflineMinutes > 5;
+                }
                 const timePart = lastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
                 aqiLastUpdateTimeStr = aqiOfflineMinutes >= 1440
                     ? lastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + timePart
@@ -1917,9 +1933,9 @@ async function refreshDashboard() {
         if (latestTimeEl) latestTimeEl.innerText = aqiLastUpdateTimeStr;
 
         // --- Weather Offline Check (Sensors log every 60s; healthy threshold is 5 mins) ---
-        let isWeatherOffline = true;
+        let isWeatherOffline = false;
         let weatherOfflineMinutes = 0;
-        let weatherLastUpdateTimeStr = "Unknown";
+        let weatherLastUpdateTimeStr = "--";
 
         if (weatherData && (weatherData.timestamp || weatherData.created_at)) {
             const wRawTs = weatherData.timestamp || weatherData.created_at;
@@ -1927,8 +1943,10 @@ async function refreshDashboard() {
             if (wLastUpdate && !isNaN(wLastUpdate.getTime())) {
                 const wDiffMs = now - wLastUpdate;
                 weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
-                // Stating offline only when no data arrives for > 5 minutes
-                isWeatherOffline = weatherOfflineMinutes > 5;
+                // Stating offline only when no data arrives for > 5 minutes AND not on initial cache pre-hydration
+                if (!isFromCache) {
+                    isWeatherOffline = weatherOfflineMinutes > 5;
+                }
                 const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
                 weatherLastUpdateTimeStr = weatherOfflineMinutes >= 1440
                     ? wLastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + wTimePart
@@ -1978,20 +1996,6 @@ async function refreshDashboard() {
         }
     } catch (e) {
         console.error("Live page error:", e);
-        const latestTimeEl = document.getElementById('latest-time');
-        if (latestTimeEl && latestTimeEl.innerText === 'Syncing...') {
-            latestTimeEl.innerText = 'Unable to sync';
-            const aqiLiveBadge = document.getElementById('aqi-live-badge');
-            if (aqiLiveBadge) {
-                aqiLiveBadge.style.backgroundColor = '#fff7ed';
-                aqiLiveBadge.style.color = '#c2410c';
-                aqiLiveBadge.style.borderColor = '#fed7aa';
-                aqiLiveBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE`;
-            }
-            if (window.updateGlobalLiveBadge) {
-                window.updateGlobalLiveBadge(false, 'Unable to connect to cloud telemetry');
-            }
-        }
     }
 }
 

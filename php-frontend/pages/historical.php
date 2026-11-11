@@ -1,10 +1,21 @@
 <?php
+$today_ist = (new DateTime('now', new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
 $req_subtab = (isset($_GET['tab']) && in_array($_GET['tab'], ['aqi', 'weather'])) ? $_GET['tab'] : 'aqi';
 $req_range_days = (isset($_GET['days']) && in_array((int)$_GET['days'], [1, 3, 7, 30])) ? (int)$_GET['days'] : 1;
 $valid_params = ['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge'];
 $req_param = (isset($_GET['param']) && in_array($_GET['param'], $valid_params)) ? $_GET['param'] : ($req_subtab === 'weather' ? 'temperature' : 'cpcb_aqi');
 $req_type = (isset($_GET['type']) && in_array($_GET['type'], ['bar', 'line'])) ? $_GET['type'] : 'bar';
-$req_date = (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) ? $_GET['date'] : '';
+$req_date = (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) ? $_GET['date'] : $today_ist;
+
+// 0ms instant pre-hydration from disk cache for today's historical records
+$init_history_json = 'null';
+$cache_file_today = sys_get_temp_dir() . '/smartairnet_cache/' . md5("history_bulk_" . md5($today_ist . '_1_150')) . '.json';
+if (file_exists($cache_file_today)) {
+    $raw_cache_today = @file_get_contents($cache_file_today);
+    if ($raw_cache_today && strlen($raw_cache_today) > 50) {
+        $init_history_json = $raw_cache_today;
+    }
+}
 ?>
 <div class="p-2.5 sm:p-6 flex flex-col gap-3.5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
   
@@ -63,7 +74,7 @@ $req_date = (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['
 
         <!-- Date Picker Input -->
         <div style="position: relative; display: inline-flex; align-items: center;">
-          <input type="date" id="history-date-picker" class="min-h-[38px] sm:min-h-[42px]" style="padding: 7px 12px 7px 32px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background-color: #f8fafc; cursor: pointer; font-family: var(--font-sans); outline: none;">
+          <input type="date" id="history-date-picker" value="<?= htmlspecialchars($req_date) ?>" max="<?= htmlspecialchars($today_ist) ?>" class="min-h-[38px] sm:min-h-[42px]" style="padding: 7px 12px 7px 32px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background-color: #f8fafc; cursor: pointer; font-family: var(--font-sans); outline: none;">
           <i data-lucide="calendar" style="position: absolute; left: 10px; width: 14px; height: 14px; color: #00bfa5; pointer-events: none;"></i>
         </div>
       </div>
@@ -205,7 +216,12 @@ $req_date = (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['
     <!-- Chart Canvas Container -->
     <div style="width: 100%; height: 300px; position: relative;">
       <canvas id="historical-chart" style="transition: opacity 0.2s ease-in-out;"></canvas>
-      <div id="chart-empty" style="display: none; position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); gap: 8px; color: #64748b;">
+      <!-- Chart Loading Indicator (Clean spinner, never flashes false empty) -->
+      <div id="chart-loading" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.85); gap: 10px; color: #00bfa5; z-index: 4;">
+        <div style="width: 28px; height: 28px; border: 3px solid #00bfa5; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+        <span style="font-size: 12px; font-weight: 600; color: #64748b;">Loading telemetry data...</span>
+      </div>
+      <div id="chart-empty" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.85); gap: 8px; color: #64748b; z-index: 5;">
         <i data-lucide="info" style="width: 24px; height: 24px; color: #94a3b8;"></i>
         <p style="margin: 0; font-size: 13.5px; font-weight: 600;" id="chart-empty-text">No records found.</p>
       </div>
@@ -453,11 +469,12 @@ function getHistoricalInitialState() {
         const candidateType = urlParams.get('type') || saved?.type;
         if (candidateType && ['bar', 'line'].includes(candidateType)) type = candidateType;
 
-        date = urlParams.get('date') || saved?.date || '';
+        date = urlParams.get('date') || saved?.date || '<?= $today_ist ?>';
     } catch(e) {}
     return { tab, param, days, type, date };
 }
 
+window.INITIAL_HISTORY = <?= $init_history_json ?>;
 const _initState = getHistoricalInitialState();
 var currentSubTab = _initState.tab;
 var currentParam = _initState.param;
@@ -696,17 +713,15 @@ async function fetchRangeData(queryDate, days) {
 
 function prefetchOtherRanges(queryDate) {
     if (!queryDate) return;
-    const ranges = [1, 3, 7, 30];
-    ranges.forEach((d, idx) => {
-        const key = getCacheKey(queryDate, d);
-        if (d !== currentRangeDays && !clientRangeCache[key] && !pendingRangeFetches[key]) {
-            setTimeout(() => {
-                if (!clientRangeCache[key] && !pendingRangeFetches[key]) {
-                    fetchRangeData(queryDate, d).catch(() => {});
-                }
-            }, (idx + 1) * 100);
-        }
-    });
+    // Only prefetch 3-day range after 2.5 seconds of user idle time, avoiding connection hogging
+    const key3 = getCacheKey(queryDate, 3);
+    if (currentRangeDays === 1 && !clientRangeCache[key3] && !pendingRangeFetches[key3]) {
+        setTimeout(() => {
+            if (currentRangeDays === 1 && !clientRangeCache[key3] && !pendingRangeFetches[key3]) {
+                fetchRangeData(queryDate, 3).catch(() => {});
+            }
+        }, 2500);
+    }
 }
 
 async function fetchAllHistory(forcedDate = null, skipCache = false) {
@@ -728,7 +743,18 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
         const days = currentRangeDays || 1;
         const key = getCacheKey(queryDate, days);
 
-        // Instant render from cache (0ms latency!)
+        // Instant 0ms pre-hydration from initial server payload
+        if (!skipCache && window.INITIAL_HISTORY && queryDate === '<?= $today_ist ?>' && days === 1) {
+            clientRangeCache[key] = window.INITIAL_HISTORY;
+            historicalDataAqi = window.INITIAL_HISTORY.aqi || [];
+            historicalDataWeather = window.INITIAL_HISTORY.weather || [];
+            window.INITIAL_HISTORY = null;
+            renderUI();
+            prefetchOtherRanges(queryDate);
+            return;
+        }
+
+        // Instant render from client memory cache (0ms latency!)
         if (!skipCache && clientRangeCache[key]) {
             const cached = clientRangeCache[key];
             historicalDataAqi = cached.aqi || [];
@@ -739,13 +765,18 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
         }
 
         const chartCanvas = document.getElementById('historical-chart');
+        const chartLoading = document.getElementById('chart-loading');
+        const chartEmpty = document.getElementById('chart-empty');
         if (chartCanvas) chartCanvas.style.opacity = '0.7';
+        if (chartLoading) chartLoading.style.display = 'flex';
+        if (chartEmpty) chartEmpty.style.display = 'none';
 
         const data = await fetchRangeData(queryDate, days);
         
         historicalDataAqi = data.aqi || [];
         historicalDataWeather = data.weather || [];
         
+        if (chartLoading) chartLoading.style.display = 'none';
         if (chartCanvas) chartCanvas.style.opacity = '1';
 
         renderUI();
@@ -753,6 +784,8 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
     } catch(e) {
         console.error("Error fetching historical data", e);
         const chartCanvas = document.getElementById('historical-chart');
+        const chartLoading = document.getElementById('chart-loading');
+        if (chartLoading) chartLoading.style.display = 'none';
         if (chartCanvas) chartCanvas.style.opacity = '1';
     }
 }
@@ -1911,7 +1944,7 @@ window.__cleanupCurrentPage = function() {
 setTimeout(() => {
     const dp = document.getElementById('history-date-picker');
     if (dp) {
-        if (_initState.date) dp.value = _initState.date;
+        if (!dp.value) dp.value = _initState.date || '<?= $today_ist ?>';
         dp.onchange = () => {
             persistHistoricalState();
             fetchAllHistory();
@@ -1929,6 +1962,24 @@ setTimeout(() => {
     if (_initState.type && _initState.type !== 'bar') {
         setChartType(_initState.type, true);
     }
+
+    // Attach on-demand prefetch handlers to range buttons so queries run only when touched/hovered
+    [1, 3, 7, 30].forEach(d => {
+        const btn = document.getElementById('btn-range-' + d);
+        if (btn) {
+            const prefetchRange = () => {
+                const picker = document.getElementById('history-date-picker');
+                const qDate = picker && picker.value ? picker.value : '<?= $today_ist ?>';
+                const k = getCacheKey(qDate, d);
+                if (!clientRangeCache[k] && !pendingRangeFetches[k]) {
+                    fetchRangeData(qDate, d).catch(() => {});
+                }
+            };
+            btn.addEventListener('pointerenter', prefetchRange, { passive: true });
+            btn.addEventListener('pointerdown', prefetchRange, { passive: true });
+        }
+    });
+
     persistHistoricalState();
     fetchAllHistory();
     startAutoRefreshHist();

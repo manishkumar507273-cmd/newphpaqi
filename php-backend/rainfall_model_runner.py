@@ -55,38 +55,75 @@ def get_rainfall_status_badge(prob_pct):
 class RainfallForecastEngine:
     def __init__(self, model_dir=MODEL_DIR):
         self.model_dir = model_dir
-        self.model_path = os.path.join(model_dir, "best_smvitm_wavelet_lstm_24h.keras")
-        self.scalers_path = os.path.join(model_dir, "wavelet_scalers.joblib")
-        self.calibrators_path = os.path.join(model_dir, "horizon_calibrators_24h_v2.joblib")
+        
+        # Candidate model files (prefer new multi-weather model)
+        model_candidates = [
+            os.path.join(model_dir, "best_smvitm_multi_weather_24h.keras"),
+            os.path.join(model_dir, "best_smvitm_wavelet_lstm_24h.keras"),
+        ]
+        self.model_path = next((p for p in model_candidates if os.path.isfile(p)), None)
+        if not self.model_path and os.path.isdir(model_dir):
+            for f in os.listdir(model_dir):
+                if f.endswith(".keras"):
+                    self.model_path = os.path.join(model_dir, f)
+                    break
+
+        # Candidate scalers files (prefer new multi-weather scalers)
+        scalers_candidates = [
+            os.path.join(model_dir, "wavelet_scalers_multi.joblib"),
+            os.path.join(model_dir, "wavelet_scalers.joblib"),
+        ]
+        self.scalers_path = next((p for p in scalers_candidates if os.path.isfile(p)), None)
+        if not self.scalers_path and os.path.isdir(model_dir):
+            for f in os.listdir(model_dir):
+                if "scaler" in f.lower() and f.endswith(".joblib"):
+                    self.scalers_path = os.path.join(model_dir, f)
+                    break
+
+        # Candidate calibrators files
+        calib_candidates = [
+            os.path.join(model_dir, "horizon_calibrators_24h_v2.joblib"),
+            os.path.join(model_dir, "horizon_calibrators_24h.joblib"),
+        ]
+        self.calibrators_path = next((p for p in calib_candidates if os.path.isfile(p)), None)
+        if not self.calibrators_path and os.path.isdir(model_dir):
+            for f in os.listdir(model_dir):
+                if "calibrator" in f.lower() and f.endswith(".joblib"):
+                    self.calibrators_path = os.path.join(model_dir, f)
+                    break
         
         self.model = None
         self.scaler_slow = None
         self.scaler_fast = None
+        self.scaler_temp_target = None
+        self.scaler_hum_target = None
         self.optimal_taus = None
         self.optimal_betas = None
         self.optimal_gammas = None
         self._load_artifacts()
 
     def _load_artifacts(self):
-        if not os.path.isfile(self.model_path):
-            raise FileNotFoundError(f"Rainfall model file not found at {self.model_path}")
-        if not os.path.isfile(self.scalers_path):
-            raise FileNotFoundError(f"Wavelet scalers file not found at {self.scalers_path}")
-        if not os.path.isfile(self.calibrators_path):
-            raise FileNotFoundError(f"Calibrators file not found at {self.calibrators_path}")
+        if not self.model_path or not os.path.isfile(self.model_path):
+            raise FileNotFoundError(f"Rainfall model file not found in {self.model_dir}")
+        if not self.scalers_path or not os.path.isfile(self.scalers_path):
+            raise FileNotFoundError(f"Wavelet scalers file not found in {self.scalers_dir if hasattr(self, 'scalers_dir') else self.model_dir}")
+        if not self.calibrators_path or not os.path.isfile(self.calibrators_path):
+            raise FileNotFoundError(f"Calibrators file not found in {self.model_dir}")
 
-        print(f"Loading SAPE Rainfall Model from: {self.model_path}", file=sys.stderr)
+        print(f"Loading SAPE Multi-Weather Model from: {self.model_path}", file=sys.stderr)
         self.model = keras.models.load_model(self.model_path, compile=False)
         
         scalers = joblib.load(self.scalers_path)
-        self.scaler_slow = scalers["scaler_slow"]
-        self.scaler_fast = scalers["scaler_fast"]
+        self.scaler_slow = scalers.get("scaler_slow")
+        self.scaler_fast = scalers.get("scaler_fast")
+        self.scaler_temp_target = scalers.get("scaler_temp_target")
+        self.scaler_hum_target = scalers.get("scaler_hum_target")
 
         calibrators = joblib.load(self.calibrators_path)
         self.optimal_taus = calibrators["optimal_taus"]
         self.optimal_betas = calibrators["optimal_betas"]
         self.optimal_gammas = calibrators["optimal_gammas"]
-        print("Rainfall model and horizon calibrators successfully loaded.", file=sys.stderr)
+        print("Multi-weather model, scalers, and horizon calibrators successfully loaded.", file=sys.stderr)
 
     @staticmethod
     def compute_modwt_details(x, levels=3):
@@ -239,6 +276,19 @@ class RainfallForecastEngine:
         raw_log_mm = preds["rain_log_mm_24h"][0].detach().cpu().numpy()
         raw_prob = preds["rain_prob_24h"][0].detach().cpu().numpy()
 
+        # Multi-Weather Model Temperature & Humidity Inference
+        pred_temps = None
+        pred_hums = None
+        if "temp_24h" in preds and self.scaler_temp_target is not None:
+            raw_temp = preds["temp_24h"][0].detach().cpu().numpy()
+            unscaled_temp = self.scaler_temp_target.inverse_transform(raw_temp.reshape(-1, 1)).flatten()
+            pred_temps = np.clip(unscaled_temp, 15.0, 48.0)
+
+        if "humidity_24h" in preds and self.scaler_hum_target is not None:
+            raw_hum = preds["humidity_24h"][0].detach().cpu().numpy()
+            unscaled_hum = self.scaler_hum_target.inverse_transform(raw_hum.reshape(-1, 1)).flatten()
+            pred_hums = np.clip(unscaled_hum, 20.0, 100.0)
+
         # Operational Ground-Truth Persistence Assimilation
         # Dynamically conditions neural predictions on recent rain station observations (avoids false-alarm 24h rain during dry spells)
         recent_18h_rain = sum(float(r.get("rain_gauge") or 0.0) for _, r in window[-18:])
@@ -298,11 +348,16 @@ class RainfallForecastEngine:
             prob_pct = round(p_calibrated * 100, 1)
             status_meta = get_rainfall_status_badge(prob_pct)
 
+            h_temp = round(float(pred_temps[i]), 1) if pred_temps is not None else None
+            h_hum = round(float(pred_hums[i]), 1) if pred_hums is not None else None
+
             hourly_rainfall.append({
                 "step": i + 1,
                 "hour": f_dt.hour,
                 "label": f_dt.strftime('%I %p').lstrip('0'),
                 "iso": f_dt.isoformat(),
+                "temp": h_temp,
+                "humidity": h_hum,
                 "rain_prob_pct": prob_pct,
                 "status_badge": status_meta["status_badge"],
                 "probability_range": status_meta["probability_range"],
@@ -334,7 +389,7 @@ class RainfallForecastEngine:
             risk_summary = "Dry Conditions Expected (No Significant Rain)"
 
         return {
-            "model_name": "SMVITM MODWT Attention LSTM (24h Wavelet Engine)",
+            "model_name": "SMVITM Multi-Weather Wavelet Attention LSTM (24h Engine)",
             "historical_window_hours": 72,
             "forecast_generated_at": datetime.now(timezone(timedelta(hours=5, minutes=30))).isoformat(),
             "window_start": window[0][0].isoformat(),
@@ -346,6 +401,8 @@ class RainfallForecastEngine:
             "rain_risk_level": risk_level,
             "rain_risk_color": risk_color,
             "rain_risk_summary": risk_summary,
+            "temperatures": [round(float(t), 1) for t in pred_temps] if pred_temps is not None else [],
+            "humidities": [round(float(h), 1) for h in pred_hums] if pred_hums is not None else [],
             "rainfall_scale": [
                 {"range": "0% – 25%", "badge": "Dry / Clear", "description": "Dry / Clear conditions, minimal or zero probability of rain."},
                 {"range": "25% – 49%", "badge": "Mostly Dry", "description": "Overcast or slight moisture; precipitation remains unlikely."},
@@ -392,5 +449,7 @@ if __name__ == "__main__":
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
 
-    print(f"Rainfall forecast generated successfully -> {out_file}", file=sys.stderr)
+    print(f"Multi-Weather & Rainfall forecast generated successfully -> {out_file}", file=sys.stderr)
     print(f"24h Total Rain: {result['total_24h_rainfall_mm']} mm | Peak: {result['peak_hourly_rate_mm']} mm/h ({result['peak_hour_label']}) | Risk: {result['rain_risk_level']}", file=sys.stderr)
+    if result.get("temperatures"):
+        print(f"Multi-Weather Temp Range: {min(result['temperatures'])}°C – {max(result['temperatures'])}°C | Humidity Range: {min(result['humidities'])}% – {max(result['humidities'])}%", file=sys.stderr)

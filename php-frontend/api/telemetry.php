@@ -495,6 +495,9 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
                         $rfHourlyMap[(int)$rfH['hour']] = $rfH;
                     }
                 }
+                $allTemps = [];
+                $tempVals = [];
+                $humVals  = [];
                 foreach ($hourlyList as $idx => &$hItem) {
                     $hr = (int)($hItem['hour'] ?? -1);
                     $rfMatch = $rfHourlyMap[$hr] ?? ($rfData['hourly'][$idx] ?? null);
@@ -503,9 +506,22 @@ function buildForecastPayloadFromDbRows(array $rows): ?array {
                         $hItem['rain_mm'] = $rfMatch['rain_mm'] ?? 0.0;
                         $hItem['is_rain'] = $rfMatch['is_rain'] ?? false;
                         $hItem['rain_intensity'] = $rfMatch['rain_intensity'] ?? 'Dry';
+                        if (isset($rfMatch['temp']) && $rfMatch['temp'] !== null) {
+                            $hItem['temp'] = (float)$rfMatch['temp'];
+                        }
+                        if (isset($rfMatch['humidity']) && $rfMatch['humidity'] !== null) {
+                            $hItem['humidity'] = (float)$rfMatch['humidity'];
+                        }
                     }
+                    $allTemps[] = (float)$hItem['temp'];
+                    $tempVals[] = (float)$hItem['temp'];
+                    $humVals[]  = (float)$hItem['humidity'];
                 }
                 unset($hItem);
+
+                // Update parameters with the multi-weather temperature and humidity
+                $parameters['temp']     = $calcStats($tempVals, 0.0, 0.0);
+                $parameters['humidity'] = $calcStats($humVals,  0.0, 0.0);
 
                 $h0 = $hourlyList[0];
                 $parameters['rainfall'] = [

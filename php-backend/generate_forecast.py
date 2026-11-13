@@ -479,7 +479,7 @@ def main():
         target_dt = start_dt + timedelta(hours=i)
         vals = smoothed_24[i]
 
-        # Targets: [0: pm25, 1: pm10, 2: no2, 3: co, 4: o3, 5: temp, 6: humidity]
+        # Criteria air pollutant targets predicted by SWT-Res-CNN-BiLSTM:
         p_pm25 = max(2.0, min(80.0, round(float(vals[0]), 2)))
         p_pm10 = max(4.0, min(120.0, round(float(vals[1]), 2)))
         p_no2  = max(1.0, min(60.0, round(float(vals[2]), 2)))
@@ -487,8 +487,16 @@ def main():
         # Ceiling at 0.35 mg/m³ reflects physical ground truth for clean rural campus air
         p_co   = max(0.08, min(0.35, round(float(vals[3]), 3)))
         p_o3   = max(5.0, min(95.0, round(float(vals[4]), 2)))
-        p_temp = round(float(vals[5]), 1)
-        p_hum  = min(98.0, max(25.0, round(float(vals[6]), 1)))
+
+        # Temperature & Humidity: Sourced from the dedicated Multi-Weather Wavelet LSTM Model
+        # (Replaces AQI model temperature & humidity outputs)
+        if rainfall_data and 'hourly' in rainfall_data and i < len(rainfall_data['hourly']) and rainfall_data['hourly'][i].get('temp') is not None:
+            p_temp = round(float(rainfall_data['hourly'][i]['temp']), 1)
+            p_hum  = min(98.0, max(25.0, round(float(rainfall_data['hourly'][i]['humidity']), 1)))
+        else:
+            # Fallback only if multi-weather engine was unavailable
+            p_temp = round(float(vals[5]), 1)
+            p_hum  = min(98.0, max(25.0, round(float(vals[6]), 1)))
 
         aqi_val, dom, sub_indices = calculate_aqi(p_pm25, p_pm10, p_no2, p_co, p_o3)
         cat_info = get_cpcb_category(aqi_val)
@@ -626,7 +634,7 @@ def main():
             'rain_risk': rainfall_data['rain_risk_level'] if rainfall_data else 'None',
             'rain_peak_rate': rainfall_data['peak_hourly_rate_mm'] if rainfall_data else 0.0,
             'rain_peak_hour': rainfall_data['peak_hour_label'] if rainfall_data else 'N/A',
-            'confidence': 'High (48h SWT Res-CNN-BiLSTM + 72h SMVITM Wavelet Telemetry)'
+            'confidence': 'High (48h SWT Res-CNN-BiLSTM AQI + 72h Multi-Weather Wavelet Telemetry)'
         },
         'parameters': {
             'pm25': {'label': 'PM2.5 Particulate', 'unit': 'µg/m³', 'current': hourly_list[0]['pm25'], 'current_subindex': current_sub_indices.get('PM2.5', 0.0), 'min': round(min(h['pm25'] for h in hourly_list), 2), 'max': round(max(h['pm25'] for h in hourly_list), 2), 'mean': round(sum(h['pm25'] for h in hourly_list) / 24, 2), 'safe_limit': '15.0 µg/m³'},

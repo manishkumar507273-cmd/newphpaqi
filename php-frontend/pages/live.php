@@ -476,8 +476,9 @@ $init_border_colors = [
     height: 12px !important;
   }
   .weather-box-main {
+    justify-content: flex-start !important;
     margin-bottom: 4px !important;
-    gap: 4px !important;
+    gap: 6px !important;
   }
   .weather-temp-row {
     margin-bottom: 0 !important;
@@ -950,20 +951,20 @@ $init_border_colors = [
               </div>
             </div>
 
-            <!-- Main Temperature & Min/Max Arrows (Single Compact Row, "Hot" removed) -->
-            <div class="weather-box-main" style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; gap: 8px;">
+            <!-- Main Temperature & Min/Max Arrows (Single Compact Row, positioned near main temp) -->
+            <div class="weather-box-main" style="display: flex; align-items: baseline; justify-content: flex-start; margin-bottom: 8px; gap: 12px;">
               <div class="weather-temp-row" style="display: flex; align-items: baseline; gap: 3px;">
                 <span id="weather-hero-temp" style="font-family: var(--font-mono); font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0f172a;"><?= $init_weather_temp ?></span>
                 <span class="weather-temp-unit" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: #64748b;">°C</span>
               </div>
 
-              <!-- Min/Max Arrows (↑ Max °C   ↓ Min °C) -->
-              <div class="weather-arrows-wrap" style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;">
-                <span style="display: inline-flex; align-items: center; gap: 2px; color: #ea580c;" title="Maximum Temperature today">
+              <!-- Min/Max Arrows (↑ Max °C   ↓ Min °C positioned right next to main temp) -->
+              <div class="weather-arrows-wrap" style="display: inline-flex; align-items: baseline; gap: 8px; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;">
+                <span style="display: inline-flex; align-items: baseline; gap: 2px; color: #ea580c;" title="Maximum Temperature today">
                   <span style="font-size: 12px; font-weight: 900;">↑</span>
                   <span id="weather-hero-temp-max"><?= $init_weather_max ?>°C</span>
                 </span>
-                <span style="display: inline-flex; align-items: center; gap: 2px; color: #0284c7;" title="Minimum Temperature today">
+                <span style="display: inline-flex; align-items: baseline; gap: 2px; color: #0284c7;" title="Minimum Temperature today">
                   <span style="font-size: 12px; font-weight: 900;">↓</span>
                   <span id="weather-hero-temp-min"><?= $init_weather_min ?>°C</span>
                 </span>

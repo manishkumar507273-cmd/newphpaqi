@@ -1067,7 +1067,7 @@ if (file_exists($forecastJsonFile)) {
             }
             const topSubtext = document.getElementById('forecast-model-subtext');
             if (topSubtext) {
-                topSubtext.innerText = isStandby ? 'Ready for new model deployment in forcast/' : 'Dual-Engine SAPE: AQI (48h Window) + Rainfall Wavelet LSTM (72h Window from WEATHER_NODE1)';
+                topSubtext.innerText = isStandby ? 'Ready for new model deployment in forcast/' : 'Dual-Engine SAPE: AQI (48h Window) + Multi-Weather Wavelet LSTM (72h Window from WEATHER_NODE1)';
             }
 
 

@@ -1293,15 +1293,27 @@ if (file_exists($forecastJsonFile)) {
     // Fetch and load forecast data from backend
     async function loadForecastData(force = false) {
         try {
-            if (!force && window.__forecastCache && window.__forecastCache.hourly) {
-                window.loadTrainedForecastModel(window.__forecastCache);
-                return;
+            if (!force) {
+                if (window.__forecastCache && window.__forecastCache.hourly) {
+                    window.loadTrainedForecastModel(window.__forecastCache);
+                    return;
+                }
+                if (typeof window.getLocalCache === 'function') {
+                    const localF = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.FORECAST : 'smartairnet_forecast_payload');
+                    if (localF && localF.hourly && localF.hourly.length > 0) {
+                        window.__forecastCache = localF;
+                        window.loadTrainedForecastModel(localF);
+                    }
+                }
             }
             const resp = await fetch(`api/telemetry.php?action=forecast${force ? '&force=1' : ''}`);
             if (!resp.ok) throw new Error('Network error loading forecast');
             const data = await resp.json();
             if (data && data.status === 'success' && data.hourly && data.hourly.length > 0) {
                 window.__forecastCache = data;
+                if (typeof window.setLocalCache === 'function') {
+                    window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.FORECAST : 'smartairnet_forecast_payload', data);
+                }
                 window.loadTrainedForecastModel(data);
                 const syncStatusEl = document.getElementById('forecast-auto-sync-status');
                 if (syncStatusEl) {
@@ -1361,6 +1373,9 @@ if (file_exists($forecastJsonFile)) {
      */
     window.loadTrainedForecastModel = function(data) {
         trainedModelData = data;
+        if (data && data.hourly && typeof window.setLocalCache === 'function') {
+            window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.FORECAST : 'smartairnet_forecast_payload', data);
+        }
         renderForecastUI();
     };
 

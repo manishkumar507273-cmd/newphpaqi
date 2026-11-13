@@ -1,7 +1,24 @@
 <?php
 if (!defined('IS_INCLUDED')) {
     header('Content-Type: application/json');
-    header('Cache-Control: no-store');
+    $reqAction = isset($_GET['action']) ? $_GET['action'] : '';
+    switch ($reqAction) {
+        case 'forecast':
+            header('Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=1800');
+            break;
+        case 'history_bulk':
+        case 'aqi_history':
+        case 'weather_history':
+            header('Cache-Control: public, max-age=30, s-maxage=60, stale-while-revalidate=600');
+            break;
+        case 'live_bulk':
+        case 'overview_bulk':
+        case 'aqi_live':
+        case 'weather_live':
+        default:
+            header('Cache-Control: public, max-age=5, s-maxage=15, stale-while-revalidate=120');
+            break;
+    }
 }
 date_default_timezone_set('Asia/Kolkata');
 
@@ -772,12 +789,18 @@ switch ($action) {
         $dtMidnightIst->setTimezone(new DateTimeZone('UTC'));
         $today_utc = $dtMidnightIst->format('Y-m-d\TH:i:s\Z');
 
-        // Fire all requests simultaneously with live rain rows
-        $raw = fetchParallel([
-            'aqi_hist'        => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
-            'weather_hist'    => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit={$lim}",
-            'today_rain_rows' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0",
-        ], $supabaseKey);
+        $cachedRainSum = cacheGet('today_rain_sum', 60);
+
+        // Fire parallel requests; omit expensive midnight rain query if cached within 60s
+        $fetchUrls = [
+            'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
+            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit={$lim}",
+        ];
+        if ($cachedRainSum === null) {
+            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0";
+        }
+
+        $raw = fetchParallel($fetchUrls, $supabaseKey);
 
         $res = [];
         $res['aqi']     = ($raw['aqi_hist']     && count($raw['aqi_hist'])     > 0) ? formatRawReading($raw['aqi_hist'][0])     : null;
@@ -793,11 +816,16 @@ switch ($action) {
         $res['weather_history'] = $wh;
 
         $today_rain_sum = 0.0;
-        if (!empty($raw['today_rain_rows']) && is_array($raw['today_rain_rows'])) {
-            foreach ($raw['today_rain_rows'] as $r) {
-                $rg = (float)($r['rain_gauge'] ?? 0);
-                if ($rg > 0) $today_rain_sum += $rg;
+        if (isset($raw['today_rain_rows'])) {
+            if (!empty($raw['today_rain_rows']) && is_array($raw['today_rain_rows'])) {
+                foreach ($raw['today_rain_rows'] as $r) {
+                    $rg = (float)($r['rain_gauge'] ?? 0);
+                    if ($rg > 0) $today_rain_sum += $rg;
+                }
             }
+            cacheSet('today_rain_sum', ['total' => round($today_rain_sum, 2)]);
+        } elseif ($cachedRainSum !== null && isset($cachedRainSum['total'])) {
+            $today_rain_sum = (float)$cachedRainSum['total'];
         }
         if ($res['weather'] && isset($res['weather']['rain_gauge'])) {
             $curRain = (float)$res['weather']['rain_gauge'];
@@ -834,11 +862,17 @@ switch ($action) {
         $dtMidnightIst->setTimezone(new DateTimeZone('UTC'));
         $today_utc = $dtMidnightIst->format('Y-m-d\TH:i:s\Z');
 
-        $raw = fetchParallel([
-            'aqi_hist'        => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
-            'weather_hist'    => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit={$lim}",
-            'today_rain_rows' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0",
-        ], $supabaseKey);
+        $cachedRainSum = cacheGet('today_rain_sum', 60);
+
+        $fetchUrls = [
+            'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
+            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit={$lim}",
+        ];
+        if ($cachedRainSum === null) {
+            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0";
+        }
+
+        $raw = fetchParallel($fetchUrls, $supabaseKey);
 
         $res = [];
         $res['aqi']     = ($raw['aqi_hist']     && count($raw['aqi_hist'])     > 0) ? formatRawReading($raw['aqi_hist'][0])     : null;
@@ -863,11 +897,16 @@ switch ($action) {
         $res['weather_history'] = $wh;
 
         $today_rain_sum = 0.0;
-        if (!empty($raw['today_rain_rows']) && is_array($raw['today_rain_rows'])) {
-            foreach ($raw['today_rain_rows'] as $r) {
-                $rg = (float)($r['rain_gauge'] ?? 0);
-                if ($rg > 0) $today_rain_sum += $rg;
+        if (isset($raw['today_rain_rows'])) {
+            if (!empty($raw['today_rain_rows']) && is_array($raw['today_rain_rows'])) {
+                foreach ($raw['today_rain_rows'] as $r) {
+                    $rg = (float)($r['rain_gauge'] ?? 0);
+                    if ($rg > 0) $today_rain_sum += $rg;
+                }
             }
+            cacheSet('today_rain_sum', ['total' => round($today_rain_sum, 2)]);
+        } elseif ($cachedRainSum !== null && isset($cachedRainSum['total'])) {
+            $today_rain_sum = (float)$cachedRainSum['total'];
         }
         if ($res['weather'] && isset($res['weather']['rain_gauge'])) {
             $curRain = (float)$res['weather']['rain_gauge'];

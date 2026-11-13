@@ -1,11 +1,59 @@
 // In-memory cache for live status evaluation
 const apiCache = {
     aqiLive: null,
-    lastFetchTime: 0
+    lastFetchTime: 0,
+    liveBulk: null,
+    overviewBulk: null
 };
 // Expose cache globally so router.js can pre-hydrate INITIAL_DATA on SPA navigation
 window.__apiCache = apiCache;
 const CACHE_TTL = 30000; // 30 seconds cache
+
+// ── Persistent Client Cache Engine (SWR - 0ms Instant Page Hydration) ──
+const STORAGE_KEYS = {
+    BULK: 'smartairnet_bulk_telemetry',
+    FORECAST: 'smartairnet_forecast_payload',
+    HIST_PREFIX: 'smartairnet_hist_'
+};
+window.STORAGE_KEYS = STORAGE_KEYS;
+
+function getLocalCache(key) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch (e) {
+        return null;
+    }
+}
+window.getLocalCache = getLocalCache;
+
+function setLocalCache(key, data) {
+    try {
+        if (!data) return;
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {}
+}
+window.setLocalCache = setLocalCache;
+
+// Synchronously hydrate memory cache and window.INITIAL_DATA on script load (0ms instant!)
+(function initClientStorageCache() {
+    try {
+        const cachedBulk = getLocalCache(STORAGE_KEYS.BULK);
+        if (cachedBulk && (cachedBulk.aqi || cachedBulk.weather)) {
+            if (!window.INITIAL_DATA || (!window.INITIAL_DATA.aqi && !window.INITIAL_DATA.weather)) {
+                window.INITIAL_DATA = cachedBulk;
+            }
+            if (!apiCache.liveBulk) apiCache.liveBulk = { data: cachedBulk, time: Date.now() };
+            if (!apiCache.overviewBulk) apiCache.overviewBulk = { data: cachedBulk, time: Date.now() };
+            if (!apiCache.aqiLive && cachedBulk.aqi) apiCache.aqiLive = { data: cachedBulk.aqi, time: Date.now() };
+        }
+        const cachedForecast = getLocalCache(STORAGE_KEYS.FORECAST);
+        if (cachedForecast && cachedForecast.hourly && !window.__forecastCache) {
+            window.__forecastCache = cachedForecast;
+        }
+    } catch (e) {}
+})();
 
 // CPCB Calibration Logic
 const CPCB_BREAKPOINTS = {

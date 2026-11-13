@@ -709,6 +709,11 @@ async function fetchRangeData(queryDate, days) {
                 fetchedAt: Date.now()
             };
             clientRangeCache[key] = payload;
+            try {
+                if (typeof window.setLocalCache === 'function') {
+                    window.setLocalCache('smartairnet_hist_' + key, payload);
+                }
+            } catch(e) {}
             return payload;
         } catch(e) {
             console.error(`Failed to fetch history for ${key}:`, e);
@@ -759,18 +764,44 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
             historicalDataAqi = window.INITIAL_HISTORY.aqi || [];
             historicalDataWeather = window.INITIAL_HISTORY.weather || [];
             window.INITIAL_HISTORY = null;
+            try {
+                if (typeof window.setLocalCache === 'function') {
+                    window.setLocalCache('smartairnet_hist_' + key, clientRangeCache[key]);
+                }
+            } catch(e) {}
             renderUI();
             prefetchOtherRanges(queryDate);
             return;
         }
 
-        // Instant render from client memory cache (0ms latency!)
-        if (!skipCache && clientRangeCache[key]) {
-            const cached = clientRangeCache[key];
+        // Instant render from client memory or localStorage cache (0ms latency!)
+        let cached = (!skipCache && clientRangeCache[key]) ? clientRangeCache[key] : null;
+        if (!cached && !skipCache && typeof window.getLocalCache === 'function') {
+            const stored = window.getLocalCache('smartairnet_hist_' + key);
+            if (stored && (stored.aqi || stored.weather)) {
+                cached = stored;
+                clientRangeCache[key] = stored;
+            }
+        }
+
+        if (cached) {
             historicalDataAqi = cached.aqi || [];
             historicalDataWeather = cached.weather || [];
             renderUI();
             prefetchOtherRanges(queryDate);
+
+            // Silently revalidate in background if records are for today or older than 45s
+            const isToday = (queryDate === getLocalDateStr());
+            const ageMs = Date.now() - (cached.fetchedAt || 0);
+            if (isToday || ageMs > 45000) {
+                fetchRangeData(queryDate, days).then(freshData => {
+                    if (freshData && (freshData.aqi?.length || freshData.weather?.length)) {
+                        historicalDataAqi = freshData.aqi || [];
+                        historicalDataWeather = freshData.weather || [];
+                        renderUI();
+                    }
+                }).catch(() => {});
+            }
             return;
         }
 

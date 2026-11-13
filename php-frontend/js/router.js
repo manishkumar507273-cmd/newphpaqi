@@ -356,6 +356,9 @@
                     } else if (window.__apiCache && window.__apiCache.aqiLive && window.__apiCache.aqiLive.data) {
                         preData = window.__apiCache.aqiLive.data;
                     }
+                    if (!preData && typeof window.getLocalCache === 'function') {
+                        preData = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry');
+                    }
                     if (preData) {
                         // Ensure both history and aqi_history keys exist
                         if (!preData.history && preData.aqi_history) preData.history = preData.aqi_history;

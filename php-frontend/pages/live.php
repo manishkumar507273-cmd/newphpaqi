@@ -330,7 +330,7 @@ $init_border_colors = [
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-    gap: 12px !important;
+    gap: 8px !important;
   }
   .hero-aqi-col {
     max-width: 100% !important;
@@ -347,43 +347,43 @@ $init_border_colors = [
 @media (max-width: 768px) {
   /* Mobile compact layout for Unified Live Telemetry Hero Card */
   #hero-card {
-    padding: 14px 14px 12px 14px !important;
-    border-radius: 20px !important;
-    margin-bottom: 10px !important;
-    box-shadow: 0 8px 24px rgba(234, 179, 8, 0.18), 0 1px 3px rgba(15,23,42,0.04) !important;
+    padding: 10px 12px 9px 12px !important;
+    border-radius: 18px !important;
+    margin-bottom: 8px !important;
+    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.16), 0 1px 3px rgba(15,23,42,0.04) !important;
   }
   .hero-skyline-silhouette {
-    height: 48px !important;
-    opacity: 0.10 !important;
+    height: 40px !important;
+    opacity: 0.08 !important;
   }
 
   /* Left: AQI Top Header Row */
   .hero-header-row {
-    margin-bottom: 8px !important;
-    gap: 10px !important;
+    margin-bottom: 5px !important;
+    gap: 8px !important;
     align-items: flex-end !important;
   }
   #hero-aqi-val {
-    font-size: 52px !important;
+    font-size: 44px !important;
     line-height: 0.9 !important;
   }
   #hero-aqi-subtext {
-    font-size: 11.5px !important;
+    font-size: 10.5px !important;
     margin-bottom: 2px !important;
   }
   #hero-aqi-badge {
-    min-width: 82px !important;
-    padding: 4px 12px !important;
-    border-radius: 10px !important;
+    min-width: 76px !important;
+    padding: 3px 10px !important;
+    border-radius: 8px !important;
     background: rgba(255, 255, 255, 0.85) !important;
   }
   #hero-aqi-label {
-    font-size: 15px !important;
+    font-size: 13.5px !important;
     font-weight: 800 !important;
   }
   #hero-aqi-title {
-    font-size: 11px !important;
-    margin-bottom: 3px !important;
+    font-size: 10.5px !important;
+    margin-bottom: 2px !important;
   }
 
   /* Middle: Frosted Glass PM Quick Stats Row */
@@ -391,43 +391,43 @@ $init_border_colors = [
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    margin-bottom: 10px !important;
-    padding: 6px 12px !important;
+    margin-bottom: 6px !important;
+    padding: 4px 10px !important;
     background: rgba(255, 255, 255, 0.45) !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     border: 1px solid rgba(255, 255, 255, 0.6) !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
   }
   .hero-pm-row strong,
   #hero-pm25, #hero-pm10 {
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 800 !important;
   }
   .hero-pm-row span.hero-pm-unit {
-    font-size: 10px !important;
+    font-size: 9.5px !important;
     color: #475569 !important;
     font-weight: 600 !important;
   }
   .hero-pm-divider {
     display: block !important;
     width: 1px !important;
-    height: 12px !important;
+    height: 11px !important;
     background: rgba(203, 213, 225, 0.8) !important;
   }
 
   /* Scale Bar Layout & Overlap Prevention */
   .hero-scale-bar-container {
-    margin-bottom: 12px !important;
+    margin-bottom: 6px !important;
   }
   .hero-scale-labels {
     display: grid !important;
     grid-template-columns: repeat(6, 1fr) !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 2px !important;
     padding: 0 !important;
     gap: 1px !important;
   }
   .hero-scale-labels .scale-label {
-    font-size: 8px !important;
+    font-size: 7.5px !important;
     font-weight: 700 !important;
     letter-spacing: -0.02em !important;
     line-height: 1 !important;
@@ -435,19 +435,19 @@ $init_border_colors = [
     white-space: nowrap !important;
   }
   .hero-scale-bar-track {
-    height: 6px !important;
-    margin-bottom: 4px !important;
+    height: 5px !important;
+    margin-bottom: 2px !important;
   }
   #hero-scale-indicator {
-    width: 15px !important;
-    height: 15px !important;
-    border-width: 3.5px !important;
+    width: 13px !important;
+    height: 13px !important;
+    border-width: 3px !important;
   }
   .hero-scale-ticks {
-    height: 13px !important;
+    height: 11px !important;
   }
   .hero-scale-ticks span {
-    font-size: 8.5px !important;
+    font-size: 8px !important;
     font-weight: 700 !important;
     color: #475569 !important;
     line-height: 1 !important;
@@ -459,16 +459,24 @@ $init_border_colors = [
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
-    border-radius: 14px !important;
-    padding: 8px 10px 8px 10px !important;
+    border-radius: 12px !important;
+    padding: 6px 8px 6px 8px !important;
     margin-bottom: 0 !important;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
   }
   .weather-box-header {
-    margin-bottom: 4px !important;
+    margin-bottom: 2px !important;
+  }
+  .weather-box-header span {
+    font-size: 9.5px !important;
+  }
+  .weather-box-header i,
+  .weather-box-header svg {
+    width: 12px !important;
+    height: 12px !important;
   }
   .weather-box-main {
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
     gap: 4px !important;
   }
   .weather-temp-row {
@@ -476,35 +484,35 @@ $init_border_colors = [
     gap: 2px !important;
   }
   #weather-hero-temp {
-    font-size: 26px !important;
+    font-size: 22px !important;
     line-height: 1 !important;
   }
   .weather-temp-unit {
-    font-size: 14px !important;
+    font-size: 12px !important;
   }
   .weather-arrows-wrap {
-    font-size: 11px !important;
-    gap: 6px !important;
+    font-size: 10px !important;
+    gap: 5px !important;
   }
   #weather-hero-temp-max, #weather-hero-temp-min {
-    font-size: 11px !important;
+    font-size: 10px !important;
   }
   .weather-metrics-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 5px !important;
-    padding-top: 6px !important;
+    gap: 4px !important;
+    padding-top: 4px !important;
     border-top: 1px solid rgba(226, 232, 240, 0.75) !important;
   }
   .weather-micro-card {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
-    padding: 3px 4px !important;
+    border-radius: 6px !important;
+    padding: 2px 3px !important;
     text-align: center !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
   }
   .weather-micro-label {
-    font-size: 8.5px !important;
+    font-size: 8px !important;
     font-weight: 700 !important;
     color: #64748b !important;
     display: flex !important;
@@ -514,11 +522,11 @@ $init_border_colors = [
     margin-bottom: 1px !important;
   }
   .weather-micro-label svg {
-    width: 10px !important;
-    height: 10px !important;
+    width: 9px !important;
+    height: 9px !important;
   }
   #weather-box-humidity, #weather-box-rain, #weather-box-wind {
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 800 !important;
     line-height: 1.1 !important;
   }
@@ -725,6 +733,28 @@ $init_border_colors = [
   
   .page-heading {
     font-size: 18px !important;
+  }
+
+  /* Comparison Chart & Filter Chips Mobile Optimization */
+  .comparison-chart-card {
+    padding: 14px 14px 12px 14px !important;
+    border-radius: 16px !important;
+    gap: 10px !important;
+  }
+  #pollutant-filters {
+    gap: 5px !important;
+    padding-bottom: 2px !important;
+  }
+  #pollutant-filters button {
+    min-height: 28px !important;
+    padding: 3px 9px !important;
+    font-size: 11px !important;
+    gap: 4.5px !important;
+    border-width: 1.2px !important;
+  }
+  #pollutant-filters button span {
+    width: 6px !important;
+    height: 6px !important;
   }
 }
 
@@ -1283,7 +1313,7 @@ $init_border_colors = [
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px;">
       <!-- AQI Parameters Comparison Lineplot Card -->
-      <div style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
+      <div class="comparison-chart-card" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
           <div>
             <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -1933,9 +1963,13 @@ async function refreshDashboard(forceNetwork = false) {
     try {
         let bulkData;
         let isFromCache = false;
-        const memoryCache = window.INITIAL_DATA || (window.__apiCache && (window.__apiCache.liveBulk || window.__apiCache.overviewBulk)
+        let memoryCache = window.INITIAL_DATA || (window.__apiCache && (window.__apiCache.liveBulk || window.__apiCache.overviewBulk)
             ? (window.__apiCache.liveBulk || window.__apiCache.overviewBulk).data
             : null);
+
+        if (!memoryCache && typeof window.getLocalCache === 'function') {
+            memoryCache = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry');
+        }
 
         if (!forceNetwork && memoryCache && (memoryCache.aqi || memoryCache.cpcb_aqi)) {
             bulkData = memoryCache.aqi ? memoryCache : { aqi: memoryCache, aqi_history: [memoryCache] };
@@ -1948,6 +1982,9 @@ async function refreshDashboard(forceNetwork = false) {
                 window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
                 window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
             }
+            if (typeof window.setLocalCache === 'function') {
+                window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry', bulkData);
+            }
             // Instantly schedule live network sync in background so data is up to the current second without delay
             setTimeout(() => {
                 refreshDashboard(true);
@@ -1957,9 +1994,14 @@ async function refreshDashboard(forceNetwork = false) {
             const fetchUrl = (typeof window.getApiUrl === 'function') ? window.getApiUrl(endpoint) : ('api/' + endpoint);
             const res = await fetch(fetchUrl);
             bulkData = await res.json();
-            if (window.__apiCache && bulkData && bulkData.aqi) {
-                window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
-                window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
+            if (bulkData && (bulkData.aqi || bulkData.weather)) {
+                if (window.__apiCache) {
+                    window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
+                    window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
+                }
+                if (typeof window.setLocalCache === 'function') {
+                    window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry', bulkData);
+                }
             }
         }
         

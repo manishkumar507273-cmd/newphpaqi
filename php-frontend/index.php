@@ -285,11 +285,33 @@ if ($is_ajax) {
 
     <?php
     $initial_overview_json = 'null';
-    $cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
-    if (file_exists($cache_file)) {
-        $raw_cache = @file_get_contents($cache_file);
-        if ($raw_cache && strlen($raw_cache) > 50) {
-            $initial_overview_json = $raw_cache;
+    $cache_dir = sys_get_temp_dir() . '/smartairnet_cache';
+    $candidates = [
+        $cache_dir . '/' . md5('overview_bulk') . '.json',
+        $cache_dir . '/' . md5('live_bulk_60') . '.json',
+        $cache_dir . '/' . md5('live_bulk_50') . '.json',
+        $cache_dir . '/last_known_hero.json',
+    ];
+    $best_epoch = 0;
+    foreach ($candidates as $cf) {
+        if (file_exists($cf)) {
+            $raw_c = @file_get_contents($cf);
+            if ($raw_c && strlen($raw_c) > 20) {
+                $parsed = @json_decode($raw_c, true);
+                if ($parsed) {
+                    if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
+                        $parsed = ['aqi' => $parsed, 'history' => [$parsed], 'aqi_history' => [$parsed]];
+                        $raw_c = json_encode($parsed);
+                    }
+                    $aqi_item = !empty($parsed['aqi']) ? (isset($parsed['aqi'][0]) ? $parsed['aqi'][0] : $parsed['aqi']) : null;
+                    $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
+                    $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
+                    if ($e > $best_epoch) {
+                        $best_epoch = $e;
+                        $initial_overview_json = $raw_c;
+                    }
+                }
+            }
         }
     }
     ?>

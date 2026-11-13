@@ -1189,9 +1189,13 @@ async function refreshData(isSilent = false, forceNetwork = false) {
     try {
         let bulkData;
         let usedInitialData = false;
-        const memoryCache = window.INITIAL_DATA || (window.__apiCache && (window.__apiCache.liveBulk || window.__apiCache.overviewBulk)
+        let memoryCache = window.INITIAL_DATA || (window.__apiCache && (window.__apiCache.liveBulk || window.__apiCache.overviewBulk)
             ? (window.__apiCache.liveBulk || window.__apiCache.overviewBulk).data
             : null);
+
+        if (!memoryCache && typeof window.getLocalCache === 'function') {
+            memoryCache = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry');
+        }
 
         if (!forceNetwork && memoryCache && (memoryCache.aqi || memoryCache.weather)) {
             bulkData = memoryCache;
@@ -1201,6 +1205,9 @@ async function refreshData(isSilent = false, forceNetwork = false) {
                 window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
                 window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
             }
+            if (typeof window.setLocalCache === 'function') {
+                window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry', bulkData);
+            }
             // Trigger a single background network sync to refresh with live data
             setTimeout(() => {
                 refreshData(true, true);
@@ -1208,9 +1215,14 @@ async function refreshData(isSilent = false, forceNetwork = false) {
         } else {
             const response = await fetch(`api/telemetry.php?action=overview_bulk`);
             bulkData = await response.json();
-            if (window.__apiCache && bulkData) {
-                window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
-                window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
+            if (bulkData && (bulkData.aqi || bulkData.weather)) {
+                if (window.__apiCache) {
+                    window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
+                    window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
+                }
+                if (typeof window.setLocalCache === 'function') {
+                    window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry', bulkData);
+                }
             }
         }
 

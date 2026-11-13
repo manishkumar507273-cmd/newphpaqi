@@ -331,15 +331,36 @@
 
             // Swap content
             if (wrapper) {
+                // Destroy any lingering Chart.js instances before swapping DOM
+                if (window.__chartInstances) {
+                    Object.keys(window.__chartInstances).forEach(k => {
+                        try {
+                            if (window.__chartInstances[k] && typeof window.__chartInstances[k].destroy === 'function') {
+                                window.__chartInstances[k].destroy();
+                            }
+                        } catch(e) {}
+                    });
+                    window.__chartInstances = {};
+                }
+
                 // Pre-hydrate INITIAL_DATA from JS API cache so page scripts skip their first fetch
                 // This eliminates the double-fetch (page HTML fetch + telemetry fetch) on SPA navigation
                 try {
-                    if (window.__apiCache && window.__apiCache.liveBulk && window.__apiCache.liveBulk.data) {
-                        window.INITIAL_DATA = window.__apiCache.liveBulk.data;
+                    let preData = null;
+                    if (targetPage === 'overview' && window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
+                        preData = window.__apiCache.overviewBulk.data;
+                    } else if (window.__apiCache && window.__apiCache.liveBulk && window.__apiCache.liveBulk.data) {
+                        preData = window.__apiCache.liveBulk.data;
                     } else if (window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
-                        window.INITIAL_DATA = window.__apiCache.overviewBulk.data;
+                        preData = window.__apiCache.overviewBulk.data;
                     } else if (window.__apiCache && window.__apiCache.aqiLive && window.__apiCache.aqiLive.data) {
-                        window.INITIAL_DATA = window.__apiCache.aqiLive.data;
+                        preData = window.__apiCache.aqiLive.data;
+                    }
+                    if (preData) {
+                        // Ensure both history and aqi_history keys exist
+                        if (!preData.history && preData.aqi_history) preData.history = preData.aqi_history;
+                        if (!preData.aqi_history && preData.history) preData.aqi_history = preData.history;
+                        window.INITIAL_DATA = preData;
                     }
                 } catch (e) { }
 

@@ -786,6 +786,7 @@ switch ($action) {
         $ah = [];
         if ($raw['aqi_hist']) { foreach ($raw['aqi_hist'] as $row) { $f = formatRawReading($row); if ($f) $ah[] = $f; } }
         $res['aqi_history'] = $ah;
+        $res['history']     = $ah;
 
         $wh = [];
         if ($raw['weather_hist']) { foreach ($raw['weather_hist'] as $row) { $w = formatWeatherReading($row); if ($w) $wh[] = $w; } }
@@ -854,7 +855,8 @@ switch ($action) {
 
         $hist = [];
         if ($raw['aqi_hist']) { foreach ($raw['aqi_hist'] as $row) { $f = formatRawReading($row); if ($f) $hist[] = $f; } }
-        $res['history'] = $hist;
+        $res['history']     = $hist;
+        $res['aqi_history'] = $hist;
 
         $wh = [];
         if ($raw['weather_hist']) { foreach ($raw['weather_hist'] as $row) { $w = formatWeatherReading($row); if ($w) $wh[] = $w; } }

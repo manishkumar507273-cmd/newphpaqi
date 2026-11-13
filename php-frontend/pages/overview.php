@@ -1147,13 +1147,13 @@ function setupCarouselScrollListener() {
 
 function resizeActiveChart() {
     const canvasIds = ['overview-aqi-chart', 'overview-temp-chart', 'overview-hum-chart', 'overview-wind-chart', 'overview-rain-chart'];
-    const activeIdx = window.currentChartSlideIndex || 0;
-    const activeCid = canvasIds[activeIdx];
-    if (activeCid && window.__chartInstances && window.__chartInstances[activeCid]) {
-        try {
-            window.__chartInstances[activeCid].resize();
-        } catch(e) {}
-    }
+    canvasIds.forEach(cid => {
+        if (window.__chartInstances && window.__chartInstances[cid]) {
+            try {
+                window.__chartInstances[cid].resize();
+            } catch(e) {}
+        }
+    });
 }
 
 function applyRainHeroSwitch(isRaining) {
@@ -1259,7 +1259,7 @@ async function refreshData(isSilent = false, forceNetwork = false) {
 
         const aqiRes = { data: bulkData.aqi };
         const weatherRes = { data: bulkData.weather };
-        const liveHistoryRes = bulkData.history;
+        const liveHistoryRes = (bulkData && (bulkData.history || bulkData.aqi_history)) ? (bulkData.history || bulkData.aqi_history) : null;
         
         // AQI
         if (aqiRes && aqiRes.data) {
@@ -1345,18 +1345,28 @@ async function refreshData(isSilent = false, forceNetwork = false) {
             const data = [];
 
             history.forEach(row => {
-                const aqi = Math.round(row.cpcb_aqi || 0);
-                if (aqi < minAqi) { minAqi = aqi; minTime = row.timestamp; }
-                if (aqi > maxAqi) { maxAqi = aqi; maxTime = row.timestamp; }
+                const aqi = Math.round(row.cpcb_aqi != null ? row.cpcb_aqi : (row.aqi != null ? row.aqi : 0));
+                if (aqi < minAqi) { minAqi = aqi; minTime = row.timestamp || row.created_at; }
+                if (aqi > maxAqi) { maxAqi = aqi; maxTime = row.timestamp || row.created_at; }
                 
-                const dt = new Date(row.timestamp);
-                const timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' }).toLowerCase();
+                const dt = new Date(row.timestamp || row.created_at);
+                const timeStr = !isNaN(dt.getTime())
+                    ? dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' }).toLowerCase()
+                    : '--';
                 
                 labels.push(timeStr);
                 data.push(aqi);
             });
 
             renderGenericChart('overview-aqi-chart', labels, data, 'AQI', '#00bfa5');
+        } else if (aqiRes && aqiRes.data) {
+            // Instant Fallback: If history array is not yet loaded, plot current reading so chart is never blank
+            const curAqi = Math.round(aqiRes.data.cpcb_aqi != null ? aqiRes.data.cpcb_aqi : (aqiRes.data.aqi_info?.value || 0));
+            const dt = new Date(aqiRes.data.timestamp || aqiRes.data.created_at || Date.now());
+            const timeStr = !isNaN(dt.getTime())
+                ? dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' }).toLowerCase()
+                : 'now';
+            renderGenericChart('overview-aqi-chart', [timeStr], [curAqi], 'AQI', '#00bfa5');
         }
 
         // Weather History Charts
@@ -1461,19 +1471,34 @@ function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
     if (chartInstances[canvasId]) {
         try {
             const existingChart = chartInstances[canvasId];
-            if (existingChart && existingChart.ctx) {
+            if (existingChart && existingChart.canvas && existingChart.canvas.isConnected && existingChart.canvas === canvas) {
                 existingChart.data.labels = labels;
                 if (existingChart.data.datasets && existingChart.data.datasets[0]) {
                     existingChart.data.datasets[0].data = data;
                 }
                 existingChart.update('none');
                 return;
+            } else {
+                if (existingChart && typeof existingChart.destroy === 'function') {
+                    existingChart.destroy();
+                }
+                delete chartInstances[canvasId];
             }
         } catch(e) {
             try { chartInstances[canvasId].destroy(); } catch(err) {}
             delete chartInstances[canvasId];
         }
     }
+    
+    // Destroy any previously registered chart on this canvas to prevent "Canvas is already in use"
+    try {
+        if (typeof Chart.getChart === 'function') {
+            const registeredChart = Chart.getChart(canvas);
+            if (registeredChart) {
+                registeredChart.destroy();
+            }
+        }
+    } catch(e) {}
     
     // Create gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, 250);
@@ -1553,6 +1578,22 @@ function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
             }
         }
     });
+
+    // Ensure dimensions are properly synchronized
+    requestAnimationFrame(() => {
+        try {
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].resize();
+            }
+        } catch(e) {}
+    });
+    setTimeout(() => {
+        try {
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].resize();
+            }
+        } catch(e) {}
+    }, 120);
 }
 
 function initCanvas() {

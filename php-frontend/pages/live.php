@@ -320,7 +320,7 @@ $init_border_colors = [
   .hero-weather-col {
     margin-left: auto !important;
     margin-right: 0 !important;
-    max-width: 375px !important;
+    max-width: 320px !important;
     width: 100% !important;
     flex-shrink: 0 !important;
   }
@@ -453,72 +453,74 @@ $init_border_colors = [
     line-height: 1 !important;
   }
 
-  /* Weather & Comfort Section Mobile Refinement */
+  /* Weather & Comfort Section Mobile Refinement (Ultra-Compact) */
   #weather-hero-box {
     background: rgba(255, 255, 255, 0.88) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
-    border-radius: 16px !important;
-    padding: 12px 12px 10px 12px !important;
+    border-radius: 14px !important;
+    padding: 8px 10px 8px 10px !important;
     margin-bottom: 0 !important;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
   }
   .weather-box-header {
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
   }
   .weather-box-main {
-    margin-bottom: 10px !important;
-    gap: 6px !important;
+    margin-bottom: 6px !important;
+    gap: 4px !important;
   }
   .weather-temp-row {
-    margin-bottom: 3px !important;
+    margin-bottom: 0 !important;
+    gap: 2px !important;
   }
   #weather-hero-temp {
-    font-size: 40px !important;
-    line-height: 0.95 !important;
+    font-size: 26px !important;
+    line-height: 1 !important;
   }
   .weather-temp-unit {
-    font-size: 20px !important;
+    font-size: 14px !important;
   }
-  .weather-sub-row {
-    margin-top: 4px !important;
-    gap: 8px !important;
+  .weather-arrows-wrap {
+    font-size: 11px !important;
+    gap: 6px !important;
   }
   #weather-hero-temp-max, #weather-hero-temp-min {
-    font-size: 12.5px !important;
-  }
-  #weather-comfort-badge {
-    font-size: 10.5px !important;
-    padding: 2px 9px !important;
+    font-size: 11px !important;
   }
   .weather-metrics-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 6px !important;
-    padding-top: 8px !important;
-    border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
+    gap: 5px !important;
+    padding-top: 6px !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.75) !important;
   }
   .weather-micro-card {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 10px !important;
-    padding: 6px 4px !important;
+    border-radius: 8px !important;
+    padding: 3px 4px !important;
     text-align: center !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
   }
   .weather-micro-label {
-    font-size: 9.5px !important;
+    font-size: 8.5px !important;
     font-weight: 700 !important;
     color: #64748b !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 3px !important;
-    margin-bottom: 2px !important;
+    gap: 2px !important;
+    margin-bottom: 1px !important;
+  }
+  .weather-micro-label svg {
+    width: 10px !important;
+    height: 10px !important;
   }
   #weather-box-humidity, #weather-box-rain, #weather-box-wind {
-    font-size: 13.5px !important;
+    font-size: 12px !important;
     font-weight: 800 !important;
+    line-height: 1.1 !important;
   }
   
   /* Pollutants Grid Mobile Refinements (Ultra-compact 2-column layout matching reference) */
@@ -906,72 +908,62 @@ $init_border_colors = [
 
         </div>
 
-        <!-- RIGHT COLUMN: Weather & Thermal Comfort Box (Pinned to Far-Right Corner) -->
-        <div class="hero-weather-col flex flex-col justify-between w-full md:w-auto shrink-0" style="width: 100%; max-width: 375px; margin-left: auto; margin-right: 0;">
-          <div id="weather-hero-box" style="background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 18px 20px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04); height: 100%; display: flex; flex-direction: column; justify-content: space-between; width: 100%;">
+        <!-- RIGHT COLUMN: Weather Box (Pinned to Far-Right Corner, Ultra-Sleek & Compact) -->
+        <div class="hero-weather-col flex flex-col justify-between w-full md:w-auto shrink-0" style="width: 100%; max-width: 320px; margin-left: auto; margin-right: 0;">
+          <div id="weather-hero-box" style="background: rgba(255, 255, 255, 0.76); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 12px 14px; box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04); height: 100%; display: flex; flex-direction: column; justify-content: space-between; width: 100%;">
             
             <!-- Box Header -->
-            <div class="weather-box-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--font-sans);">
-                <i data-lucide="cloud-sun" style="width: 15px; height: 15px; color: #0284c7;"></i>
+            <div class="weather-box-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <div style="display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-sans);">
+                <i data-lucide="cloud-sun" style="width: 14px; height: 14px; color: #0284c7;"></i>
                 <span>Weather &amp; Comfort</span>
               </div>
             </div>
 
-            <!-- Main Temperature, Min/Max Arrows and Comfort Badge -->
-            <div class="weather-box-main" style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-              <!-- Big Temp + Min/Max Arrows + Comfort Pill Badge -->
-              <div style="display: flex; flex-direction: column; min-width: 0; width: 100%;">
-                <div class="weather-temp-row" style="display: flex; align-items: baseline; gap: 4px;">
-                  <span id="weather-hero-temp" style="font-family: var(--font-mono); font-size: 48px; font-weight: 900; line-height: 1; letter-spacing: -0.04em; color: #0f172a;"><?= $init_weather_temp ?></span>
-                  <span class="weather-temp-unit" style="font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: #64748b;">°C</span>
-                </div>
+            <!-- Main Temperature & Min/Max Arrows (Single Compact Row, "Hot" removed) -->
+            <div class="weather-box-main" style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; gap: 8px;">
+              <div class="weather-temp-row" style="display: flex; align-items: baseline; gap: 3px;">
+                <span id="weather-hero-temp" style="font-family: var(--font-mono); font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0f172a;"><?= $init_weather_temp ?></span>
+                <span class="weather-temp-unit" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: #64748b;">°C</span>
+              </div>
 
-                <!-- Min/Max Arrows (↑ Max °C   ↓ Min °C) -->
-                <div class="weather-sub-row" style="display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
-                  <div class="weather-arrows-wrap" style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 13.5px; font-weight: 700;">
-                    <span style="display: inline-flex; align-items: center; gap: 3px; color: #ea580c;" title="Maximum Temperature today">
-                      <span style="font-size: 14px; font-weight: 900;">↑</span>
-                      <span id="weather-hero-temp-max"><?= $init_weather_max ?>°C</span>
-                    </span>
-                    <span style="display: inline-flex; align-items: center; gap: 3px; color: #0284c7;" title="Minimum Temperature today">
-                      <span style="font-size: 14px; font-weight: 900;">↓</span>
-                      <span id="weather-hero-temp-min"><?= $init_weather_min ?>°C</span>
-                    </span>
-                  </div>
-
-                  <!-- Comfort Badge (Cool, Pleasant, Warm, Hot) -->
-                  <span id="weather-comfort-badge" style="display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-family: var(--font-sans); letter-spacing: 0.01em;">
-                    <?= $init_weather_comfort ?>
-                  </span>
-                </div>
+              <!-- Min/Max Arrows (↑ Max °C   ↓ Min °C) -->
+              <div class="weather-arrows-wrap" style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;">
+                <span style="display: inline-flex; align-items: center; gap: 2px; color: #ea580c;" title="Maximum Temperature today">
+                  <span style="font-size: 12px; font-weight: 900;">↑</span>
+                  <span id="weather-hero-temp-max"><?= $init_weather_max ?>°C</span>
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 2px; color: #0284c7;" title="Minimum Temperature today">
+                  <span style="font-size: 12px; font-weight: 900;">↓</span>
+                  <span id="weather-hero-temp-min"><?= $init_weather_min ?>°C</span>
+                </span>
               </div>
             </div>
 
             <!-- Micro Metrics Row (Humidity, Rainfall, Wind Speed) -->
-            <div class="weather-metrics-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 12px; border-top: 1px solid rgba(203, 213, 225, 0.6);">
+            <div class="weather-metrics-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-top: 8px; border-top: 1px solid rgba(203, 213, 225, 0.55);">
               <!-- Humidity -->
-              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.75); border: 1px solid #e2e8f0; border-radius: 12px; padding: 7px 8px; text-align: center;">
-                <div class="weather-micro-label" style="font-size: 10.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 3px; margin-bottom: 2px;">
-                  <i data-lucide="droplets" style="width: 12px; height: 12px; color: #0284c7;"></i> Humidity
+              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 6px; text-align: center;">
+                <div class="weather-micro-label" style="font-size: 9.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 2.5px; margin-bottom: 1px;">
+                  <i data-lucide="droplets" style="width: 11px; height: 11px; color: #0284c7;"></i> Humidity
                 </div>
-                <div id="weather-box-humidity" style="font-family: var(--font-mono); font-size: 15.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_hum ?></div>
+                <div id="weather-box-humidity" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_hum ?></div>
               </div>
 
               <!-- Rainfall -->
-              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.75); border: 1px solid #e2e8f0; border-radius: 12px; padding: 7px 8px; text-align: center;">
-                <div class="weather-micro-label" style="font-size: 10.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 3px; margin-bottom: 2px;">
-                  <i data-lucide="cloud-rain" style="width: 12px; height: 12px; color: #0891b2;"></i> Rainfall
+              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 6px; text-align: center;">
+                <div class="weather-micro-label" style="font-size: 9.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 2.5px; margin-bottom: 1px;">
+                  <i data-lucide="cloud-rain" style="width: 11px; height: 11px; color: #0891b2;"></i> Rainfall
                 </div>
-                <div id="weather-box-rain" style="font-family: var(--font-mono); font-size: 15.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_rain ?></div>
+                <div id="weather-box-rain" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_rain ?></div>
               </div>
 
               <!-- Wind Speed -->
-              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.75); border: 1px solid #e2e8f0; border-radius: 12px; padding: 7px 8px; text-align: center;">
-                <div class="weather-micro-label" style="font-size: 10.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 3px; margin-bottom: 2px;">
-                  <i data-lucide="wind" style="width: 12px; height: 12px; color: #6366f1;"></i> Wind
+              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 6px; text-align: center;">
+                <div class="weather-micro-label" style="font-size: 9.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 2.5px; margin-bottom: 1px;">
+                  <i data-lucide="wind" style="width: 11px; height: 11px; color: #6366f1;"></i> Wind
                 </div>
-                <div id="weather-box-wind" style="font-family: var(--font-mono); font-size: 15.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_wind ?></div>
+                <div id="weather-box-wind" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_wind ?></div>
               </div>
             </div>
 
@@ -2423,8 +2415,16 @@ window.__cleanupCurrentPage = function() {
     }
     document.removeEventListener('visibilitychange', onLiveVisibilityChange);
     if (comparisonChartInstance) {
-        comparisonChartInstance.destroy();
+        try { comparisonChartInstance.destroy(); } catch(e) {}
         comparisonChartInstance = null;
+    }
+    if (window.__chartInstances) {
+        Object.keys(window.__chartInstances).forEach(k => {
+            if (window.__chartInstances[k]) {
+                try { window.__chartInstances[k].destroy(); } catch(e) {}
+            }
+        });
+        window.__chartInstances = {};
     }
     const bodyModals = document.querySelectorAll('body > #pollutant-modal');
     bodyModals.forEach(m => m.remove());

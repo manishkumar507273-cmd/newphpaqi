@@ -62,14 +62,18 @@ if (file_exists($cache_file_today)) {
         </div>
       </div>
 
-      <!-- Right Action Controls: Range Pills (1D, 3D, 7D, 30D) & Date Picker -->
+      <!-- Right Action Controls: Range Dropdown (24h, 3D, 7D, 30D) & Date Picker -->
       <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
-        <!-- Range Selector Pills -->
-        <div id="range-pills" class="inline-flex items-center bg-slate-100 p-1 rounded-full border border-slate-200 gap-1 overflow-x-auto shadow-inner">
-          <button type="button" onclick="setRangeDays(1)" id="btn-range-1" class="px-3 sm:px-3.5 py-1.5 rounded-full font-bold text-xs cursor-pointer transition-all duration-200 ease-out <?= $req_range_days === 1 ? 'bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02]' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95' ?> min-h-[34px]">1 Day</button>
-          <button type="button" onclick="setRangeDays(3)" id="btn-range-3" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out <?= $req_range_days === 3 ? 'bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02]' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95' ?> min-h-[34px]">3 Days</button>
-          <button type="button" onclick="setRangeDays(7)" id="btn-range-7" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out <?= $req_range_days === 7 ? 'bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02]' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95' ?> min-h-[34px]">7 Days</button>
-          <button type="button" onclick="setRangeDays(30)" id="btn-range-30" class="px-3 sm:px-3.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ease-out <?= $req_range_days === 30 ? 'bg-[#00bfa5] text-white shadow-[0_2px_8px_rgba(0,191,165,0.35)] scale-[1.02]' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 active:scale-95' ?> min-h-[34px]">30 Days</button>
+        <!-- Range Selector Dropdown -->
+        <div style="position: relative; display: inline-flex; align-items: center;">
+          <select id="range-select" onchange="setRangeDays(this.value)" class="min-h-[38px] sm:min-h-[42px] cursor-pointer text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all duration-200" style="padding: 7px 32px 7px 32px; border-radius: 12px; border: 1.5px solid #cbd5e1; outline: none; appearance: none; -webkit-appearance: none; -moz-appearance: none; font-family: var(--font-sans); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <option value="1" <?= $req_range_days === 1 ? 'selected' : '' ?>>24h</option>
+            <option value="3" <?= $req_range_days === 3 ? 'selected' : '' ?>>3 Days</option>
+            <option value="7" <?= $req_range_days === 7 ? 'selected' : '' ?>>7 Days</option>
+            <option value="30" <?= $req_range_days === 30 ? 'selected' : '' ?>>30 Days</option>
+          </select>
+          <i data-lucide="clock-4" style="position: absolute; left: 10px; width: 14px; height: 14px; color: #00bfa5; pointer-events: none;"></i>
+          <i data-lucide="chevron-down" style="position: absolute; right: 10px; width: 14px; height: 14px; color: #64748b; pointer-events: none;"></i>
         </div>
 
         <!-- Date Picker Input -->
@@ -554,7 +558,13 @@ function animateSummarySection(show) {
 function setRangeDays(days, skipFetch = false) {
     currentRangeDays = Number(days) || 1;
     
-    // Tactile & smooth pill transitions
+    // Sync Range Dropdown
+    const rangeSelect = document.getElementById('range-select');
+    if (rangeSelect && Number(rangeSelect.value) !== currentRangeDays) {
+        rangeSelect.value = currentRangeDays;
+    }
+
+    // Tactile & smooth pill transitions (if present)
     [1, 3, 7, 30].forEach(d => {
         const btn = document.getElementById(`btn-range-${d}`);
         if (btn) {
@@ -1963,7 +1973,22 @@ setTimeout(() => {
         setChartType(_initState.type, true);
     }
 
-    // Attach on-demand prefetch handlers to range buttons so queries run only when touched/hovered
+    // Attach on-demand prefetch handlers to range dropdown & buttons so queries run only when touched/hovered
+    const rSelect = document.getElementById('range-select');
+    if (rSelect) {
+        const prefetchCommon = () => {
+            const picker = document.getElementById('history-date-picker');
+            const qDate = picker && picker.value ? picker.value : '<?= $today_ist ?>';
+            [3, 7].forEach(d => {
+                const k = getCacheKey(qDate, d);
+                if (!clientRangeCache[k] && !pendingRangeFetches[k]) {
+                    fetchRangeData(qDate, d).catch(() => {});
+                }
+            });
+        };
+        rSelect.addEventListener('pointerenter', prefetchCommon, { passive: true });
+        rSelect.addEventListener('focus', prefetchCommon, { passive: true });
+    }
     [1, 3, 7, 30].forEach(d => {
         const btn = document.getElementById('btn-range-' + d);
         if (btn) {

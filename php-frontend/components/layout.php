@@ -2,6 +2,9 @@
 require_once __DIR__ . '/brand-assets.php';
 $allowed_pages = ['overview', 'live', 'historical', 'weather', 'predictive'];
 $current_page = (isset($_GET['page']) && in_array($_GET['page'], $allowed_pages)) ? $_GET['page'] : 'overview';
+if ($current_page === 'weather') {
+    $current_page = 'live';
+}
 $is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']);
 $user_display_name = !empty($_SESSION['user_name']) ? $_SESSION['user_name'] : (!empty($_SESSION['user_email']) ? explode('@', $_SESSION['user_email'])[0] : 'User');
 $user_email = $_SESSION['user_email'] ?? '';

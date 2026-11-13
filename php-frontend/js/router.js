@@ -228,6 +228,7 @@
         try {
             const urlObj = new URL(url, window.location.origin);
             targetPage = urlObj.searchParams.get('page') || 'overview';
+            if (targetPage === 'weather') targetPage = 'live';
         } catch (e) {
             targetPage = 'overview';
         }

@@ -168,6 +168,9 @@ $allowed_pages = ['overview', 'live', 'historical', 'weather', 'predictive'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'overview';
 }
+if ($page === 'weather') {
+    $page = 'live';
+}
 
 $is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']);
 $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);

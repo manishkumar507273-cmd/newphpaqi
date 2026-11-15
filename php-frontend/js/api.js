@@ -460,16 +460,26 @@ async function fetchHistoryBulk(queryDate, days = 1) {
 window.fetchHistoryBulk = fetchHistoryBulk;
 
 async function fetchForecastData(force = false) {
-    if (!force) {
-        const cached = window.__forecastCache || getLocalCache(STORAGE_KEYS.FORECAST);
-        if (cached && cached.hourly && cached.hourly.length > 0) {
-            return cached;
+    // 1. Primary dynamic path: query dynamic backend with cache-busting to ensure server & Supabase parity
+    try {
+        const resp = await fetch(`api/telemetry.php?action=forecast&v=${Date.now()}${force ? '&force=1' : ''}`, {
+            cache: 'no-store'
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.hourly && data.hourly.length > 0) {
+                window.__forecastCache = data;
+                setLocalCache(STORAGE_KEYS.FORECAST, data);
+                return data;
+            }
         }
+    } catch (e) {
+        console.warn('Dynamic forecast fetch failed, attempting static file fallback:', e);
     }
 
+    // 2. Secondary path: static forecast_data.json fallback
     try {
-        // Fast path: static forecast_data.json served directly by Vercel Edge CDN in ~20ms!
-        const staticRes = await fetch('api/forecast_data.json?v=' + Math.floor(Date.now() / 60000));
+        const staticRes = await fetch('api/forecast_data.json?v=' + Date.now(), { cache: 'no-store' });
         if (staticRes.ok) {
             const payload = await staticRes.json();
             if (payload && payload.hourly && payload.hourly.length > 0) {
@@ -486,23 +496,10 @@ async function fetchForecastData(force = false) {
             }
         }
     } catch (err) {
-        console.warn('Static forecast fetch failed; falling back:', err);
+        console.warn('Static forecast fetch failed; falling back to local cache:', err);
     }
 
-    // Secondary path: call api/telemetry.php?action=forecast
-    try {
-        const resp = await fetch(`api/telemetry.php?action=forecast${force ? '&force=1' : ''}`);
-        if (resp.ok) {
-            const data = await resp.json();
-            if (data && data.hourly && data.hourly.length > 0) {
-                window.__forecastCache = data;
-                setLocalCache(STORAGE_KEYS.FORECAST, data);
-                return data;
-            }
-        }
-    } catch (e) {
-        console.error('All forecast fetch paths failed:', e);
-    }
+    // 3. Offline fallback
     return window.__forecastCache || getLocalCache(STORAGE_KEYS.FORECAST) || null;
 }
 window.fetchForecastData = fetchForecastData;

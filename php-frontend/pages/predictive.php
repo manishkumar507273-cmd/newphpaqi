@@ -9,13 +9,32 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     exit;
 }
 
-// 0ms instant pre-hydration from disk cache
+// 0ms instant pre-hydration from disk cache if it contains upcoming forecast hours
 $forecastJsonFile = __DIR__ . '/../api/forecast_data.json';
 $preloadedForecastJson = 'null';
 if (file_exists($forecastJsonFile)) {
     $rawPreload = @file_get_contents($forecastJsonFile);
     if ($rawPreload && strlen($rawPreload) > 20) {
-        $preloadedForecastJson = $rawPreload;
+        $decodedPreload = @json_decode($rawPreload, true);
+        if (is_array($decodedPreload) && !empty($decodedPreload['hourly'])) {
+            $nowIst = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
+            $currentHourStartTs = (clone $nowIst)->setTime((int)$nowIst->format('H'), 0, 0)->getTimestamp();
+            $hasFutureHour = false;
+            foreach ($decodedPreload['hourly'] as $hItem) {
+                if (!empty($hItem['iso'])) {
+                    try {
+                        $dtH = new DateTime($hItem['iso']);
+                        if ($dtH->getTimestamp() >= $currentHourStartTs) {
+                            $hasFutureHour = true;
+                            break;
+                        }
+                    } catch (Exception $e) {}
+                }
+            }
+            if ($hasFutureHour) {
+                $preloadedForecastJson = $rawPreload;
+            }
+        }
     }
 }
 ?>
@@ -1292,15 +1311,14 @@ if (file_exists($forecastJsonFile)) {
 
     let autoRefreshForecastTimer = null;
 
-    // Fetch and load forecast data from backend
+    // Fetch and load forecast data from backend (Stale-While-Revalidate)
     async function loadForecastData(force = false) {
         try {
+            // Immediate paint: render any cached forecast right away so UI is instant
             if (!force) {
                 if (window.__forecastCache && window.__forecastCache.hourly) {
                     window.loadTrainedForecastModel(window.__forecastCache);
-                    return;
-                }
-                if (typeof window.getLocalCache === 'function') {
+                } else if (typeof window.getLocalCache === 'function') {
                     const localF = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.FORECAST : 'smartairnet_forecast_payload');
                     if (localF && localF.hourly && localF.hourly.length > 0) {
                         window.__forecastCache = localF;
@@ -1308,11 +1326,16 @@ if (file_exists($forecastJsonFile)) {
                     }
                 }
             }
+
+            // Always revalidate from network in the background to ensure parity with server
             let data;
+            const bust = 'v=' + Date.now();
             if (typeof window.fetchForecastData === 'function') {
                 data = await window.fetchForecastData(force);
             } else {
-                const resp = await fetch(`api/telemetry.php?action=forecast${force ? '&force=1' : ''}`);
+                const resp = await fetch(`api/telemetry.php?action=forecast&${bust}${force ? '&force=1' : ''}`, {
+                    cache: 'no-store'
+                });
                 if (!resp.ok) throw new Error('Network error loading forecast');
                 data = await resp.json();
             }

@@ -4,7 +4,9 @@ if (!defined('IS_INCLUDED')) {
     $reqAction = isset($_GET['action']) ? $_GET['action'] : '';
     switch ($reqAction) {
         case 'forecast':
-            header('Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=1800');
+            header('Cache-Control: no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
             break;
         case 'history_bulk':
         case 'aqi_history':
@@ -1059,8 +1061,8 @@ switch ($action) {
         $force = isset($_GET['force']) && $_GET['force'] === '1';
         $jsonFile = __DIR__ . '/forecast_data.json';
 
-        // 1. FAST PATH: Read from local forecast_data.json on disk if fresh (< 3600s / 1 hour)
-        $cacheTtlSeconds = 3600;
+        // 1. FAST PATH: Read from local forecast_data.json on disk if fresh (< 60s) and has upcoming hours
+        $cacheTtlSeconds = 60;
         $isFresh = file_exists($jsonFile) && (time() - @filemtime($jsonFile) < $cacheTtlSeconds);
 
         if (!$force && $isFresh) {
@@ -1084,10 +1086,7 @@ switch ($action) {
                         }
                     }
 
-                    if (empty($filteredHourly) && !empty($payload['hourly'])) {
-                        $filteredHourly = $payload['hourly'];
-                    }
-
+                    // Only serve from disk if it actually has upcoming hours! If expired, fall through to Supabase query!
                     if (!empty($filteredHourly)) {
                         foreach ($filteredHourly as $idx => &$item) {
                             $item['index'] = $idx;

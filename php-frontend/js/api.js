@@ -390,12 +390,56 @@ async function fetchOverviewBulk(forceNetwork = false) {
 }
 window.fetchOverviewBulk = fetchOverviewBulk;
 
-async function fetchHistoryBulk(queryDate, days = 1) {
-    const cacheKey = `${queryDate}_${days}`;
+function parseDateParts(dateStr) {
+    if (!dateStr) {
+        const now = new Date();
+        return [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+    }
+    const clean = String(dateStr).trim();
+    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(clean)) {
+        const [y, m, d] = clean.split('-').map(Number);
+        return [y, m, d];
+    }
+    if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(clean)) {
+        const [d, m, y] = clean.split('-').map(Number);
+        return [y, m, d];
+    }
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(clean)) {
+        const [d, m, y] = clean.split('/').map(Number);
+        return [y, m, d];
+    }
+    if (/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(clean)) {
+        const [y, m, d] = clean.split('/').map(Number);
+        return [y, m, d];
+    }
+    const dt = new Date(clean);
+    if (!isNaN(dt.getTime())) {
+        return [dt.getFullYear(), dt.getMonth() + 1, dt.getDate()];
+    }
+    const now = new Date();
+    return [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+}
+window.parseDateParts = parseDateParts;
+
+function normalizeDateToYmd(dateStr) {
+    const [y, m, d] = parseDateParts(dateStr);
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+window.normalizeDateToYmd = normalizeDateToYmd;
+
+async function fetchHistoryBulk(queryDate, days = 1, force = false) {
+    const normDate = normalizeDateToYmd(queryDate || new Date());
+    const cacheKey = `${normDate}_${days}`;
     const storageKey = STORAGE_KEYS.HIST_PREFIX + cacheKey;
-    const cached = getLocalCache(storageKey);
-    if (cached && (Date.now() - (cached.fetchedAt || 0) < (days === 1 ? 60000 : 3600000))) {
-        return cached;
+    const todayYmd = normalizeDateToYmd(new Date());
+    const isToday = (normDate === todayYmd);
+    const maxAge = (isToday && days === 1) ? 15000 : (days === 1 ? 60000 : 3600000);
+
+    if (!force) {
+        const cached = getLocalCache(storageKey);
+        if (cached && (cached.aqi?.length || cached.weather?.length) && (Date.now() - (cached.fetchedAt || 0) < maxAge)) {
+            return cached;
+        }
     }
 
     const cfg = getSbConfig();
@@ -407,10 +451,11 @@ async function fetchHistoryBulk(queryDate, days = 1) {
     try {
         let filter = '';
         const lim = days > 1 ? Math.min(1500, Math.max(150, days * 35)) : 150;
-        if (queryDate) {
-            const target = new Date(queryDate + 'T00:00:00+05:30');
-            const startDate = new Date(target.getTime() - (days > 1 ? (days * 86400000) : 86400000));
-            const endDate = new Date(target.getTime() + (2 * 86400000));
+        if (normDate) {
+            const [y, m, d] = parseDateParts(normDate);
+            const targetUtc = Date.UTC(y, m - 1, d, 0, 0, 0) - (5.5 * 3600000);
+            const startDate = new Date(targetUtc - (days > 1 ? (days * 86400000) : 86400000));
+            const endDate = new Date(targetUtc + (2 * 86400000));
             const sIso = startDate.toISOString().split('T')[0];
             const eIso = endDate.toISOString().split('T')[0];
             filter = `&timestamp_hour=gte.${sIso}T00:00:00&timestamp_hour=lt.${eIso}T00:00:00`;
@@ -431,18 +476,23 @@ async function fetchHistoryBulk(queryDate, days = 1) {
             resWeather.json()
         ]);
 
+        const aqiList = Array.isArray(aqiRaw) ? aqiRaw.map(formatRawReadingClient).filter(Boolean) : [];
+        const weatherList = Array.isArray(weatherRaw) ? weatherRaw.map(formatWeatherReadingClient).filter(Boolean) : [];
+
         const payload = {
-            aqi: Array.isArray(aqiRaw) ? aqiRaw.map(formatRawReadingClient).filter(Boolean) : [],
-            weather: Array.isArray(weatherRaw) ? weatherRaw.map(formatWeatherReadingClient).filter(Boolean) : [],
+            aqi: aqiList,
+            weather: weatherList,
             fetchedAt: Date.now()
         };
 
-        setLocalCache(storageKey, payload);
+        if (aqiList.length > 0 || weatherList.length > 0) {
+            setLocalCache(storageKey, payload);
+        }
         return payload;
     } catch (err) {
         console.warn('Direct Supabase history fetch failed; falling back to api/telemetry.php:', err);
         try {
-            const fbRes = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}&days=${days}`);
+            const fbRes = await fetch(`api/telemetry.php?action=history_bulk&date=${normDate}&days=${days}&_t=${Date.now()}`);
             if (fbRes.ok) {
                 const fbData = await fbRes.json();
                 const payload = {
@@ -450,11 +500,14 @@ async function fetchHistoryBulk(queryDate, days = 1) {
                     weather: fbData.weather || [],
                     fetchedAt: Date.now()
                 };
-                setLocalCache(storageKey, payload);
+                if (payload.aqi.length > 0 || payload.weather.length > 0) {
+                    setLocalCache(storageKey, payload);
+                }
                 return payload;
             }
         } catch (e) {}
-        return cached || { aqi: [], weather: [], fetchedAt: Date.now() };
+        const fallbackCached = getLocalCache(storageKey);
+        return fallbackCached || { aqi: [], weather: [], fetchedAt: Date.now() };
     }
 }
 window.fetchHistoryBulk = fetchHistoryBulk;

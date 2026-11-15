@@ -468,7 +468,17 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
 };
 </script>
 
-<div style="min-height: 100vh; background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%); position: relative; width: 100%; display: flex; flex-direction: column;">
+<?php
+// Dynamic cool and light background per page
+$cool_bg_styles = [
+    'live' => 'background-color: #f0f7ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
+    'historical' => 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
+    'predictive' => 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',
+    'overview' => 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);'
+];
+$active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
+?>
+<div id="app-layout-root" style="min-height: 100vh; <?= $active_layout_bg ?> position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.4s ease;">
 
   <!-- Sticky Header with Safe-Area Inset -->
   <header style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding-left: 16px; padding-right: 16px;">

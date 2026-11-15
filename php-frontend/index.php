@@ -253,7 +253,7 @@ if ($is_ajax) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f1f5f9" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#f0f7ff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -362,7 +362,7 @@ if ($is_ajax) {
         window.INITIAL_DATA = <?= $initial_overview_json ?>;
     </script>
 </head>
-<body class="bg-[#f1f5f9] text-[#0f172a] font-sans antialiased">
+<body class="bg-[#f0f7ff] text-[#0f172a] font-sans antialiased">
     
     <?php include __DIR__ . '/components/layout.php'; ?>
 

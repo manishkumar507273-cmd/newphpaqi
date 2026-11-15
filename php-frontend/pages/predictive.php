@@ -43,66 +43,115 @@ if (file_exists($forecastJsonFile)) {
 
   <div class="mb-0.5 sm:mb-2">
     <h1 class="text-lg sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Weather Forecast</h1>
-    <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Atmospheric weather, rainfall, and air quality predictive forecasting for SMVITM Campus.</p>
+    <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Atmospheric weather and air quality predictive forecasting for SMVITM Campus.</p>
   </div>
 
 
 
-  <!-- ── 3. Forecast Hero Summary Card: Predicted AQI ── -->
-  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-7 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] relative overflow-hidden">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+  <!-- ── 3. Forecast Hero Summary Card: Predicted AQI & Weather Telemetry ── -->
+  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-4 sm:p-7 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] relative overflow-hidden">
+    <div class="flex flex-col gap-4 sm:gap-6 w-full">
       
-      <!-- Left Hero Info: Big AQI & Category -->
-      <div class="flex-1">
-        <div class="flex items-center gap-2 flex-wrap text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 sm:mb-2">
-          <span>Predicted Weather & Air Quality Index</span>
+      <!-- Top Row: Title, Date, Hour Target Badge -->
+      <div class="flex items-center justify-between flex-wrap gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span>Predicted Weather &amp; Air Quality Index</span>
           <span>•</span>
           <span class="text-slate-600 font-semibold" id="forecast-date-str">Loading...</span>
           <span>•</span>
-          <span class="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-teal-50 text-teal-700 border border-teal-200 font-mono" id="forecast-hero-target-window">Hourly Prediction</span>
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200 font-mono" id="forecast-hero-target-window">Hourly Prediction</span>
         </div>
+      </div>
 
-        <div class="flex items-baseline gap-3 mb-2 sm:mb-2.5">
-          <span id="forecast-hero-aqi" class="text-4xl sm:text-6xl font-extrabold text-slate-400 font-mono tracking-tight">--</span>
-          <div class="flex flex-col">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">AQI</span>
-              <span id="forecast-hero-category-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200 font-mono">Standby</span>
+      <!-- Main Row: Left (Rainbow Arc Gauge) + Right (Big Temperature, Humidity & Rain Cards) -->
+      <div class="flex flex-col md:flex-row items-center md:items-stretch justify-between gap-6 md:gap-8">
+
+        <!-- Left Side: Compact Rainbow Arc AQI Gauge -->
+        <div class="flex flex-col items-center justify-center shrink-0 w-full md:w-auto md:min-w-[240px] lg:min-w-[270px] md:border-r md:border-slate-100 md:pr-6 lg:pr-8 py-1">
+          <div class="relative w-full max-w-[220px] sm:max-w-[240px] flex flex-col items-center justify-center">
+            
+            <svg viewBox="0 0 200 120" class="w-full h-auto overflow-visible select-none drop-shadow-xs" id="forecast-rainbow-svg">
+              <defs>
+                <filter id="gauge-pin-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.25"/>
+                </filter>
+              </defs>
+
+              <!-- Background Track -->
+              <path d="M 25.0 105.0 A 75 75 0 0 1 175.0 105.0" fill="none" stroke="#f1f5f9" stroke-width="10" stroke-linecap="round" />
+
+              <!-- 6 Colored Rainbow Segments -->
+              <path d="M 25.0 105.0 A 75 75 0 0 1 35.05 67.5" fill="none" stroke="#16a34a" stroke-width="8" stroke-linecap="round" />
+              <path d="M 35.05 67.5 A 75 75 0 0 1 62.5 40.05" fill="none" stroke="#eab308" stroke-width="8" stroke-linecap="butt" />
+              <path d="M 62.5 40.05 A 75 75 0 0 1 100.0 30.0" fill="none" stroke="#f97316" stroke-width="8" stroke-linecap="butt" />
+              <path d="M 100.0 30.0 A 75 75 0 0 1 137.5 40.05" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="butt" />
+              <path d="M 137.5 40.05 A 75 75 0 0 1 164.95 67.5" fill="none" stroke="#a855f7" stroke-width="8" stroke-linecap="butt" />
+              <path d="M 164.95 67.5 A 75 75 0 0 1 175.0 105.0" fill="none" stroke="#991b1b" stroke-width="8" stroke-linecap="round" />
+
+              <!-- Muted Start and End Scale Labels -->
+              <text x="25" y="117" text-anchor="middle" font-size="8.5" font-family="monospace" font-weight="700" fill="#94a3b8">0</text>
+              <text x="175" y="117" text-anchor="middle" font-size="8.5" font-family="monospace" font-weight="700" fill="#94a3b8">500+</text>
+
+              <!-- Dynamic Indicator Bead on the Rainbow Arc -->
+              <circle id="forecast-rainbow-pin" cx="40.74" cy="59.03" r="5.5" fill="#ffffff" stroke="#ca8a04" stroke-width="2.5" filter="url(#gauge-pin-glow)" style="transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);" />
+            </svg>
+
+            <!-- Centered Clean Reading under the Rainbow -->
+            <div class="absolute inset-x-0 bottom-2.5 flex flex-col items-center justify-center text-center pointer-events-none">
+              <span id="forecast-hero-aqi" class="text-4xl sm:text-[46px] font-black font-mono tracking-tight leading-none text-slate-900 mb-1">--</span>
+              <span id="forecast-hero-category-badge" class="px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold uppercase font-mono tracking-wider border shadow-xs bg-slate-100 text-slate-600 border-slate-200">STANDBY</span>
             </div>
-            <span id="forecast-hero-dominant" class="text-xs sm:text-[13px] font-semibold text-slate-600 mt-0.5 sm:mt-1">Awaiting Model Inference</span>
+
+          </div>
+          <span class="text-[10.5px] sm:text-[11.5px] font-bold text-slate-400 uppercase tracking-wider mt-1.5">Predicted Air Quality</span>
+        </div>
+
+        <!-- Right Side: Weather Box (Clean, without comfort/wind/limits) -->
+        <div class="hero-weather-col flex flex-col justify-center w-full md:w-auto shrink-0 md:min-w-[280px] lg:min-w-[300px] py-1">
+          <div id="weather-hero-box" class="bg-gradient-to-br from-amber-50/40 via-white to-slate-50/40 border border-slate-200/90 rounded-2xl p-4 sm:p-4.5 shadow-xs w-full flex flex-col justify-between">
+            
+            <!-- Box Header -->
+            <div class="weather-box-header flex items-center justify-between mb-2">
+              <div class="flex items-center gap-1.5 text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider font-sans">
+                <i data-lucide="cloud-sun" class="w-3.5 h-3.5 text-amber-500"></i>
+                <span>Weather</span>
+              </div>
+            </div>
+
+            <!-- Main Temperature (Clean and Prominent) -->
+            <div class="weather-box-main flex items-baseline justify-start my-1.5">
+              <div class="weather-temp-row flex items-baseline gap-1">
+                <span id="forecast-weather-temp" class="text-3xl sm:text-[38px] font-black font-mono leading-none tracking-tight text-slate-900">--</span>
+                <span class="weather-temp-unit text-base sm:text-lg font-bold font-mono text-slate-500">°C</span>
+              </div>
+            </div>
+
+            <!-- Micro Metrics Row (Humidity & Rain Percentage) -->
+            <div class="weather-metrics-grid grid grid-cols-2 gap-2.5 pt-2.5 mt-1 border-t border-slate-200/60">
+              
+              <!-- Humidity -->
+              <div class="weather-micro-card bg-white/90 border border-slate-200/80 rounded-xl p-2 sm:p-2.5 text-center shadow-2xs">
+                <div class="weather-micro-label text-[9.5px] sm:text-[10px] font-bold text-slate-500 flex items-center justify-center gap-1 mb-0.5">
+                  <i data-lucide="droplets" class="w-3 h-3 text-sky-500"></i>
+                  <span>Humidity</span>
+                </div>
+                <div id="forecast-weather-humidity" class="font-mono text-xs sm:text-[14px] font-extrabold text-slate-900">--%</div>
+              </div>
+
+              <!-- Rain Percentage -->
+              <div class="weather-micro-card bg-white/90 border border-slate-200/80 rounded-xl p-2 sm:p-2.5 text-center shadow-2xs">
+                <div class="weather-micro-label text-[9.5px] sm:text-[10px] font-bold text-slate-500 flex items-center justify-center gap-1 mb-0.5">
+                  <i data-lucide="cloud-rain" class="w-3 h-3 text-cyan-600"></i>
+                  <span>Rain</span>
+                </div>
+                <div id="forecast-weather-rain" class="font-mono text-xs sm:text-[14px] font-extrabold text-slate-900">--%</div>
+              </div>
+
+            </div>
+
           </div>
         </div>
 
-        <!-- 5 Criteria Pollutant Sub-Indices Badges -->
-        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-2 sm:mb-2.5">
-          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for PM2.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PM2.5: <strong id="sub-pm25-val" class="font-mono font-extrabold">--</strong>
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for PM10">
-            <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span> PM10: <strong id="sub-pm10-val" class="font-mono font-extrabold">--</strong>
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for NO2">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> NO₂: <strong id="sub-no2-val" class="font-mono font-extrabold">--</strong>
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for CO">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> CO: <strong id="sub-co-val" class="font-mono font-extrabold">--</strong>
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200" title="Sub-Index for O3">
-            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> O₃: <strong id="sub-o3-val" class="font-mono font-extrabold">--</strong>
-          </span>
-        </div>
-
-        <div class="flex items-center gap-2 flex-wrap text-xs text-slate-400 font-medium">
-          <div class="flex items-center gap-1.5">
-            <i data-lucide="thermometer" class="w-3.5 h-3.5 text-slate-400"></i>
-            <span>Ambient: <strong id="forecast-hero-temp" class="text-slate-600 font-mono">--°C</strong>, <strong id="forecast-hero-humidity" class="text-slate-600 font-mono">--%</strong> Humidity</span>
-          </div>
-          <span class="hidden sm:inline text-slate-300">•</span>
-          <div id="forecast-hero-rain-badge" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">
-            <span>🌧️</span> Rain: <strong id="forecast-hero-rain" class="font-mono">-- mm</strong>
-            <span id="forecast-hero-rain-risk" class="text-[9.5px] uppercase font-mono px-1 rounded bg-blue-100 text-blue-800">--</span>
-          </div>
-        </div>
       </div>
 
     </div>
@@ -115,12 +164,12 @@ if (file_exists($forecastJsonFile)) {
         <div class="w-8 h-8 rounded-lg bg-[#e6fcf9] text-[#00bfa5] flex items-center justify-center">
           <i data-lucide="activity" class="w-4 h-4"></i>
         </div>
-        <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Predicted Parameters (Next 24 Hours)</h2>
+        <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Predicted Parameters</h2>
       </div>
     </div>
 
-    <!-- Grid of the 8 predicted parameters -->
-    <div id="predicted-parameters-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-2.5 xl:gap-3">
+    <!-- Grid of the 5 criteria air pollutants -->
+    <div id="predicted-parameters-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
       <div class="text-xs text-slate-400 py-6 text-center col-span-full">Loading predicted parameters...</div>
     </div>
   </div>
@@ -157,125 +206,90 @@ if (file_exists($forecastJsonFile)) {
   </div>
 
   <!-- ── 5. Rainfall Prediction Probability Scale & Status Legend ── -->
-  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-3.5 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)]">
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] flex flex-col gap-4">
     
-    <div class="flex items-center gap-2.5 mb-3.5 sm:mb-4 px-1">
-      <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-        <i data-lucide="cloud-rain" class="w-4 h-4"></i>
-      </div>
-      <div>
-        <h2 class="text-sm sm:text-base font-extrabold text-slate-900 m-0 tracking-tight flex items-center gap-2">
-          <span>Rainfall Prediction Scale</span>
-          <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">5-Tier Standard</span>
-        </h2>
-        <p class="text-[11px] sm:text-xs text-slate-400 m-0">Operational classification standard for machine-learned precipitation probability forecasts</p>
-      </div>
+    <div>
+      <h2 class="text-base sm:text-lg font-bold text-slate-900 m-0 flex items-center gap-2">
+        <i data-lucide="cloud-rain" class="w-5 h-5 text-[#00bfa5]"></i>
+        <span>Rainfall Prediction Scale</span>
+      </h2>
+      <p class="text-xs sm:text-[12.5px] text-slate-500 mt-1 mb-0">
+        Operational classification standard for machine-learned precipitation probability forecasts.
+      </p>
     </div>
 
-    <!-- Responsive Table Card -->
-    <div class="overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-xs">
-      <div class="w-full overflow-x-auto sm:overflow-x-visible">
-        <table class="rain-scale-table w-full text-left border-collapse sm:min-w-[540px]">
-          <thead>
-            <tr class="bg-slate-50/90 border-b border-slate-200 text-[11.5px] uppercase tracking-wider font-extrabold text-slate-500 font-mono">
-              <th class="py-3.5 px-4 w-[28%]">Probability Range</th>
-              <th class="py-3.5 px-4 w-[32%]">Status Badge</th>
-              <th class="py-3.5 px-4 w-[40%]">Meteorological Advisory</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
-            <!-- Tier 1: 0% - 25% -->
-            <tr id="rain-scale-tier-1" class="rain-scale-row transition-all hover:bg-slate-50/70">
-              <td class="py-3.5 px-4 font-mono font-extrabold text-slate-900 text-sm whitespace-nowrap">
-                <span class="inline-flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  0% – 25%
-                </span>
-              </td>
-              <td class="py-3.5 px-4">
-                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-[#f1f5f9] text-[#334155] border border-[#cbd5e1]/70 shadow-xs">
-                  Dry / Clear
-                </span>
-              </td>
-              <td class="py-3.5 px-4 text-slate-500 text-[11.5px] leading-relaxed">
-                Dry / clear atmospheric conditions; minimal or zero probability of rain.
-              </td>
-            </tr>
-
-            <!-- Tier 2: 25% - 49% -->
-            <tr id="rain-scale-tier-2" class="rain-scale-row transition-all hover:bg-slate-50/70">
-              <td class="py-3.5 px-4 font-mono font-extrabold text-slate-900 text-sm whitespace-nowrap">
-                <span class="inline-flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
-                  25% – 49%
-                </span>
-              </td>
-              <td class="py-3.5 px-4">
-                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-[#f1f5f9] text-[#334155] border border-[#cbd5e1]/70 shadow-xs">
-                  Mostly Dry
-                </span>
-              </td>
-              <td class="py-3.5 px-4 text-slate-500 text-[11.5px] leading-relaxed">
-                Overcast skies or slight moisture; precipitation remains unlikely.
-              </td>
-            </tr>
-
-            <!-- Tier 3: 50% - 69% -->
-            <tr id="rain-scale-tier-3" class="rain-scale-row transition-all hover:bg-slate-50/70">
-              <td class="py-3.5 px-4 font-mono font-extrabold text-slate-900 text-sm whitespace-nowrap">
-                <span class="inline-flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                  50% – 69%
-                </span>
-              </td>
-              <td class="py-3.5 px-4">
-                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-[#f1f5f9] text-[#334155] border border-[#cbd5e1]/70 shadow-xs">
-                  Chance of Rain
-                </span>
-              </td>
-              <td class="py-3.5 px-4 text-slate-500 text-[11.5px] leading-relaxed">
-                Scattered showers or drizzle possible; consider carrying an umbrella.
-              </td>
-            </tr>
-
-            <!-- Tier 4: 70% - 84% -->
-            <tr id="rain-scale-tier-4" class="rain-scale-row transition-all hover:bg-slate-50/70">
-              <td class="py-3.5 px-4 font-mono font-extrabold text-slate-900 text-sm whitespace-nowrap">
-                <span class="inline-flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                  70% – 84%
-                </span>
-              </td>
-              <td class="py-3.5 px-4">
-                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-[#f1f5f9] text-[#334155] border border-[#cbd5e1]/70 shadow-xs">
-                  Rain Likely
-                </span>
-              </td>
-              <td class="py-3.5 px-4 text-slate-500 text-[11.5px] leading-relaxed">
-                High confidence of steady precipitation; wet ground and slippery pathways anticipated.
-              </td>
-            </tr>
-
-            <!-- Tier 5: 85% - 100% -->
-            <tr id="rain-scale-tier-5" class="rain-scale-row transition-all hover:bg-slate-50/70">
-              <td class="py-3.5 px-4 font-mono font-extrabold text-slate-900 text-sm whitespace-nowrap">
-                <span class="inline-flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                  85% – 100%
-                </span>
-              </td>
-              <td class="py-3.5 px-4">
-                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-[#f1f5f9] text-[#334155] border border-[#cbd5e1]/70 shadow-xs">
-                  Heavy Rain Alert
-                </span>
-              </td>
-              <td class="py-3.5 px-4 text-slate-500 text-[11.5px] leading-relaxed">
-                Torrential downpour or high-volume precipitation alert; campus drainage runoff risk.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div class="flex flex-col gap-2.5">
+      
+      <!-- Tier 1: Dry / Clear (0% to 25%) -->
+      <div id="rain-tier-1" class="rain-scale-item flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#f0fdf4] border border-[#bbf7d0] gap-3 flex-wrap transition-all">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-[4px] bg-[#10b981] shrink-0"></span>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-bold text-slate-900">Dry / Clear</span>
+              <span class="text-xs font-bold font-mono text-[#059669]">(0% to 25%)</span>
+            </div>
+            <div class="text-[11.5px] text-slate-600 mt-0.5">Dry and clear atmospheric conditions; minimal or zero probability of precipitation.</div>
+          </div>
+        </div>
       </div>
+
+      <!-- Tier 2: Mostly Dry (26% to 49%) -->
+      <div id="rain-tier-2" class="rain-scale-item flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#ecfeff] border border-[#a5f3fc] gap-3 flex-wrap transition-all">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-[4px] bg-[#06b6d4] shrink-0"></span>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-bold text-slate-900">Mostly Dry</span>
+              <span class="text-xs font-bold font-mono text-[#0891b2]">(26% to 49%)</span>
+            </div>
+            <div class="text-[11.5px] text-slate-600 mt-0.5">Overcast skies or slight moisture; precipitation remains unlikely.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier 3: Chance of Rain (50% to 69%) -->
+      <div id="rain-tier-3" class="rain-scale-item flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#eff6ff] border border-[#bfdbfe] gap-3 flex-wrap transition-all">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-[4px] bg-[#3b82f6] shrink-0"></span>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-bold text-slate-900">Chance of Rain</span>
+              <span class="text-xs font-bold font-mono text-[#2563eb]">(50% to 69%)</span>
+            </div>
+            <div class="text-[11.5px] text-slate-600 mt-0.5">Scattered showers or drizzle possible; consider carrying an umbrella.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier 4: Rain Likely (70% to 84%) -->
+      <div id="rain-tier-4" class="rain-scale-item flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#fffbeb] border border-[#fde68a] gap-3 flex-wrap transition-all">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-[4px] bg-[#f59e0b] shrink-0"></span>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-bold text-slate-900">Rain Likely</span>
+              <span class="text-xs font-bold font-mono text-[#d97706]">(70% to 84%)</span>
+            </div>
+            <div class="text-[11.5px] text-slate-600 mt-0.5">High confidence of rainfall; steady precipitation or showers anticipated.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier 5: Heavy Rain (85% to 100%) -->
+      <div id="rain-tier-5" class="rain-scale-item flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#faf5ff] border border-[#e9d5ff] gap-3 flex-wrap transition-all">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-[4px] bg-[#8b5cf6] shrink-0"></span>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-bold text-slate-900">Heavy Rain</span>
+              <span class="text-xs font-bold font-mono text-[#7c3aed]">(85% to 100%)</span>
+            </div>
+            <div class="text-[11.5px] text-slate-600 mt-0.5">Intense precipitation or torrential downpours expected; outdoor activities disrupted.</div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -409,85 +423,6 @@ if (file_exists($forecastJsonFile)) {
   border-radius: 999px;
   background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 50%, #ef4444 100%);
 }
-
-/* Rainfall Scale Table Active Row Highlighting & Mobile Adaptation */
-.rain-scale-row {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.rain-scale-row.active-rain-tier {
-  background-color: #f0fdf4 !important;
-}
-.rain-scale-row.active-rain-tier td:first-child {
-  border-left: 3.5px solid #00bfa5 !important;
-  padding-left: 14px !important;
-}
-.rain-scale-row.active-rain-tier td {
-  font-weight: 700;
-}
-
-@media (max-width: 640px) {
-  .rain-scale-table {
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-  .rain-scale-table thead {
-    display: none !important;
-  }
-  .rain-scale-table tbody {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    gap: 0 !important;
-  }
-  .rain-scale-row {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 12px 14px !important;
-    border-bottom: 1px solid #f1f5f9 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .rain-scale-row td {
-    border: none !important;
-  }
-  .rain-scale-row td:nth-child(1) {
-    order: 1 !important;
-    width: auto !important;
-    padding: 0 !important;
-    font-size: 13.5px !important;
-  }
-  .rain-scale-row td:nth-child(2) {
-    order: 2 !important;
-    width: auto !important;
-    padding: 0 !important;
-    text-align: right !important;
-  }
-  .rain-scale-row td:nth-child(3) {
-    order: 3 !important;
-    width: 100% !important;
-    padding: 6px 0 0 0 !important;
-    font-size: 11.5px !important;
-    line-height: 1.45 !important;
-    color: #64748b !important;
-    font-weight: 400 !important;
-  }
-  .rain-scale-row.active-rain-tier {
-    border-left: 4px solid #00bfa5 !important;
-    background-color: #f0fdf4 !important;
-  }
-  .rain-scale-row.active-rain-tier td:first-child {
-    border-left: none !important;
-    padding-left: 0 !important;
-  }
-  .rain-scale-row.active-rain-tier td:nth-child(3) {
-    color: #065f46 !important;
-    font-weight: 500 !important;
-  }
-}
 </style>
 
 <!-- ── JavaScript Forecast Model Engine ── -->
@@ -551,95 +486,17 @@ if (file_exists($forecastJsonFile)) {
         };
     }
 
-    // 5-Tier Rainfall Probability Scale & Status Badges Standard
+    // 5-Tier Rainfall Probability Scale & Status Standard
     function getRainStatus(prob) {
         if (prob === null || prob === undefined || prob === '--' || isNaN(Number(prob))) {
-            return {
-                tier: 1,
-                range: '0% – 25%',
-                badge: 'Dry / Clear',
-                color: '#10b981',
-                bg: '#ecfdf5',
-                border: '#a7f3d0',
-                text: '#065f46',
-                chipBg: '#d1fae5',
-                chipText: '#047857',
-                icon: '☀️',
-                summary: 'Dry and clear atmospheric conditions; minimal or zero precipitation expected.'
-            };
+            return { tier: 1, label: 'Dry / Clear', color: '#10b981' };
         }
         const p = Math.round(Number(prob));
-        if (p >= 85) {
-            return {
-                tier: 5,
-                range: '85% – 100%',
-                badge: 'Heavy Rain Alert',
-                color: '#ef4444',
-                bg: '#fef2f2',
-                border: '#fecaca',
-                text: '#991b1b',
-                chipBg: '#fee2e2',
-                chipText: '#b91c1c',
-                icon: '⛈️',
-                summary: 'Torrential downpour or high-volume precipitation alert; campus drainage runoff risk.'
-            };
-        } else if (p >= 70) {
-            return {
-                tier: 4,
-                range: '70% – 84%',
-                badge: 'Rain Likely',
-                color: '#f97316',
-                bg: '#fff7ed',
-                border: '#fed7aa',
-                text: '#9a3412',
-                chipBg: '#ffedd5',
-                chipText: '#c2410c',
-                icon: '🌧️',
-                summary: 'High confidence of steady precipitation; wet ground conditions anticipated.'
-            };
-        } else if (p >= 50) {
-            return {
-                tier: 3,
-                range: '50% – 69%',
-                badge: 'Chance of Rain',
-                color: '#3b82f6',
-                bg: '#eff6ff',
-                border: '#bfdbfe',
-                text: '#1e40af',
-                chipBg: '#dbeafe',
-                chipText: '#1d4ed8',
-                icon: '🌦️',
-                summary: 'Scattered showers or drizzle possible; consider carrying an umbrella.'
-            };
-        } else if (p >= 25) {
-            return {
-                tier: 2,
-                range: '25% – 49%',
-                badge: 'Mostly Dry',
-                color: '#06b6d4',
-                bg: '#ecfeff',
-                border: '#a5f3fc',
-                text: '#155e75',
-                chipBg: '#cffafe',
-                chipText: '#0e7490',
-                icon: '⛅',
-                summary: 'Overcast skies or slight moisture; precipitation remains unlikely.'
-            };
-        } else {
-            return {
-                tier: 1,
-                range: '0% – 25%',
-                badge: 'Dry / Clear',
-                color: '#10b981',
-                bg: '#ecfdf5',
-                border: '#a7f3d0',
-                text: '#065f46',
-                chipBg: '#d1fae5',
-                chipText: '#047857',
-                icon: '☀️',
-                summary: 'Dry / clear atmospheric conditions; minimal or zero probability of rain.'
-            };
-        }
+        if (p >= 85) return { tier: 5, label: 'Heavy Rain', color: '#8b5cf6' };
+        if (p >= 70) return { tier: 4, label: 'Rain Likely', color: '#f59e0b' };
+        if (p >= 50) return { tier: 3, label: 'Chance of Rain', color: '#3b82f6' };
+        if (p >= 26) return { tier: 2, label: 'Mostly Dry', color: '#06b6d4' };
+        return { tier: 1, label: 'Dry / Clear', color: '#10b981' };
     }
 
     // Toggle 7-Day Accordion Row
@@ -824,212 +681,207 @@ if (file_exists($forecastJsonFile)) {
                 targetWinEl.innerText = curHour.label;
             }
 
-            // Dominant Pollutant
-            const domEl = document.getElementById('forecast-hero-dominant');
-            if (domEl) {
-                domEl.innerHTML = `Dominant Pollutant: <strong class="text-slate-900 font-mono">${curHour.dominant || '--'}</strong> · Max Sub-Index Rule`;
-            }
-
-            // Sub-Indices
-            const s = curHour.sub_indices || {};
-            const setVal = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.innerText = val !== undefined ? val : '--';
+            // Compact Rainbow Curved Gauge Indicator Pin
+            const getAqiRainbowAngle = (aqi) => {
+                const v = Number(aqi);
+                if (isNaN(v) || v <= 0) return 0;
+                if (v <= 50)  return Math.max(1, (v / 50) * 30);
+                if (v <= 100) return 30 + ((v - 50) / 50) * 30;
+                if (v <= 200) return 60 + ((v - 100) / 100) * 30;
+                if (v <= 300) return 90 + ((v - 200) / 100) * 30;
+                if (v <= 400) return 120 + ((v - 300) / 100) * 30;
+                return Math.min(179, 150 + Math.min((v - 400) / 100, 1) * 30);
             };
-            setVal('sub-pm25-val', s['PM2.5'] !== undefined ? s['PM2.5'] : s['pm25']);
-            setVal('sub-pm10-val', s['PM10'] !== undefined ? s['PM10'] : s['pm10']);
-            setVal('sub-no2-val', s['NO₂'] !== undefined ? s['NO₂'] : (s['no2'] !== undefined ? s['no2'] : s['NO2']));
-            setVal('sub-co-val', s['CO'] !== undefined ? s['CO'] : s['co']);
-            setVal('sub-o3-val', s['O₃'] !== undefined ? s['O₃'] : (s['o3'] !== undefined ? s['o3'] : s['O3']));
 
-            // Ambient Temperature & Humidity
-            const heroTemp = document.getElementById('forecast-hero-temp');
-            if (heroTemp) heroTemp.innerText = (curHour.temp !== undefined ? Math.round(curHour.temp) : '--') + '°C';
+            const angle = getAqiRainbowAngle(curHour.aqi);
+            const rad = angle * (Math.PI / 180);
+            const cx = 100, cy = 105;
+            const r_arc = 75;
+            const pinX = (cx - r_arc * Math.cos(rad)).toFixed(2);
+            const pinY = (cy - r_arc * Math.sin(rad)).toFixed(2);
 
-            const heroHum = document.getElementById('forecast-hero-humidity');
-            if (heroHum) heroHum.innerText = (curHour.humidity !== undefined ? curHour.humidity : '--') + '%';
-
-            // Selected Hour's Rainfall Metric in Hero Card
-            const heroRain = document.getElementById('forecast-hero-rain');
-            const heroRainRisk = document.getElementById('forecast-hero-rain-risk');
-            const heroRainBadge = document.getElementById('forecast-hero-rain-badge');
-            const rf = trainedModelData.rainfall;
-
-            let hourRainProb = 0;
-            let hourRainMm = 0.0;
-
-            if (curHour.rain_prob !== undefined && curHour.rain_prob !== null) {
-                hourRainProb = Math.round(curHour.rain_prob);
-                hourRainMm = curHour.rain_mm ?? 0.0;
-            } else if (rf && rf.hourly && curHour.index !== undefined && rf.hourly[curHour.index]) {
-                const match = rf.hourly[curHour.index];
-                hourRainProb = Math.round(match.rain_prob_pct ?? 0);
-                hourRainMm = match.rain_mm ?? 0.0;
-            } else if (trainedModelData.parameters?.rainfall) {
-                hourRainMm = trainedModelData.parameters.rainfall.current ?? 0.0;
-                hourRainProb = Math.round(trainedModelData.parameters.rainfall.prob ?? (hourRainMm > 0 ? 80 : 0));
+            const rainbowPin = document.getElementById('forecast-rainbow-pin');
+            if (rainbowPin) {
+                rainbowPin.setAttribute('cx', pinX);
+                rainbowPin.setAttribute('cy', pinY);
+                rainbowPin.setAttribute('stroke', b.color);
             }
 
-            const rainStatus = getRainStatus(hourRainProb);
-
-            if (heroRain) {
-                heroRain.innerText = `${hourRainMm} mm`;
-            }
-            if (heroRainRisk) {
-                heroRainRisk.innerText = `${hourRainProb}%`;
+            // Weather Box Updates (Clean: Temp, Humidity, Rain Percentage)
+            const weatherTemp = document.getElementById('forecast-weather-temp');
+            if (weatherTemp) {
+                const t = curHour.temp;
+                weatherTemp.innerText = (t !== undefined && t !== null && !isNaN(t)) ? (Number(t) % 1 === 0 ? Number(t) : Number(t).toFixed(1)) : '--';
             }
 
-            // Highlight active row in Section 5: Rainfall Prediction Scale table
-            document.querySelectorAll('.rain-scale-row').forEach(row => {
-                row.classList.remove('active-rain-tier');
+            const weatherHum = document.getElementById('forecast-weather-humidity');
+            if (weatherHum) {
+                const h = curHour.humidity;
+                weatherHum.innerText = (h !== undefined && h !== null && !isNaN(h)) ? (Number(h) % 1 === 0 ? Number(h) : Number(h).toFixed(1)) + '%' : '--%';
+            }
+
+            const weatherRain = document.getElementById('forecast-weather-rain');
+            const rp = curHour.rain_prob !== undefined && curHour.rain_prob !== null
+                ? curHour.rain_prob
+                : (curHour.rain_prob_pct !== undefined ? curHour.rain_prob_pct : 0);
+            if (weatherRain) {
+                weatherRain.innerText = Math.round(Number(rp)) + '%';
+            }
+
+            // Highlight corresponding active tier in Section 5: Rainfall Prediction Scale
+            const rStatus = getRainStatus(rp);
+            document.querySelectorAll('.rain-scale-item').forEach(el => {
+                el.classList.remove('ring-2', 'ring-teal-500', 'shadow-md');
             });
-            const activeRow = document.getElementById(`rain-scale-tier-${rainStatus.tier}`);
-            if (activeRow) {
-                activeRow.classList.add('active-rain-tier');
+            const activeRainTier = document.getElementById(`rain-tier-${rStatus.tier}`);
+            if (activeRainTier) {
+                activeRainTier.classList.add('ring-2', 'ring-teal-500', 'shadow-md');
             }
 
-            // 3. Render 8 Predicted Model Parameters Grid for this timestamp
+            // 3. Render 5 Predicted Model Criteria Pollutants Grid for this timestamp
             const paramsGrid = document.getElementById('predicted-parameters-grid');
             if (paramsGrid && trainedModelData && trainedModelData.parameters) {
                 const p = trainedModelData.parameters;
                 const curSub = curHour.sub_indices || {};
-                const curRainMm = hourRainMm;
-                const curRainChance = hourRainProb;
 
-                const whoSafeLimits = {
-                    pm25: '≤15 µg/m³',
-                    pm10: '≤45 µg/m³',
-                    no2:  '≤25 µg/m³',
-                    co:   '≤4 mg/m³',
+                // CPCB NAQI National Standard Safe Limits matching the Live page exactly
+                const cpcbSafeLimits = {
+                    pm25: '≤60 µg/m³',
+                    pm10: '≤100 µg/m³',
+                    co:   '≤2 mg/m³',
+                    no2:  '≤80 µg/m³',
                     o3:   '≤100 µg/m³'
                 };
 
-                const getSubBadgeStyles = (subVal) => {
-                    if (subVal === null || subVal === undefined || isNaN(subVal)) {
-                        return 'bg-slate-100 text-slate-600 border-slate-200';
+                // Normal / High status tag based on parameter limit matching Live page
+                const getParamTag = (key, val) => {
+                    if (val === null || val === undefined || isNaN(val)) return null;
+                    const v = Number(val);
+                    const limits = { pm25: 60, pm10: 100, co: 2, no2: 80, o3: 100 };
+                    const lim = limits[key];
+                    if (lim === undefined) return null;
+                    const isSafe = v <= lim;
+                    return {
+                        text: isSafe ? 'Normal' : 'High',
+                        dot: isSafe ? '#16a34a' : '#dc2626',
+                        bg: isSafe ? '#dcfce7' : '#fee2e2',
+                        border: isSafe ? '#bbf7d0' : '#fecaca',
+                        color: isSafe ? '#15803d' : '#b91c1c'
+                    };
+                };
+
+                // Standard CPCB 6-tier status border color matching the Live page scale
+                const getParamStatusColor = (key, val) => {
+                    if (val === null || val === undefined || isNaN(val)) return '#cbd5e1';
+                    const v = Number(val);
+                    const colors = ['#59b61f', '#eec732', '#ea8c34', '#e95478', '#b33fba', '#c92033'];
+                    const scales = {
+                        pm25: [30, 60, 90, 120, 250],
+                        pm10: [50, 100, 250, 350, 430],
+                        co: [1.0, 2.0, 10.0, 17.0, 34.0],
+                        no2: [40, 80, 180, 280, 400],
+                        o3: [50, 100, 168, 208, 748]
+                    };
+                    const sc = scales[key];
+                    if (!sc) {
+                        return '#00bfa5';
                     }
-                    const v = Number(subVal);
-                    if (v <= 50)  return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                    if (v <= 100) return 'bg-amber-50 text-amber-700 border-amber-200';
-                    if (v <= 200) return 'bg-orange-50 text-orange-700 border-orange-200';
-                    if (v <= 300) return 'bg-rose-50 text-rose-700 border-rose-200';
-                    if (v <= 400) return 'bg-purple-50 text-purple-700 border-purple-200';
-                    return 'bg-red-50 text-red-700 border-red-200';
+                    for (let i = 0; i < sc.length; i++) {
+                        if (v <= sc[i]) return colors[i];
+                    }
+                    return colors[colors.length - 1];
+                };
+
+                const getValColorClass = (key) => {
+                    switch (key) {
+                        case 'pm25': return 'text-sky-500';
+                        case 'pm10': return 'text-indigo-500';
+                        case 'co': return 'text-slate-600';
+                        case 'no2': return 'text-purple-500';
+                        case 'o3': return 'text-amber-500';
+                        default: return 'text-slate-900';
+                    }
                 };
 
                 const formatCurVal = (val, key) => {
                     if (val === null || val === undefined || isNaN(val)) return '--';
                     const num = Number(val);
                     if (key === 'co') return num.toFixed(2);
-                    if (['pm25', 'pm10', 'no2', 'o3'].includes(key)) {
-                        return num.toFixed(2);
-                    }
-                    if (key === 'temp' || key === 'humidity') {
-                        return num.toFixed(1);
-                    }
-                    if (key === 'rainfall') {
-                        return Math.round(num);
-                    }
-                    return num.toFixed(1);
+                    return num.toFixed(2);
                 };
-
-                const pm25Sub = curSub['PM2.5'] ?? curSub['pm25'] ?? p.pm25.current_subindex;
-                const pm10Sub = curSub['PM10'] ?? curSub['pm10'] ?? p.pm10.current_subindex;
-                const no2Sub  = curSub['NO₂'] ?? curSub['no2'] ?? curSub['NO2'] ?? p.no2.current_subindex;
-                const coSub   = curSub['CO'] ?? curSub['co'] ?? p.co.current_subindex;
-                const o3Sub   = curSub['O₃'] ?? curSub['o3'] ?? curSub['O3'] ?? p.o3.current_subindex;
 
                 const items = [
                     {
-                        key: 'pm25', name: 'PM2.5', icon: '💨',
+                        key: 'pm25', name: 'PM₂.₅', icon: '🌫️',
                         current: formatCurVal(curHour.pm25, 'pm25'),
                         unit: 'µg/m³',
-                        badgeText: `Sub: ${pm25Sub != null ? Math.round(pm25Sub) : '--'}`,
-                        badgeClass: getSubBadgeStyles(pm25Sub),
-                        footerLabel: 'WHO:',
-                        footerVal: whoSafeLimits.pm25
+                        tag: getParamTag('pm25', curHour.pm25),
+                        borderColor: getParamStatusColor('pm25', curHour.pm25),
+                        valColor: getValColorClass('pm25'),
+                        footerLabel: 'CPCB:',
+                        footerVal: cpcbSafeLimits.pm25
                     },
                     {
-                        key: 'pm10', name: 'PM10', icon: '🌫️',
+                        key: 'pm10', name: 'PM₁₀', icon: '☁️',
                         current: formatCurVal(curHour.pm10, 'pm10'),
                         unit: 'µg/m³',
-                        badgeText: `Sub: ${pm10Sub != null ? Math.round(pm10Sub) : '--'}`,
-                        badgeClass: getSubBadgeStyles(pm10Sub),
-                        footerLabel: 'WHO:',
-                        footerVal: whoSafeLimits.pm10
+                        tag: getParamTag('pm10', curHour.pm10),
+                        borderColor: getParamStatusColor('pm10', curHour.pm10),
+                        valColor: getValColorClass('pm10'),
+                        footerLabel: 'CPCB:',
+                        footerVal: cpcbSafeLimits.pm10
                     },
                     {
-                        key: 'no2', name: 'NO₂', icon: '🚦',
-                        current: formatCurVal(curHour.no2, 'no2'),
-                        unit: 'µg/m³',
-                        badgeText: `Sub: ${no2Sub != null ? (Math.round(no2Sub * 10) / 10) : '--'}`,
-                        badgeClass: getSubBadgeStyles(no2Sub),
-                        footerLabel: 'WHO:',
-                        footerVal: whoSafeLimits.no2
-                    },
-                    {
-                        key: 'co', name: 'CO', icon: '🏭',
+                        key: 'co', name: 'CO', icon: '💨',
                         current: formatCurVal(curHour.co, 'co'),
                         unit: 'mg/m³',
-                        badgeText: `Sub: ${coSub != null ? (Math.round(coSub * 10) / 10) : '--'}`,
-                        badgeClass: getSubBadgeStyles(coSub),
-                        footerLabel: 'WHO:',
-                        footerVal: whoSafeLimits.co
+                        tag: getParamTag('co', curHour.co),
+                        borderColor: getParamStatusColor('co', curHour.co),
+                        valColor: getValColorClass('co'),
+                        footerLabel: 'CPCB:',
+                        footerVal: cpcbSafeLimits.co
+                    },
+                    {
+                        key: 'no2', name: 'NO₂', icon: '🏭',
+                        current: formatCurVal(curHour.no2, 'no2'),
+                        unit: 'µg/m³',
+                        tag: getParamTag('no2', curHour.no2),
+                        borderColor: getParamStatusColor('no2', curHour.no2),
+                        valColor: getValColorClass('no2'),
+                        footerLabel: 'CPCB:',
+                        footerVal: cpcbSafeLimits.no2
                     },
                     {
                         key: 'o3', name: 'O₃', icon: '☀️',
                         current: formatCurVal(curHour.o3, 'o3'),
                         unit: 'µg/m³',
-                        badgeText: `Sub: ${o3Sub != null ? (Math.round(o3Sub * 10) / 10) : '--'}`,
-                        badgeClass: getSubBadgeStyles(o3Sub),
-                        footerLabel: 'WHO:',
-                        footerVal: whoSafeLimits.o3
-                    },
-                    {
-                        key: 'temp', name: 'Temp', icon: '🌡️',
-                        current: formatCurVal(curHour.temp, 'temp'),
-                        unit: '°C',
-                        badgeText: 'Ambient',
-                        badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
-                        footerLabel: '',
-                        footerVal: ''
-                    },
-                    {
-                        key: 'humidity', name: 'Humidity', icon: '💧',
-                        current: formatCurVal(curHour.humidity, 'humidity'),
-                        unit: '%',
-                        badgeText: 'Comfort',
-                        badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
-                        footerLabel: '',
-                        footerVal: ''
-                    },
-                    {
-                        key: 'rainfall', name: 'Rainfall', icon: '🌧️',
-                        current: curRainChance,
-                        unit: '%',
-                        badgeText: curRainChance > 0 ? `${curRainChance}%` : 'Dry',
-                        badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
-                        footerLabel: 'Precip:',
-                        footerVal: `${curRainMm} mm`
+                        tag: getParamTag('o3', curHour.o3),
+                        borderColor: getParamStatusColor('o3', curHour.o3),
+                        valColor: getValColorClass('o3'),
+                        footerLabel: 'CPCB:',
+                        footerVal: cpcbSafeLimits.o3
                     }
                 ];
 
                 paramsGrid.innerHTML = items.map((it) => `
-                    <div class="bg-white border border-slate-200/90 rounded-2xl p-2 sm:p-2.5 xl:p-3 flex flex-col justify-between hover:border-teal-500/40 hover:shadow-sm transition-all shadow-2xs h-full min-h-[110px]">
-                      <!-- Top Row: Full Name on left, Badge on right -->
+                    <div class="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-3.5 xl:p-4 flex flex-col justify-between hover:border-teal-500/40 hover:shadow-sm transition-all shadow-2xs h-full min-h-[118px]" style="border-left: 4px solid ${it.borderColor};">
+                      <!-- Top Row: Full Name on left, Tag on right -->
                       <div class="flex items-center justify-between gap-1 mb-1">
                         <span class="text-xs font-bold text-slate-800 flex items-center gap-1 shrink-0 whitespace-nowrap">
                           <span class="shrink-0 text-xs sm:text-sm">${it.icon}</span>
                           <span class="font-sans font-bold whitespace-nowrap">${it.name}</span>
                         </span>
-                        <span class="text-[8.5px] sm:text-[9px] font-mono font-extrabold px-1 sm:px-1.5 py-0.5 rounded border ${it.badgeClass} whitespace-nowrap shrink-0">
-                          ${it.badgeText}
+                        ${it.tag ? `
+                        <span class="text-[8.5px] sm:text-[9.5px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-1 whitespace-nowrap shrink-0" style="background-color: ${it.tag.bg}; border-color: ${it.tag.border}; color: ${it.tag.color};">
+                          <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${it.tag.dot};"></span>
+                          <span>${it.tag.text}</span>
                         </span>
+                        ` : ''}
                       </div>
 
                       <!-- Middle Row: Value & Unit on a single aligned line -->
                       <div class="my-1 flex items-baseline gap-1">
-                        <span class="text-lg sm:text-[21px] font-extrabold font-mono text-slate-900 tracking-tight leading-none">${it.current}</span>
+                        <span class="text-lg sm:text-[21px] font-extrabold font-mono ${it.valColor} tracking-tight leading-none">${it.current}</span>
                         <span class="text-[11px] font-semibold text-slate-400 font-mono shrink-0">${it.unit}</span>
                       </div>
 
@@ -1107,20 +959,8 @@ if (file_exists($forecastJsonFile)) {
                 const isSelected = (idx === window.__selectedHourIdx);
                 const isFirst = (idx === 0);
 
-                // Rainfall probability calculation (percentage)
-                const rfInfo = trainedModelData?.rainfall;
-                const rainChanceRaw = (item.rain_prob !== undefined && item.rain_prob !== null)
-                    ? item.rain_prob
-                    : ((item.rain_prob_pct !== undefined && item.rain_prob_pct !== null)
-                        ? item.rain_prob_pct
-                        : (rfInfo?.hourly && rfInfo.hourly[item.index]?.rain_prob_pct !== undefined
-                            ? rfInfo.hourly[item.index].rain_prob_pct
-                            : (item.rain_mm && item.rain_mm > 0 ? 80 : 0)));
-                const rainChance = Math.round(Number(rainChanceRaw) || 0);
-                const rStatus = getRainStatus(rainChance);
-
                 return `
-                    <div class="hourly-card ${isSelected ? 'active-hour' : ''}" onclick="selectForecastHour(${idx})" style="cursor: pointer;" title="Rain Probability: ${rainChance}%">
+                    <div class="hourly-card ${isSelected ? 'active-hour' : ''}" onclick="selectForecastHour(${idx})" style="cursor: pointer;">
                       <div class="hour-label text-xs sm:text-[13px] font-extrabold ${isFirst ? 'text-teal-600' : 'text-slate-600'} mb-1 whitespace-nowrap flex items-center gap-1.5">
                         <span>${item.label}</span>
                         ${isFirst ? '<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">NEXT</span>' : ''}
@@ -1132,10 +972,6 @@ if (file_exists($forecastJsonFile)) {
                         <div class="flex items-center justify-between text-[11px] font-medium text-slate-600">
                           <span class="flex items-center gap-1">💧 <span class="text-[10px] text-slate-400 font-semibold">Hum</span></span>
                           <span class="font-mono font-bold text-sky-700">${item.humidity}%</span>
-                        </div>
-                        <div class="flex items-center justify-between text-[11px] font-medium text-slate-600" title="Precipitation: ${rainChance}%">
-                          <span class="flex items-center gap-1">🌧️ <span class="text-[10px] text-slate-400 font-semibold">Rain</span></span>
-                          <span class="font-mono font-extrabold" style="color:${rStatus.color};">${rainChance}%</span>
                         </div>
                       </div>
 

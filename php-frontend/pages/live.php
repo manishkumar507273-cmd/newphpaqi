@@ -76,9 +76,9 @@ if (!empty($init_bulk['aqi'])) {
         if ($v <= 50) {
             $init_aqi_label = 'Good';
             $init_aqi_accent = '#16a34a';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #86efac 80%, #34d399 92%, #10b981 100%)';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)';
             $init_aqi_border = 'rgba(22, 163, 74, 0.35)';
-            $init_aqi_shadow = 'rgba(16, 185, 129, 0.20)';
+            $init_aqi_shadow = 'rgba(34, 197, 94, 0.22)';
             $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
             $init_aqi_badge_border = 'rgba(22, 163, 74, 0.35)';
             $init_aqi_badge_text = '#15803d';
@@ -850,7 +850,12 @@ $init_border_colors = [
 }
 </style>
 
-<div style="display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-2.5 sm:p-6">
+<div class="live-page-root" style="position: relative; display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-2.5 sm:p-6">
+  <!-- Dynamic Ambient Canvas (Enhanced Bubbles & Wind Streaks) -->
+  <canvas id="live-ambient-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.95; width: 100%; height: 100%;"></canvas>
+
+  <!-- Live Content Container -->
+  <div class="live-content-container" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: 100%;">
 
 <!-- Offline Banner -->
 <div id="live-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
@@ -867,17 +872,8 @@ $init_border_colors = [
       <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
         Real-time Air Quality &amp; Weather Telemetry
       </h1>
-      <div class="live-page-meta" style="font-size: 13px; color: #475569; margin-top: 6px; font-family: var(--font-sans); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
-          <i data-lucide="clock" style="width: 14px; height: 14px; color: #00bfa5;"></i>
-          <span>Last Updated:</span>
-          <span id="latest-time" style="color: #0f172a; font-weight: 700; font-family: var(--font-mono); background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);"><?= htmlspecialchars($init_time_str) ?></span>
-        </span>
-        <span id="live-beacon-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2.5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
-          LIVE
-        </span>
-      </div>
+      <span id="latest-time" style="display: none;"><?= htmlspecialchars($init_time_str) ?></span>
+      <span id="live-beacon-badge" style="display: none;"></span>
     </div>
   </div>
 
@@ -919,7 +915,7 @@ $init_border_colors = [
                   <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;"><?= $init_is_aqi_offline ? 'Cached AQI' : 'Live AQI' ?></span>
                 </div>
                 <span id="hero-live-time-chip" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); color: #475569; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.9); padding: 1.5px 7px; border-radius: 6px; box-shadow: 0 1px 2px rgba(15,23,42,0.03);">
-                  <i data-lucide="clock" style="width: 11px; height: 11px; color: #00bfa5;"></i>
+                  <i data-lucide="clock" id="hero-clock-icon" style="width: 11px; height: 11px; color: <?= $init_aqi_accent ?>;"></i>
                   <span id="hero-latest-time"><?= htmlspecialchars($init_time_str) ?></span>
                 </span>
               </div>
@@ -943,13 +939,13 @@ $init_border_colors = [
           <!-- Quick PM2.5 & PM10 Row -->
           <div class="hero-pm-row" style="display: flex; align-items: baseline; justify-content: space-between; max-width: 100%; margin-bottom: 14px; font-size: 13.5px; font-weight: 700;">
             <div style="display: flex; align-items: baseline; gap: 6px;">
-              <span style="color: #1e3a5f; font-weight: 800; letter-spacing: -0.01em;">PM2.5 :</span>
+              <span style="color: #334155; font-weight: 800; letter-spacing: -0.01em;">PM2.5 :</span>
               <strong id="hero-pm25" style="color: #0f172a; font-size: 15.5px; font-family: var(--font-mono); font-weight: 800;"><?= $init_pm25 ?></strong>
               <span class="hero-pm-unit" style="font-size: 11px; color: #475569; font-weight: 600;">µg/m³</span>
             </div>
             <div class="hero-pm-divider" style="display: none; width: 1px; height: 12px; background: rgba(203, 213, 225, 0.8);"></div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
-              <span style="color: #1e3a5f; font-weight: 800; letter-spacing: -0.01em;">PM10 :</span>
+              <span style="color: #334155; font-weight: 800; letter-spacing: -0.01em;">PM10 :</span>
               <strong id="hero-pm10" style="color: #0f172a; font-size: 15.5px; font-family: var(--font-mono); font-weight: 800;"><?= $init_pm10 ?></strong>
               <span class="hero-pm-unit" style="font-size: 11px; color: #475569; font-weight: 600;">µg/m³</span>
             </div>
@@ -991,8 +987,8 @@ $init_border_colors = [
             <!-- Box Header -->
             <div class="weather-box-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
               <div style="display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-sans);">
-                <i data-lucide="cloud-sun" style="width: 14px; height: 14px; color: #0284c7;"></i>
-                <span>Weather &amp; Comfort</span>
+                <i data-lucide="cloud-sun" style="width: 14px; height: 14px; color: #ea580c;"></i>
+                <span>Weather</span>
               </div>
             </div>
 
@@ -1581,6 +1577,7 @@ $init_border_colors = [
     </div>
   </div>
 
+  </div>
 </div>
 
 <?php if (!empty($init_bulk)): ?>
@@ -2159,9 +2156,9 @@ async function refreshDashboard(forceNetwork = false) {
             if (isNaN(v) || v <= 50) {
                 return {
                     label: 'Good',
-                    bg: 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #86efac 80%, #34d399 92%, #10b981 100%)',
+                    bg: 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)',
                     border: 'rgba(22, 163, 74, 0.35)',
-                    shadow: 'rgba(16, 185, 129, 0.20)',
+                    shadow: 'rgba(34, 197, 94, 0.22)',
                     accent: '#16a34a',
                     badgeBg: 'rgba(255, 255, 255, 0.75)',
                     badgeBorder: 'rgba(22, 163, 74, 0.35)',
@@ -2265,6 +2262,11 @@ async function refreshDashboard(forceNetwork = false) {
             const skyline = document.getElementById('hero-skyline-svg');
             if (skyline) {
                 skyline.style.fill = theme.accent;
+            }
+
+            const clockIcon = document.getElementById('hero-clock-icon');
+            if (clockIcon && theme.accent) {
+                clockIcon.style.color = theme.accent;
             }
 
             const scalePct = getAQIScalePercentage(aqiValue);
@@ -2612,13 +2614,143 @@ window.__cleanupCurrentPage = function() {
         });
         window.__chartInstances = {};
     }
+    if (liveCanvasAnimId) {
+        cancelAnimationFrame(liveCanvasAnimId);
+        liveCanvasAnimId = null;
+    }
+    if (liveCanvasResizeHandler) {
+        window.removeEventListener('resize', liveCanvasResizeHandler);
+        liveCanvasResizeHandler = null;
+    }
     const bodyModals = document.querySelectorAll('body > #pollutant-modal');
     bodyModals.forEach(m => m.remove());
     document.body.style.overflow = '';
 };
 
+var liveCanvasAnimId = null;
+var liveCanvasResizeHandler = null;
+
+function initLiveAmbientCanvas() {
+    const canvas = document.getElementById('live-ambient-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (liveCanvasAnimId) cancelAnimationFrame(liveCanvasAnimId);
+    if (liveCanvasResizeHandler) {
+        window.removeEventListener('resize', liveCanvasResizeHandler);
+    }
+
+    function resize() {
+        if (!canvas || !canvas.parentElement) return;
+        canvas.width = canvas.parentElement.offsetWidth || window.innerWidth;
+        canvas.height = canvas.parentElement.offsetHeight || window.innerHeight;
+    }
+    liveCanvasResizeHandler = resize;
+    window.addEventListener('resize', liveCanvasResizeHandler);
+    resize();
+
+    const rawWind = (window.INITIAL_DATA && window.INITIAL_DATA.weather && window.INITIAL_DATA.weather.wind_speed)
+        ? Number(window.INITIAL_DATA.weather.wind_speed)
+        : 3.5;
+    const speedFactor = Math.max(0.6, (rawWind / 10.0));
+
+    // 80 Floating Ambient Bubbles
+    const particles = Array.from({ length: 80 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 4.2 + 2.0,
+        speedX: (0.5 + Math.random() * 0.9) * speedFactor,
+        speedY: (Math.random() - 0.5) * 0.35,
+        alpha: Math.random() * 0.28 + 0.18,
+        angle: Math.random() * Math.PI * 2,
+        waveFreq: Math.random() * 0.02 + 0.012,
+        waveAmp: Math.random() * 1.8 + 0.8,
+    }));
+
+    // 7 Flowing Wind Stream Ribbons
+    const streamRibbons = Array.from({ length: 7 }, (_, i) => ({
+        y: (canvas.height / 8) * (i + 1) + (Math.random() - 0.5) * 45,
+        length: canvas.width * 0.5 + Math.random() * 120,
+        x: Math.random() * canvas.width,
+        speed: (1.3 + i * 0.35) * speedFactor,
+        thickness: 1.8 + Math.random() * 1.6,
+        opacity: 0.20 + Math.random() * 0.18,
+    }));
+
+    let tick = 0;
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        tick += 0.02;
+
+        // Render Flowing Wind Stream Ribbons
+        for (const rib of streamRibbons) {
+            ctx.beginPath();
+            const grad = ctx.createLinearGradient(rib.x, rib.y, rib.x + rib.length, rib.y);
+            grad.addColorStop(0, 'rgba(0, 191, 165, 0)');
+            grad.addColorStop(0.2, `rgba(0, 191, 165, ${rib.opacity * 0.75})`);
+            grad.addColorStop(0.55, `rgba(14, 165, 233, ${rib.opacity})`);
+            grad.addColorStop(0.8, `rgba(56, 189, 248, ${rib.opacity * 0.65})`);
+            grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = rib.thickness;
+            ctx.lineCap = 'round';
+
+            ctx.moveTo(rib.x, rib.y);
+            for (let x = 0; x < rib.length; x += 18) {
+                const cy = rib.y + Math.sin((rib.x + x) * 0.009 + tick) * 9 + Math.cos((rib.x + x) * 0.018 + tick * 0.5) * 3;
+                ctx.lineTo(rib.x + x, cy);
+            }
+            ctx.stroke();
+
+            rib.x += rib.speed;
+            if (rib.x > canvas.width + 120) {
+                rib.x = -rib.length - 60;
+                rib.y = (canvas.height / 8) * (Math.floor(Math.random() * 7) + 1);
+            }
+        }
+
+        // Render Floating Iridescent Bubbles
+        for (const p of particles) {
+            ctx.beginPath();
+            p.angle += p.waveFreq;
+            const currentY = p.y + Math.sin(p.angle) * p.waveAmp;
+
+            const particleGrad = ctx.createRadialGradient(
+                p.x - p.radius * 0.35, currentY - p.radius * 0.35, p.radius * 0.15,
+                p.x, currentY, p.radius * 2
+            );
+            particleGrad.addColorStop(0, `rgba(255, 255, 255, ${p.alpha * 1.3})`);
+            particleGrad.addColorStop(0.3, `rgba(0, 191, 165, ${p.alpha * 0.95})`);
+            particleGrad.addColorStop(0.7, `rgba(14, 165, 233, ${p.alpha * 0.75})`);
+            particleGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = particleGrad;
+            ctx.arc(p.x, currentY, p.radius * 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = `rgba(0, 191, 165, ${p.alpha * 0.65})`;
+            ctx.lineWidth = 0.85;
+            ctx.stroke();
+
+            p.y += p.speedY;
+            p.x += p.speedX;
+
+            if (p.x > canvas.width + 25) p.x = -25;
+            if (p.y > canvas.height + 25) p.y = -25;
+            if (p.y < -25) p.y = canvas.height + 25;
+        }
+
+        liveCanvasAnimId = requestAnimationFrame(render);
+    }
+    render();
+}
+
 setTimeout(() => {
     refreshDashboard();
+    initLiveAmbientCanvas();
     
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {

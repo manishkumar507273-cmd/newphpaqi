@@ -9,7 +9,7 @@
 
 /* ── Design Tokens ── */
 :root {
-  --bg-main:        #f1f5f9;
+  --bg-main:        #f0f7ff;
   --bg-surface:     #ffffff;
   --bg-surface-2:   #f8fafc;
   --bg-card:        #ffffff;
@@ -58,7 +58,7 @@ html {
 }
 
 body {
-  background-color: #f1f5f9;
+  background-color: #f0f7ff;
   color: #0f172a;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

@@ -7,10 +7,10 @@ $req_param = (isset($_GET['param']) && in_array($_GET['param'], $valid_params)) 
 $req_type = (isset($_GET['type']) && in_array($_GET['type'], ['bar', 'line'])) ? $_GET['type'] : 'bar';
 $req_date = (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) ? $_GET['date'] : $today_ist;
 
-// 0ms instant pre-hydration from disk cache for today's historical records
+// 0ms instant pre-hydration from disk cache for today's historical records (strictly 15s TTL for today)
 $init_history_json = 'null';
 $cache_file_today = sys_get_temp_dir() . '/smartairnet_cache/' . md5("history_bulk_" . md5($today_ist . '_1_150')) . '.json';
-if (file_exists($cache_file_today)) {
+if (file_exists($cache_file_today) && (time() - filemtime($cache_file_today)) < 15) {
     $raw_cache_today = @file_get_contents($cache_file_today);
     if ($raw_cache_today && strlen($raw_cache_today) > 50) {
         $init_history_json = $raw_cache_today;
@@ -684,6 +684,43 @@ var getCompassDir = function(val) {
     return dirs[Math.round(deg / 22.5) % 16];
 };
 
+var parseDateParts = function(dateStr) {
+    if (!dateStr) {
+        const now = new Date();
+        return [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+    }
+    const clean = String(dateStr).trim();
+    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(clean)) {
+        const [y, m, d] = clean.split('-').map(Number);
+        return [y, m, d];
+    }
+    if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(clean)) {
+        const [d, m, y] = clean.split('-').map(Number);
+        return [y, m, d];
+    }
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(clean)) {
+        const [d, m, y] = clean.split('/').map(Number);
+        return [y, m, d];
+    }
+    if (/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(clean)) {
+        const [y, m, d] = clean.split('/').map(Number);
+        return [y, m, d];
+    }
+    const dt = new Date(clean);
+    if (!isNaN(dt.getTime())) {
+        return [dt.getFullYear(), dt.getMonth() + 1, dt.getDate()];
+    }
+    const now = new Date();
+    return [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+};
+window.parseDateParts = parseDateParts;
+
+var normalizeDateToYmd = function(dateStr) {
+    const [y, m, d] = parseDateParts(dateStr);
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+};
+window.normalizeDateToYmd = normalizeDateToYmd;
+
 var getLocalDateStr = function(d = new Date()) {
     const yr = d.getFullYear();
     const mo = String(d.getMonth() + 1).padStart(2, '0');
@@ -691,21 +728,28 @@ var getLocalDateStr = function(d = new Date()) {
     return `${yr}-${mo}-${da}`;
 };
 
-async function fetchRangeData(queryDate, days) {
-    const key = getCacheKey(queryDate, days);
-    if (clientRangeCache[key]) {
-        return clientRangeCache[key];
+async function fetchRangeData(queryDate, days, force = false) {
+    const normDate = normalizeDateToYmd(queryDate || getLocalDateStr());
+    const key = getCacheKey(normDate, days);
+    const isToday = (normDate === getLocalDateStr() && Number(days) === 1);
+
+    if (!force && clientRangeCache[key]) {
+        const age = Date.now() - (clientRangeCache[key].fetchedAt || 0);
+        // For today's view, cache expires after 15 seconds so new hourly readings stream in
+        if (!isToday || age < 15000) {
+            return clientRangeCache[key];
+        }
     }
-    if (pendingRangeFetches[key]) {
+    if (!force && pendingRangeFetches[key]) {
         return pendingRangeFetches[key];
     }
     const fetchPromise = (async () => {
         try {
             let payload;
             if (typeof window.fetchHistoryBulk === 'function') {
-                payload = await window.fetchHistoryBulk(queryDate, days);
+                payload = await window.fetchHistoryBulk(normDate, days, force);
             } else {
-                const response = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}&days=${days}`);
+                const response = await fetch(`api/telemetry.php?action=history_bulk&date=${normDate}&days=${days}&_t=${Date.now()}`);
                 const data = await response.json();
                 payload = {
                     aqi: data.aqi || [],
@@ -713,16 +757,19 @@ async function fetchRangeData(queryDate, days) {
                     fetchedAt: Date.now()
                 };
             }
-            clientRangeCache[key] = payload;
-            try {
-                if (typeof window.setLocalCache === 'function') {
-                    window.setLocalCache('smartairnet_hist_' + key, payload);
-                }
-            } catch(e) {}
-            return payload;
+            if (payload && ((payload.aqi && payload.aqi.length > 0) || (payload.weather && payload.weather.length > 0))) {
+                payload.fetchedAt = Date.now();
+                clientRangeCache[key] = payload;
+                try {
+                    if (typeof window.setLocalCache === 'function') {
+                        window.setLocalCache('smartairnet_hist_' + key, payload);
+                    }
+                } catch(e) {}
+            }
+            return payload || { aqi: [], weather: [], fetchedAt: Date.now() };
         } catch(e) {
             console.error(`Failed to fetch history for ${key}:`, e);
-            return { aqi: [], weather: [], fetchedAt: Date.now() };
+            return clientRangeCache[key] || { aqi: [], weather: [], fetchedAt: Date.now() };
         } finally {
             delete pendingRangeFetches[key];
         }
@@ -733,12 +780,13 @@ async function fetchRangeData(queryDate, days) {
 
 function prefetchOtherRanges(queryDate) {
     if (!queryDate) return;
+    const normDate = normalizeDateToYmd(queryDate);
     // Only prefetch 3-day range after 2.5 seconds of user idle time, avoiding connection hogging
-    const key3 = getCacheKey(queryDate, 3);
+    const key3 = getCacheKey(normDate, 3);
     if (currentRangeDays === 1 && !clientRangeCache[key3] && !pendingRangeFetches[key3]) {
         setTimeout(() => {
             if (currentRangeDays === 1 && !clientRangeCache[key3] && !pendingRangeFetches[key3]) {
-                fetchRangeData(queryDate, 3).catch(() => {});
+                fetchRangeData(normDate, 3).catch(() => {});
             }
         }, 2500);
     }
@@ -747,25 +795,24 @@ function prefetchOtherRanges(queryDate) {
 async function fetchAllHistory(forcedDate = null, skipCache = false) {
     try {
         const datePicker = document.getElementById('history-date-picker');
-        let queryDate = forcedDate || (datePicker ? datePicker.value : null);
+        let rawDate = forcedDate || (datePicker ? datePicker.value : null);
+        let queryDate = normalizeDateToYmd(rawDate || getLocalDateStr());
         
-        // Default date if none selected (use local date YYYY-MM-DD)
-        if (!queryDate) {
-            queryDate = getLocalDateStr();
-            if (datePicker) {
-                datePicker.value = queryDate;
-                datePicker.max = queryDate;
-            }
-        } else if (datePicker && !datePicker.max) {
+        if (datePicker && datePicker.value !== queryDate) {
+            datePicker.value = queryDate;
+        }
+        if (datePicker && !datePicker.max) {
             datePicker.max = getLocalDateStr();
         }
 
         const days = currentRangeDays || 1;
         const key = getCacheKey(queryDate, days);
+        const isToday = (queryDate === getLocalDateStr() && days === 1);
 
         // Instant 0ms pre-hydration from initial server payload
         if (!skipCache && window.INITIAL_HISTORY && queryDate === '<?= $today_ist ?>' && days === 1) {
             clientRangeCache[key] = window.INITIAL_HISTORY;
+            clientRangeCache[key].fetchedAt = Date.now();
             historicalDataAqi = window.INITIAL_HISTORY.aqi || [];
             historicalDataWeather = window.INITIAL_HISTORY.weather || [];
             window.INITIAL_HISTORY = null;
@@ -776,6 +823,14 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
             } catch(e) {}
             renderUI();
             prefetchOtherRanges(queryDate);
+            // Silently fetch fresh data in background to ensure all latest hours are rendered
+            fetchRangeData(queryDate, days, true).then(freshData => {
+                if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
+                    historicalDataAqi = freshData.aqi || [];
+                    historicalDataWeather = freshData.weather || [];
+                    renderUI();
+                }
+            }).catch(() => {});
             return;
         }
 
@@ -783,24 +838,23 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
         let cached = (!skipCache && clientRangeCache[key]) ? clientRangeCache[key] : null;
         if (!cached && !skipCache && typeof window.getLocalCache === 'function') {
             const stored = window.getLocalCache('smartairnet_hist_' + key);
-            if (stored && (stored.aqi || stored.weather)) {
+            if (stored && ((stored.aqi && stored.aqi.length > 0) || (stored.weather && stored.weather.length > 0))) {
                 cached = stored;
                 clientRangeCache[key] = stored;
             }
         }
 
-        if (cached) {
+        if (cached && !skipCache) {
             historicalDataAqi = cached.aqi || [];
             historicalDataWeather = cached.weather || [];
             renderUI();
             prefetchOtherRanges(queryDate);
 
-            // Silently revalidate in background if records are for today or older than 45s
-            const isToday = (queryDate === getLocalDateStr());
+            // Silently revalidate in background if records are for today or older than 30s
             const ageMs = Date.now() - (cached.fetchedAt || 0);
-            if (isToday || ageMs > 45000) {
-                fetchRangeData(queryDate, days).then(freshData => {
-                    if (freshData && (freshData.aqi?.length || freshData.weather?.length)) {
+            if (isToday || ageMs > 30000) {
+                fetchRangeData(queryDate, days, true).then(freshData => {
+                    if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
                         historicalDataAqi = freshData.aqi || [];
                         historicalDataWeather = freshData.weather || [];
                         renderUI();
@@ -817,7 +871,7 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
         if (chartLoading) chartLoading.style.display = 'flex';
         if (chartEmpty) chartEmpty.style.display = 'none';
 
-        const data = await fetchRangeData(queryDate, days);
+        const data = await fetchRangeData(queryDate, days, skipCache);
         
         historicalDataAqi = data.aqi || [];
         historicalDataWeather = data.weather || [];
@@ -948,7 +1002,7 @@ function setParam(param, skipRender = false) {
 function renderUI(skipDayFilter = false) {
     const datePicker = document.getElementById('history-date-picker');
     if (!datePicker) return;
-    const dateInput = datePicker.value;
+    const dateInput = normalizeDateToYmd(datePicker.value || getLocalDateStr());
     if (!dateInput) return;
 
     const parseIsoLocal = (str) => {
@@ -956,7 +1010,7 @@ function renderUI(skipDayFilter = false) {
         const cleanStr = String(str).replace(/[Zz]|[+-]\d{2}(:\d{2})?$/, '');
         const parts = cleanStr.split('T');
         if (parts.length !== 2) return new Date(str).getTime();
-        const [yr, mo, da] = parts[0].split('-').map(Number);
+        const [yr, mo, da] = parseDateParts(parts[0]);
         const timeParts = parts[1].split(':');
         const hr = Number(timeParts[0]) || 0;
         const mn = Number(timeParts[1]) || 0;
@@ -969,7 +1023,7 @@ function renderUI(skipDayFilter = false) {
     if (!skipDayFilter) {
         const sourceData = currentSubTab === 'aqi' ? historicalDataAqi : historicalDataWeather;
 
-        const [y, m, d] = dateInput.split('-').map(Number);
+        const [y, m, d] = parseDateParts(dateInput);
         let startWindow, endWindow;
         if (days === 1) {
             startWindow = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
@@ -1000,7 +1054,8 @@ function renderUI(skipDayFilter = false) {
             const parts = (item.timestamp || '').split('T');
             let hrKey = '';
             if (parts.length === 2) {
-                hrKey = parts[0] + ' ' + parts[1].slice(0, 2);
+                const normD = normalizeDateToYmd(parts[0]);
+                hrKey = normD + ' ' + parts[1].slice(0, 2);
             } else {
                 const dt = new Date(item.timestamp);
                 hrKey = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate() + ' ' + dt.getHours();
@@ -1118,7 +1173,7 @@ function renderUI(skipDayFilter = false) {
 
         const summaryDateEl = document.getElementById('summary-date-display');
         if (summaryDateEl) {
-            const [y, m, d] = dateInput.split('-').map(Number);
+            const [y, m, d] = parseDateParts(dateInput);
             const dtObj = new Date(y, m - 1, d);
             summaryDateEl.innerText = dtObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
         }
@@ -1246,12 +1301,15 @@ function renderUI(skipDayFilter = false) {
         const parts = (d.timestamp || '').split('T');
         if (parts.length === 2) {
             const [yr, mo, da] = parts[0].split('-').map(Number);
-            const [hr, mn] = parts[1].split(':').map(Number);
-            const dt = new Date(yr, mo - 1, da, hr, mn || 0);
+            const timeParts = parts[1].split(':');
+            const hr = Number(timeParts[0]) || 0;
+            const period = hr >= 12 ? 'PM' : 'AM';
+            const displayHr = hr % 12 === 0 ? 12 : hr % 12;
+            const timeStr = `${String(displayHr).padStart(2, '0')} ${period}`;
             if (days > 1) {
-                return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')} ${dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true})}`;
+                return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')} ${timeStr}`;
             }
-            return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
+            return timeStr;
         }
         const dt = new Date(d.timestamp);
         if (days > 1) {
@@ -1454,14 +1512,17 @@ function renderUI(skipDayFilter = false) {
             let dateStr = '', timeStr = '';
             if (parts.length === 2) {
                 const [yr, mo, da] = parts[0].split('-').map(Number);
-                const [hr, mn] = parts[1].split(':').map(Number);
-                const dt = new Date(yr, mo - 1, da, hr, mn || 0);
+                const timeParts = parts[1].split(':');
+                const hr = Number(timeParts[0]) || 0;
+                const mn = Number(timeParts[1]) || 0;
+                const period = hr >= 12 ? 'PM' : 'AM';
+                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
                 dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
-                timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' });
+                timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
             } else {
                 const dt = new Date(d.timestamp);
-                dateStr = dt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
-                timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' });
+                dateStr = dt.toLocaleDateString('en-GB');
+                timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
             }
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                 <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>
@@ -1491,14 +1552,17 @@ function renderUI(skipDayFilter = false) {
             let dateStr = '', timeStr = '';
             if (parts.length === 2) {
                 const [yr, mo, da] = parts[0].split('-').map(Number);
-                const [hr, mn] = parts[1].split(':').map(Number);
-                const dt = new Date(yr, mo - 1, da, hr, mn || 0);
+                const timeParts = parts[1].split(':');
+                const hr = Number(timeParts[0]) || 0;
+                const mn = Number(timeParts[1]) || 0;
+                const period = hr >= 12 ? 'PM' : 'AM';
+                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
                 dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
-                timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' });
+                timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
             } else {
                 const dt = new Date(d.timestamp);
-                dateStr = dt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
-                timeStr = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' });
+                dateStr = dt.toLocaleDateString('en-GB');
+                timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
             }
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                 <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>
@@ -1970,7 +2034,8 @@ function startAutoRefreshHist() {
         const dp = document.getElementById('history-date-picker');
         if (!dp) return;
         const todayStr = getLocalDateStr();
-        if (dp.value === todayStr && currentRangeDays === 1) {
+        const currentPickerVal = normalizeDateToYmd(dp.value);
+        if (currentPickerVal === todayStr && currentRangeDays === 1) {
             fetchAllHistory(todayStr, true);
         }
     }, 12000);
@@ -1990,7 +2055,8 @@ window.__cleanupCurrentPage = function() {
 setTimeout(() => {
     const dp = document.getElementById('history-date-picker');
     if (dp) {
-        if (!dp.value) dp.value = _initState.date || '<?= $today_ist ?>';
+        if (!dp.value) dp.value = normalizeDateToYmd(_initState.date || '<?= $today_ist ?>');
+        else dp.value = normalizeDateToYmd(dp.value);
         dp.onchange = () => {
             persistHistoricalState();
             fetchAllHistory();
@@ -2014,7 +2080,7 @@ setTimeout(() => {
     if (rSelect) {
         const prefetchCommon = () => {
             const picker = document.getElementById('history-date-picker');
-            const qDate = picker && picker.value ? picker.value : '<?= $today_ist ?>';
+            const qDate = normalizeDateToYmd(picker && picker.value ? picker.value : '<?= $today_ist ?>');
             [3, 7].forEach(d => {
                 const k = getCacheKey(qDate, d);
                 if (!clientRangeCache[k] && !pendingRangeFetches[k]) {
@@ -2030,7 +2096,7 @@ setTimeout(() => {
         if (btn) {
             const prefetchRange = () => {
                 const picker = document.getElementById('history-date-picker');
-                const qDate = picker && picker.value ? picker.value : '<?= $today_ist ?>';
+                const qDate = normalizeDateToYmd(picker && picker.value ? picker.value : '<?= $today_ist ?>');
                 const k = getCacheKey(qDate, d);
                 if (!clientRangeCache[k] && !pendingRangeFetches[k]) {
                     fetchRangeData(qDate, d).catch(() => {});

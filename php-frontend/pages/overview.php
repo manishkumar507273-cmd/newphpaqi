@@ -1608,25 +1608,26 @@ function initCanvas() {
 
     const speedFactor = Math.max(0.6, (Number(rawWind || 3.5) / 10.0));
 
-    const particles = Array.from({ length: 50 }, () => ({
+    // Enhanced Atmospheric Bubbles & Wind Streaks
+    const particles = Array.from({ length: 80 }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        radius: Math.random() * 3 + 1.5,
-        speedX: (0.4 + Math.random() * 0.8) * speedFactor,
-        speedY: (Math.random() - 0.5) * 0.3,
-        alpha: Math.random() * 0.25 + 0.1,
+        radius: Math.random() * 4.2 + 2.0,
+        speedX: (0.5 + Math.random() * 0.9) * speedFactor,
+        speedY: (Math.random() - 0.5) * 0.35,
+        alpha: Math.random() * 0.28 + 0.18,
         angle: Math.random() * Math.PI * 2,
-        waveFreq: Math.random() * 0.02 + 0.01,
-        waveAmp: Math.random() * 1.5 + 0.5,
+        waveFreq: Math.random() * 0.02 + 0.012,
+        waveAmp: Math.random() * 1.8 + 0.8,
     }));
 
-    const streamRibbons = Array.from({ length: 4 }, (_, i) => ({
-        y: (canvas.height / 5) * (i + 1) + (Math.random() - 0.5) * 40,
-        length: canvas.width * 0.45 + Math.random() * 100,
+    const streamRibbons = Array.from({ length: 7 }, (_, i) => ({
+        y: (canvas.height / 8) * (i + 1) + (Math.random() - 0.5) * 45,
+        length: canvas.width * 0.5 + Math.random() * 120,
         x: Math.random() * canvas.width,
-        speed: (1.2 + i * 0.4) * speedFactor,
-        thickness: 1.2 + Math.random() * 1.2,
-        opacity: 0.12 + Math.random() * 0.12,
+        speed: (1.3 + i * 0.35) * speedFactor,
+        thickness: 1.8 + Math.random() * 1.6,
+        opacity: 0.20 + Math.random() * 0.18,
     }));
 
     let tick = 0;
@@ -1635,60 +1636,75 @@ function initCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         tick += 0.02;
 
+        // Render Flowing Wind Stream Ribbons
         for (const rib of streamRibbons) {
             ctx.beginPath();
             const grad = ctx.createLinearGradient(rib.x, rib.y, rib.x + rib.length, rib.y);
             grad.addColorStop(0, 'rgba(0, 191, 165, 0)');
-            grad.addColorStop(0.5, `rgba(14, 165, 233, ${rib.opacity})`);
-            grad.addColorStop(1, 'rgba(0, 191, 165, 0)');
+            grad.addColorStop(0.2, `rgba(0, 191, 165, ${rib.opacity * 0.75})`);
+            grad.addColorStop(0.55, `rgba(14, 165, 233, ${rib.opacity})`);
+            grad.addColorStop(0.8, `rgba(56, 189, 248, ${rib.opacity * 0.65})`);
+            grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
 
             ctx.strokeStyle = grad;
             ctx.lineWidth = rib.thickness;
             ctx.lineCap = 'round';
 
             ctx.moveTo(rib.x, rib.y);
-            for (let x = 0; x < rib.length; x += 20) {
-                const cy = rib.y + Math.sin((rib.x + x) * 0.01 + tick) * 8;
+            for (let x = 0; x < rib.length; x += 18) {
+                const cy = rib.y + Math.sin((rib.x + x) * 0.009 + tick) * 9 + Math.cos((rib.x + x) * 0.018 + tick * 0.5) * 3;
                 ctx.lineTo(rib.x + x, cy);
             }
             ctx.stroke();
 
             rib.x += rib.speed;
-            if (rib.x > canvas.width + 100) {
-                rib.x = -rib.length - 50;
-                rib.y = (canvas.height / 5) * (Math.floor(Math.random() * 4) + 1);
+            if (rib.x > canvas.width + 120) {
+                rib.x = -rib.length - 60;
+                rib.y = (canvas.height / 8) * (Math.floor(Math.random() * 7) + 1);
             }
         }
 
+        // Render Floating Iridescent Bubbles
         for (const p of particles) {
             ctx.beginPath();
             p.angle += p.waveFreq;
             const currentY = p.y + Math.sin(p.angle) * p.waveAmp;
 
             if (isRainingGlobal) {
-                ctx.strokeStyle = `rgba(56, 189, 248, ${p.alpha * 1.5})`;
-                ctx.lineWidth = 1.6;
+                ctx.strokeStyle = `rgba(56, 189, 248, ${p.alpha * 1.6})`;
+                ctx.lineWidth = 1.8;
                 ctx.moveTo(p.x, currentY);
-                ctx.lineTo(p.x + p.speedX * 0.8, currentY + 12);
+                ctx.lineTo(p.x + p.speedX * 0.8, currentY + 14);
                 ctx.stroke();
-                p.y += 9 + Math.random() * 4;
+                p.y += 10 + Math.random() * 4;
             } else {
-                const particleGrad = ctx.createRadialGradient(p.x, currentY, 0, p.x, currentY, p.radius * 2);
-                particleGrad.addColorStop(0, `rgba(0, 191, 165, ${p.alpha})`);
-                particleGrad.addColorStop(0.7, `rgba(56, 189, 248, ${p.alpha * 0.6})`);
+                // Spherical translucent bubble with light glare
+                const particleGrad = ctx.createRadialGradient(
+                    p.x - p.radius * 0.35, currentY - p.radius * 0.35, p.radius * 0.15,
+                    p.x, currentY, p.radius * 2
+                );
+                particleGrad.addColorStop(0, `rgba(255, 255, 255, ${p.alpha * 1.3})`);
+                particleGrad.addColorStop(0.3, `rgba(0, 191, 165, ${p.alpha * 0.95})`);
+                particleGrad.addColorStop(0.7, `rgba(14, 165, 233, ${p.alpha * 0.75})`);
                 particleGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
                 ctx.fillStyle = particleGrad;
                 ctx.arc(p.x, currentY, p.radius * 2, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Luminous outer rim
+                ctx.strokeStyle = `rgba(0, 191, 165, ${p.alpha * 0.65})`;
+                ctx.lineWidth = 0.85;
+                ctx.stroke();
+
                 p.y += p.speedY;
             }
 
             p.x += p.speedX;
 
-            if (p.x > canvas.width + 20) p.x = -20;
-            if (p.y > canvas.height + 20) p.y = -20;
-            if (p.y < -20) p.y = canvas.height + 20;
+            if (p.x > canvas.width + 25) p.x = -25;
+            if (p.y > canvas.height + 25) p.y = -25;
+            if (p.y < -25) p.y = canvas.height + 25;
         }
 
         animationFrameId = requestAnimationFrame(render);

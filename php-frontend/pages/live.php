@@ -743,19 +743,19 @@ $init_border_colors = [
     gap: 10px !important;
   }
   #pollutant-filters {
-    gap: 5px !important;
+    gap: 4px !important;
     padding-bottom: 2px !important;
   }
   #pollutant-filters button {
-    min-height: 28px !important;
-    padding: 3px 9px !important;
-    font-size: 11px !important;
-    gap: 4.5px !important;
-    border-width: 1.2px !important;
+    min-height: 25px !important;
+    padding: 2.5px 8px !important;
+    font-size: 10.5px !important;
+    gap: 4px !important;
+    border-width: 1px !important;
   }
   #pollutant-filters button span {
-    width: 6px !important;
-    height: 6px !important;
+    width: 5px !important;
+    height: 5px !important;
   }
 }
 
@@ -1327,22 +1327,22 @@ $init_border_colors = [
           </div>
         </div>
 
-        <!-- Pollutant Filter Chips -->
-        <div style="display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none;" class="sm:flex-wrap" id="pollutant-filters">
-          <button onclick="togglePollutant('pm25')" id="filter-pm25" data-active="true" data-color="#0284c7" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #0284c7; background-color: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #0284c7;"></span> PM2.5
+        <!-- Pollutant Filter Chips (Sleek Compact Design) -->
+        <div style="display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none;" class="sm:flex-wrap" id="pollutant-filters">
+          <button onclick="togglePollutant('pm25')" id="filter-pm25" data-active="true" data-color="#0284c7" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #0284c7; background-color: rgba(2, 132, 199, 0.12); color: #0284c7; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #0284c7;"></span> PM2.5
           </button>
-          <button onclick="togglePollutant('pm10')" id="filter-pm10" data-active="true" data-color="#6366f1" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #6366f1; background-color: rgba(99, 102, 241, 0.15); color: #6366f1; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #6366f1;"></span> PM10
+          <button onclick="togglePollutant('pm10')" id="filter-pm10" data-active="true" data-color="#6366f1" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #6366f1; background-color: rgba(99, 102, 241, 0.12); color: #6366f1; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #6366f1;"></span> PM10
           </button>
-          <button onclick="togglePollutant('co')" id="filter-co" data-active="true" data-color="#64748b" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #64748b; background-color: rgba(100, 116, 139, 0.15); color: #64748b; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #64748b;"></span> CO
+          <button onclick="togglePollutant('co')" id="filter-co" data-active="true" data-color="#64748b" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #64748b; background-color: rgba(100, 116, 139, 0.12); color: #64748b; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #64748b;"></span> CO
           </button>
-          <button onclick="togglePollutant('no2')" id="filter-no2" data-active="true" data-color="#9333ea" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #9333ea; background-color: rgba(147, 51, 234, 0.15); color: #9333ea; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #9333ea;"></span> NO₂
+          <button onclick="togglePollutant('no2')" id="filter-no2" data-active="true" data-color="#9333ea" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #9333ea; background-color: rgba(147, 51, 234, 0.12); color: #9333ea; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #9333ea;"></span> NO₂
           </button>
-          <button onclick="togglePollutant('o3')" id="filter-o3" data-active="true" data-color="#d97706" style="min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1.5px solid #d97706; background-color: rgba(217, 119, 6, 0.15); color: #d97706; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #d97706;"></span> O₃
+          <button onclick="togglePollutant('o3')" id="filter-o3" data-active="true" data-color="#d97706" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #d97706; background-color: rgba(217, 119, 6, 0.12); color: #d97706; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #d97706;"></span> O₃
           </button>
         </div>
 
@@ -1364,16 +1364,16 @@ $init_border_colors = [
         <span>Network Readings &amp; Status</span>
       </h2>
       
-      <!-- Table Stream Dropdown Selector -->
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <label for="table-stream-select" style="font-size: 12px; font-weight: 600; color: #64748b; white-space: nowrap;">Stream View:</label>
-        <div style="position: relative;">
-          <select id="table-stream-select" onchange="switchLiveTableStream(this.value)" style="padding: 7px 32px 7px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; background-color: #ffffff; color: #0f172a; font-size: 12.5px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: border-color 0.2s ease;">
-            <option value="aqi" selected>Air Quality Telemetry</option>
-            <option value="weather">Weather Telemetry</option>
-          </select>
-          <i data-lucide="chevron-down" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #64748b; pointer-events: none;"></i>
-        </div>
+      <!-- Table Stream Segmented Toggle (Left: Air Quality, Right: Weather) -->
+      <div class="stream-toggle-wrap" style="display: inline-flex; align-items: center; background-color: #f1f5f9; padding: 3px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);">
+        <button type="button" id="stream-toggle-aqi" onclick="switchLiveTableStream('aqi')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(15,23,42,0.1); transition: all 0.2s ease; white-space: nowrap;">
+          <i data-lucide="wind" style="width: 13px; height: 13px; color: #00bfa5;"></i>
+          <span>Air Quality</span>
+        </button>
+        <button type="button" id="stream-toggle-weather" onclick="switchLiveTableStream('weather')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background-color: transparent; color: #64748b; box-shadow: none; transition: all 0.2s ease; white-space: nowrap;">
+          <i data-lucide="cloud-sun" style="width: 13px; height: 13px; color: #64748b;"></i>
+          <span>Weather</span>
+        </button>
       </div>
     </div>
 
@@ -1545,19 +1545,49 @@ window.INITIAL_DATA = <?= json_encode($init_bulk, JSON_HEX_TAG | JSON_HEX_AMP) ?
 <?php endif; ?>
 
 <script>
-// Switch between Air Quality and Weather stream tables
+// Switch between Air Quality and Weather stream tables (Segmented Toggle)
 function switchLiveTableStream(type) {
     if (window.triggerHaptic) window.triggerHaptic('light');
     const aqiTable = document.getElementById('live-aqi-table-container');
     const weatherTable = document.getElementById('live-weather-table-container');
+    const btnAqi = document.getElementById('stream-toggle-aqi');
+    const btnWeather = document.getElementById('stream-toggle-weather');
     if (!aqiTable || !weatherTable) return;
 
     if (type === 'weather') {
         aqiTable.style.display = 'none';
         weatherTable.style.display = 'block';
+
+        if (btnWeather && btnAqi) {
+            btnWeather.style.backgroundColor = '#ffffff';
+            btnWeather.style.color = '#0f172a';
+            btnWeather.style.boxShadow = '0 1px 3px rgba(15,23,42,0.1)';
+            const wIcon = btnWeather.querySelector('i, svg');
+            if (wIcon) wIcon.style.color = '#0284c7';
+
+            btnAqi.style.backgroundColor = 'transparent';
+            btnAqi.style.color = '#64748b';
+            btnAqi.style.boxShadow = 'none';
+            const aIcon = btnAqi.querySelector('i, svg');
+            if (aIcon) aIcon.style.color = '#64748b';
+        }
     } else {
         weatherTable.style.display = 'none';
         aqiTable.style.display = 'block';
+
+        if (btnWeather && btnAqi) {
+            btnAqi.style.backgroundColor = '#ffffff';
+            btnAqi.style.color = '#0f172a';
+            btnAqi.style.boxShadow = '0 1px 3px rgba(15,23,42,0.1)';
+            const aIcon = btnAqi.querySelector('i, svg');
+            if (aIcon) aIcon.style.color = '#00bfa5';
+
+            btnWeather.style.backgroundColor = 'transparent';
+            btnWeather.style.color = '#64748b';
+            btnWeather.style.boxShadow = 'none';
+            const wIcon = btnWeather.querySelector('i, svg');
+            if (wIcon) wIcon.style.color = '#64748b';
+        }
     }
     if (window.lucide && lucide.createIcons) lucide.createIcons();
 }
@@ -1686,6 +1716,74 @@ var pollutantDetails = {
         maxTick: '748+',
         desc: 'Not emitted directly into the air, but created by chemical reactions between oxides of nitrogen (NOx) and volatile organic compounds (VOC) in the presence of sunlight.',
         health: 'Can trigger a variety of health problems including chest pain, coughing, throat irritation, and airway inflammation. It can worsen bronchitis, emphysema, and asthma.'
+    }
+};
+
+var pollutantCategoryRanges = {
+    pm25: {
+        title: 'PM2.5 Scale (NAAQS Standard)',
+        sub: 'National Ambient Air Quality Standard limits for PM2.5 in µg/m³.',
+        unit: 'µg/m³',
+        ranges: [
+            { name: 'Good', range: '0 to 30', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
+            { name: 'Moderate', range: '31 to 60', dot: '#eec732', bg: '#fefce8', border: '#fef08a', textCol: '#854d0e', desc: 'Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.' },
+            { name: 'Poor', range: '61 to 90', dot: '#ea8c34', bg: '#fff7ed', border: '#fed7aa', textCol: '#ea8c34', desc: 'Breathing discomfort to people with lungs, asthma, and heart diseases.' },
+            { name: 'Unhealthy', range: '91 to 120', dot: '#e95478', bg: '#fef2f2', border: '#fecaca', textCol: '#e95478', desc: 'Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.' },
+            { name: 'Severe', range: '121 to 250', dot: '#b33fba', bg: '#faf5ff', border: '#e9d5ff', textCol: '#b33fba', desc: 'Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.' },
+            { name: 'Hazardous', range: '250+', dot: '#c92033', bg: '#fef2f2', border: '#fecaca', textCol: '#c92033', desc: 'Emergency conditions. The entire population is likely to be affected. Serious risk of respiratory effects.' }
+        ]
+    },
+    pm10: {
+        title: 'PM10 Scale (NAAQS Standard)',
+        sub: 'National Ambient Air Quality Standard limits for PM10 in µg/m³.',
+        unit: 'µg/m³',
+        ranges: [
+            { name: 'Good', range: '0 to 50', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
+            { name: 'Moderate', range: '51 to 100', dot: '#eec732', bg: '#fefce8', border: '#fef08a', textCol: '#854d0e', desc: 'Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.' },
+            { name: 'Poor', range: '101 to 250', dot: '#ea8c34', bg: '#fff7ed', border: '#fed7aa', textCol: '#ea8c34', desc: 'Breathing discomfort to people with lungs, asthma, and heart diseases.' },
+            { name: 'Unhealthy', range: '251 to 350', dot: '#e95478', bg: '#fef2f2', border: '#fecaca', textCol: '#e95478', desc: 'Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.' },
+            { name: 'Severe', range: '351 to 430', dot: '#b33fba', bg: '#faf5ff', border: '#e9d5ff', textCol: '#b33fba', desc: 'Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.' },
+            { name: 'Hazardous', range: '430+', dot: '#c92033', bg: '#fef2f2', border: '#fecaca', textCol: '#c92033', desc: 'Emergency conditions. The entire population is likely to be affected. Serious risk of respiratory effects.' }
+        ]
+    },
+    co: {
+        title: 'Carbon Monoxide (CO) Scale',
+        sub: 'National Ambient Air Quality Standard limits for CO in mg/m³.',
+        unit: 'mg/m³',
+        ranges: [
+            { name: 'Good', range: '0.0 to 1.0', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
+            { name: 'Moderate', range: '1.1 to 2.0', dot: '#eec732', bg: '#fefce8', border: '#fef08a', textCol: '#854d0e', desc: 'Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.' },
+            { name: 'Poor', range: '2.1 to 10.0', dot: '#ea8c34', bg: '#fff7ed', border: '#fed7aa', textCol: '#ea8c34', desc: 'Breathing discomfort to people with lungs, asthma, and heart diseases.' },
+            { name: 'Unhealthy', range: '10.1 to 17.0', dot: '#e95478', bg: '#fef2f2', border: '#fecaca', textCol: '#e95478', desc: 'Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.' },
+            { name: 'Severe', range: '17.1 to 34.0', dot: '#b33fba', bg: '#faf5ff', border: '#e9d5ff', textCol: '#b33fba', desc: 'Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.' },
+            { name: 'Hazardous', range: '34.0+', dot: '#c92033', bg: '#fef2f2', border: '#fecaca', textCol: '#c92033', desc: 'Emergency conditions. The entire population is likely to be affected. Serious risk of respiratory effects.' }
+        ]
+    },
+    no2: {
+        title: 'Nitrogen Dioxide (NO₂) Scale',
+        sub: 'National Ambient Air Quality Standard limits for NO₂ in µg/m³.',
+        unit: 'µg/m³',
+        ranges: [
+            { name: 'Good', range: '0 to 40', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
+            { name: 'Moderate', range: '41 to 80', dot: '#eec732', bg: '#fefce8', border: '#fef08a', textCol: '#854d0e', desc: 'Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.' },
+            { name: 'Poor', range: '81 to 180', dot: '#ea8c34', bg: '#fff7ed', border: '#fed7aa', textCol: '#ea8c34', desc: 'Breathing discomfort to people with lungs, asthma, and heart diseases.' },
+            { name: 'Unhealthy', range: '181 to 280', dot: '#e95478', bg: '#fef2f2', border: '#fecaca', textCol: '#e95478', desc: 'Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.' },
+            { name: 'Severe', range: '281 to 400', dot: '#b33fba', bg: '#faf5ff', border: '#e9d5ff', textCol: '#b33fba', desc: 'Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.' },
+            { name: 'Hazardous', range: '400+', dot: '#c92033', bg: '#fef2f2', border: '#fecaca', textCol: '#c92033', desc: 'Emergency conditions. The entire population is likely to be affected. Serious risk of respiratory effects.' }
+        ]
+    },
+    o3: {
+        title: 'Ground-level Ozone (O₃) Scale',
+        sub: 'National Ambient Air Quality Standard limits for O₃ in µg/m³.',
+        unit: 'µg/m³',
+        ranges: [
+            { name: 'Good', range: '0 to 50', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
+            { name: 'Moderate', range: '51 to 100', dot: '#eec732', bg: '#fefce8', border: '#fef08a', textCol: '#854d0e', desc: 'Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.' },
+            { name: 'Poor', range: '101 to 168', dot: '#ea8c34', bg: '#fff7ed', border: '#fed7aa', textCol: '#ea8c34', desc: 'Breathing discomfort to people with lungs, asthma, and heart diseases.' },
+            { name: 'Unhealthy', range: '169 to 208', dot: '#e95478', bg: '#fef2f2', border: '#fecaca', textCol: '#e95478', desc: 'Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.' },
+            { name: 'Severe', range: '209 to 748', dot: '#b33fba', bg: '#faf5ff', border: '#e9d5ff', textCol: '#b33fba', desc: 'Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.' },
+            { name: 'Hazardous', range: '748+', dot: '#c92033', bg: '#fef2f2', border: '#fecaca', textCol: '#c92033', desc: 'Emergency conditions. The entire population is likely to be affected. Serious risk of respiratory effects.' }
+        ]
     }
 };
 
@@ -1906,7 +2004,7 @@ function formatStreamTimestamp(row) {
     if (!rawTs) return '--';
     const dt = (typeof safeParseDate === 'function') ? safeParseDate(rawTs) : new Date(rawTs);
     if (isNaN(dt.getTime())) return '--';
-    return dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    return dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 function formatSupabaseValue(val, unit = '') {
@@ -1963,47 +2061,25 @@ function renderLiveTable() {
 async function refreshDashboard(forceNetwork = false) {
     try {
         let bulkData;
-        let isFromCache = false;
-        let memoryCache = window.INITIAL_DATA || (window.__apiCache && (window.__apiCache.liveBulk || window.__apiCache.overviewBulk)
-            ? (window.__apiCache.liveBulk || window.__apiCache.overviewBulk).data
-            : null);
 
-        if (!memoryCache && typeof window.getLocalCache === 'function') {
-            memoryCache = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry');
-        }
-
-        if (!forceNetwork && memoryCache && (memoryCache.aqi || memoryCache.cpcb_aqi)) {
-            bulkData = memoryCache.aqi ? memoryCache : { aqi: memoryCache, aqi_history: [memoryCache] };
-            if (!bulkData.aqi_history && bulkData.history) {
-                bulkData.aqi_history = bulkData.history;
-            }
-            window.INITIAL_DATA = null;
-            isFromCache = true;
-            if (window.__apiCache && bulkData) {
-                window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
-                window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
-            }
-            if (typeof window.setLocalCache === 'function') {
-                window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry', bulkData);
-            }
-            // Instantly schedule live network sync in background so data is up to the current second without delay
-            setTimeout(() => {
-                refreshDashboard(true);
-            }, 60);
+        if (typeof window.fetchLiveBulk === 'function') {
+            bulkData = await window.fetchLiveBulk(forceNetwork);
         } else {
             const endpoint = 'telemetry.php?action=live_bulk&limit=60';
             const fetchUrl = (typeof window.getApiUrl === 'function') ? window.getApiUrl(endpoint) : ('api/' + endpoint);
             const res = await fetch(fetchUrl);
             bulkData = await res.json();
-            if (bulkData && (bulkData.aqi || bulkData.weather)) {
-                if (window.__apiCache) {
-                    window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
-                    window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
-                }
-                if (typeof window.setLocalCache === 'function') {
-                    window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry', bulkData);
-                }
-            }
+        }
+
+        if (!bulkData || (!bulkData.aqi && !bulkData.weather)) {
+            return;
+        }
+
+        if (!forceNetwork && !window.__liveNetworkSyncedOnce) {
+            window.__liveNetworkSyncedOnce = true;
+            setTimeout(() => {
+                refreshDashboard(true);
+            }, 60);
         }
         
         const aqiData = bulkData.aqi;
@@ -2201,16 +2277,6 @@ async function refreshDashboard(forceNetwork = false) {
 
             const wBoxWind = document.getElementById('weather-box-wind');
             if (wBoxWind) wBoxWind.innerText = wWindFormatted;
-
-            // Thermal comfort badge
-            wComfortObj = getComfortLevel(w.temperature);
-            const comfortBadge = document.getElementById('weather-comfort-badge');
-            if (comfortBadge) {
-                comfortBadge.innerText = wComfortObj.text;
-                comfortBadge.style.backgroundColor = wComfortObj.bg;
-                comfortBadge.style.color = wComfortObj.color;
-                comfortBadge.style.borderColor = wComfortObj.border;
-            }
 
             // Cards: Wind Gust, Wind Direction, Rain
             const cardGust = document.getElementById('card-gust');
@@ -2447,7 +2513,7 @@ async function refreshDashboard(forceNetwork = false) {
 var autoRefreshInterval = null;
 var onLiveVisibilityChange = function() {
     if (!document.hidden) {
-        refreshDashboard();
+        refreshDashboard(true);
     }
 };
 
@@ -2480,7 +2546,7 @@ setTimeout(() => {
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {
         if (!document.hidden) {
-            refreshDashboard();
+            refreshDashboard(true);
         }
     }, 7000);
 
@@ -2556,6 +2622,29 @@ window.openPollutantModal = function(type) {
     if (marker) {
         marker.style.left = `clamp(8px, ${scaleInfo.pct}%, calc(100% - 8px))`;
         marker.style.borderColor = scaleInfo.color;
+    }
+    
+    // Render pollutant's own limits and categories inside the modal
+    const scaleConfig = pollutantCategoryRanges[type];
+    const scaleHeading = modal.querySelector('#pm-modal-scale-heading');
+    const scaleSub = modal.querySelector('#pm-modal-scale-sub');
+    const scaleList = modal.querySelector('#pm-modal-scale-list');
+    
+    if (scaleConfig && scaleHeading && scaleSub && scaleList) {
+        scaleHeading.innerText = scaleConfig.title;
+        scaleSub.innerText = scaleConfig.sub;
+        scaleList.innerHTML = scaleConfig.ranges.map(item => `
+            <div class="aqi-scale-item" style="display: flex; align-items: center; padding: 11px 13px; border-radius: 14px; background-color: ${item.bg}; border: 1px solid ${item.border}; gap: 10px;">
+                <span class="scale-dot" style="width: 10px; height: 10px; border-radius: 3px; background-color: ${item.dot}; flex-shrink: 0;"></span>
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="scale-title" style="font-size: 13.5px; font-weight: 700; color: #0f172a;">${item.name}</span>
+                        <span class="scale-range" style="font-size: 12px; font-weight: 700; color: ${item.textCol}; font-family: var(--font-mono);">(${item.range} ${scaleConfig.unit})</span>
+                    </div>
+                    <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px; line-height: 1.4;">${item.desc}</div>
+                </div>
+            </div>
+        `).join('');
     }
     
     if (modal.parentElement !== document.body) {
@@ -2700,6 +2789,23 @@ if (!window.__pollutantModalListenersBound) {
             <p id="pm-modal-health" style="font-size: 13.5px; color: #475569; line-height: 1.6; margin: 0;">
                 Causes respiratory inflammation and impacts sensitive individuals on prolonged exposure.
             </p>
+        </div>
+
+        <!-- Dynamic Pollutant Concentration Scale Section (Inside Modal) -->
+        <div id="pm-modal-scale-section" style="margin-top: 22px; border-top: 1px solid #e2e8f0; padding-top: 18px;">
+            <div style="margin-bottom: 12px;">
+                <h3 style="font-size: 15.5px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
+                    <i data-lucide="shield-alert" style="width: 18px; height: 18px; color: #00bfa5;"></i>
+                    <span id="pm-modal-scale-heading">PM2.5 Scale (NAAQS Standard)</span>
+                </h3>
+                <p id="pm-modal-scale-sub" style="font-size: 12px; color: #64748b; margin-top: 4px; margin-bottom: 0; line-height: 1.4;">
+                    National Ambient Air Quality Standard limits for PM2.5 in µg/m³.
+                </p>
+            </div>
+
+            <div id="pm-modal-scale-list" style="display: flex; flex-direction: column; gap: 9px;">
+                <!-- Populated dynamically per pollutant in openPollutantModal -->
+            </div>
         </div>
 
     </div>

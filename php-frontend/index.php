@@ -3,6 +3,39 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('Asia/Kolkata');
+
+// Load Supabase and Environment Configuration
+$env_paths = [
+    __DIR__ . '/.env',
+    __DIR__ . '/../.env',
+    __DIR__ . '/../../.env',
+];
+$supabaseUrl = 'https://sgkdpliqlhgiqsabxzxe.supabase.co';
+$supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30';
+$TABLE_AQI_LIVE = 'AQI_LIVE_NODE1';
+$TABLE_AQI_HISTORICAL = 'AQI_NODE1';
+$TABLE_WEATHER_LIVE = 'WEATHER_LIVE_NODE1';
+$TABLE_WEATHER_HIST = 'WEATHER_NODE1';
+
+foreach ($env_paths as $ep) {
+    if (file_exists($ep)) {
+        $lines = file($ep, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), '#') === 0) continue;
+            if (strpos($line, '=') !== false) {
+                list($k, $v) = explode('=', $line, 2);
+                $k = trim($k); $v = trim($v);
+                if (($k === 'VITE_SUPABASE_URL' || $k === 'SUPABASE_URL') && $v) $supabaseUrl = $v;
+                if (($k === 'VITE_SUPABASE_ANON_KEY' || $k === 'SUPABASE_KEY') && $v) $supabaseKey = $v;
+                if ($k === 'TABLE_AQI_LIVE' && $v) $TABLE_AQI_LIVE = $v;
+                if (($k === 'TABLE_AQI_HISTORICAL' || $k === 'SOURCE_AQI_TABLE') && $v) $TABLE_AQI_HISTORICAL = $v;
+                if ($k === 'TABLE_WEATHER_LIVE' && $v) $TABLE_WEATHER_LIVE = $v;
+                if ($k === 'TABLE_WEATHER_HISTORICAL' && $v) $TABLE_WEATHER_HIST = $v;
+            }
+        }
+        break;
+    }
+}
 // Configure 1-year persistent session cookies (365 days) for mobile and laptop re-entry
 $session_lifetime = 60 * 60 * 24 * 365;
 ini_set('session.gc_maxlifetime', (string)$session_lifetime);
@@ -316,6 +349,15 @@ if ($is_ajax) {
     }
     ?>
     <script>
+        // Supabase configuration for instant direct browser telemetry streaming
+        window.SUPABASE_CONFIG = {
+            url: <?= json_encode($supabaseUrl) ?>,
+            key: <?= json_encode($supabaseKey) ?>,
+            tableAqiLive: <?= json_encode($TABLE_AQI_LIVE) ?>,
+            tableWeatherLive: <?= json_encode($TABLE_WEATHER_LIVE) ?>,
+            tableAqiHist: <?= json_encode($TABLE_AQI_HISTORICAL) ?>,
+            tableWeatherHist: <?= json_encode($TABLE_WEATHER_HIST) ?>
+        };
         // Server pre-hydrated telemetry cache (0ms instant first-paint)
         window.INITIAL_DATA = <?= $initial_overview_json ?>;
     </script>

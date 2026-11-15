@@ -157,7 +157,12 @@ function fetchParallel(array $urls, string $key): array {
     $running = null;
     do {
         $status = curl_multi_exec($mh, $running);
-        if ($running) curl_multi_select($mh, 0.5);
+        if ($running > 0) {
+            $select = curl_multi_select($mh, 0.05);
+            if ($select === -1) {
+                usleep(5000); // 5ms sleep if descriptor returned -1
+            }
+        }
     } while ($running > 0 && $status === CURLM_OK);
 
     $results = [];
@@ -813,7 +818,7 @@ switch ($action) {
             'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit={$lim}",
         ];
         if ($cachedRainSum === null) {
-            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0";
+            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0&limit=100";
         }
 
         $raw = fetchParallel($fetchUrls, $supabaseKey);
@@ -885,7 +890,7 @@ switch ($action) {
             'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit={$lim}",
         ];
         if ($cachedRainSum === null) {
-            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0";
+            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0&limit=100";
         }
 
         $raw = fetchParallel($fetchUrls, $supabaseKey);

@@ -295,6 +295,73 @@ class RainfallForecastEngine:
         recent_18h_count = sum(1 for _, r in window[-18:] if float(r.get("rain_gauge") or 0.0) > 0.0)
         recent_6h_rain = sum(float(r.get("rain_gauge") or 0.0) for _, r in window[-6:])
 
+        # Ground-Truth Assimilation for Ambient Temperature & Humidity
+        # The neural model was trained on monsoon rainfall periods where overcast clouds bound temperatures to ~24°C–29°C.
+        # During dry/clear regimes, intense solar radiation naturally elevates coastal daytime temperatures to 33°C–37°C.
+        # We preserve the neural network's learned diurnal cycle shape and phase while assimilating the observed
+        # synoptic envelope from recent station telemetry (continuous 24h window).
+        if pred_temps is not None and len(pred_temps) == 24:
+            recent_24 = window[-24:]
+            obs_temps = [float(r.get("temperature") or 26.5) for _, r in recent_24]
+            latest_t = obs_temps[-1]
+            obs_t_min = min(obs_temps)
+            obs_t_max = max(obs_temps)
+
+            t_min, t_max = np.min(pred_temps), np.max(pred_temps)
+            t_span = max(0.1, t_max - t_min)
+            t_norm = (pred_temps - t_min) / t_span  # [0, 1] neural diurnal profile
+
+            if recent_18h_rain >= 5.0 and recent_18h_count >= 4:
+                # Active monsoon depression: overcast clouds maintain narrow cool envelope
+                target_min = t_min
+                target_max = t_max
+            else:
+                # Dry / fair weather: align diurnal amplitude with ground truth station observations
+                target_min = min(obs_t_min, t_min)
+                target_max = max(obs_t_max, t_max, 32.0)  # Ensure daytime ceiling reflects sunny conditions
+
+            scaled_temps = target_min + t_norm * (target_max - target_min)
+
+            # Smoothly transition from latest observation at t=0 into calibrated profile
+            weights = np.array([0.65, 0.40, 0.18, 0.0] + [0.0] * 20)
+            calib_temps = []
+            for i in range(24):
+                if i < 4:
+                    blended = (1.0 - weights[i]) * scaled_temps[i] + weights[i] * (latest_t + (scaled_temps[i] - scaled_temps[0]))
+                    calib_temps.append(round(float(blended), 1))
+                else:
+                    calib_temps.append(round(float(scaled_temps[i]), 1))
+            pred_temps = np.clip(np.array(calib_temps, dtype=np.float32), 15.0, 48.0)
+
+        if pred_hums is not None and len(pred_hums) == 24:
+            recent_24 = window[-24:]
+            obs_hums = [float(r.get("humidity") or 75.0) for _, r in recent_24]
+            latest_h = obs_hums[-1]
+            obs_h_min = min(obs_hums)
+            obs_h_max = max(obs_hums)
+
+            h_min, h_max = np.min(pred_hums), np.max(pred_hums)
+            h_span = max(0.1, h_max - h_min)
+            h_norm = (pred_hums - h_min) / h_span  # [0, 1] neural humidity profile
+
+            if recent_18h_rain >= 5.0 and recent_18h_count >= 4:
+                target_h_min = h_min
+                target_h_max = h_max
+            else:
+                target_h_min = min(obs_h_min, h_min)
+                target_h_max = max(obs_h_max, h_max)
+
+            scaled_hums = target_h_min + h_norm * (target_h_max - target_h_min)
+            weights_h = np.array([0.65, 0.40, 0.18, 0.0] + [0.0] * 20)
+            calib_hums = []
+            for i in range(24):
+                if i < 4:
+                    blended = (1.0 - weights_h[i]) * scaled_hums[i] + weights_h[i] * (latest_h + (scaled_hums[i] - scaled_hums[0]))
+                    calib_hums.append(round(float(blended), 1))
+                else:
+                    calib_hums.append(round(float(scaled_hums[i]), 1))
+            pred_hums = np.clip(np.array(calib_hums, dtype=np.float32), 20.0, 100.0)
+
         if recent_18h_rain >= 5.0 and recent_18h_count >= 4:
             # Regime A: Active continuous monsoon depression (keep 100% full model prediction)
             regime_weight = 1.0

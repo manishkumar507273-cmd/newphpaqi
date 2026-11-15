@@ -701,13 +701,18 @@ async function fetchRangeData(queryDate, days) {
     }
     const fetchPromise = (async () => {
         try {
-            const response = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}&days=${days}`);
-            const data = await response.json();
-            const payload = {
-                aqi: data.aqi || [],
-                weather: data.weather || [],
-                fetchedAt: Date.now()
-            };
+            let payload;
+            if (typeof window.fetchHistoryBulk === 'function') {
+                payload = await window.fetchHistoryBulk(queryDate, days);
+            } else {
+                const response = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}&days=${days}`);
+                const data = await response.json();
+                payload = {
+                    aqi: data.aqi || [],
+                    weather: data.weather || [],
+                    fetchedAt: Date.now()
+                };
+            }
             clientRangeCache[key] = payload;
             try {
                 if (typeof window.setLocalCache === 'function') {

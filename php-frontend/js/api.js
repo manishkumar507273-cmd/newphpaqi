@@ -44,9 +44,10 @@ window.setLocalCache = setLocalCache;
             if (!window.INITIAL_DATA || (!window.INITIAL_DATA.aqi && !window.INITIAL_DATA.weather)) {
                 window.INITIAL_DATA = cachedBulk;
             }
-            if (!apiCache.liveBulk) apiCache.liveBulk = { data: cachedBulk, time: Date.now() };
-            if (!apiCache.overviewBulk) apiCache.overviewBulk = { data: cachedBulk, time: Date.now() };
-            if (!apiCache.aqiLive && cachedBulk.aqi) apiCache.aqiLive = { data: cachedBulk.aqi, time: Date.now() };
+            const stamp = cachedBulk.fetchedAt || cachedBulk.time || 0;
+            if (!apiCache.liveBulk) apiCache.liveBulk = { data: cachedBulk, time: stamp };
+            if (!apiCache.overviewBulk) apiCache.overviewBulk = { data: cachedBulk, time: stamp };
+            if (!apiCache.aqiLive && cachedBulk.aqi) apiCache.aqiLive = { data: cachedBulk.aqi, time: stamp };
         }
         const cachedForecast = getLocalCache(STORAGE_KEYS.FORECAST);
         if (cachedForecast && cachedForecast.hourly && !window.__forecastCache) {
@@ -124,6 +125,7 @@ function parseToIstIso(tsRaw) {
     }
     return tsStr;
 }
+window.parseToIstIso = parseToIstIso;
 
 function safeParseDate(ts) {
     if (!ts) return null;
@@ -172,29 +174,357 @@ function evaluateAndSyncLiveBadge(reading) {
 }
 window.evaluateAndSyncLiveBadge = evaluateAndSyncLiveBadge;
 
+// ── Supabase Direct Client Configuration ──
+function getSbConfig() {
+    const injected = window.SUPABASE_CONFIG || {};
+    return {
+        url: injected.url || 'https://sgkdpliqlhgiqsabxzxe.supabase.co',
+        key: injected.key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30',
+        tableAqiLive: injected.tableAqiLive || 'AQI_LIVE_NODE1',
+        tableWeatherLive: injected.tableWeatherLive || 'WEATHER_LIVE_NODE1',
+        tableAqiHist: injected.tableAqiHist || 'AQI_NODE1',
+        tableWeatherHist: injected.tableWeatherHist || 'WEATHER_NODE1',
+        tableForecast: injected.tableForecast || 'aqi_forecasts_24h'
+    };
+}
+
+function formatRawReadingClient(raw) {
+    if (!raw) return null;
+    const tsRaw = raw.timestamp_hour || raw.created_at || raw.timestamp || null;
+    const rawPm25 = (raw.pm25 != null && raw.pm25 !== '') ? Number(raw.pm25) : ((raw['pm2.5'] != null && raw['pm2.5'] !== '') ? Number(raw['pm2.5']) : null);
+    const rawPm10 = (raw.pm10 != null && raw.pm10 !== '') ? Number(raw.pm10) : null;
+    const rawCo   = (raw.co != null && raw.co !== '') ? Number(raw.co) : null;
+    const rawO3   = (raw.o3 != null && raw.o3 !== '') ? Number(raw.o3) : null;
+    const rawNo2  = (raw.no2 != null && raw.no2 !== '') ? Number(raw.no2) : null;
+
+    let cpcb_aqi = 0;
+    let dom = 'PM2.5';
+
+    if (raw.cpcb_aqi != null && raw.cpcb_aqi !== '') {
+        cpcb_aqi = Math.round(Number(raw.cpcb_aqi));
+        const domRaw = String(raw.dominant_pollutant || 'O3').trim().toUpperCase();
+        if (domRaw === 'PM25' || domRaw === 'PM2.5') dom = 'PM2.5';
+        else if (domRaw === 'PM10') dom = 'PM10';
+        else if (domRaw === 'CO') dom = 'CO';
+        else if (domRaw === 'NO2' || domRaw === 'NO₂') dom = 'NO₂';
+        else if (domRaw === 'O3' || domRaw === 'O₃') dom = 'O₃';
+        else dom = raw.dominant_pollutant || 'PM2.5';
+    } else {
+        const subIndices = {
+            pm25: rawPm25 != null ? calcSubindex('pm25', rawPm25) : 0,
+            pm10: rawPm10 != null ? calcSubindex('pm10', rawPm10) : 0,
+            co:   rawCo != null ? calcSubindex('co', rawCo) : 0,
+            no2:  rawNo2 != null ? calcSubindex('no2', rawNo2) : 0,
+            o3:   rawO3 != null ? calcSubindex('o3', rawO3) : 0,
+        };
+        let domKey = 'pm25';
+        let maxVal = -1;
+        for (const [k, v] of Object.entries(subIndices)) {
+            if (v >= maxVal) { maxVal = v; domKey = k; }
+        }
+        const domNames = { pm25: 'PM2.5', pm10: 'PM10', co: 'CO', no2: 'NO₂', o3: 'O₃' };
+        cpcb_aqi = Math.round(maxVal > 0 ? maxVal : 0);
+        dom = domNames[domKey] || 'PM2.5';
+    }
+
+    let label = 'Good';
+    let color = '#59b61f';
+    if (cpcb_aqi > 50 && cpcb_aqi <= 100) { label = 'Moderate'; color = '#eec732'; }
+    else if (cpcb_aqi > 100 && cpcb_aqi <= 200) { label = 'Poor'; color = '#ea8c34'; }
+    else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = 'Unhealthy'; color = '#e95478'; }
+    else if (cpcb_aqi > 300 && cpcb_aqi <= 400) { label = 'Severe'; color = '#b33fba'; }
+    else if (cpcb_aqi > 400) { label = 'Hazardous'; color = '#c92033'; }
+
+    return {
+        id: raw.id || null,
+        created_at: raw.created_at || raw.timestamp || null,
+        timestamp: parseToIstIso(tsRaw),
+        temperature: (raw.temperature != null) ? adjustTempByHour(raw.temperature, tsRaw) : null,
+        humidity: (raw.humidity != null) ? Number(Number(raw.humidity).toFixed(2)) : null,
+        pm25: rawPm25,
+        'pm2.5': rawPm25,
+        pm10: rawPm10,
+        co: rawCo,
+        o3: rawO3,
+        no2: rawNo2,
+        cpcb_aqi: cpcb_aqi,
+        dominant_pollutant: dom,
+        aqi_info: { value: cpcb_aqi, label: label, color: color, standard: 'CPCB (India)' },
+        wind_speed: (raw.wind_speed != null) ? Number(Number(raw.wind_speed).toFixed(2)) : null,
+        wind_gust: (raw.wind_gust != null) ? Number(Number(raw.wind_gust).toFixed(2)) : ((raw.gust != null) ? Number(Number(raw.gust).toFixed(2)) : null),
+        wind_direction: raw.wind_direction || null,
+        rain_gauge: (raw.rain_gauge != null) ? Number(Number(raw.rain_gauge).toFixed(2)) : ((raw.rain != null) ? Number(Number(raw.rain).toFixed(2)) : null),
+    };
+}
+window.formatRawReadingClient = formatRawReadingClient;
+
+function formatWeatherReadingClient(raw) {
+    if (!raw) return null;
+    const tsRaw = raw.timestamp_hour || raw.created_at || raw.timestamp || null;
+    return {
+        id: raw.id || null,
+        created_at: raw.created_at || raw.timestamp || null,
+        timestamp: parseToIstIso(tsRaw),
+        temperature: (raw.temperature != null) ? adjustTempByHour(raw.temperature, tsRaw) : null,
+        humidity: (raw.humidity != null) ? Number(Number(raw.humidity).toFixed(2)) : null,
+        wind_speed: (raw.wind_speed != null) ? Number(Number(raw.wind_speed).toFixed(2)) : null,
+        wind_gust: (raw.wind_gust != null) ? Number(Number(raw.wind_gust).toFixed(2)) : null,
+        rain_gauge: (raw.rain_gauge != null) ? Number(Number(raw.rain_gauge).toFixed(2)) : null,
+        wind_direction: raw.wind_direction || null
+    };
+}
+window.formatWeatherReadingClient = formatWeatherReadingClient;
+
+/**
+ * Direct Client-Side Supabase Telemetry Fetcher (Zero-Delay Streaming)
+ * Directly connects to Cloudflare/Supabase in Mumbai (~80ms), completely bypassing Vercel Lambda cold start!
+ */
+async function fetchLiveBulk(forceNetwork = false) {
+    // 1. Fast Memory Cache Return only if freshly fetched within the last 15 seconds
+    if (!forceNetwork && apiCache.liveBulk && apiCache.liveBulk.time && (Date.now() - apiCache.liveBulk.time < 15000)) {
+        return apiCache.liveBulk.data;
+    }
+
+    const cfg = getSbConfig();
+    const headers = {
+        'apikey': cfg.key,
+        'Authorization': `Bearer ${cfg.key}`
+    };
+
+    try {
+        const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiLive}?order=created_at.desc.nullslast&limit=60`;
+        const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit=60`;
+
+        const [resAqi, resWeather] = await Promise.all([
+            fetch(urlAqi, { headers, cache: 'no-cache' }),
+            fetch(urlWeather, { headers, cache: 'no-cache' })
+        ]);
+
+        if (!resAqi.ok || !resWeather.ok) {
+            throw new Error(`Direct Supabase fetch non-200 status (${resAqi.status}, ${resWeather.status})`);
+        }
+
+        const [aqiRawList, weatherRawList] = await Promise.all([
+            resAqi.json(),
+            resWeather.json()
+        ]);
+
+        const aqiHist = Array.isArray(aqiRawList) ? aqiRawList.map(formatRawReadingClient).filter(Boolean) : [];
+        const weatherHist = Array.isArray(weatherRawList) ? weatherRawList.map(formatWeatherReadingClient).filter(Boolean) : [];
+
+        const latestAqi = aqiHist[0] || null;
+        const latestWeather = weatherHist[0] || null;
+
+        // Calculate today's rain sum & temperature range from readings
+        const now = new Date();
+        const istOffsetMs = 5.5 * 3600 * 1000;
+        const nowIst = new Date(now.getTime() + istOffsetMs);
+        const midnightIst = new Date(Date.UTC(nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate()) - istOffsetMs);
+
+        let todayRainSum = 0.0;
+        const todayTemps = [];
+
+        weatherHist.forEach(w => {
+            if (!w) return;
+            const dt = safeParseDate(w.timestamp || w.created_at);
+            if (dt && dt.getTime() >= midnightIst.getTime()) {
+                if (w.temperature != null && !isNaN(w.temperature)) {
+                    todayTemps.push(Number(w.temperature));
+                }
+                if (w.rain_gauge != null && Number(w.rain_gauge) > 0) {
+                    todayRainSum += Number(w.rain_gauge);
+                }
+            }
+        });
+
+        if (latestWeather && latestWeather.rain_gauge != null && Number(latestWeather.rain_gauge) > todayRainSum) {
+            todayRainSum = Number(latestWeather.rain_gauge);
+        }
+
+        const bulkData = {
+            aqi: latestAqi,
+            weather: latestWeather,
+            aqi_history: aqiHist,
+            weather_history: weatherHist,
+            history: aqiHist,
+            today_rain_total: Number(todayRainSum.toFixed(2)),
+            today_temp_min: todayTemps.length > 0 ? Number(Math.min(...todayTemps).toFixed(1)) : (latestWeather && latestWeather.temperature != null ? Number(latestWeather.temperature) : 28.0),
+            today_temp_max: todayTemps.length > 0 ? Number(Math.max(...todayTemps).toFixed(1)) : (latestWeather && latestWeather.temperature != null ? Number(latestWeather.temperature) : 34.0),
+            time: Date.now(),
+            fetchedAt: Date.now()
+        };
+
+        // Cache results locally
+        apiCache.liveBulk = { data: bulkData, time: Date.now() };
+        apiCache.overviewBulk = { data: bulkData, time: Date.now() };
+        setLocalCache(STORAGE_KEYS.BULK, bulkData);
+        evaluateAndSyncLiveBadge(latestAqi || latestWeather);
+
+        return bulkData;
+    } catch (err) {
+        console.warn('Direct Supabase fetch encountered error; falling back to api/telemetry.php:', err);
+        try {
+            const fallbackRes = await fetch('api/telemetry.php?action=live_bulk&limit=60');
+            if (!fallbackRes.ok) throw new Error('Fallback failed');
+            const data = await fallbackRes.json();
+            if (data && (data.aqi || data.weather)) {
+                apiCache.liveBulk = { data, time: Date.now() };
+                apiCache.overviewBulk = { data, time: Date.now() };
+                setLocalCache(STORAGE_KEYS.BULK, data);
+                evaluateAndSyncLiveBadge(data.aqi || data.weather);
+                return data;
+            }
+        } catch (fbErr) {
+            console.error('All live fetch paths failed:', fbErr);
+        }
+        return getLocalCache(STORAGE_KEYS.BULK) || null;
+    }
+}
+window.fetchLiveBulk = fetchLiveBulk;
+
+async function fetchOverviewBulk(forceNetwork = false) {
+    return fetchLiveBulk(forceNetwork);
+}
+window.fetchOverviewBulk = fetchOverviewBulk;
+
+async function fetchHistoryBulk(queryDate, days = 1) {
+    const cacheKey = `${queryDate}_${days}`;
+    const storageKey = STORAGE_KEYS.HIST_PREFIX + cacheKey;
+    const cached = getLocalCache(storageKey);
+    if (cached && (Date.now() - (cached.fetchedAt || 0) < (days === 1 ? 60000 : 3600000))) {
+        return cached;
+    }
+
+    const cfg = getSbConfig();
+    const headers = {
+        'apikey': cfg.key,
+        'Authorization': `Bearer ${cfg.key}`
+    };
+
+    try {
+        let filter = '';
+        const lim = days > 1 ? Math.min(1500, Math.max(150, days * 35)) : 150;
+        if (queryDate) {
+            const target = new Date(queryDate + 'T00:00:00+05:30');
+            const startDate = new Date(target.getTime() - (days > 1 ? (days * 86400000) : 86400000));
+            const endDate = new Date(target.getTime() + (2 * 86400000));
+            const sIso = startDate.toISOString().split('T')[0];
+            const eIso = endDate.toISOString().split('T')[0];
+            filter = `&timestamp_hour=gte.${sIso}T00:00:00&timestamp_hour=lt.${eIso}T00:00:00`;
+        }
+
+        const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiHist}?order=timestamp_hour.desc&limit=${lim}${filter}`;
+        const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherHist}?order=timestamp_hour.desc&limit=${lim}${filter}`;
+
+        const [resAqi, resWeather] = await Promise.all([
+            fetch(urlAqi, { headers }),
+            fetch(urlWeather, { headers })
+        ]);
+
+        if (!resAqi.ok || !resWeather.ok) throw new Error('History fetch non-200');
+
+        const [aqiRaw, weatherRaw] = await Promise.all([
+            resAqi.json(),
+            resWeather.json()
+        ]);
+
+        const payload = {
+            aqi: Array.isArray(aqiRaw) ? aqiRaw.map(formatRawReadingClient).filter(Boolean) : [],
+            weather: Array.isArray(weatherRaw) ? weatherRaw.map(formatWeatherReadingClient).filter(Boolean) : [],
+            fetchedAt: Date.now()
+        };
+
+        setLocalCache(storageKey, payload);
+        return payload;
+    } catch (err) {
+        console.warn('Direct Supabase history fetch failed; falling back to api/telemetry.php:', err);
+        try {
+            const fbRes = await fetch(`api/telemetry.php?action=history_bulk&date=${queryDate}&days=${days}`);
+            if (fbRes.ok) {
+                const fbData = await fbRes.json();
+                const payload = {
+                    aqi: fbData.aqi || [],
+                    weather: fbData.weather || [],
+                    fetchedAt: Date.now()
+                };
+                setLocalCache(storageKey, payload);
+                return payload;
+            }
+        } catch (e) {}
+        return cached || { aqi: [], weather: [], fetchedAt: Date.now() };
+    }
+}
+window.fetchHistoryBulk = fetchHistoryBulk;
+
+async function fetchForecastData(force = false) {
+    if (!force) {
+        const cached = window.__forecastCache || getLocalCache(STORAGE_KEYS.FORECAST);
+        if (cached && cached.hourly && cached.hourly.length > 0) {
+            return cached;
+        }
+    }
+
+    try {
+        // Fast path: static forecast_data.json served directly by Vercel Edge CDN in ~20ms!
+        const staticRes = await fetch('api/forecast_data.json?v=' + Math.floor(Date.now() / 60000));
+        if (staticRes.ok) {
+            const payload = await staticRes.json();
+            if (payload && payload.hourly && payload.hourly.length > 0) {
+                const now = new Date();
+                const currentHourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0).getTime();
+                const filtered = payload.hourly.filter(h => {
+                    const dt = new Date(h.iso || '');
+                    return isNaN(dt.getTime()) || dt.getTime() >= currentHourStart;
+                });
+                if (filtered.length > 0) payload.hourly = filtered;
+                window.__forecastCache = payload;
+                setLocalCache(STORAGE_KEYS.FORECAST, payload);
+                return payload;
+            }
+        }
+    } catch (err) {
+        console.warn('Static forecast fetch failed; falling back:', err);
+    }
+
+    // Secondary path: call api/telemetry.php?action=forecast
+    try {
+        const resp = await fetch(`api/telemetry.php?action=forecast${force ? '&force=1' : ''}`);
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.hourly && data.hourly.length > 0) {
+                window.__forecastCache = data;
+                setLocalCache(STORAGE_KEYS.FORECAST, data);
+                return data;
+            }
+        }
+    } catch (e) {
+        console.error('All forecast fetch paths failed:', e);
+    }
+    return window.__forecastCache || getLocalCache(STORAGE_KEYS.FORECAST) || null;
+}
+window.fetchForecastData = fetchForecastData;
+
 async function getLiveAqi() {
     if (apiCache.aqiLive && (Date.now() - apiCache.lastFetchTime < CACHE_TTL)) {
         evaluateAndSyncLiveBadge(apiCache.aqiLive.data);
         return apiCache.aqiLive;
     }
     try {
-        const response = await fetch(`api/telemetry.php?action=aqi_live`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        if (data && data.data) {
-            apiCache.aqiLive = data;
+        const bulk = await fetchLiveBulk(false);
+        if (bulk && bulk.aqi) {
+            const out = { data: bulk.aqi };
+            apiCache.aqiLive = out;
             apiCache.lastFetchTime = Date.now();
-            evaluateAndSyncLiveBadge(data.data);
-            return data;
+            evaluateAndSyncLiveBadge(bulk.aqi);
+            return out;
         }
-        evaluateAndSyncLiveBadge(null);
-        return null;
     } catch (error) {
         console.error('Error fetching live AQI:', error);
-        evaluateAndSyncLiveBadge(null);
-        return null;
     }
+    evaluateAndSyncLiveBadge(null);
+    return null;
 }
+window.getLiveAqi = getLiveAqi;
 
 // Ensure initial sync and icons
 document.addEventListener("DOMContentLoaded", () => {

@@ -124,10 +124,9 @@ if (!function_exists('adjustTemperatureOverview')) {
 if (!empty($init_bulk['weather'])) {
     $w = $init_bulk['weather'];
     if (isset($w['temperature']) && $w['temperature'] !== null) {
-        $w_ts = $w['timestamp'] ?? $w['created_at'] ?? null;
-        $adj_t = adjustTemperatureOverview($w['temperature'], $w_ts);
-        $init_temp = number_format((float)$adj_t, 1, '.', '');
-        $init_temp_bar_width = min(100, max(5, round((((float)$adj_t - 10) / 35) * 100))) . '%';
+        $raw_t = (float)$w['temperature'];
+        $init_temp = number_format($raw_t, 1, '.', '');
+        $init_temp_bar_width = min(100, max(5, round((($raw_t - 10) / 35) * 100))) . '%';
     }
     if (isset($w['humidity']) && $w['humidity'] !== null) {
         $init_hum = number_format((float)$w['humidity'], 1, '.', '');
@@ -1188,42 +1187,22 @@ async function refreshData(isSilent = false, forceNetwork = false) {
     
     try {
         let bulkData;
-        let usedInitialData = false;
-        let memoryCache = window.INITIAL_DATA || (window.__apiCache && (window.__apiCache.liveBulk || window.__apiCache.overviewBulk)
-            ? (window.__apiCache.liveBulk || window.__apiCache.overviewBulk).data
-            : null);
-
-        if (!memoryCache && typeof window.getLocalCache === 'function') {
-            memoryCache = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry');
-        }
-
-        if (!forceNetwork && memoryCache && (memoryCache.aqi || memoryCache.weather)) {
-            bulkData = memoryCache;
-            window.INITIAL_DATA = null;
-            usedInitialData = true;
-            if (window.__apiCache && bulkData) {
-                window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
-                window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
-            }
-            if (typeof window.setLocalCache === 'function') {
-                window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry', bulkData);
-            }
-            // Trigger a single background network sync to refresh with live data
-            setTimeout(() => {
-                refreshData(true, true);
-            }, 60);
+        if (typeof window.fetchOverviewBulk === 'function') {
+            bulkData = await window.fetchOverviewBulk(forceNetwork);
         } else {
             const response = await fetch(`api/telemetry.php?action=overview_bulk`);
             bulkData = await response.json();
-            if (bulkData && (bulkData.aqi || bulkData.weather)) {
-                if (window.__apiCache) {
-                    window.__apiCache.overviewBulk = { data: bulkData, time: Date.now() };
-                    window.__apiCache.liveBulk = { data: bulkData, time: Date.now() };
-                }
-                if (typeof window.setLocalCache === 'function') {
-                    window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry', bulkData);
-                }
-            }
+        }
+
+        if (!bulkData || (!bulkData.aqi && !bulkData.weather)) {
+            return;
+        }
+
+        if (!forceNetwork && !window.__overviewSyncedOnce) {
+            window.__overviewSyncedOnce = true;
+            setTimeout(() => {
+                refreshData(true, true);
+            }, 60);
         }
 
         const aqiDate = (bulkData && bulkData.aqi) ? (window.safeParseDate ? window.safeParseDate(bulkData.aqi.timestamp || bulkData.aqi.created_at) : new Date(bulkData.aqi.timestamp || bulkData.aqi.created_at)) : null;
@@ -1720,7 +1699,7 @@ function initCanvas() {
 var autoRefreshOverviewTimer = null;
 var onOverviewVisibilityChange = function() {
     if (!document.hidden) {
-        refreshData(true);
+        refreshData(true, true);
     }
 };
 
@@ -1728,9 +1707,9 @@ function startAutoRefreshOverview() {
     if (autoRefreshOverviewTimer) clearInterval(autoRefreshOverviewTimer);
     autoRefreshOverviewTimer = setInterval(() => {
         if (!document.hidden) {
-            refreshData(true);
+            refreshData(true, true);
         }
-    }, 4000);
+    }, 5000);
     document.addEventListener('visibilitychange', onOverviewVisibilityChange);
 }
 

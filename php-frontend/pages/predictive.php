@@ -972,8 +972,8 @@ if (file_exists($forecastJsonFile)) {
                         unit: '°C',
                         badgeText: 'Ambient',
                         badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
-                        footerLabel: 'Range:',
-                        footerVal: `${Math.round(p.temp.min)}° – ${Math.round(p.temp.max)}°`
+                        footerLabel: '',
+                        footerVal: ''
                     },
                     {
                         key: 'humidity', name: 'Humidity', icon: '💧',
@@ -981,8 +981,8 @@ if (file_exists($forecastJsonFile)) {
                         unit: '%',
                         badgeText: 'Comfort',
                         badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
-                        footerLabel: 'Target:',
-                        footerVal: '40% – 70%'
+                        footerLabel: '',
+                        footerVal: ''
                     },
                     {
                         key: 'rainfall', name: 'Rainfall', icon: '🌧️',
@@ -1015,9 +1015,11 @@ if (file_exists($forecastJsonFile)) {
                       </div>
 
                       <!-- Bottom Row: Benchmark / Range Footer -->
-                      <div class="text-[9px] sm:text-[9.5px] text-slate-400 flex items-center justify-between gap-1">
-                        <span class="shrink-0">${it.footerLabel}</span>
-                        <strong class="text-slate-600 font-mono font-bold truncate text-right">${it.footerVal}</strong>
+                      <div class="text-[9px] sm:text-[9.5px] text-slate-400 flex items-center justify-between gap-1 min-h-[14px]">
+                        ${it.footerLabel ? `
+                          <span class="shrink-0">${it.footerLabel}</span>
+                          <strong class="text-slate-600 font-mono font-bold truncate text-right">${it.footerVal}</strong>
+                        ` : ''}
                       </div>
                     </div>
                 `).join('');
@@ -1306,10 +1308,15 @@ if (file_exists($forecastJsonFile)) {
                     }
                 }
             }
-            const resp = await fetch(`api/telemetry.php?action=forecast${force ? '&force=1' : ''}`);
-            if (!resp.ok) throw new Error('Network error loading forecast');
-            const data = await resp.json();
-            if (data && data.status === 'success' && data.hourly && data.hourly.length > 0) {
+            let data;
+            if (typeof window.fetchForecastData === 'function') {
+                data = await window.fetchForecastData(force);
+            } else {
+                const resp = await fetch(`api/telemetry.php?action=forecast${force ? '&force=1' : ''}`);
+                if (!resp.ok) throw new Error('Network error loading forecast');
+                data = await resp.json();
+            }
+            if (data && data.hourly && data.hourly.length > 0) {
                 window.__forecastCache = data;
                 if (typeof window.setLocalCache === 'function') {
                     window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.FORECAST : 'smartairnet_forecast_payload', data);

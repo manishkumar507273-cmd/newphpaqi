@@ -579,6 +579,7 @@ if (file_exists($forecastJsonFile)) {
                 temp: '--',
                 aqi: '--',
                 humidity: '--',
+                rain_prob: 0,
                 pm25: '--',
                 pm10: '--',
                 co: '--',
@@ -958,9 +959,16 @@ if (file_exists($forecastJsonFile)) {
                 const b = getAqiBadge(item.aqi);
                 const isSelected = (idx === window.__selectedHourIdx);
                 const isFirst = (idx === 0);
+                const rainProbRaw = (item.rain_prob !== undefined && item.rain_prob !== null) 
+                    ? item.rain_prob 
+                    : (item.rain_prob_pct !== undefined ? item.rain_prob_pct : 0);
+                const rainChance = (rainProbRaw !== '--' && rainProbRaw !== undefined && rainProbRaw !== null && !isNaN(Number(rainProbRaw)))
+                    ? Math.round(Number(rainProbRaw))
+                    : 0;
+                const rStatus = getRainStatus(rainChance);
 
                 return `
-                    <div class="hourly-card ${isSelected ? 'active-hour' : ''}" onclick="selectForecastHour(${idx})" style="cursor: pointer;">
+                    <div class="hourly-card ${isSelected ? 'active-hour' : ''}" onclick="selectForecastHour(${idx})" style="cursor: pointer;" title="Rain Probability: ${rainChance}% (${rStatus.label})">
                       <div class="hour-label text-xs sm:text-[13px] font-extrabold ${isFirst ? 'text-teal-600' : 'text-slate-600'} mb-1 whitespace-nowrap flex items-center gap-1.5">
                         <span>${item.label}</span>
                         ${isFirst ? '<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">NEXT</span>' : ''}
@@ -972,6 +980,10 @@ if (file_exists($forecastJsonFile)) {
                         <div class="flex items-center justify-between text-[11px] font-medium text-slate-600">
                           <span class="flex items-center gap-1">💧 <span class="text-[10px] text-slate-400 font-semibold">Hum</span></span>
                           <span class="font-mono font-bold text-sky-700">${item.humidity}%</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] font-medium text-slate-600 pt-0.5 border-t border-slate-100" title="Precipitation: ${rainChance}%">
+                          <span class="flex items-center gap-1">🌧️ <span class="text-[10px] text-slate-400 font-semibold">Rain</span></span>
+                          <span class="font-mono font-extrabold" style="color:${rStatus.color};">${rainChance}%</span>
                         </div>
                       </div>
 

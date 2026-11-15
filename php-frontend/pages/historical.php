@@ -479,7 +479,7 @@ function getHistoricalInitialState() {
 }
 
 window.INITIAL_HISTORY = <?= $init_history_json ?>;
-const _initState = getHistoricalInitialState();
+var _initState = getHistoricalInitialState();
 var currentSubTab = _initState.tab;
 var currentParam = _initState.param;
 var currentChartType = _initState.type;
@@ -515,9 +515,9 @@ function persistHistoricalState() {
 }
 
 // High-performance in-memory cache for instant 0ms range switching
-const clientRangeCache = window.__historicalCache = window.__historicalCache || {};
-const pendingRangeFetches = window.__pendingHistFetches = window.__pendingHistFetches || {};
-let summaryCollapseTimer = null;
+var clientRangeCache = window.__historicalCache = window.__historicalCache || {};
+var pendingRangeFetches = window.__pendingHistFetches = window.__pendingHistFetches || {};
+var summaryCollapseTimer = null;
 
 function getCacheKey(date, days) {
     return `${date}_${days}`;

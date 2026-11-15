@@ -47,9 +47,7 @@ files_for_friend/
 php-frontend/data/proofs/
 !php-frontend/data/requests.json
 
-# Local Runtime Caches & Dynamic Forecast JSON
-php-frontend/api/rainfall_forecast_24h.json
-php-frontend/api/forecast_data.json
+# Local Runtime Logs
 forecast_cron.log
 
 # IDEs & Editors

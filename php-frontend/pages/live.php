@@ -194,14 +194,12 @@ if (is_numeric($init_weather_temp)) {
 }
 
 $init_is_aqi_offline = false;
-$init_time_str = 'Live Stream';
 $init_aqi_ts = $init_bulk['aqi']['timestamp'] ?? ($init_bulk['aqi']['created_at'] ?? null);
-if (!empty($init_aqi_ts)) {
-    $ts = strtotime($init_aqi_ts);
-    if ($ts > 0) {
-        $init_time_str = date('h:i A', $ts);
-    }
-}
+$init_weather_ts = $init_bulk['weather']['timestamp'] ?? ($init_bulk['weather']['created_at'] ?? null);
+$init_aqi_epoch = $init_aqi_ts ? strtotime($init_aqi_ts) : 0;
+$init_weather_epoch = $init_weather_ts ? strtotime($init_weather_ts) : 0;
+$init_latest_epoch = max($init_aqi_epoch, $init_weather_epoch);
+$init_time_str = $init_latest_epoch > 0 ? date('h:i A', $init_latest_epoch) : 'Live Stream';
 
 $aqi_d_sub = !empty($init_bulk['aqi']) ? $init_bulk['aqi'] : [];
 $init_pollutants = [
@@ -735,6 +733,30 @@ $init_border_colors = [
   .page-heading {
     font-size: 18px !important;
   }
+  .live-page-title {
+    font-size: 16px !important;
+    line-height: 1.25 !important;
+  }
+  .live-page-meta {
+    font-size: 11px !important;
+    margin-top: 3px !important;
+    gap: 6px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+  }
+  .live-page-meta #latest-time {
+    padding: 1.5px 6px !important;
+    font-size: 10px !important;
+  }
+  .live-page-meta #live-beacon-badge {
+    padding: 1.5px 6px !important;
+    font-size: 9.5px !important;
+  }
+  #hero-live-time-chip {
+    font-size: 10px !important;
+    padding: 1px 6px !important;
+  }
 
   /* Comparison Chart & Filter Chips Mobile Optimization */
   .comparison-chart-card {
@@ -760,6 +782,17 @@ $init_border_colors = [
 }
 
 @media (max-width: 380px) {
+  .live-page-title {
+    font-size: 14.5px !important;
+  }
+  .live-page-meta {
+    font-size: 10px !important;
+    gap: 4px !important;
+  }
+  .live-page-meta #latest-time {
+    font-size: 9.5px !important;
+    padding: 1px 5px !important;
+  }
   .hero-scale-labels .scale-label {
     font-size: 7.2px !important;
     letter-spacing: -0.03em !important;
@@ -829,16 +862,22 @@ $init_border_colors = [
 </div>
 
   <!-- Page Header Titles -->
-  <div>
-    <h1 class="page-heading" style="font-size: 24px; font-weight: 700; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
-      Real-time Air Quality &amp; Weather Telemetry
-    </h1>
-    <div style="font-size: 12.5px; color: #64748b; margin-top: 6px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-      <span>Last Updated: <span id="latest-time" style="color: #00bfa5; font-weight: 600;"><?= htmlspecialchars($init_time_str) ?></span></span>
-      <span id="live-beacon-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
-        <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
-        LIVE
-      </span>
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 2px;">
+    <div style="width: 100%;">
+      <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
+        Real-time Air Quality &amp; Weather Telemetry
+      </h1>
+      <div class="live-page-meta" style="font-size: 13px; color: #475569; margin-top: 6px; font-family: var(--font-sans); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+          <i data-lucide="clock" style="width: 14px; height: 14px; color: #00bfa5;"></i>
+          <span>Last Updated:</span>
+          <span id="latest-time" style="color: #0f172a; font-weight: 700; font-family: var(--font-mono); background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);"><?= htmlspecialchars($init_time_str) ?></span>
+        </span>
+        <span id="live-beacon-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2.5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
+          LIVE
+        </span>
+      </div>
     </div>
   </div>
 
@@ -872,11 +911,17 @@ $init_border_colors = [
           <div class="hero-header-row" style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 14px; flex-wrap: wrap;">
             <!-- Left: Live AQI & Big Value -->
             <div style="display: flex; flex-direction: column;">
-              <div id="status-dot-container" class="<?= $init_is_aqi_offline ? 'status-dot-offline' : 'status-dot-glowing' ?>" style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px; color: <?= $init_aqi_accent ?>;">
-                <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background-color: <?= $init_is_aqi_offline ? 'rgba(148, 163, 184, 0.20)' : $init_aqi_accent . '33' ?>; color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; transition: background-color 0.5s ease, color 0.5s ease;">
-                  <span id="status-dot" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease, color 0.5s ease;"></span>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                <div id="status-dot-container" class="<?= $init_is_aqi_offline ? 'status-dot-offline' : 'status-dot-glowing' ?>" style="display: flex; align-items: center; gap: 7px; color: <?= $init_aqi_accent ?>;">
+                  <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background-color: <?= $init_is_aqi_offline ? 'rgba(148, 163, 184, 0.20)' : $init_aqi_accent . '33' ?>; color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; transition: background-color 0.5s ease, color 0.5s ease;">
+                    <span id="status-dot" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease, color 0.5s ease;"></span>
+                  </span>
+                  <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;"><?= $init_is_aqi_offline ? 'Cached AQI' : 'Live AQI' ?></span>
+                </div>
+                <span id="hero-live-time-chip" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); color: #475569; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.9); padding: 1.5px 7px; border-radius: 6px; box-shadow: 0 1px 2px rgba(15,23,42,0.03);">
+                  <i data-lucide="clock" style="width: 11px; height: 11px; color: #00bfa5;"></i>
+                  <span id="hero-latest-time"><?= htmlspecialchars($init_time_str) ?></span>
                 </span>
-                <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;"><?= $init_is_aqi_offline ? 'Cached AQI' : 'Live AQI' ?></span>
               </div>
               <div style="display: flex; align-items: baseline; gap: 8px;">
                 <div id="hero-aqi-val" style="font-family: var(--font-mono); font-size: 64px; font-weight: 900; line-height: 0.95; letter-spacing: -0.04em; color: <?= $init_aqi_accent ?>; transition: color 0.5s ease;">
@@ -1827,14 +1872,15 @@ function getPollutantScaleInfo(param, value) {
 }
 
 // Comparison Chart
-let comparisonChartInstance = null;
-let activePollutants = {
+var comparisonChartInstance = window.__liveComparisonChartInstance || null;
+var activePollutants = window.__liveActivePollutants || {
     pm25: true,
     pm10: true,
     co: true,
     no2: true,
     o3: true
 };
+window.__liveActivePollutants = activePollutants;
 
 function togglePollutant(pollutant) {
     if (window.triggerHaptic) window.triggerHaptic('selection');
@@ -1937,67 +1983,76 @@ function renderComparisonChart() {
         }
     ].filter(ds => activePollutants[ds.key]);
 
-    if (comparisonChartInstance) {
-        comparisonChartInstance.data.labels = labels;
-        comparisonChartInstance.data.datasets = datasets;
-        comparisonChartInstance.update('none');
-    } else {
-        const ctx = canvas.getContext('2d');
-        comparisonChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { labels, datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
-                        titleColor: '#ffffff',
-                        bodyColor: '#cbd5e1',
-                        padding: 10,
-                        cornerRadius: 8,
-                        boxPadding: 4,
-                        callbacks: {
-                            label: function(ctx) {
-                                const val = ctx.parsed.y;
-                                const unit = ctx.dataset.label === 'CO' ? ' mg/m³' : ' µg/m³';
-                                return `${ctx.dataset.label}: ${val != null ? val.toFixed(2) : '--'}${unit}`;
+    try {
+        if (comparisonChartInstance && comparisonChartInstance.ctx && comparisonChartInstance.canvas === canvas) {
+            comparisonChartInstance.data.labels = labels;
+            comparisonChartInstance.data.datasets = datasets;
+            comparisonChartInstance.update('none');
+        } else {
+            if (comparisonChartInstance) {
+                try { comparisonChartInstance.destroy(); } catch(e) {}
+            }
+            const ctx = canvas.getContext('2d');
+            comparisonChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#cbd5e1',
+                            padding: 10,
+                            cornerRadius: 8,
+                            boxPadding: 4,
+                            callbacks: {
+                                label: function(ctx) {
+                                    const val = ctx.parsed.y;
+                                    const unit = ctx.dataset.label === 'CO' ? ' mg/m³' : ' µg/m³';
+                                    return `${ctx.dataset.label}: ${val != null ? val.toFixed(2) : '--'}${unit}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { family: 'var(--font-mono)', size: 10 },
+                                color: '#94a3b8',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 7
+                            }
+                        },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                font: { family: 'var(--font-mono)', size: 10 },
+                                color: '#94a3b8'
                             }
                         }
                     }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            font: { family: 'var(--font-mono)', size: 10 },
-                            color: '#94a3b8',
-                            maxRotation: 0,
-                            autoSkip: true,
-                            maxTicksLimit: 7
-                        }
-                    },
-                    y: {
-                        grid: { color: '#f1f5f9' },
-                        ticks: {
-                            font: { family: 'var(--font-mono)', size: 10 },
-                            color: '#94a3b8'
-                        }
-                    }
                 }
-            }
-        });
+            });
+            window.__liveComparisonChartInstance = comparisonChartInstance;
+        }
+    } catch (chartErr) {
+        console.warn('Comparison chart render error:', chartErr);
     }
 }
 
 // Data Stream Formatting
-let liveDataStream = [];
+var liveDataStream = window.__liveDataStream || [];
+window.__liveDataStream = liveDataStream;
 
 function formatStreamTimestamp(row) {
     const rawTs = row.timestamp || row.created_at;
@@ -2374,16 +2429,9 @@ async function refreshDashboard(forceNetwork = false) {
             document.cookie = "aqi_last_hero=" + encodeURIComponent(JSON.stringify(heroState)) + "; path=/; max-age=31536000; SameSite=Lax";
         } catch(e) {}
 
-        // LIVE AQI HISTORY (for chart and table)
-        if (historyData && historyData.length > 0) {
-            liveDataStream = historyData;
-        }
-        renderComparisonChart();
-        renderLiveTable();
-
         const now = new Date();
         
-        // --- Offline Check (Sensors log every 60s; healthy threshold is 5 mins) ---
+        // --- Offline Check & Immediate Timestamp Calculation ---
         let isAqiOffline = false;
         let aqiOfflineMinutes = 0;
         let aqiLastUpdateTimeStr = "--";
@@ -2394,9 +2442,7 @@ async function refreshDashboard(forceNetwork = false) {
             if (lastUpdate && !isNaN(lastUpdate.getTime())) {
                 const diffMs = now - lastUpdate;
                 aqiOfflineMinutes = Math.floor(diffMs / 60000);
-                if (!isFromCache) {
-                    isAqiOffline = aqiOfflineMinutes > 5;
-                }
+                isAqiOffline = aqiOfflineMinutes > 5;
                 const timePart = lastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
                 aqiLastUpdateTimeStr = aqiOfflineMinutes >= 1440
                     ? lastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + timePart
@@ -2414,9 +2460,7 @@ async function refreshDashboard(forceNetwork = false) {
             if (wLastUpdate && !isNaN(wLastUpdate.getTime())) {
                 const wDiffMs = now - wLastUpdate;
                 weatherOfflineMinutes = Math.floor(wDiffMs / 60000);
-                if (!isFromCache) {
-                    isWeatherOffline = weatherOfflineMinutes > 5;
-                }
+                isWeatherOffline = weatherOfflineMinutes > 5;
                 const wTimePart = wLastUpdate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
                 weatherLastUpdateTimeStr = weatherOfflineMinutes >= 1440
                     ? wLastUpdate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + wTimePart
@@ -2485,8 +2529,25 @@ async function refreshDashboard(forceNetwork = false) {
         }
 
         const latestTimeEl = document.getElementById('latest-time');
-        if (latestTimeEl) {
-            latestTimeEl.innerText = aqiLastUpdateTimeStr !== '--' ? aqiLastUpdateTimeStr : weatherLastUpdateTimeStr;
+        const heroLatestTimeEl = document.getElementById('hero-latest-time');
+        const heroTimeChip = document.getElementById('hero-live-time-chip');
+        const liveActiveTimeStr = aqiLastUpdateTimeStr !== '--' ? aqiLastUpdateTimeStr : weatherLastUpdateTimeStr;
+        if (latestTimeEl && liveActiveTimeStr !== '--') {
+            latestTimeEl.innerText = liveActiveTimeStr;
+        }
+        if (heroLatestTimeEl && liveActiveTimeStr !== '--') {
+            heroLatestTimeEl.innerText = liveActiveTimeStr;
+        }
+        if (heroTimeChip) {
+            if (isOverallOffline) {
+                heroTimeChip.style.color = '#9a3412';
+                heroTimeChip.style.borderColor = '#fed7aa';
+                heroTimeChip.style.background = 'rgba(255, 247, 237, 0.9)';
+            } else {
+                heroTimeChip.style.color = '#475569';
+                heroTimeChip.style.borderColor = 'rgba(226, 232, 240, 0.9)';
+                heroTimeChip.style.background = 'rgba(255, 255, 255, 0.85)';
+            }
         }
 
         const isOverallLive = (!isAqiOffline || !isWeatherOffline);
@@ -2501,9 +2562,24 @@ async function refreshDashboard(forceNetwork = false) {
             window.updateGlobalLiveBadge(isOverallLive, tip);
         }
 
-        if (!window.__liveIconsInitialized) {
+        // LIVE AQI HISTORY (for chart and table)
+        if (historyData && historyData.length > 0) {
+            liveDataStream = historyData;
+            window.__liveDataStream = liveDataStream;
+        }
+        try {
+            renderComparisonChart();
+        } catch(chartErr) {
+            console.warn("Comparison chart error:", chartErr);
+        }
+        try {
+            renderLiveTable();
+        } catch(tableErr) {
+            console.warn("Live table error:", tableErr);
+        }
+
+        if (window.lucide && lucide.createIcons) {
             lucide.createIcons();
-            window.__liveIconsInitialized = true;
         }
     } catch (e) {
         console.error("Live page error:", e);
@@ -2526,6 +2602,7 @@ window.__cleanupCurrentPage = function() {
     if (comparisonChartInstance) {
         try { comparisonChartInstance.destroy(); } catch(e) {}
         comparisonChartInstance = null;
+        window.__liveComparisonChartInstance = null;
     }
     if (window.__chartInstances) {
         Object.keys(window.__chartInstances).forEach(k => {

@@ -216,14 +216,13 @@ def get_rainfall_status_badge(prob_pct):
 
 def sync_supabase_forecast_table(hourly_list, now_ist):
     """
-    Deletes the old 24h forecast rows and inserts the fresh 24h predictions
-    into table aqi_forecasts_24h in Supabase.
+    Deletes old forecast rows and inserts the fresh 24h predictions
+    into both aqi_forecasts_24h and weather_forecasts_24h in Supabase.
     """
     if not SUPABASE_URL or not SUPABASE_KEY:
-        print("Warning: Supabase credentials not configured, skipping aqi_forecasts_24h sync.", file=sys.stderr)
+        print("Warning: Supabase credentials not configured, skipping Supabase forecast sync.", file=sys.stderr)
         return False
 
-    table_url = f"{SUPABASE_URL}/rest/v1/aqi_forecasts_24h"
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -231,20 +230,26 @@ def sync_supabase_forecast_table(hourly_list, now_ist):
         "Prefer": "return=minimal"
     }
 
-    # 1. Delete previous forecast records
+    gen_time_str = now_ist.isoformat()
+
+    # 1. Sync aqi_forecasts_24h
+    table_url = f"{SUPABASE_URL}/rest/v1/aqi_forecasts_24h"
     delete_url = f"{table_url}?id=gt.0"
     try:
         del_req = urllib.request.Request(delete_url, headers=headers, method="DELETE")
         with urllib.request.urlopen(del_req, timeout=15) as resp:
             print(f"Cleared previous records from aqi_forecasts_24h (HTTP {resp.getcode()})", file=sys.stderr)
     except Exception as e:
-        print(f"Notice: clearing old forecast records: {e}", file=sys.stderr)
+        print(f"Notice: clearing old aqi forecast records: {e}", file=sys.stderr)
 
-    # 2. Insert the fresh 24 hourly forecast rows
-    records = []
-    gen_time_str = now_ist.isoformat()
+    aqi_records = []
+    weather_records = []
     for item in hourly_list:
-        records.append({
+        p_temp = float(item['temp'])
+        p_hum = float(item['humidity'])
+        p_rain = float(item.get('rain_mm', 0.0))
+
+        aqi_records.append({
             "node_id": "node_1",
             "forecast_for_time": item['iso'],
             "forecast_generated_at": gen_time_str,
@@ -253,24 +258,56 @@ def sync_supabase_forecast_table(hourly_list, now_ist):
             "no2_ug_m3": float(item['no2']),
             "co_mg_m3": float(item['co']),
             "ozone_ug_m3": float(item['o3']),
-            "temperature_c": float(item['temp']),
-            "humidity_pct": float(item['humidity']),
+            "temperature_c": p_temp,
+            "humidity_pct": p_hum,
             "tier_used": 48
+        })
+
+        weather_records.append({
+            "node_id": "node_1",
+            "forecast_for_time": item['iso'],
+            "forecast_generated_at": gen_time_str,
+            "temperature": p_temp,
+            "humidity": p_hum,
+            "wind_speed": 7.86,
+            "rain_gauge": p_rain
         })
 
     try:
         post_req = urllib.request.Request(
             table_url,
-            data=json.dumps(records).encode("utf-8"),
+            data=json.dumps(aqi_records).encode("utf-8"),
             headers=headers,
             method="POST"
         )
         with urllib.request.urlopen(post_req, timeout=15) as resp:
-            print(f"Successfully inserted {len(records)} new forecast rows into aqi_forecasts_24h (HTTP {resp.getcode()})", file=sys.stderr)
-            return True
+            print(f"Successfully inserted {len(aqi_records)} new forecast rows into aqi_forecasts_24h (HTTP {resp.getcode()})", file=sys.stderr)
     except Exception as e:
         print(f"Error inserting new forecast rows into aqi_forecasts_24h: {e}", file=sys.stderr)
-        return False
+
+    # 2. Sync weather_forecasts_24h
+    w_table_url = f"{SUPABASE_URL}/rest/v1/weather_forecasts_24h"
+    w_delete_url = f"{w_table_url}?id=gt.0"
+    try:
+        w_del_req = urllib.request.Request(w_delete_url, headers=headers, method="DELETE")
+        with urllib.request.urlopen(w_del_req, timeout=15) as resp:
+            print(f"Cleared previous records from weather_forecasts_24h (HTTP {resp.getcode()})", file=sys.stderr)
+    except Exception as e:
+        print(f"Notice: clearing old weather forecast records: {e}", file=sys.stderr)
+
+    try:
+        w_post_req = urllib.request.Request(
+            w_table_url,
+            data=json.dumps(weather_records).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(w_post_req, timeout=15) as resp:
+            print(f"Successfully inserted {len(weather_records)} new forecast rows into weather_forecasts_24h (HTTP {resp.getcode()})", file=sys.stderr)
+            return True
+    except Exception as e:
+        print(f"Error inserting new forecast rows into weather_forecasts_24h: {e}", file=sys.stderr)
+        return True
 
 def find_model_path():
     """Locate the swt_res_cnn_bilstm model or any new model inside forcast directory."""

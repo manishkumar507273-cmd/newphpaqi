@@ -119,7 +119,7 @@ function parseToIstIso(tsRaw) {
             if (!isNaN(dt.getTime())) {
                 const istOffsetMs = 5.5 * 60 * 60 * 1000;
                 const istDt = new Date(dt.getTime() + istOffsetMs);
-                return `${istDt.getUTCFullYear()}-${String(istDt.getUTCMonth() + 1).padStart(2, '0')}-${String(istDt.getUTCDate()).padStart(2, '0')}T${String(istDt.getUTCHours()).padStart(2, '0')}:${String(istDt.getUTCMinutes()).padStart(2, '0')}:${String(istDt.getUTCSeconds()).padStart(2, '0')}`;
+                return `${istDt.getUTCFullYear()}-${String(istDt.getUTCMonth() + 1).padStart(2, '0')}-${String(istDt.getUTCDate()).padStart(2, '0')}T${String(istDt.getUTCHours()).padStart(2, '0')}:${String(istDt.getUTCMinutes()).padStart(2, '0')}:${String(istDt.getUTCSeconds()).padStart(2, '0')}+05:30`;
             }
         } catch (e) { }
     }
@@ -362,9 +362,12 @@ async function fetchLiveBulk(forceNetwork = false) {
 
         return bulkData;
     } catch (err) {
-        console.warn('Direct Supabase fetch encountered error; falling back to api/telemetry.php:', err);
+        console.warn('Direct Supabase fetch encountered error; falling back to telemetry endpoint:', err);
         try {
-            const fallbackRes = await fetch('api/telemetry.php?action=live_bulk&limit=60');
+            const fallbackUrl = (typeof window.getApiUrl === 'function') 
+                ? window.getApiUrl('telemetry.php?action=live_bulk&limit=60') 
+                : 'api/telemetry.php?action=live_bulk&limit=60';
+            const fallbackRes = await fetch(fallbackUrl);
             if (!fallbackRes.ok) throw new Error('Fallback failed');
             const data = await fallbackRes.json();
             if (data && (data.aqi || data.weather)) {

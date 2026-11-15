@@ -1389,9 +1389,8 @@ if (file_exists($forecastJsonFile)) {
     // Initial render and data fetch
     function initForecastPage() {
         renderForecastUI();
-        if (!trainedModelData) {
-            loadForecastData(false);
-        }
+        // Always sync latest forecast telemetry in background so local and hosted remain 100% synchronized
+        loadForecastData(false);
         startAutoRefreshForecast();
     }
 

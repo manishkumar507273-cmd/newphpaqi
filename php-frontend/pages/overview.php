@@ -912,7 +912,7 @@ if ($latest_epoch > 0) {
 var tempUnit = (function() { try { return localStorage.getItem('aqi_temp_unit') || 'C'; } catch(e) { return 'C'; } })();
 var windUnit = (function() { try { return localStorage.getItem('aqi_wind_unit') || 'kmh'; } catch(e) { return 'kmh'; } })();
 var rainUnit = (function() { try { return localStorage.getItem('aqi_rain_unit') || 'mm'; } catch(e) { return 'mm'; } })();
-var rawTemp = <?= isset($init_bulk['weather']['temperature']) && $init_bulk['weather']['temperature'] !== null ? json_encode((float)adjustTemperatureOverview($init_bulk['weather']['temperature'], $init_bulk['weather']['timestamp'] ?? $init_bulk['weather']['created_at'] ?? null)) : 'null' ?>;
+var rawTemp = <?= isset($init_bulk['weather']['temperature']) && $init_bulk['weather']['temperature'] !== null ? json_encode((float)$init_bulk['weather']['temperature']) : 'null' ?>;
 var rawWind = <?= isset($init_bulk['weather']['wind_speed']) && $init_bulk['weather']['wind_speed'] !== null ? json_encode((float)$init_bulk['weather']['wind_speed']) : 'null' ?>;
 var rawLiveRain = <?= isset($init_bulk['weather']['rain_gauge']) && $init_bulk['weather']['rain_gauge'] !== null ? json_encode((float)$init_bulk['weather']['rain_gauge']) : '0' ?>;
 var rawTodayRain = <?= isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null ? json_encode((float)$init_bulk['today_rain_total']) : '0' ?>;

@@ -45,7 +45,7 @@ files_for_friend/
 
 # User Data & Uploaded Verification Documents
 php-frontend/data/proofs/
-!php-frontend/data/requests.json
+php-frontend/data/requests.json
 
 # Local Runtime Logs
 forecast_cron.log

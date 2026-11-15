@@ -136,64 +136,13 @@ $new_request = [
 
 array_unshift($requests, $new_request);
 
-// Push directly to Firebase Realtime Database
-function pushRequestToFirebase($requestData) {
-    $apiKey = 'AIzaSyC8UYQMhOaS5SFAdkCcdISTkEWw57WsmFs';
-    $authUrl = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={$apiKey}";
-    $authPayload = json_encode([
-        'email' => 'testuser123@example.com',
-        'password' => 'Password123!',
-        'returnSecureToken' => true
-    ]);
-    
-    $ch = curl_init($authUrl);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $authPayload,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 4,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json']
-    ]);
-    $authRes = curl_exec($ch);
-    curl_close($ch);
-    
-    if (!$authRes) return false;
-    $authData = json_decode($authRes, true);
-    $idToken = $authData['idToken'] ?? '';
-    if (empty($idToken)) return false;
-    
-    $rtdbUrl = "https://smart-air-net-default-rtdb.firebaseio.com/requests.json?auth=" . urlencode($idToken);
-    $ch2 = curl_init($rtdbUrl);
-    curl_setopt_array($ch2, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($requestData),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 4,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json']
-    ]);
-    $res = curl_exec($ch2);
-    $code = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
-    curl_close($ch2);
-    return ($code >= 200 && $code < 300);
-}
-@pushRequestToFirebase($new_request);
-
-
-$saved = file_put_contents($requests_file, json_encode($requests, JSON_PRETTY_PRINT));
-
-if (!$saved) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Failed to save request']);
-    exit;
-}
-
 // ─────────────────────────────────────────────────────────────
-// Forward request to External Admin Portal (Site B)
+// Environment Variable Resolver for submit_request.php
 // ─────────────────────────────────────────────────────────────
 $get_env_val = function($key, $default = '') {
     $val = $_ENV[$key] ?? ($_SERVER[$key] ?? (getenv($key) ?: ''));
     if (!empty($val)) return $val;
-    $env_paths = [__DIR__ . '/../.env', __DIR__ . '/../../.env'];
+    $env_paths = [__DIR__ . '/../.env', __DIR__ . '/../../.env', __DIR__ . '/../../php-backend/.env'];
     foreach ($env_paths as $ep) {
         if (file_exists($ep)) {
             $lines = file($ep, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -208,6 +157,70 @@ $get_env_val = function($key, $default = '') {
     }
     return $default;
 };
+
+// Push directly to Firebase Realtime Database using Environment Configuration
+function pushRequestToFirebase($requestData, $get_env_fn) {
+    $apiKey = $get_env_fn('FIREBASE_API_KEY') ?: $get_env_fn('VITE_FIREBASE_API_KEY');
+    $dbUrl = rtrim($get_env_fn('FIREBASE_DATABASE_URL') ?: ($get_env_fn('VITE_FIREBASE_DATABASE_URL') ?: ''), '/');
+    if (empty($dbUrl)) return false;
+
+    $authEmail = $get_env_fn('FIREBASE_AUTH_EMAIL') ?: $get_env_fn('ADMIN_EMAIL');
+    $authPassword = $get_env_fn('FIREBASE_AUTH_PASSWORD') ?: $get_env_fn('ADMIN_PASSWORD');
+
+    $idToken = '';
+    if (!empty($apiKey) && !empty($authEmail) && !empty($authPassword)) {
+        $authUrl = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={$apiKey}";
+        $authPayload = json_encode([
+            'email' => $authEmail,
+            'password' => $authPassword,
+            'returnSecureToken' => true
+        ]);
+        
+        $ch = curl_init($authUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $authPayload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 4,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json']
+        ]);
+        $authRes = curl_exec($ch);
+        curl_close($ch);
+        
+        if ($authRes) {
+            $authData = json_decode($authRes, true);
+            $idToken = $authData['idToken'] ?? '';
+        }
+    }
+
+    $rtdbUrl = $dbUrl . '/requests.json' . (!empty($idToken) ? ('?auth=' . urlencode($idToken)) : '');
+    $ch2 = curl_init($rtdbUrl);
+    curl_setopt_array($ch2, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($requestData),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 4,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json']
+    ]);
+    $res = curl_exec($ch2);
+    $code = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+    curl_close($ch2);
+    return ($code >= 200 && $code < 300);
+}
+@pushRequestToFirebase($new_request, $get_env_val);
+
+
+$saved = file_put_contents($requests_file, json_encode($requests, JSON_PRETTY_PRINT));
+
+if (!$saved) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Failed to save request']);
+    exit;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Forward request to External Admin Portal (Site B)
+// ─────────────────────────────────────────────────────────────
 
 $webhook_url = $get_env_val('EXTERNAL_ADMIN_WEBHOOK_URL', 'https://smart-airnet-admin.vercel.app/api/webhook_receive.php');
 $webhook_key = $get_env_val('EXTERNAL_ADMIN_API_KEY', 'sec_admin_token_2026_xyz');

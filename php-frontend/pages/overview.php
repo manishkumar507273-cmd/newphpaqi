@@ -144,6 +144,9 @@ if (!empty($init_bulk['weather'])) {
 }
 
 $init_is_raining = (!empty($init_bulk['weather']['rain_gauge']) && (float)$init_bulk['weather']['rain_gauge'] > 0);
+if (isset($_GET['rain'])) {
+    $init_is_raining = ($_GET['rain'] === '1' || $_GET['rain'] === 'true');
+}
 $init_rain_bar_width = '0%';
 if ($init_is_raining) {
     $init_rain_val = (float)$init_bulk['weather']['rain_gauge'];
@@ -917,7 +920,7 @@ var rawWind = <?= isset($init_bulk['weather']['wind_speed']) && $init_bulk['weat
 var rawLiveRain = <?= isset($init_bulk['weather']['rain_gauge']) && $init_bulk['weather']['rain_gauge'] !== null ? json_encode((float)$init_bulk['weather']['rain_gauge']) : '0' ?>;
 var rawTodayRain = <?= isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null ? json_encode((float)$init_bulk['today_rain_total']) : '0' ?>;
 var cachedWeatherHistory = null;
-var isRainingGlobal = <?= !empty($init_bulk['weather']['rain_gauge']) && (float)$init_bulk['weather']['rain_gauge'] > 0 ? 'true' : 'false' ?>;
+var isRainingGlobal = <?= $init_is_raining ? 'true' : 'false' ?>;
 var animationFrameId = null;
 var canvasResizeHandler = null;
 
@@ -1305,6 +1308,10 @@ async function refreshData(isSilent = false, forceNetwork = false) {
             // Rain (Live & Today's Rain in one card)
             const isRaining = rain != null && Number(rain) > 0;
             isRainingGlobal = isRaining;
+            const overviewUrlParams = new URLSearchParams(window.location.search);
+            if (overviewUrlParams.has('rain')) {
+                isRainingGlobal = (overviewUrlParams.get('rain') === '1' || overviewUrlParams.get('rain') === 'true');
+            }
             rawLiveRain = rain != null ? Number(rain) : 0;
             let currentTodayRain = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total) : 0;
             if (rawLiveRain > 0 && currentTodayRain < rawLiveRain) {
@@ -1608,8 +1615,8 @@ function initCanvas() {
 
     const speedFactor = Math.max(0.6, (Number(rawWind || 3.5) / 10.0));
 
-    // Enhanced Atmospheric Bubbles & Wind Streaks
-    const particles = Array.from({ length: 80 }, () => ({
+    // Floating Bubbles (shown strictly when rain_gauge <= 0)
+    const bubbleParticles = Array.from({ length: 80 }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         radius: Math.random() * 4.2 + 2.0,
@@ -1621,6 +1628,21 @@ function initCanvas() {
         waveAmp: Math.random() * 1.8 + 0.8,
     }));
 
+    // Dense Raindrops (shown strictly when rain_gauge > 0)
+    const raindrops = Array.from({ length: 180 }, () => ({
+        x: Math.random() * (canvas.width + 120) - 60,
+        y: Math.random() * canvas.height,
+        length: Math.random() * 16 + 14,
+        speedY: Math.random() * 7 + 13,
+        speedX: (0.7 + Math.random() * 0.6) * speedFactor * 1.6,
+        thickness: Math.random() * 0.8 + 1.2,
+        alpha: Math.random() * 0.35 + 0.25
+    }));
+
+    // Dynamic Ground Splash Ripples
+    const splashes = [];
+
+    // Flowing Wind Stream Ribbons
     const streamRibbons = Array.from({ length: 7 }, (_, i) => ({
         y: (canvas.height / 8) * (i + 1) + (Math.random() - 0.5) * 45,
         length: canvas.width * 0.5 + Math.random() * 120,
@@ -1636,15 +1658,26 @@ function initCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         tick += 0.02;
 
-        // Render Flowing Wind Stream Ribbons
+        // Strictly check live rain_gauge > 0
+        const isRainMode = (typeof isRainingGlobal !== 'undefined' && isRainingGlobal);
+
+        // 1. Render Flowing Wind Stream Ribbons
         for (const rib of streamRibbons) {
             ctx.beginPath();
             const grad = ctx.createLinearGradient(rib.x, rib.y, rib.x + rib.length, rib.y);
-            grad.addColorStop(0, 'rgba(0, 191, 165, 0)');
-            grad.addColorStop(0.2, `rgba(0, 191, 165, ${rib.opacity * 0.75})`);
-            grad.addColorStop(0.55, `rgba(14, 165, 233, ${rib.opacity})`);
-            grad.addColorStop(0.8, `rgba(56, 189, 248, ${rib.opacity * 0.65})`);
-            grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
+            if (isRainMode) {
+                grad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                grad.addColorStop(0.2, `rgba(56, 189, 248, ${rib.opacity * 0.85})`);
+                grad.addColorStop(0.55, `rgba(14, 165, 233, ${rib.opacity * 0.95})`);
+                grad.addColorStop(0.8, `rgba(2, 132, 199, ${rib.opacity * 0.7})`);
+                grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
+            } else {
+                grad.addColorStop(0, 'rgba(0, 191, 165, 0)');
+                grad.addColorStop(0.2, `rgba(0, 191, 165, ${rib.opacity * 0.75})`);
+                grad.addColorStop(0.55, `rgba(14, 165, 233, ${rib.opacity})`);
+                grad.addColorStop(0.8, `rgba(56, 189, 248, ${rib.opacity * 0.65})`);
+                grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
+            }
 
             ctx.strokeStyle = grad;
             ctx.lineWidth = rib.thickness;
@@ -1664,21 +1697,57 @@ function initCanvas() {
             }
         }
 
-        // Render Floating Iridescent Bubbles
-        for (const p of particles) {
-            ctx.beginPath();
-            p.angle += p.waveFreq;
-            const currentY = p.y + Math.sin(p.angle) * p.waveAmp;
-
-            if (isRainingGlobal) {
-                ctx.strokeStyle = `rgba(56, 189, 248, ${p.alpha * 1.6})`;
-                ctx.lineWidth = 1.8;
-                ctx.moveTo(p.x, currentY);
-                ctx.lineTo(p.x + p.speedX * 0.8, currentY + 14);
+        // 2. WHEN RAINING (rain_gauge > 0): SHOW FALLING RAIN & SPLASHES (NOT BUBBLES)
+        if (isRainMode) {
+            ctx.lineCap = 'round';
+            for (const drop of raindrops) {
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(56, 189, 248, ${drop.alpha})`;
+                ctx.lineWidth = drop.thickness;
+                ctx.moveTo(drop.x, drop.y);
+                ctx.lineTo(drop.x + drop.speedX * 0.9, drop.y + drop.length);
                 ctx.stroke();
-                p.y += 10 + Math.random() * 4;
-            } else {
-                // Spherical translucent bubble with light glare
+
+                drop.y += drop.speedY;
+                drop.x += drop.speedX;
+
+                if (drop.y > canvas.height - 12) {
+                    if (splashes.length < 30 && Math.random() < 0.28) {
+                        splashes.push({
+                            x: drop.x,
+                            y: Math.min(canvas.height - 4, drop.y + Math.random() * 8),
+                            radius: 1,
+                            maxRadius: Math.random() * 5 + 3,
+                            alpha: drop.alpha * 0.85
+                        });
+                    }
+                    drop.y = -drop.length - Math.random() * 20;
+                    drop.x = Math.random() * (canvas.width + 120) - 60;
+                }
+            }
+
+            // Render Ground Splash Ripples
+            for (let sIdx = splashes.length - 1; sIdx >= 0; sIdx--) {
+                const sp = splashes[sIdx];
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(186, 230, 253, ${sp.alpha})`;
+                ctx.lineWidth = 0.8;
+                ctx.ellipse(sp.x, sp.y, sp.radius * 2, sp.radius * 0.7, 0, 0, Math.PI * 2);
+                ctx.stroke();
+
+                sp.radius += 0.45;
+                sp.alpha -= 0.04;
+                if (sp.alpha <= 0 || sp.radius >= sp.maxRadius) {
+                    splashes.splice(sIdx, 1);
+                }
+            }
+        } else {
+            // 3. DRY / CLEAR CONDITION (rain_gauge <= 0): SHOW FLOATING IRIDESCENT BUBBLES
+            for (const p of bubbleParticles) {
+                ctx.beginPath();
+                p.angle += p.waveFreq;
+                const currentY = p.y + Math.sin(p.angle) * p.waveAmp;
+
                 const particleGrad = ctx.createRadialGradient(
                     p.x - p.radius * 0.35, currentY - p.radius * 0.35, p.radius * 0.15,
                     p.x, currentY, p.radius * 2
@@ -1698,13 +1767,12 @@ function initCanvas() {
                 ctx.stroke();
 
                 p.y += p.speedY;
+                p.x += p.speedX;
+
+                if (p.x > canvas.width + 25) p.x = -25;
+                if (p.y > canvas.height + 25) p.y = -25;
+                if (p.y < -25) p.y = canvas.height + 25;
             }
-
-            p.x += p.speedX;
-
-            if (p.x > canvas.width + 25) p.x = -25;
-            if (p.y > canvas.height + 25) p.y = -25;
-            if (p.y < -25) p.y = canvas.height + 25;
         }
 
         animationFrameId = requestAnimationFrame(render);

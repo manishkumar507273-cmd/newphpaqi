@@ -2317,6 +2317,7 @@ async function refreshDashboard(forceNetwork = false) {
 
         if (weatherData) {
             const w = weatherData;
+            window.__liveRainGauge = (w.rain_gauge != null) ? Number(w.rain_gauge) : 0;
             wTempFormatted = formatWeatherOneDecimal(w.temperature);
             wHumFormatted = formatWeatherOneDecimal(w.humidity, '%');
             wRainFormatted = formatWeatherOneDecimal(w.rain_gauge, ' mm');

@@ -280,8 +280,8 @@ window.formatWeatherReadingClient = formatWeatherReadingClient;
  * Directly connects to Cloudflare/Supabase in Mumbai (~80ms), completely bypassing Vercel Lambda cold start!
  */
 async function fetchLiveBulk(forceNetwork = false) {
-    // 1. Fast Memory Cache Return only if freshly fetched within the last 15 seconds
-    if (!forceNetwork && apiCache.liveBulk && apiCache.liveBulk.time && (Date.now() - apiCache.liveBulk.time < 15000)) {
+    // 1. Fast Memory Cache Return only if freshly fetched within the last 4 seconds
+    if (!forceNetwork && apiCache.liveBulk && apiCache.liveBulk.time && (Date.now() - apiCache.liveBulk.time < 4000)) {
         return apiCache.liveBulk.data;
     }
 
@@ -364,9 +364,10 @@ async function fetchLiveBulk(forceNetwork = false) {
     } catch (err) {
         console.warn('Direct Supabase fetch encountered error; falling back to telemetry endpoint:', err);
         try {
+            const baseEndpoint = 'telemetry.php?action=live_bulk&limit=60&_t=' + Date.now();
             const fallbackUrl = (typeof window.getApiUrl === 'function') 
-                ? window.getApiUrl('telemetry.php?action=live_bulk&limit=60') 
-                : 'api/telemetry.php?action=live_bulk&limit=60';
+                ? window.getApiUrl(baseEndpoint) 
+                : 'api/' + baseEndpoint;
             const fallbackRes = await fetch(fallbackUrl);
             if (!fallbackRes.ok) throw new Error('Fallback failed');
             const data = await fallbackRes.json();

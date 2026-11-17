@@ -17,8 +17,12 @@ if (!defined('IS_INCLUDED')) {
         case 'overview_bulk':
         case 'aqi_live':
         case 'weather_live':
+            header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            break;
         default:
-            header('Cache-Control: public, max-age=5, s-maxage=15, stale-while-revalidate=120');
+            header('Cache-Control: public, max-age=5, s-maxage=15');
             break;
     }
 }
@@ -860,7 +864,7 @@ switch ($action) {
     case 'live_bulk': {
         $lim   = min($limit, 120);
         $ckey  = "live_bulk_{$lim}";
-        $cached = cacheGet($ckey, 20);
+        $cached = cacheGet($ckey, 3);
         if ($cached !== null) { echo json_encode($cached); break; }
 
         $dtMidnightIst = new DateTime('today midnight', new DateTimeZone('Asia/Kolkata'));
@@ -933,7 +937,7 @@ switch ($action) {
     case 'overview_bulk': {
         $lim   = 60;
         $ckey  = "overview_bulk";
-        $cached = cacheGet($ckey, 20);
+        $cached = cacheGet($ckey, 3);
         if ($cached !== null && (!empty($cached['aqi']) || !empty($cached['weather']))) { echo json_encode($cached); break; }
 
         $dtMidnightIst = new DateTime('today midnight', new DateTimeZone('Asia/Kolkata'));

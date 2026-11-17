@@ -452,7 +452,7 @@ $init_border_colors = [
   }
 
   /* Weather & Comfort Section Mobile Refinement (Ultra-Compact) */
-  #weather-hero-box {
+  .live-page-container #weather-hero-box {
     background: rgba(255, 255, 255, 0.88) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
@@ -736,6 +736,7 @@ $init_border_colors = [
   .live-page-title {
     font-size: 16px !important;
     line-height: 1.25 !important;
+    text-align: center !important;
   }
   .live-page-meta {
     font-size: 11px !important;
@@ -784,6 +785,7 @@ $init_border_colors = [
 @media (max-width: 380px) {
   .live-page-title {
     font-size: 14.5px !important;
+    text-align: center !important;
   }
   .live-page-meta {
     font-size: 10px !important;
@@ -850,7 +852,7 @@ $init_border_colors = [
 }
 </style>
 
-<div class="live-page-root" style="position: relative; display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out;" class="p-2.5 sm:p-6">
+<div class="live-page-root p-2.5 sm:p-6" style="position: relative; display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out; padding-top: 14px;">
   <!-- Dynamic Ambient Canvas (Enhanced Bubbles & Wind Streaks) -->
   <canvas id="live-ambient-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.95; width: 100%; height: 100%;"></canvas>
 
@@ -867,9 +869,9 @@ $init_border_colors = [
 </div>
 
   <!-- Page Header Titles -->
-  <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 2px;">
-    <div style="width: 100%;">
-      <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
+  <div style="display: flex; justify-content: center; align-items: center; text-align: center; width: 100%; margin-top: 10px; margin-bottom: 6px;">
+    <div style="width: 100%; text-align: center;">
+      <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: center;">
         Real-time Air Quality &amp; Weather Telemetry
       </h1>
       <span id="latest-time" style="display: none;"><?= htmlspecialchars($init_time_str) ?></span>
@@ -2056,7 +2058,7 @@ function formatStreamTimestamp(row) {
     if (!rawTs) return '--';
     const dt = (typeof safeParseDate === 'function') ? safeParseDate(rawTs) : new Date(rawTs);
     if (isNaN(dt.getTime())) return '--';
-    return dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+    return dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 }
 
 function formatSupabaseValue(val, unit = '') {

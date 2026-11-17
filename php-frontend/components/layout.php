@@ -347,14 +347,14 @@ window.updateUserAccountUI = function(user) {
 
 window.updateBottomNavLockedState = function(isLoggedIn) {
     const isAuth = Boolean(isLoggedIn);
+    const curPage = window.__currentPage || 'overview';
     document.querySelectorAll('[data-bottom-nav]').forEach(el => {
         const pageKey = el.getAttribute('data-bottom-nav');
-        if (pageKey === 'overview') return;
         const icon = el.querySelector('i') || el.querySelector('svg');
-        const label = el.querySelector('span');
+        const label = el.querySelector('span:not(.campus-status-dot)');
         const liveDot = el.querySelector('.campus-status-dot');
 
-        if (!isAuth) {
+        if (!isAuth && pageKey !== 'overview') {
             el.classList.add('bottom-nav-locked');
             el.removeAttribute('aria-disabled');
             el.style.opacity = '0.38';
@@ -381,15 +381,17 @@ window.updateBottomNavLockedState = function(isLoggedIn) {
             if (liveDot) {
                 liveDot.style.display = '';
             }
-            const isCurrent = (window.__currentPage || 'overview') === pageKey;
-            el.style.color = isCurrent ? '#00bfa5' : '#64748b';
+            const isCurrent = curPage === pageKey;
+            el.style.color = isCurrent ? '#00bfa5' : '#475569';
             el.style.backgroundColor = isCurrent ? 'rgba(0, 191, 165, 0.1)' : 'transparent';
             if (icon) {
-                icon.style.color = isCurrent ? '#00bfa5' : '#64748b';
+                icon.style.color = isCurrent ? '#00bfa5' : '#475569';
                 icon.style.opacity = '1';
+                icon.setAttribute('stroke-width', isCurrent ? '2.2' : '2.0');
+                icon.style.strokeWidth = isCurrent ? '2.2' : '2.0';
             }
             if (label) {
-                label.style.color = isCurrent ? '#00bfa5' : '#64748b';
+                label.style.color = isCurrent ? '#00bfa5' : '#475569';
                 label.style.fontWeight = isCurrent ? '700' : '600';
             }
         }
@@ -624,7 +626,7 @@ $active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
 
   <!-- Main Content Area -->
   <main style="display: flex; flex-direction: column; position: relative;">
-    <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 0; min-height: auto;">
+    <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 0; min-height: auto; padding-top: 10px;">
       <?php
         $page_file = __DIR__ . '/../pages/' . $current_page . '.php';
         if (file_exists($page_file)) {
@@ -663,30 +665,30 @@ $active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
 
     <?php $is_nav_locked = !$is_logged_in; ?>
     <!-- Overview -->
-    <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'overview' ? '1' : ($is_nav_locked ? '0.38' : '0.78') ?>; cursor: pointer;">
-      <i data-lucide="home" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'overview' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'overview' ? '#00bfa5' : '#94a3b8' ?>;"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
+    <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: 1; cursor: pointer;">
+      <i data-lucide="home" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'overview' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'overview' ? '#00bfa5' : '#475569' ?>;"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
     </a>
 
     <!-- Live Feed -->
-    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'live') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'live' ? '1' : ($is_nav_locked ? '0.38' : '0.78') ?>; cursor: pointer;">
+    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'live') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'live' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
       <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
-        <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'live' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'live' ? '#00bfa5' : '#94a3b8' ?>;"></i>
+        <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'live' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'live' ? '#00bfa5' : '#475569' ?>;"></i>
         <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; border: 1px solid #ffffff; <?= $is_nav_locked ? 'display: none;' : '' ?>"></span>
       </div>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
     </a>
 
     <!-- Analytics -->
-    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : ($is_nav_locked ? '0.38' : '0.78') ?>; cursor: pointer;">
-      <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'historical' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : '#94a3b8' ?>;"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
+    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
+      <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'historical' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : '#475569' ?>;"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
     </a>
 
     <!-- Forecast -->
-    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#94a3b8' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : ($is_nav_locked ? '0.38' : '0.78') ?>; cursor: pointer;">
-      <i data-lucide="cloud-rain" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'predictive' ? '2.2' : '1.8' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#94a3b8' ?>;"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '500' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
+    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
+      <i data-lucide="cloud-rain" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'predictive' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#475569' ?>;"></i>
+      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
     </a>
 
 

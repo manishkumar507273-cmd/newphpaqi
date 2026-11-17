@@ -1491,9 +1491,10 @@ function renderUI(skipDayFilter = false) {
         });
     }
 
-    // Table Render
+    // Table Render (Newest readings at the top, oldest at the bottom)
     const theadRow = document.getElementById('table-head-row');
     const tbody = document.getElementById('table-body');
+    const tableRows = [...filteredDayData].reverse();
     
     if(currentSubTab === 'aqi') {
         theadRow.innerHTML = `
@@ -1507,7 +1508,7 @@ function renderUI(skipDayFilter = false) {
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">O₃ (µg/m³)</th>
         `;
         
-        tbody.innerHTML = filteredDayData.map((d, i) => {
+        tbody.innerHTML = tableRows.map((d, i) => {
             const parts = (d.timestamp || '').split('T');
             let dateStr = '', timeStr = '';
             if (parts.length === 2) {
@@ -1547,7 +1548,7 @@ function renderUI(skipDayFilter = false) {
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Rain (mm)</th>
         `;
         
-        tbody.innerHTML = filteredDayData.map((d, i) => {
+        tbody.innerHTML = tableRows.map((d, i) => {
             const parts = (d.timestamp || '').split('T');
             let dateStr = '', timeStr = '';
             if (parts.length === 2) {

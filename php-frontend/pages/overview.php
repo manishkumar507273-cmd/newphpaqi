@@ -419,13 +419,13 @@ if ($latest_epoch > 0) {
       <!-- Horizontal Swipeable Carousel (One graph visible at a time on mobile/tablet/desktop) -->
       <div id="overview-chart-carousel" class="overview-chart-carousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; gap: 16px; padding-bottom: 6px; scrollbar-width: none;">
         
-        <!-- SLIDE 0: AQI Line Plot Card -->
+        <!-- SLIDE 0: AQI Card -->
         <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="activity" style="width: 16px; height: 16px; color: #00bfa5;"></i>
-                AQI Line Plot
+                AQI
               </div>
               <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
                 Real-time Air Quality progression
@@ -441,13 +441,13 @@ if ($latest_epoch > 0) {
           </div>
         </div>
 
-        <!-- SLIDE 1: Temperature Plot Card -->
+        <!-- SLIDE 1: Temperature Card -->
         <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="thermometer" style="width: 16px; height: 16px; color: #f97316;"></i>
-                Temperature Plot
+                Temperature
               </div>
               <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
                 Real-time Temperature progression
@@ -462,13 +462,13 @@ if ($latest_epoch > 0) {
           </div>
         </div>
 
-        <!-- SLIDE 2: Humidity Plot Card -->
+        <!-- SLIDE 2: Humidity Card -->
         <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="droplets" style="width: 16px; height: 16px; color: #0ea5e9;"></i>
-                Humidity Plot
+                Humidity
               </div>
               <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
                 Real-time Humidity progression
@@ -483,13 +483,13 @@ if ($latest_epoch > 0) {
           </div>
         </div>
 
-        <!-- SLIDE 3: Wind Speed Plot Card -->
+        <!-- SLIDE 3: Wind Speed Card -->
         <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="wind" style="width: 16px; height: 16px; color: #10b981;"></i>
-                Wind Speed Plot
+                Wind Speed
               </div>
               <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
                 Real-time Wind Speed progression
@@ -504,13 +504,13 @@ if ($latest_epoch > 0) {
           </div>
         </div>
 
-        <!-- SLIDE 4: Rainfall Plot Card -->
+        <!-- SLIDE 4: Rainfall Card -->
         <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="cloud-rain" style="width: 16px; height: 16px; color: #6366f1;"></i>
-                Rainfall Plot
+                Rainfall
               </div>
               <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
                 Real-time Rainfall progression

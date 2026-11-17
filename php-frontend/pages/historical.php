@@ -1027,7 +1027,7 @@ function renderUI(skipDayFilter = false) {
         let startWindow, endWindow;
         if (days === 1) {
             startWindow = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
-            endWindow = startWindow + (24 * 60 * 60 * 1000);
+            endWindow = new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
             const startDateObj = new Date(y, m - 1, d);
             const dateStrLong = startDateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
             rangeLabel = `${dateStrLong} (12:00 AM – 12:00 AM)`;
@@ -1058,19 +1058,61 @@ function renderUI(skipDayFilter = false) {
                 hrKey = normD + ' ' + parts[1].slice(0, 2);
             } else {
                 const dt = new Date(item.timestamp);
-                hrKey = dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate() + ' ' + dt.getHours();
+                const yr = dt.getFullYear();
+                const mo = String(dt.getMonth() + 1).padStart(2, '0');
+                const da = String(dt.getDate()).padStart(2, '0');
+                const hr = String(dt.getHours()).padStart(2, '0');
+                hrKey = `${yr}-${mo}-${da} ${hr}`;
             }
             hourlyMap.set(hrKey, item);
         });
+
+        // Ensure every hour slot is populated across the selected range (0 to 23 for past days; 0 to current hour for today)
+        const todayYmd = getLocalDateStr();
+        const currentHour = new Date().getHours();
+        
+        for (let i = days - 1; i >= 0; i--) {
+            const curDate = new Date(y, m - 1, d - i);
+            const curYmd = `${curDate.getFullYear()}-${String(curDate.getMonth() + 1).padStart(2, '0')}-${String(curDate.getDate()).padStart(2, '0')}`;
+            const isCurToday = (curYmd === todayYmd);
+            const isFuture = (curYmd > todayYmd);
+            if (isFuture) continue;
+            
+            const maxH = isCurToday ? Math.min(23, currentHour) : 23;
+            for (let h = 0; h <= maxH; h++) {
+                const hrKey = `${curYmd} ${String(h).padStart(2, '0')}`;
+                if (!hourlyMap.has(hrKey)) {
+                    hourlyMap.set(hrKey, {
+                        timestamp: `${curYmd}T${String(h).padStart(2, '0')}:00:00`,
+                        cpcb_aqi: null,
+                        pm25: null,
+                        pm10: null,
+                        co: null,
+                        no2: null,
+                        o3: null,
+                        temperature: null,
+                        humidity: null,
+                        wind_speed: null,
+                        wind_gust: null,
+                        wind_direction: null,
+                        rain_gauge: null,
+                        isMissing: true
+                    });
+                }
+            }
+        }
+
         filteredDayData = Array.from(hourlyMap.values());
         filteredDayData.sort((a,b) => parseIsoLocal(a.timestamp) - parseIsoLocal(b.timestamp));
         
+        const isAqi = currentSubTab === 'aqi';
+        const loggedCount = filteredDayData.filter(d => !d.isMissing && (isAqi ? d.cpcb_aqi != null : d.temperature != null)).length;
+        
         const subtitleEl = document.getElementById('date-subtitle-desktop');
         if (subtitleEl) {
-            subtitleEl.innerText = `Showing ${filteredDayData.length} records (${rangeLabel})`;
+            subtitleEl.innerText = `Showing ${filteredDayData.length} records (${loggedCount} logged) (${rangeLabel})`;
         }
         
-        const isAqi = currentSubTab === 'aqi';
         const chartTitle = document.getElementById('chart-main-title');
         if (chartTitle) {
             chartTitle.innerText = days === 1
@@ -1092,7 +1134,7 @@ function renderUI(skipDayFilter = false) {
         
         const tableSubtitle = document.getElementById('table-subtitle');
         if (tableSubtitle) {
-            tableSubtitle.innerText = `${days === 1 ? '24 Hourly Telemetry Rows' : days + '-Day Telemetry Rows'} (${rangeLabel}) — ${filteredDayData.length} Logged Readings`;
+            tableSubtitle.innerText = `${days === 1 ? '24 Hourly Telemetry Rows' : days + '-Day Telemetry Rows'} (${rangeLabel}) — ${loggedCount} Logged Readings`;
         }
     }
     
@@ -1136,7 +1178,43 @@ function renderUI(skipDayFilter = false) {
         return;
     }
 
-    document.getElementById('chart-empty').style.display = 'none';
+    const isAqiCurrent = currentSubTab === 'aqi';
+    const loggedCount = filteredDayData.filter(d => !d.isMissing && (isAqiCurrent ? d.cpcb_aqi != null : d.temperature != null)).length;
+
+    if (loggedCount === 0) {
+        if (days === 1) {
+            const logCountEl = document.getElementById('log-count');
+            if (logCountEl) logCountEl.innerText = '0';
+            const avgAqiVal = document.getElementById('avg-aqi-val');
+            if (avgAqiVal) avgAqiVal.innerText = '--';
+            const label = document.getElementById('avg-aqi-label');
+            if (label) label.style.display = 'none';
+            const minMaxAqi = document.getElementById('min-max-aqi');
+            if (minMaxAqi) minMaxAqi.style.display = 'none';
+            const miniChips = document.getElementById('mini-chips-container');
+            if (miniChips) miniChips.style.display = 'none';
+            const elTemp = document.getElementById('w-avg-temp');
+            if (elTemp) elTemp.innerText = '--';
+            const elHum = document.getElementById('w-avg-hum');
+            if (elHum) elHum.innerText = '--';
+            const elWind = document.getElementById('w-avg-wind');
+            if (elWind) elWind.innerText = '--';
+            const elGust = document.getElementById('w-max-gust');
+            if (elGust) elGust.innerText = '--';
+            const elDir = document.getElementById('w-mode-dir');
+            if (elDir) elDir.innerText = '--';
+            const elRain = document.getElementById('w-total-rain');
+            if (elRain) elRain.innerText = '--';
+        }
+        document.getElementById('chart-empty').style.display = 'flex';
+        document.getElementById('chart-empty-text').innerText = `No telemetry recorded for ${rangeLabel}.`;
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+    } else {
+        document.getElementById('chart-empty').style.display = 'none';
+    }
 
     // ── Summary Calculations for 1-Day View ──
     if (days === 1) {
@@ -1179,7 +1257,7 @@ function renderUI(skipDayFilter = false) {
         }
         const logCountEl = document.getElementById('log-count');
         if (logCountEl) {
-            logCountEl.innerText = filteredDayData.length;
+            logCountEl.innerText = loggedCount;
         }
 
         const aqiBlock = document.getElementById('summary-aqi-block');
@@ -1295,200 +1373,202 @@ function renderUI(skipDayFilter = false) {
     }
 
     // Chart Render
-    const ctx = document.getElementById('historical-chart').getContext('2d');
+    if (loggedCount > 0) {
+        const ctx = document.getElementById('historical-chart').getContext('2d');
 
-    const labels = filteredDayData.map(d => {
-        const parts = (d.timestamp || '').split('T');
-        if (parts.length === 2) {
-            const [yr, mo, da] = parts[0].split('-').map(Number);
-            const timeParts = parts[1].split(':');
-            const hr = Number(timeParts[0]) || 0;
-            const period = hr >= 12 ? 'PM' : 'AM';
-            const displayHr = hr % 12 === 0 ? 12 : hr % 12;
-            const timeStr = `${String(displayHr).padStart(2, '0')} ${period}`;
+        const labels = filteredDayData.map(d => {
+            const parts = (d.timestamp || '').split('T');
+            if (parts.length === 2) {
+                const [yr, mo, da] = parts[0].split('-').map(Number);
+                const timeParts = parts[1].split(':');
+                const hr = Number(timeParts[0]) || 0;
+                const period = hr >= 12 ? 'PM' : 'AM';
+                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
+                const timeStr = `${String(displayHr).padStart(2, '0')} ${period}`;
+                if (days > 1) {
+                    return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')} ${timeStr}`;
+                }
+                return timeStr;
+            }
+            const dt = new Date(d.timestamp);
             if (days > 1) {
-                return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')} ${timeStr}`;
+                return `${dt.getDate()}/${dt.getMonth()+1} ${dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true})}`;
             }
-            return timeStr;
-        }
-        const dt = new Date(d.timestamp);
-        if (days > 1) {
-            return `${dt.getDate()}/${dt.getMonth()+1} ${dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true})}`;
-        }
-        return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
-    });
-
-    // Preserve valid 0 values so Supabase zeros are displayed
-    const dataPoints = filteredDayData.map(d => (d[currentParam] != null ? d[currentParam] : null));
-    const hasScale = Boolean(POLLUTANT_SCALES[currentParam]);
-    const itemColors = hasScale ? dataPoints.map(v => getParamColor(currentParam, v)) : null;
-    const color = PARAM_COLORS[currentParam] || '#00bfa5';
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, color + '66');
-    gradient.addColorStop(1, color + '00');
-
-    // Vertical crosshair plugin for silky-smooth touch dragging and crosshair tracking
-    const crosshairPlugin = {
-        id: 'crosshairLine',
-        afterDatasetsDraw(chart) {
-            if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
-                const activePoint = chart.tooltip._active[0];
-                const ctx = chart.ctx;
-                const x = activePoint.element.x;
-                const topY = chart.scales.y.top;
-                const bottomY = chart.scales.y.bottom;
-                const idx = activePoint.index;
-                const activeVal = dataPoints[idx];
-                const activeColor = hasScale ? getParamColor(currentParam, activeVal) : color;
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(x, topY);
-                ctx.lineTo(x, bottomY);
-                ctx.lineWidth = 1.5;
-                ctx.strokeStyle = activeColor || '#00bfa5';
-                ctx.globalAlpha = 0.55;
-                ctx.setLineDash([4, 4]);
-                ctx.stroke();
-                ctx.restore();
-            }
-        }
-    };
-
-    // In-place silent update without destroying or flickering
-    if (chartInstance && chartInstance.config && chartInstance.config.type === currentChartType) {
-        if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.x) {
-            chartInstance.options.scales.x.display = false;
-        }
-        chartInstance.data.labels = labels;
-        if (chartInstance.data.datasets && chartInstance.data.datasets[0]) {
-            chartInstance.data.datasets[0].label = getParamDisplayName(currentParam);
-            chartInstance.data.datasets[0].data = dataPoints;
-            chartInstance.data.datasets[0].borderColor = (hasScale && currentChartType === 'bar') ? itemColors : color;
-            chartInstance.data.datasets[0].backgroundColor = currentChartType === 'line' ? gradient : (hasScale ? itemColors : color);
-            chartInstance.data.datasets[0].borderWidth = currentChartType === 'line' ? 2.5 : 0;
-            chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0;
-            chartInstance.data.datasets[0].borderSkipped = false;
-            chartInstance.data.datasets[0].pointRadius = 0;
-            chartInstance.data.datasets[0].pointBackgroundColor = hasScale ? itemColors : color;
-            chartInstance.data.datasets[0].pointHoverRadius = 5;
-            chartInstance.data.datasets[0].pointHitRadius = 28;
-            if (hasScale && currentChartType === 'line') {
-                chartInstance.data.datasets[0].segment = {
-                    borderColor: ctx => getParamColor(currentParam, ctx.p1?.parsed?.y)
-                };
-            } else {
-                delete chartInstance.data.datasets[0].segment;
-            }
-        }
-        chartInstance.update({
-            duration: 320,
-            easing: 'easeOutQuart'
+            return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
         });
-    } else {
-        if (chartInstance) { chartInstance.destroy(); }
-        chartInstance = new Chart(ctx, {
-            type: currentChartType,
-            plugins: [crosshairPlugin],
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: getParamDisplayName(currentParam),
-                    data: dataPoints,
-                    borderColor: (hasScale && currentChartType === 'bar') ? itemColors : color,
-                    backgroundColor: currentChartType === 'line' ? gradient : (hasScale ? itemColors : color),
-                    borderWidth: currentChartType === 'line' ? 2.5 : 0,
-                    borderRadius: currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0,
-                    borderSkipped: false,
-                    barPercentage: days > 7 ? 0.9 : 0.72,
-                    categoryPercentage: 0.88,
-                    segment: hasScale && currentChartType === 'line' ? {
-                        borderColor: ctx => getParamColor(currentParam, ctx.p1?.parsed?.y)
-                    } : undefined,
-                    fill: currentChartType === 'line',
-                    tension: 0.4,
-                    pointBackgroundColor: hasScale ? itemColors : color,
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 5,
-                    pointHitRadius: 28,
-                    spanGaps: false
-                }]
-            },
-            options: {
-                animation: {
-                    duration: 320,
-                    easing: 'easeOutQuart'
-                },
-                responsive: true,
-                maintainAspectRatio: false,
-                events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                    axis: 'x'
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        titleColor: '#94a3b8',
-                        bodyColor: '#ffffff',
-                        bodyFont: { size: 14, weight: 'bold', family: 'monospace' },
-                        padding: 10,
-                        cornerRadius: 12,
-                        displayColors: hasScale,
-                        boxWidth: 9,
-                        boxHeight: 9,
-                        usePointStyle: true,
-                        callbacks: {
-                            title: function(items) {
-                                if (!items.length) return '';
-                                const idx = items[0].dataIndex;
-                                const item = filteredDayData[idx];
-                                if (!item || !item.timestamp) return items[0].label;
-                                const parts = item.timestamp.split('T');
-                                if (parts.length === 2) {
-                                    const [yr, mo, da] = parts[0].split('-').map(Number);
-                                    const [hr, mn] = parts[1].split(':').map(Number);
-                                    const dt = new Date(yr, mo - 1, da, hr, mn || 0);
-                                    return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')}/${yr} • ${dt.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}`;
-                                }
-                                return items[0].label;
-                            },
-                            label: function(item) {
-                                const val = item.parsed.y;
-                                if (val == null) return '';
-                                const unit = PARAM_UNITS[currentParam] || '';
-                                const paramName = getParamDisplayName(currentParam);
-                                if (hasScale) {
-                                    const tier = getParamTierInfo(currentParam, val);
-                                    const dispVal = (currentParam === 'cpcb_aqi' || currentParam === 'aqi') 
-                                        ? Math.round(val) 
-                                        : (currentParam === 'co' ? Number(val).toFixed(2) : Number(val).toFixed(1));
-                                    return ` ${paramName}: ${dispVal}${unit ? ' ' + unit : ''} (${tier.label})`;
-                                }
-                                return ` ${paramName}: ${val}${unit ? ' ' + unit : ''}`;
-                            },
-                            labelColor: function(item) {
-                                const val = item.parsed.y;
-                                const c = hasScale ? getParamColor(currentParam, val) : color;
-                                return {
-                                    borderColor: c,
-                                    backgroundColor: c,
-                                    borderWidth: 1
-                                };
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: { display: false },
-                    y: { grid: { color: '#e2e8f0', borderDash: [3, 3] }, ticks: { color: '#64748b' }, beginAtZero: true }
+
+        // Preserve valid 0 values so Supabase zeros are displayed
+        const dataPoints = filteredDayData.map(d => (d[currentParam] != null ? d[currentParam] : null));
+        const hasScale = Boolean(POLLUTANT_SCALES[currentParam]);
+        const itemColors = hasScale ? dataPoints.map(v => getParamColor(currentParam, v)) : null;
+        const color = PARAM_COLORS[currentParam] || '#00bfa5';
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, color + '66');
+        gradient.addColorStop(1, color + '00');
+
+        // Vertical crosshair plugin for silky-smooth touch dragging and crosshair tracking
+        const crosshairPlugin = {
+            id: 'crosshairLine',
+            afterDatasetsDraw(chart) {
+                if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
+                    const activePoint = chart.tooltip._active[0];
+                    const ctx = chart.ctx;
+                    const x = activePoint.element.x;
+                    const topY = chart.scales.y.top;
+                    const bottomY = chart.scales.y.bottom;
+                    const idx = activePoint.index;
+                    const activeVal = dataPoints[idx];
+                    const activeColor = hasScale ? getParamColor(currentParam, activeVal) : color;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(x, topY);
+                    ctx.lineTo(x, bottomY);
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = activeColor || '#00bfa5';
+                    ctx.globalAlpha = 0.55;
+                    ctx.setLineDash([4, 4]);
+                    ctx.stroke();
+                    ctx.restore();
                 }
             }
-        });
+        };
+
+        // In-place silent update without destroying or flickering
+        if (chartInstance && chartInstance.config && chartInstance.config.type === currentChartType) {
+            if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.x) {
+                chartInstance.options.scales.x.display = false;
+            }
+            chartInstance.data.labels = labels;
+            if (chartInstance.data.datasets && chartInstance.data.datasets[0]) {
+                chartInstance.data.datasets[0].label = getParamDisplayName(currentParam);
+                chartInstance.data.datasets[0].data = dataPoints;
+                chartInstance.data.datasets[0].borderColor = (hasScale && currentChartType === 'bar') ? itemColors : color;
+                chartInstance.data.datasets[0].backgroundColor = currentChartType === 'line' ? gradient : (hasScale ? itemColors : color);
+                chartInstance.data.datasets[0].borderWidth = currentChartType === 'line' ? 2.5 : 0;
+                chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0;
+                chartInstance.data.datasets[0].borderSkipped = false;
+                chartInstance.data.datasets[0].pointRadius = 0;
+                chartInstance.data.datasets[0].pointBackgroundColor = hasScale ? itemColors : color;
+                chartInstance.data.datasets[0].pointHoverRadius = 5;
+                chartInstance.data.datasets[0].pointHitRadius = 28;
+                if (hasScale && currentChartType === 'line') {
+                    chartInstance.data.datasets[0].segment = {
+                        borderColor: ctx => getParamColor(currentParam, ctx.p1?.parsed?.y)
+                    };
+                } else {
+                    delete chartInstance.data.datasets[0].segment;
+                }
+            }
+            chartInstance.update({
+                duration: 320,
+                easing: 'easeOutQuart'
+            });
+        } else {
+            if (chartInstance) { chartInstance.destroy(); }
+            chartInstance = new Chart(ctx, {
+                type: currentChartType,
+                plugins: [crosshairPlugin],
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: getParamDisplayName(currentParam),
+                        data: dataPoints,
+                        borderColor: (hasScale && currentChartType === 'bar') ? itemColors : color,
+                        backgroundColor: currentChartType === 'line' ? gradient : (hasScale ? itemColors : color),
+                        borderWidth: currentChartType === 'line' ? 2.5 : 0,
+                        borderRadius: currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0,
+                        borderSkipped: false,
+                        barPercentage: days > 7 ? 0.9 : 0.72,
+                        categoryPercentage: 0.88,
+                        segment: hasScale && currentChartType === 'line' ? {
+                            borderColor: ctx => getParamColor(currentParam, ctx.p1?.parsed?.y)
+                        } : undefined,
+                        fill: currentChartType === 'line',
+                        tension: 0.4,
+                        pointBackgroundColor: hasScale ? itemColors : color,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        pointHitRadius: 28,
+                        spanGaps: false
+                    }]
+                },
+                options: {
+                    animation: {
+                        duration: 320,
+                        easing: 'easeOutQuart'
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                        axis: 'x'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#94a3b8',
+                            bodyColor: '#ffffff',
+                            bodyFont: { size: 14, weight: 'bold', family: 'monospace' },
+                            padding: 10,
+                            cornerRadius: 12,
+                            displayColors: hasScale,
+                            boxWidth: 9,
+                            boxHeight: 9,
+                            usePointStyle: true,
+                            callbacks: {
+                                title: function(items) {
+                                    if (!items.length) return '';
+                                    const idx = items[0].dataIndex;
+                                    const item = filteredDayData[idx];
+                                    if (!item || !item.timestamp) return items[0].label;
+                                    const parts = item.timestamp.split('T');
+                                    if (parts.length === 2) {
+                                        const [yr, mo, da] = parts[0].split('-').map(Number);
+                                        const [hr, mn] = parts[1].split(':').map(Number);
+                                        const dt = new Date(yr, mo - 1, da, hr, mn || 0);
+                                        return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')}/${yr} • ${dt.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}`;
+                                    }
+                                    return items[0].label;
+                                },
+                                label: function(item) {
+                                    const val = item.parsed.y;
+                                    if (val == null || isNaN(val)) return ' No data recorded';
+                                    const unit = PARAM_UNITS[currentParam] || '';
+                                    const paramName = getParamDisplayName(currentParam);
+                                    if (hasScale) {
+                                        const tier = getParamTierInfo(currentParam, val);
+                                        const dispVal = (currentParam === 'cpcb_aqi' || currentParam === 'aqi') 
+                                            ? Math.round(val) 
+                                            : (currentParam === 'co' ? Number(val).toFixed(2) : Number(val).toFixed(1));
+                                        return ` ${paramName}: ${dispVal}${unit ? ' ' + unit : ''} (${tier.label})`;
+                                    }
+                                    return ` ${paramName}: ${val}${unit ? ' ' + unit : ''}`;
+                                },
+                                labelColor: function(item) {
+                                    const val = item.parsed.y;
+                                    const c = hasScale ? getParamColor(currentParam, val) : color;
+                                    return {
+                                        borderColor: c,
+                                        backgroundColor: c,
+                                        borderWidth: 1
+                                    };
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { grid: { color: '#e2e8f0', borderDash: [3, 3] }, ticks: { color: '#64748b' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
     }
 
     // Table Render (Newest readings at the top, oldest at the bottom)
@@ -1525,15 +1605,37 @@ function renderUI(skipDayFilter = false) {
                 dateStr = dt.toLocaleDateString('en-GB');
                 timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
             }
-            return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>
-                <td style="padding: 10px 16px; color: #00bfa5; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
-                <td style="padding: 10px 16px; font-weight: 800; color: ${getAqiCategory(d.cpcb_aqi).text};">${d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '--'}</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: ${d.pm25 != null ? getParamColor('pm25', d.pm25) : '#475569'};">${d.pm25 != null ? Number(d.pm25).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: ${d.pm10 != null ? getParamColor('pm10', d.pm10) : '#475569'};">${d.pm10 != null ? Number(d.pm10).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: ${d.co != null ? getParamColor('co', d.co) : '#475569'};">${d.co != null ? Number(d.co).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: ${d.no2 != null ? getParamColor('no2', d.no2) : '#475569'};">${d.no2 != null ? Number(d.no2).toFixed(3) : '0.000'}</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: ${d.o3 != null ? getParamColor('o3', d.o3) : '#475569'};">${d.o3 != null ? Number(d.o3).toFixed(3) : '0.000'}</td>
+            const isMissing = Boolean(d.isMissing || (d.cpcb_aqi == null && d.pm25 == null && d.pm10 == null));
+            const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
+
+            const aqiCell = d.cpcb_aqi != null 
+                ? `<span style="font-weight: 800; color: ${getAqiCategory(d.cpcb_aqi).text};">${Math.round(d.cpcb_aqi)}</span>`
+                : emptyCell;
+            const pm25Cell = d.pm25 != null 
+                ? `<span style="font-weight: 700; color: ${getParamColor('pm25', d.pm25)};">${Number(d.pm25).toFixed(3)}</span>`
+                : emptyCell;
+            const pm10Cell = d.pm10 != null 
+                ? `<span style="font-weight: 700; color: ${getParamColor('pm10', d.pm10)};">${Number(d.pm10).toFixed(3)}</span>`
+                : emptyCell;
+            const coCell = d.co != null 
+                ? `<span style="font-weight: 700; color: ${getParamColor('co', d.co)};">${Number(d.co).toFixed(3)}</span>`
+                : emptyCell;
+            const no2Cell = d.no2 != null 
+                ? `<span style="font-weight: 700; color: ${getParamColor('no2', d.no2)};">${Number(d.no2).toFixed(3)}</span>`
+                : emptyCell;
+            const o3Cell = d.o3 != null 
+                ? `<span style="font-weight: 700; color: ${getParamColor('o3', d.o3)};">${Number(d.o3).toFixed(3)}</span>`
+                : emptyCell;
+
+            return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
+                <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
+                <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
+                <td style="padding: 10px 16px;">${aqiCell}</td>
+                <td style="padding: 10px 16px;">${pm25Cell}</td>
+                <td style="padding: 10px 16px;">${pm10Cell}</td>
+                <td style="padding: 10px 16px;">${coCell}</td>
+                <td style="padding: 10px 16px;">${no2Cell}</td>
+                <td style="padding: 10px 16px;">${o3Cell}</td>
             </tr>`;
         }).join('');
     } else {
@@ -1565,15 +1667,37 @@ function renderUI(skipDayFilter = false) {
                 dateStr = dt.toLocaleDateString('en-GB');
                 timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
             }
-            return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                <td style="padding: 10px 16px; color: #0f172a; font-weight: 600; white-space: nowrap;">${dateStr}</td>
-                <td style="padding: 10px 16px; color: #00bfa5; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
-                <td style="padding: 10px 16px; color: #0f172a; font-weight: 600;">${d.temperature != null ? Number(d.temperature).toFixed(1) : '--'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.humidity != null ? Number(d.humidity).toFixed(1) : '--'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.wind_speed != null ? Number(d.wind_speed).toFixed(1) : '0.0'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.wind_gust != null ? Number(d.wind_gust).toFixed(1) : '0.0'}</td>
-                <td style="padding: 10px 16px; color: #475569;">${getCompassDir(d.wind_direction)}</td>
-                <td style="padding: 10px 16px; color: #475569;">${d.rain_gauge != null ? Number(d.rain_gauge).toFixed(1) : '0.0'}</td>
+            const isMissing = Boolean(d.isMissing || (d.temperature == null && d.humidity == null));
+            const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
+
+            const tempCell = d.temperature != null 
+                ? `<span style="color: #0f172a; font-weight: 600;">${Number(d.temperature).toFixed(1)}</span>` 
+                : emptyCell;
+            const humCell = d.humidity != null 
+                ? `<span style="color: #475569;">${Number(d.humidity).toFixed(1)}</span>` 
+                : emptyCell;
+            const windSpdCell = d.wind_speed != null 
+                ? `<span style="color: #475569;">${Number(d.wind_speed).toFixed(1)}</span>` 
+                : emptyCell;
+            const windGustCell = d.wind_gust != null 
+                ? `<span style="color: #475569;">${Number(d.wind_gust).toFixed(1)}</span>` 
+                : emptyCell;
+            const windDirCell = d.wind_direction != null 
+                ? `<span style="color: #475569;">${getCompassDir(d.wind_direction)}</span>` 
+                : emptyCell;
+            const rainCell = d.rain_gauge != null 
+                ? `<span style="color: #475569;">${Number(d.rain_gauge).toFixed(1)}</span>` 
+                : emptyCell;
+
+            return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
+                <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
+                <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
+                <td style="padding: 10px 16px;">${tempCell}</td>
+                <td style="padding: 10px 16px;">${humCell}</td>
+                <td style="padding: 10px 16px;">${windSpdCell}</td>
+                <td style="padding: 10px 16px;">${windGustCell}</td>
+                <td style="padding: 10px 16px;">${windDirCell}</td>
+                <td style="padding: 10px 16px;">${rainCell}</td>
             </tr>`;
         }).join('');
     }
@@ -2006,14 +2130,56 @@ function downloadCSV() {
     if(currentSubTab === 'aqi') {
         csv += 'Date,Time,AQI,PM2.5,PM10,CO,NO2,O3\n';
         filteredDayData.forEach(d => {
-            const dt = new Date(d.timestamp);
-            csv += `${dt.toLocaleDateString('en-GB')},${dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})},${Math.round(d.cpcb_aqi)},${d.pm25},${d.pm10},${d.co},${d.no2},${d.o3}\n`;
+            const parts = (d.timestamp || '').split('T');
+            let dateStr = '', timeStr = '';
+            if (parts.length === 2) {
+                const [yr, mo, da] = parts[0].split('-').map(Number);
+                const timeParts = parts[1].split(':');
+                const hr = Number(timeParts[0]) || 0;
+                const mn = Number(timeParts[1]) || 0;
+                const period = hr >= 12 ? 'PM' : 'AM';
+                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
+                dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
+                timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
+            } else {
+                const dt = new Date(d.timestamp);
+                dateStr = dt.toLocaleDateString('en-GB');
+                timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+            }
+            const aqi = d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '';
+            const pm25 = d.pm25 != null ? d.pm25 : '';
+            const pm10 = d.pm10 != null ? d.pm10 : '';
+            const co = d.co != null ? d.co : '';
+            const no2 = d.no2 != null ? d.no2 : '';
+            const o3 = d.o3 != null ? d.o3 : '';
+            csv += `${dateStr},${timeStr},${aqi},${pm25},${pm10},${co},${no2},${o3}\n`;
         });
     } else {
         csv += 'Date,Time,Temp,Humidity,WindSpeed,WindGust,WindDir,Rain\n';
         filteredDayData.forEach(d => {
-            const dt = new Date(d.timestamp);
-            csv += `${dt.toLocaleDateString('en-GB')},${dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})},${d.temperature},${d.humidity},${d.wind_speed},${d.wind_gust},${d.wind_direction},${d.rain_gauge}\n`;
+            const parts = (d.timestamp || '').split('T');
+            let dateStr = '', timeStr = '';
+            if (parts.length === 2) {
+                const [yr, mo, da] = parts[0].split('-').map(Number);
+                const timeParts = parts[1].split(':');
+                const hr = Number(timeParts[0]) || 0;
+                const mn = Number(timeParts[1]) || 0;
+                const period = hr >= 12 ? 'PM' : 'AM';
+                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
+                dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
+                timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
+            } else {
+                const dt = new Date(d.timestamp);
+                dateStr = dt.toLocaleDateString('en-GB');
+                timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+            }
+            const temp = d.temperature != null ? d.temperature : '';
+            const hum = d.humidity != null ? d.humidity : '';
+            const wind = d.wind_speed != null ? d.wind_speed : '';
+            const gust = d.wind_gust != null ? d.wind_gust : '';
+            const dir = d.wind_direction != null ? getCompassDir(d.wind_direction) : '';
+            const rain = d.rain_gauge != null ? d.rain_gauge : '';
+            csv += `${dateStr},${timeStr},${temp},${hum},${wind},${gust},${dir},${rain}\n`;
         });
     }
     

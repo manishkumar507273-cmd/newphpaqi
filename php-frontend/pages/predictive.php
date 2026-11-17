@@ -203,12 +203,12 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
 
         <!-- Right Side: Weather Box (Clean, without comfort/wind/limits) -->
         <div class="hero-weather-col flex flex-col justify-center w-full md:w-auto shrink-0 md:min-w-[280px] lg:min-w-[300px] py-1">
-          <div id="weather-hero-box" class="weather-hero-box rounded-2xl p-4 sm:p-4.5 w-full flex flex-col justify-between" style="background: #f8fafc !important; border: 1.5px solid #e2e8f0 !important; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important; transition: border-color 0.4s ease;">
+          <div id="weather-hero-box" class="weather-hero-box rounded-2xl p-4 sm:p-4.5 w-full flex flex-col justify-between" style="background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 25%, #e0f2fe 65%, #bae6fd 100%) !important; border: 1.5px solid rgba(14, 165, 233, 0.38) !important; box-shadow: 0 4px 20px rgba(14, 165, 233, 0.12) !important; transition: border-color 0.4s ease, box-shadow 0.4s ease;">
             
             <!-- Box Header -->
             <div class="weather-box-header flex items-center justify-between mb-2">
               <div class="flex items-center gap-1.5 text-[11px] font-extrabold text-slate-700 uppercase tracking-wider font-sans">
-                <i data-lucide="cloud-sun" class="w-4 h-4" style="color: <?= $init_f_color ?>;"></i>
+                <i data-lucide="cloud-sun" id="weather-hero-icon" class="w-4 h-4" style="color: #0284c7;"></i>
                 <span>Weather</span>
               </div>
             </div>
@@ -217,15 +217,15 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
             <div class="weather-box-main flex items-baseline justify-start my-1.5">
               <div class="weather-temp-row flex items-baseline gap-1">
                 <span id="forecast-weather-temp" class="text-3xl sm:text-[38px] font-black font-mono leading-none tracking-tight text-slate-900">--</span>
-                <span class="weather-temp-unit text-base sm:text-lg font-bold font-mono" style="color: <?= $init_f_color ?>;">°C</span>
+                <span class="weather-temp-unit text-base sm:text-lg font-bold font-mono" style="color: #0284c7;">°C</span>
               </div>
             </div>
 
             <!-- Micro Metrics Row (Humidity & Rain Percentage) -->
-            <div class="weather-metrics-grid grid grid-cols-2 gap-2.5 pt-2.5 mt-1 border-t" style="border-color: #e2e8f0;">
+            <div id="weather-metrics-divider" class="weather-metrics-grid grid grid-cols-2 gap-2.5 pt-2.5 mt-1 border-t" style="border-color: rgba(56, 189, 248, 0.3);">
               
               <!-- Humidity -->
-              <div id="weather-micro-humidity" class="weather-micro-card rounded-xl p-2 sm:p-2.5 text-center shadow-xs transition-colors duration-300" style="background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
+              <div id="weather-micro-humidity" class="weather-micro-card rounded-xl p-2 sm:p-2.5 text-center shadow-xs transition-colors duration-300" style="background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(14, 165, 233, 0.3); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
                 <div class="weather-micro-label text-[10px] sm:text-[10.5px] font-bold text-slate-600 flex items-center justify-center gap-1 mb-0.5">
                   <i data-lucide="droplets" class="w-3.5 h-3.5 text-[#00bfa5]"></i>
                   <span>Humidity</span>
@@ -234,7 +234,7 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
               </div>
 
               <!-- Rain Percentage -->
-              <div id="weather-micro-rain" class="weather-micro-card rounded-xl p-2 sm:p-2.5 text-center shadow-xs transition-colors duration-300" style="background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
+              <div id="weather-micro-rain" class="weather-micro-card rounded-xl p-2 sm:p-2.5 text-center shadow-xs transition-colors duration-300" style="background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(14, 165, 233, 0.3); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
                 <div class="weather-micro-label text-[10px] sm:text-[10.5px] font-bold text-slate-600 flex items-center justify-center gap-1 mb-0.5">
                   <i data-lucide="cloud-rain" class="w-3.5 h-3.5 text-[#0284c7]"></i>
                   <span>Rain</span>
@@ -906,7 +906,7 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
             if (!curHour) return;
             const b = getAqiBadge(curHour.aqi);
 
-            // Maintain crisp white container styling while tinting its border
+            // Keep outer hero container background white per user request
             const heroCard = document.getElementById('forecast-hero-container');
             if (heroCard) {
                 heroCard.style.setProperty('background', '#ffffff', 'important');
@@ -986,28 +986,39 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
                 aqiCard.style.boxShadow = `0 4px 20px ${b.shadow}`;
             }
 
-            // Weather Box Updates (Clean: Temp, Humidity, Rain Percentage)
+            // Weather Box Updates (Fresh Cool Sky Weather Gradient)
             const weatherBox = document.getElementById('weather-hero-box');
             if (weatherBox) {
-                weatherBox.style.setProperty('background', '#f8fafc', 'important');
-                weatherBox.style.setProperty('border-color', '#e2e8f0', 'important');
+                weatherBox.style.setProperty('background', 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 25%, #e0f2fe 65%, #bae6fd 100%)', 'important');
+                weatherBox.style.setProperty('border-color', 'rgba(14, 165, 233, 0.38)', 'important');
+                weatherBox.style.boxShadow = '0 4px 20px rgba(14, 165, 233, 0.12)';
+            }
+
+            const weatherDivider = document.getElementById('weather-metrics-divider');
+            if (weatherDivider) {
+                weatherDivider.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+            }
+
+            const weatherIcon = document.getElementById('weather-hero-icon');
+            if (weatherIcon) {
+                weatherIcon.style.color = '#0284c7';
             }
 
             const weatherUnit = document.querySelector('.weather-temp-unit');
             if (weatherUnit) {
-                weatherUnit.style.color = b.color;
+                weatherUnit.style.color = '#0284c7';
             }
 
             const microHum = document.getElementById('weather-micro-humidity');
             if (microHum) {
-                microHum.style.backgroundColor = '#ffffff';
-                microHum.style.borderColor = '#e2e8f0';
+                microHum.style.backgroundColor = 'rgba(255, 255, 255, 0.88)';
+                microHum.style.borderColor = 'rgba(14, 165, 233, 0.3)';
             }
 
             const microRain = document.getElementById('weather-micro-rain');
             if (microRain) {
-                microRain.style.backgroundColor = '#ffffff';
-                microRain.style.borderColor = '#e2e8f0';
+                microRain.style.backgroundColor = 'rgba(255, 255, 255, 0.88)';
+                microRain.style.borderColor = 'rgba(14, 165, 233, 0.3)';
             }
 
             const weatherTemp = document.getElementById('forecast-weather-temp');

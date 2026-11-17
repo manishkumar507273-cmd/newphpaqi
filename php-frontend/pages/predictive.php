@@ -216,18 +216,18 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
   </div>
 
   <!-- ── 3.5. Predicted Model Parameters (Outputs) Grid ── -->
-  <div class="bg-white rounded-[24px] p-4 sm:p-6 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)]">
-    <div class="flex items-center justify-between mb-4 px-1">
+  <div class="predicted-params-section bg-transparent sm:bg-white rounded-none sm:rounded-[24px] p-0 sm:p-6 border-0 sm:border border-slate-200 shadow-none sm:shadow-[0_4px_24px_rgba(15,23,42,0.05)] mt-3 sm:mt-0">
+    <div class="params-header flex items-center justify-between mb-3 px-0.5">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-[#e6fcf9] text-[#00bfa5] flex items-center justify-center">
+        <div class="w-8 h-8 rounded-lg bg-[#e6fcf9] text-[#00bfa5] flex items-center justify-center shrink-0">
           <i data-lucide="activity" class="w-4 h-4"></i>
         </div>
-        <h2 class="text-base font-extrabold text-slate-900 m-0 tracking-tight">Predicted Parameters</h2>
+        <h2 class="text-[17px] sm:text-lg font-bold text-slate-900 m-0 font-sans tracking-tight">Predicted Air Quality Parameters</h2>
       </div>
     </div>
 
     <!-- Grid of the 5 criteria air pollutants -->
-    <div id="predicted-parameters-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+    <div id="predicted-parameters-grid" class="pollutants-grid-responsive grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
       <div class="text-xs text-slate-400 py-6 text-center col-span-full">Loading predicted parameters...</div>
     </div>
   </div>
@@ -480,6 +480,129 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
   bottom: 0;
   border-radius: 999px;
   background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 50%, #ef4444 100%);
+}
+
+/* Pollutant Card Base & Mobile Styles (100% parity with Live page) */
+.pollutant-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-top-color 0.2s ease, border-right-color 0.2s ease, border-bottom-color 0.2s ease !important;
+}
+.pollutant-card:hover {
+  border-top-color: #00bfa5 !important;
+  border-right-color: #00bfa5 !important;
+  border-bottom-color: #00bfa5 !important;
+}
+.pollutant-chevron {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  /* Seamless full-width container on mobile matching live page */
+  .predicted-params-section {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    margin-top: 10px !important;
+  }
+  .predicted-params-section .params-header {
+    padding: 0 2px 8px 2px !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* Pollutants Grid Mobile Refinements (Ultra-compact 2-column layout matching live page) */
+  .pollutants-grid-responsive {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .pollutant-card {
+    display: grid !important;
+    grid-template-columns: 28px 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas:
+      "icon title   chevron"
+      "icon valwrap chevron" !important;
+    align-items: center !important;
+    column-gap: 8px !important;
+    row-gap: 2px !important;
+    padding: 7px 10px 7px 10px !important;
+    min-height: 48px !important;
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.04) !important;
+    background: #ffffff !important;
+  }
+  .pollutant-card-top,
+  .pollutant-card-bottom,
+  .pollutant-card-top > .flex {
+    display: contents !important;
+  }
+  .pollutant-card .pollutant-icon-box {
+    grid-area: icon !important;
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+  .pollutant-card .pollutant-title-box {
+    grid-area: title !important;
+    min-width: 0 !important;
+  }
+  .pollutant-card .pollutant-name {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 1.15 !important;
+    color: #1e293b !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .pollutant-card .pollutant-who {
+    display: none !important;
+  }
+  .pollutant-card .pollutant-val-wrap {
+    grid-area: valwrap !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 3.5px !important;
+    line-height: 1 !important;
+    min-width: 0 !important;
+  }
+  .pollutant-card [id^="card-"] {
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+  .pollutant-card .pollutant-unit {
+    font-size: 9.5px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    font-family: ui-monospace, monospace !important;
+  }
+  .pollutant-chevron {
+    grid-area: chevron !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #94a3b8 !important;
+    padding-left: 2px !important;
+  }
+  .pollutant-chevron svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .pollutant-card .pollutant-info-icon,
+  .pollutant-card [id^="tag-"],
+  .pollutant-card .pollutant-tag {
+    display: none !important;
+  }
 }
 </style>
 
@@ -936,84 +1059,86 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
                 const items = [
                     {
                         key: 'pm25', name: 'PM₂.₅', icon: '🌫️',
+                        iconBgClass: 'bg-sky-50 text-sky-500',
                         current: formatCurVal(curHour.pm25, 'pm25'),
                         unit: 'µg/m³',
                         tag: getParamTag('pm25', curHour.pm25),
                         borderColor: getParamStatusColor('pm25', curHour.pm25),
-                        valColor: getValColorClass('pm25'),
-                        footerLabel: 'CPCB:',
+                        valColor: 'text-sky-500',
                         footerVal: cpcbSafeLimits.pm25
                     },
                     {
                         key: 'pm10', name: 'PM₁₀', icon: '☁️',
+                        iconBgClass: 'bg-indigo-50 text-indigo-500',
                         current: formatCurVal(curHour.pm10, 'pm10'),
                         unit: 'µg/m³',
                         tag: getParamTag('pm10', curHour.pm10),
                         borderColor: getParamStatusColor('pm10', curHour.pm10),
-                        valColor: getValColorClass('pm10'),
-                        footerLabel: 'CPCB:',
+                        valColor: 'text-indigo-500',
                         footerVal: cpcbSafeLimits.pm10
                     },
                     {
                         key: 'co', name: 'CO', icon: '💨',
+                        iconBgClass: 'bg-slate-50 text-slate-600',
                         current: formatCurVal(curHour.co, 'co'),
                         unit: 'mg/m³',
                         tag: getParamTag('co', curHour.co),
                         borderColor: getParamStatusColor('co', curHour.co),
-                        valColor: getValColorClass('co'),
-                        footerLabel: 'CPCB:',
+                        valColor: 'text-slate-600',
                         footerVal: cpcbSafeLimits.co
                     },
                     {
                         key: 'no2', name: 'NO₂', icon: '🏭',
+                        iconBgClass: 'bg-purple-50 text-purple-500',
                         current: formatCurVal(curHour.no2, 'no2'),
                         unit: 'µg/m³',
                         tag: getParamTag('no2', curHour.no2),
                         borderColor: getParamStatusColor('no2', curHour.no2),
-                        valColor: getValColorClass('no2'),
-                        footerLabel: 'CPCB:',
+                        valColor: 'text-purple-500',
                         footerVal: cpcbSafeLimits.no2
                     },
                     {
                         key: 'o3', name: 'O₃', icon: '☀️',
+                        iconBgClass: 'bg-amber-50 text-amber-500',
                         current: formatCurVal(curHour.o3, 'o3'),
                         unit: 'µg/m³',
                         tag: getParamTag('o3', curHour.o3),
                         borderColor: getParamStatusColor('o3', curHour.o3),
-                        valColor: getValColorClass('o3'),
-                        footerLabel: 'CPCB:',
+                        valColor: 'text-amber-500',
                         footerVal: cpcbSafeLimits.o3
                     }
                 ];
 
                 paramsGrid.innerHTML = items.map((it) => `
-                    <div class="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-3.5 xl:p-4 flex flex-col justify-between hover:border-teal-500/40 hover:shadow-sm transition-all shadow-2xs h-full min-h-[118px]" style="border-left: 4px solid ${it.borderColor};">
-                      <!-- Top Row: Full Name on left, Tag on right -->
-                      <div class="flex items-center justify-between gap-1 mb-1">
-                        <span class="text-xs font-bold text-slate-800 flex items-center gap-1 shrink-0 whitespace-nowrap">
-                          <span class="shrink-0 text-xs sm:text-sm">${it.icon}</span>
-                          <span class="font-sans font-bold whitespace-nowrap">${it.name}</span>
-                        </span>
+                    <div id="card-box-${it.key}" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden h-full min-h-[110px]" style="border-left: 5px solid ${it.borderColor};">
+                      <div class="pollutant-card-top flex items-center justify-between w-full">
+                        <div class="flex items-center gap-2">
+                          <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${it.iconBgClass} flex items-center justify-center text-sm sm:text-lg shrink-0">${it.icon}</div>
+                          <div class="pollutant-title-box">
+                            <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">${it.name}</div>
+                            <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ${it.footerVal}</div>
+                          </div>
+                        </div>
+                        <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        </div>
+                      </div>
+
+                      <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
+                        <div class="pollutant-val-wrap flex flex-col">
+                          <div id="card-${it.key}" class="font-mono text-lg sm:text-2xl font-extrabold ${it.valColor} leading-none">${it.current}</div>
+                          <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">${it.unit}</div>
+                        </div>
                         ${it.tag ? `
-                        <span class="text-[8.5px] sm:text-[9.5px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-1 whitespace-nowrap shrink-0" style="background-color: ${it.tag.bg}; border-color: ${it.tag.border}; color: ${it.tag.color};">
+                        <div id="tag-${it.key}" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shrink-0" style="background-color: ${it.tag.bg}; border: 1px solid ${it.tag.border}; color: ${it.tag.color};">
                           <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${it.tag.dot};"></span>
                           <span>${it.tag.text}</span>
-                        </span>
+                        </div>
                         ` : ''}
                       </div>
 
-                      <!-- Middle Row: Value & Unit on a single aligned line -->
-                      <div class="my-1 flex items-baseline gap-1">
-                        <span class="text-lg sm:text-[21px] font-extrabold font-mono ${it.valColor} tracking-tight leading-none">${it.current}</span>
-                        <span class="text-[11px] font-semibold text-slate-400 font-mono shrink-0">${it.unit}</span>
-                      </div>
-
-                      <!-- Bottom Row: Benchmark / Range Footer -->
-                      <div class="text-[9px] sm:text-[9.5px] text-slate-400 flex items-center justify-between gap-1 min-h-[14px]">
-                        ${it.footerLabel ? `
-                          <span class="shrink-0">${it.footerLabel}</span>
-                          <strong class="text-slate-600 font-mono font-bold truncate text-right">${it.footerVal}</strong>
-                        ` : ''}
+                      <div class="pollutant-chevron text-slate-400 shrink-0">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                       </div>
                     </div>
                 `).join('');

@@ -40,61 +40,85 @@ if (file_exists($forecastJsonFile)) {
 
 // Initial AQI category theming in light (matching Live / Overview AQI tier standards)
 $init_f_bg = '#fefce8';
-$init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fefce8 35%, #fef9c3 100%)';
+$init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)';
 $init_f_border = 'rgba(202, 138, 4, 0.38)';
 $init_f_text = '#854d0e';
 $init_f_color = '#ca8a04';
-$init_f_shadow = 'rgba(234, 179, 8, 0.12)';
+$init_f_shadow = 'rgba(234, 179, 8, 0.18)';
 $init_f_label = 'MODERATE';
 $init_f_aqi = 90;
+$init_f_advice = 'Acceptable air quality.';
 
 if (isset($decodedPreload['hourly'][0]['aqi'])) {
     $vA = (int)$decodedPreload['hourly'][0]['aqi'];
     $init_f_aqi = $vA;
     if ($vA <= 50) {
         $init_f_bg = '#f0fdf4';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 35%, #dcfce7 100%)';
+        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)';
         $init_f_border = 'rgba(22, 163, 74, 0.35)';
         $init_f_text = '#15803d';
         $init_f_color = '#16a34a';
-        $init_f_shadow = 'rgba(22, 163, 74, 0.10)';
+        $init_f_shadow = 'rgba(22, 163, 74, 0.16)';
         $init_f_label = 'GOOD';
+        $init_f_advice = 'Air quality is satisfactory.';
     } elseif ($vA <= 100) {
         // Moderate default above
+        $init_f_advice = 'Acceptable air quality.';
     } elseif ($vA <= 200) {
         $init_f_bg = '#fff7ed';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fff7ed 35%, #ffedd5 100%)';
+        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)';
         $init_f_border = 'rgba(234, 88, 12, 0.38)';
         $init_f_text = '#c2410c';
         $init_f_color = '#ea580c';
-        $init_f_shadow = 'rgba(249, 115, 22, 0.12)';
+        $init_f_shadow = 'rgba(249, 115, 22, 0.18)';
         $init_f_label = 'POOR';
+        $init_f_advice = 'Sensitive people affected.';
     } elseif ($vA <= 300) {
         $init_f_bg = '#fff1f2';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fff1f2 35%, #ffe4e6 100%)';
+        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)';
         $init_f_border = 'rgba(225, 29, 72, 0.38)';
         $init_f_text = '#9f1239';
         $init_f_color = '#e11d48';
-        $init_f_shadow = 'rgba(225, 29, 72, 0.12)';
+        $init_f_shadow = 'rgba(225, 29, 72, 0.18)';
         $init_f_label = 'UNHEALTHY';
+        $init_f_advice = 'Health effects for everyone.';
     } elseif ($vA <= 400) {
         $init_f_bg = '#faf5ff';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #faf5ff 35%, #f3e8ff 100%)';
+        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #faf5ff 22%, #f3e8ff 48%, #e9d5ff 72%, #c084fc 90%, #9333ea 100%)';
         $init_f_border = 'rgba(147, 51, 234, 0.38)';
         $init_f_text = '#6b21a8';
         $init_f_color = '#9333ea';
-        $init_f_shadow = 'rgba(147, 51, 234, 0.12)';
+        $init_f_shadow = 'rgba(147, 51, 234, 0.18)';
         $init_f_label = 'SEVERE';
+        $init_f_advice = 'Emergency health warning.';
     } else {
         $init_f_bg = '#fef2f2';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fef2f2 35%, #fee2e2 100%)';
+        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fef2f2 22%, #fee2e2 48%, #fca5a5 72%, #f87171 90%, #b91c1c 100%)';
         $init_f_border = 'rgba(185, 28, 28, 0.40)';
         $init_f_text = '#881337';
         $init_f_color = '#b91c1c';
-        $init_f_shadow = 'rgba(185, 28, 28, 0.14)';
+        $init_f_shadow = 'rgba(185, 28, 28, 0.20)';
         $init_f_label = 'HAZARDOUS';
+        $init_f_advice = 'Serious health crisis.';
     }
 }
+
+if ($init_f_aqi <= 50) {
+    $init_f_t = ($init_f_aqi / 50) * 0.22;
+} elseif ($init_f_aqi <= 100) {
+    $init_f_t = 0.22 + (($init_f_aqi - 50) / 50) * 0.20;
+} elseif ($init_f_aqi <= 200) {
+    $init_f_t = 0.42 + (($init_f_aqi - 100) / 100) * 0.23;
+} elseif ($init_f_aqi <= 300) {
+    $init_f_t = 0.65 + (($init_f_aqi - 200) / 100) * 0.15;
+} elseif ($init_f_aqi <= 400) {
+    $init_f_t = 0.80 + (($init_f_aqi - 300) / 100) * 0.12;
+} else {
+    $init_f_t = min(1.0, 0.92 + min(($init_f_aqi - 400) / 100, 1) * 0.08);
+}
+$init_f_theta = (-157.38 + $init_f_t * 134.76) * (M_PI / 180);
+$init_f_pin_x = round(75 + 65 * cos($init_f_theta), 2);
+$init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
 ?>
 
 <div class="forecast-page-container p-2.5 sm:p-6 flex flex-col gap-3 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
@@ -107,7 +131,7 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
 
 
   <!-- ── 3. Forecast Hero Summary Card: Predicted AQI & Weather Telemetry ── -->
-  <div id="forecast-hero-container" class="rounded-[16px] sm:rounded-[24px] p-4 sm:p-7 border relative overflow-hidden" style="background: <?= $init_f_card_bg ?> !important; border: 1.5px solid <?= $init_f_border ?> !important; box-shadow: 0 4px 24px <?= $init_f_shadow ?> !important; transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
+  <div id="forecast-hero-container" class="rounded-[16px] sm:rounded-[24px] p-4 sm:p-7 border relative overflow-hidden" style="background: #ffffff !important; border: 1.5px solid <?= $init_f_border ?> !important; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.05) !important; transition: border-color 0.5s ease, box-shadow 0.5s ease;">
     <div class="flex flex-col gap-4 sm:gap-6 w-full">
       
       <!-- Top Row: Title, Date, Hour Target Badge -->
@@ -124,49 +148,62 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
       <!-- Main Row: Left (Rainbow Arc Gauge) + Right (Big Temperature, Humidity & Rain Cards) -->
       <div class="flex flex-col md:flex-row items-center md:items-stretch justify-between gap-6 md:gap-8">
 
-        <!-- Left Side: Compact Rainbow Arc AQI Gauge -->
-        <div id="forecast-hero-divider-v" class="flex flex-col items-center justify-center shrink-0 w-full md:w-auto md:min-w-[240px] lg:min-w-[270px] md:pr-4 lg:pr-6 py-1">
-          <div class="relative w-full max-w-[220px] sm:max-w-[240px] flex flex-col items-center justify-center">
-            
-            <svg viewBox="0 0 200 120" class="w-full h-auto overflow-visible select-none drop-shadow-xs" id="forecast-rainbow-svg">
-              <defs>
-                <filter id="gauge-pin-glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.25"/>
-                </filter>
-              </defs>
+        <!-- Left Side: Sleek Modern AQI Arc Widget (matching user reference card, in clean light theme) -->
+        <div class="hero-aqi-col flex flex-col justify-center w-full md:flex-1 shrink-0 py-1">
+          <div id="aqi-hero-card" class="rounded-2xl p-4 sm:p-5 w-full flex flex-col justify-between relative overflow-hidden h-full" style="background: <?= $init_f_card_bg ?> !important; border: 1.5px solid <?= $init_f_border ?> !important; box-shadow: 0 4px 20px <?= $init_f_shadow ?> !important; transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
 
-              <!-- Background Track -->
-              <path d="M 25.0 105.0 A 75 75 0 0 1 175.0 105.0" fill="none" stroke="#f1f5f9" stroke-width="10" stroke-linecap="round" />
+            <!-- Content Row: Arc on Left, Reading & Health Advice on Right -->
+            <div class="flex items-center justify-between gap-4 sm:gap-6 w-full my-auto">
+              
+              <!-- Left Column: Smooth Low Arc with Category Text below -->
+              <div class="flex flex-col items-center justify-center shrink-0" style="width: 140px; max-width: 145px;">
+                <div class="relative w-full flex flex-col items-center justify-center">
+                  <svg viewBox="0 0 150 72" class="w-full h-auto overflow-visible select-none" id="forecast-rainbow-svg">
+                    <defs>
+                      <linearGradient id="aqi-rainbow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#22c55e" />
+                        <stop offset="22%" stop-color="#84cc16" />
+                        <stop offset="42%" stop-color="#eab308" />
+                        <stop offset="65%" stop-color="#f97316" />
+                        <stop offset="85%" stop-color="#ec4899" />
+                        <stop offset="100%" stop-color="#dc2626" />
+                      </linearGradient>
+                      <filter id="aqi-bead-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.30"/>
+                      </filter>
+                    </defs>
 
-              <!-- 6 Colored Rainbow Segments -->
-              <path d="M 25.0 105.0 A 75 75 0 0 1 35.05 67.5" fill="none" stroke="#16a34a" stroke-width="8" stroke-linecap="round" />
-              <path d="M 35.05 67.5 A 75 75 0 0 1 62.5 40.05" fill="none" stroke="#eab308" stroke-width="8" stroke-linecap="butt" />
-              <path d="M 62.5 40.05 A 75 75 0 0 1 100.0 30.0" fill="none" stroke="#f97316" stroke-width="8" stroke-linecap="butt" />
-              <path d="M 100.0 30.0 A 75 75 0 0 1 137.5 40.05" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="butt" />
-              <path d="M 137.5 40.05 A 75 75 0 0 1 164.95 67.5" fill="none" stroke="#a855f7" stroke-width="8" stroke-linecap="butt" />
-              <path d="M 164.95 67.5 A 75 75 0 0 1 175.0 105.0" fill="none" stroke="#991b1b" stroke-width="8" stroke-linecap="round" />
+                    <!-- Background Base Track -->
+                    <path d="M 15 58 A 65 65 0 0 1 135 58" fill="none" stroke="rgba(0, 0, 0, 0.06)" stroke-width="5.5" stroke-linecap="round" />
 
-              <!-- Muted Start and End Scale Labels -->
-              <text x="25" y="117" text-anchor="middle" font-size="8.5" font-family="monospace" font-weight="700" fill="#94a3b8">0</text>
-              <text x="175" y="117" text-anchor="middle" font-size="8.5" font-family="monospace" font-weight="700" fill="#94a3b8">500+</text>
+                    <!-- Smooth Continuous Rainbow Gradient Arc -->
+                    <path d="M 15 58 A 65 65 0 0 1 135 58" fill="none" stroke="url(#aqi-rainbow-gradient)" stroke-width="5" stroke-linecap="round" />
 
-              <!-- Dynamic Indicator Bead on the Rainbow Arc -->
-              <circle id="forecast-rainbow-pin" cx="40.74" cy="59.03" r="5.5" fill="#ffffff" stroke="<?= $init_f_color ?>" stroke-width="2.5" filter="url(#gauge-pin-glow)" style="transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);" />
-            </svg>
+                    <!-- Dynamic Sliding White Bead Pin -->
+                    <circle id="forecast-rainbow-pin" cx="<?= $init_f_pin_x ?>" cy="<?= $init_f_pin_y ?>" r="5.5" fill="#ffffff" stroke="<?= $init_f_color ?>" stroke-width="2.2" filter="url(#aqi-bead-shadow)" style="transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);" />
+                  </svg>
+                </div>
+                <!-- Category Text right below the curve apex -->
+                <div id="forecast-hero-category-text" class="text-xs sm:text-[13.5px] font-black uppercase tracking-wider font-sans mt-0.5 text-center" style="color: <?= $init_f_color ?>;"><?= $init_f_label ?></div>
+              </div>
 
-            <!-- Centered Clean Reading under the Rainbow -->
-            <div class="absolute inset-x-0 bottom-2.5 flex flex-col items-center justify-center text-center pointer-events-none">
-              <span id="forecast-hero-aqi" class="text-4xl sm:text-[46px] font-black font-mono tracking-tight leading-none mb-1" style="color: <?= $init_f_color ?>;"><?= $init_f_aqi ?></span>
-              <span id="forecast-hero-category-badge" class="px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold uppercase font-mono tracking-wider border shadow-xs" style="background-color: <?= $init_f_bg ?>; border-color: <?= $init_f_border ?>; color: <?= $init_f_text ?>;"><?= $init_f_label ?></span>
+              <!-- Right Column: Big AQI Value + Health Impact Advisory -->
+              <div class="flex flex-col justify-center flex-1 min-w-0 pr-2 sm:pr-4">
+                <div class="flex items-baseline gap-1.5 leading-none">
+                  <span id="forecast-hero-aqi" class="text-3xl sm:text-4xl lg:text-[44px] font-black font-mono tracking-tight text-slate-900 leading-none"><?= $init_f_aqi ?></span>
+                  <span class="text-base sm:text-lg font-extrabold text-slate-500 font-sans tracking-tight">AQI</span>
+                </div>
+                <p id="forecast-hero-health-advice" class="text-xs sm:text-[13px] font-semibold text-slate-500 mt-1.5 line-clamp-2 leading-snug m-0"><?= $init_f_advice ?></p>
+              </div>
+
             </div>
 
           </div>
-          <span id="forecast-hero-label" class="text-[10.5px] sm:text-[11.5px] font-extrabold uppercase tracking-wider mt-1.5" style="color: <?= $init_f_color ?>;">Predicted Air Quality</span>
         </div>
 
         <!-- Right Side: Weather Box (Clean, without comfort/wind/limits) -->
         <div class="hero-weather-col flex flex-col justify-center w-full md:w-auto shrink-0 md:min-w-[280px] lg:min-w-[300px] py-1">
-          <div id="weather-hero-box" class="weather-hero-box rounded-2xl p-4 sm:p-4.5 w-full flex flex-col justify-between" style="background: #ffffff !important; border: 1.5px solid <?= $init_f_border ?> !important; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06) !important; transition: border-color 0.4s ease;">
+          <div id="weather-hero-box" class="weather-hero-box rounded-2xl p-4 sm:p-4.5 w-full flex flex-col justify-between" style="background: #f8fafc !important; border: 1.5px solid #e2e8f0 !important; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important; transition: border-color 0.4s ease;">
             
             <!-- Box Header -->
             <div class="weather-box-header flex items-center justify-between mb-2">
@@ -185,10 +222,10 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
             </div>
 
             <!-- Micro Metrics Row (Humidity & Rain Percentage) -->
-            <div class="weather-metrics-grid grid grid-cols-2 gap-2.5 pt-2.5 mt-1 border-t" style="border-color: <?= $init_f_border ?>;">
+            <div class="weather-metrics-grid grid grid-cols-2 gap-2.5 pt-2.5 mt-1 border-t" style="border-color: #e2e8f0;">
               
               <!-- Humidity -->
-              <div id="weather-micro-humidity" class="weather-micro-card rounded-xl p-2 sm:p-2.5 text-center shadow-xs transition-colors duration-300" style="background: <?= $init_f_bg ?>; border: 1px solid <?= $init_f_border ?>; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
+              <div id="weather-micro-humidity" class="weather-micro-card rounded-xl p-2 sm:p-2.5 text-center shadow-xs transition-colors duration-300" style="background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
                 <div class="weather-micro-label text-[10px] sm:text-[10.5px] font-bold text-slate-600 flex items-center justify-center gap-1 mb-0.5">
                   <i data-lucide="droplets" class="w-3.5 h-3.5 text-[#00bfa5]"></i>
                   <span>Humidity</span>
@@ -197,7 +234,7 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
               </div>
 
               <!-- Rain Percentage -->
-              <div id="weather-micro-rain" class="weather-micro-card rounded-xl p-2 sm:p-2.5 text-center shadow-xs transition-colors duration-300" style="background: <?= $init_f_bg ?>; border: 1px solid <?= $init_f_border ?>; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
+              <div id="weather-micro-rain" class="weather-micro-card rounded-xl p-2 sm:p-2.5 text-center shadow-xs transition-colors duration-300" style="background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
                 <div class="weather-micro-label text-[10px] sm:text-[10.5px] font-bold text-slate-600 flex items-center justify-center gap-1 mb-0.5">
                   <i data-lucide="cloud-rain" class="w-3.5 h-3.5 text-[#0284c7]"></i>
                   <span>Rain</span>
@@ -616,6 +653,7 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
         if (aqi === null || aqi === undefined || aqi === '--' || isNaN(Number(aqi))) {
             return {
                 label: 'Standby',
+                advice: 'Awaiting station telemetry.',
                 bg: '#f8fafc',
                 cardBg: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 40%, #f1f5f9 100%)',
                 text: '#64748b',
@@ -628,63 +666,69 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
         const v = Number(aqi);
         if (v <= 50) return {
             label: 'Good',
+            advice: 'Air quality is satisfactory.',
             bg: '#f0fdf4',
-            cardBg: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 35%, #dcfce7 100%)',
+            cardBg: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)',
             text: '#15803d',
             border: 'rgba(22, 163, 74, 0.35)',
             dot: '#16a34a',
             color: '#16a34a',
-            shadow: 'rgba(22, 163, 74, 0.10)'
+            shadow: 'rgba(22, 163, 74, 0.16)'
         };
         if (v <= 100) return {
             label: 'Moderate',
+            advice: 'Acceptable air quality.',
             bg: '#fefce8',
-            cardBg: 'linear-gradient(135deg, #ffffff 0%, #fefce8 35%, #fef9c3 100%)',
+            cardBg: 'linear-gradient(135deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)',
             text: '#854d0e',
             border: 'rgba(202, 138, 4, 0.38)',
             dot: '#eab308',
             color: '#ca8a04',
-            shadow: 'rgba(234, 179, 8, 0.12)'
+            shadow: 'rgba(234, 179, 8, 0.18)'
         };
         if (v <= 200) return {
             label: 'Poor',
+            advice: 'Sensitive people affected.',
             bg: '#fff7ed',
-            cardBg: 'linear-gradient(135deg, #ffffff 0%, #fff7ed 35%, #ffedd5 100%)',
+            cardBg: 'linear-gradient(135deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)',
             text: '#c2410c',
             border: 'rgba(234, 88, 12, 0.38)',
             dot: '#f97316',
             color: '#ea580c',
-            shadow: 'rgba(249, 115, 22, 0.12)'
+            shadow: 'rgba(249, 115, 22, 0.18)'
         };
         if (v <= 300) return {
             label: 'Unhealthy',
+            advice: 'Health effects for everyone.',
             bg: '#fff1f2',
-            cardBg: 'linear-gradient(135deg, #ffffff 0%, #fff1f2 35%, #ffe4e6 100%)',
+            cardBg: 'linear-gradient(135deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)',
             text: '#9f1239',
             border: 'rgba(225, 29, 72, 0.38)',
             dot: '#ef4444',
             color: '#e11d48',
-            shadow: 'rgba(225, 29, 72, 0.12)'
+            shadow: 'rgba(225, 29, 72, 0.18)'
         };
         if (v <= 400) return {
             label: 'Severe',
+            advice: 'Emergency health warning.',
             bg: '#faf5ff',
-            cardBg: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 35%, #f3e8ff 100%)',
+            cardBg: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 22%, #f3e8ff 48%, #e9d5ff 72%, #c084fc 90%, #9333ea 100%)',
             text: '#6b21a8',
             border: 'rgba(147, 51, 234, 0.38)',
             dot: '#a855f7',
             color: '#9333ea',
-            shadow: 'rgba(147, 51, 234, 0.12)'
+            shadow: 'rgba(147, 51, 234, 0.18)'
         };
         return {
             label: 'Hazardous',
+            advice: 'Serious health crisis.',
             bg: '#fef2f2',
-            cardBg: 'linear-gradient(135deg, #ffffff 0%, #fef2f2 35%, #fee2e2 100%)',
+            cardBg: 'linear-gradient(135deg, #ffffff 0%, #fef2f2 22%, #fee2e2 48%, #fca5a5 72%, #f87171 90%, #b91c1c 100%)',
             text: '#881337',
             border: 'rgba(185, 28, 28, 0.40)',
             dot: '#b91c1c',
             color: '#b91c1c',
-            shadow: 'rgba(185, 28, 28, 0.14)'
+            shadow: 'rgba(185, 28, 28, 0.20)'
         };
     }
 
@@ -862,12 +906,12 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
             if (!curHour) return;
             const b = getAqiBadge(curHour.aqi);
 
-            // Dynamically theme the Forecast Hero Container to match the active AQI category in light
+            // Maintain crisp white container styling while tinting its border
             const heroCard = document.getElementById('forecast-hero-container');
             if (heroCard) {
-                heroCard.style.setProperty('background', b.cardBg, 'important');
+                heroCard.style.setProperty('background', '#ffffff', 'important');
                 heroCard.style.setProperty('border-color', b.border, 'important');
-                heroCard.style.boxShadow = `0 4px 24px ${b.shadow}`;
+                heroCard.style.boxShadow = `0 4px 24px rgba(15, 23, 42, 0.05)`;
             }
 
             const heroTitle = document.getElementById('forecast-hero-title');
@@ -880,20 +924,23 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
                 heroLabel.style.color = b.color;
             }
 
-            // Hero AQI
+            // Hero AQI Value
             const heroAqi = document.getElementById('forecast-hero-aqi');
             if (heroAqi) {
                 heroAqi.innerText = curHour.aqi !== undefined ? curHour.aqi : '--';
-                heroAqi.style.color = b.color;
             }
 
-            // Category Badge as per Live Page Bar standard
-            const catBadge = document.getElementById('forecast-hero-category-badge');
-            if (catBadge) {
-                catBadge.innerText = b.label.toUpperCase();
-                catBadge.style.backgroundColor = b.bg;
-                catBadge.style.borderColor = b.border;
-                catBadge.style.color = b.text;
+            // Category text right under the arc curve apex
+            const catText = document.getElementById('forecast-hero-category-text');
+            if (catText) {
+                catText.innerText = b.label.toUpperCase();
+                catText.style.color = b.color;
+            }
+
+            // Health Impact Advisory Statement
+            const healthAdvice = document.getElementById('forecast-hero-health-advice');
+            if (healthAdvice) {
+                healthAdvice.innerText = b.advice;
             }
 
             // Target Hour Badge (shows only the hour, e.g. "8 PM")
@@ -905,24 +952,24 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
                 targetWinEl.style.color = b.text;
             }
 
-            // Compact Rainbow Curved Gauge Indicator Pin
-            const getAqiRainbowAngle = (aqi) => {
+            // Smooth Arc Pin Calculation (Matching user reference card gauge)
+            const getAqiProgress = (aqi) => {
                 const v = Number(aqi);
                 if (isNaN(v) || v <= 0) return 0;
-                if (v <= 50)  return Math.max(1, (v / 50) * 30);
-                if (v <= 100) return 30 + ((v - 50) / 50) * 30;
-                if (v <= 200) return 60 + ((v - 100) / 100) * 30;
-                if (v <= 300) return 90 + ((v - 200) / 100) * 30;
-                if (v <= 400) return 120 + ((v - 300) / 100) * 30;
-                return Math.min(179, 150 + Math.min((v - 400) / 100, 1) * 30);
+                if (v <= 50)  return (v / 50) * 0.22;
+                if (v <= 100) return 0.22 + ((v - 50) / 50) * 0.20;
+                if (v <= 200) return 0.42 + ((v - 100) / 100) * 0.23;
+                if (v <= 300) return 0.65 + ((v - 200) / 100) * 0.15;
+                if (v <= 400) return 0.80 + ((v - 300) / 100) * 0.12;
+                return Math.min(1.0, 0.92 + Math.min((v - 400) / 100, 1) * 0.08);
             };
 
-            const angle = getAqiRainbowAngle(curHour.aqi);
-            const rad = angle * (Math.PI / 180);
-            const cx = 100, cy = 105;
-            const r_arc = 75;
-            const pinX = (cx - r_arc * Math.cos(rad)).toFixed(2);
-            const pinY = (cy - r_arc * Math.sin(rad)).toFixed(2);
+            const t = getAqiProgress(curHour.aqi);
+            const thetaStart = -157.38 * (Math.PI / 180);
+            const thetaEnd = -22.62 * (Math.PI / 180);
+            const currentTheta = thetaStart + t * (thetaEnd - thetaStart);
+            const pinX = (75 + 65 * Math.cos(currentTheta)).toFixed(2);
+            const pinY = (83 + 65 * Math.sin(currentTheta)).toFixed(2);
 
             const rainbowPin = document.getElementById('forecast-rainbow-pin');
             if (rainbowPin) {
@@ -931,10 +978,19 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
                 rainbowPin.setAttribute('stroke', b.color);
             }
 
+            // AQI Hero Card: dynamically theme background to match the AQI bar in light, along with border & glowing shadow
+            const aqiCard = document.getElementById('aqi-hero-card');
+            if (aqiCard) {
+                aqiCard.style.setProperty('background', b.cardBg, 'important');
+                aqiCard.style.setProperty('border-color', b.border, 'important');
+                aqiCard.style.boxShadow = `0 4px 20px ${b.shadow}`;
+            }
+
             // Weather Box Updates (Clean: Temp, Humidity, Rain Percentage)
             const weatherBox = document.getElementById('weather-hero-box');
             if (weatherBox) {
-                weatherBox.style.setProperty('border-color', b.border, 'important');
+                weatherBox.style.setProperty('background', '#f8fafc', 'important');
+                weatherBox.style.setProperty('border-color', '#e2e8f0', 'important');
             }
 
             const weatherUnit = document.querySelector('.weather-temp-unit');
@@ -944,14 +1000,14 @@ if (isset($decodedPreload['hourly'][0]['aqi'])) {
 
             const microHum = document.getElementById('weather-micro-humidity');
             if (microHum) {
-                microHum.style.backgroundColor = b.bg;
-                microHum.style.borderColor = b.border;
+                microHum.style.backgroundColor = '#ffffff';
+                microHum.style.borderColor = '#e2e8f0';
             }
 
             const microRain = document.getElementById('weather-micro-rain');
             if (microRain) {
-                microRain.style.backgroundColor = b.bg;
-                microRain.style.borderColor = b.border;
+                microRain.style.backgroundColor = '#ffffff';
+                microRain.style.borderColor = '#e2e8f0';
             }
 
             const weatherTemp = document.getElementById('forecast-weather-temp');

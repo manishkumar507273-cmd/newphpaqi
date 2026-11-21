@@ -675,7 +675,7 @@ var pendingRangeFetches = window.__pendingHistFetches = window.__pendingHistFetc
 var summaryCollapseTimer = null;
 
 function getCacheKey(date, days) {
-    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '2'));
     return `${date}_${days}_n${activeNode}`;
 }
 
@@ -770,6 +770,25 @@ var getAqiCategory = function(val) {
     if (v <= 300) return { label: 'Unhealthy', color: '#e95478', bg: '#fff1f2', border: 'rgba(233, 84, 120, 0.45)', text: '#991b1b', badgeBg: '#e95478', badgeText: '#ffffff' };
     if (v <= 400) return { label: 'Severe', color: '#b33fba', bg: '#faf5ff', border: 'rgba(179, 63, 186, 0.45)', text: '#6b21a8', badgeBg: '#b33fba', badgeText: '#ffffff' };
     return { label: 'Hazardous', color: '#c92033', bg: '#fef2f2', border: 'rgba(201, 32, 51, 0.45)', text: '#9f1239', badgeBg: '#c92033', badgeText: '#ffffff' };
+};
+
+var calculateCpcbSubIndex = function(param, val) {
+    if (val == null || isNaN(val)) return 0;
+    const v = Number(val);
+    const breakpoints = {
+        pm25: [[0,30,0,50],[30,60,51,100],[60,90,101,200],[90,120,201,300],[120,250,301,400],[250,500,401,500]],
+        pm10: [[0,50,0,50],[50,100,51,100],[100,250,101,200],[250,350,201,300],[350,430,301,400],[430,600,401,500]],
+        co:   [[0,1,0,50],[1,2,51,100],[2,10,101,200],[10,17,201,300],[17,34,301,400],[34,50,401,500]],
+        no2:  [[0,40,0,50],[40,80,51,100],[80,180,101,200],[180,280,201,300],[280,400,301,400],[400,500,401,500]],
+        o3:   [[0,50,0,50],[50,100,51,100],[100,168,101,200],[168,208,201,300],[208,748,301,400],[748,1000,401,500]]
+    };
+    const tiers = breakpoints[param];
+    if (!tiers) return 0;
+    for (const [clo, chi, ilo, ihi] of tiers) {
+        if (v <= chi) return Math.round(((ihi - ilo) / (chi - clo)) * (v - clo) + ilo);
+    }
+    const [clo, chi, ilo, ihi] = tiers[tiers.length - 1];
+    return Math.min(500, Math.round(((ihi - ilo) / (chi - clo)) * (v - clo) + ilo));
 };
 
 // 6-Tier scales matching the Live page bar standards for each air pollutant
@@ -1497,17 +1516,43 @@ function renderUI(skipDayFilter = false) {
         if (weatherBlock) weatherBlock.style.display = currentSubTab === 'weather' ? 'flex' : 'none';
 
         if (currentSubTab === 'aqi') {
-            const avgAqi = countAqi > 0 ? Math.round(sumAqi / countAqi) : 0;
+            // Node 2 standard CPCB NAQI calculation from 24-hr mean criteria pollutant concentrations
+            const avgPm25Val = countPm25 > 0 ? (sumPm25 / countPm25) : null;
+            const avgPm10Val = countPm10 > 0 ? (sumPm10 / countPm10) : null;
+            const avgCoVal   = countCo > 0 ? (sumCo / countCo) : null;
+            const avgNo2Val  = countNo2 > 0 ? (sumNo2 / countNo2) : null;
+            const avgO3Val   = countO3 > 0 ? (sumO3 / countO3) : null;
+
+            const subIndices = {
+                pm25: avgPm25Val != null ? calculateCpcbSubIndex('pm25', avgPm25Val) : 0,
+                pm10: avgPm10Val != null ? calculateCpcbSubIndex('pm10', avgPm10Val) : 0,
+                co:   avgCoVal != null ? calculateCpcbSubIndex('co', avgCoVal) : 0,
+                no2:  avgNo2Val != null ? calculateCpcbSubIndex('no2', avgNo2Val) : 0,
+                o3:   avgO3Val != null ? calculateCpcbSubIndex('o3', avgO3Val) : 0
+            };
+
+            let maxSub = 0;
+            let dominantPollutant = 'PM2.5';
+            const domMap = { pm25: 'PM2.5', pm10: 'PM10', co: 'CO', no2: 'NO₂', o3: 'O₃' };
+            for (const [param, sub] of Object.entries(subIndices)) {
+                if (sub >= maxSub) {
+                    maxSub = sub;
+                    dominantPollutant = domMap[param] || 'PM2.5';
+                }
+            }
+
+            // The official 24-hr CPCB AQI is the maximum of the individual pollutant sub-indices
+            const avgAqi = (countPm25 > 0 || countPm10 > 0) ? Math.round(maxSub) : (countAqi > 0 ? Math.round(sumAqi / countAqi) : 0);
             const aqiCat = getAqiCategory(avgAqi);
             const avgAqiVal = document.getElementById('avg-aqi-val');
             if (avgAqiVal) {
-                avgAqiVal.innerText = countAqi > 0 ? avgAqi : '--';
-                avgAqiVal.style.color = countAqi > 0 ? aqiCat.text : '#64748b';
+                avgAqiVal.innerText = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? avgAqi : '--';
+                avgAqiVal.style.color = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.text : '#64748b';
             }
 
             const label = document.getElementById('avg-aqi-label');
             if (label) {
-                if (countAqi > 0) {
+                if (countPm25 > 0 || countPm10 > 0 || countAqi > 0) {
                     label.innerText = aqiCat.label;
                     label.style.display = 'inline-block';
                     label.style.backgroundColor = aqiCat.badgeBg;
@@ -1520,19 +1565,23 @@ function renderUI(skipDayFilter = false) {
             const minAqiVal = document.getElementById('min-aqi-val');
             const maxAqiVal = document.getElementById('max-aqi-val');
             const minMaxAqi = document.getElementById('min-max-aqi');
-            if (minAqiVal) minAqiVal.innerText = countAqi > 0 ? minAqi : '--';
-            if (maxAqiVal) maxAqiVal.innerText = countAqi > 0 ? maxAqi : '--';
+            if (minAqiVal) minAqiVal.innerText = (countAqi > 0 && minAqi !== 9999) ? minAqi : '--';
+            if (maxAqiVal) maxAqiVal.innerText = (countAqi > 0 && maxAqi !== -1) ? maxAqi : '--';
             if (minMaxAqi) minMaxAqi.style.display = countAqi > 0 ? 'flex' : 'none';
 
             const badge = document.getElementById('avg-aqi-badge-container');
             if (badge) {
-                badge.style.backgroundColor = countAqi > 0 ? aqiCat.bg : '#f8fafc';
-                badge.style.borderColor = countAqi > 0 ? aqiCat.border : '#e2e8f0';
+                badge.style.backgroundColor = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.bg : '#f8fafc';
+                badge.style.borderColor = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.border : '#e2e8f0';
+                badge.title = `Dominant Pollutant: ${dominantPollutant} (Sub-index: ${maxSub})`;
             }
             const avgAqiDot = document.getElementById('avg-aqi-dot');
-            if (avgAqiDot) avgAqiDot.style.backgroundColor = countAqi > 0 ? aqiCat.color : '#94a3b8';
+            if (avgAqiDot) avgAqiDot.style.backgroundColor = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.color : '#94a3b8';
             const avgAqiTitle = document.getElementById('avg-aqi-title');
-            if (avgAqiTitle) avgAqiTitle.style.color = countAqi > 0 ? aqiCat.text : '#64748b';
+            if (avgAqiTitle) {
+                avgAqiTitle.style.color = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.text : '#64748b';
+                avgAqiTitle.title = `Dominant: ${dominantPollutant}`;
+            }
 
             const miniChips = document.getElementById('mini-chips-container');
             if (miniChips) miniChips.style.display = countAqi > 0 ? 'flex' : 'none';

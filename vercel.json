@@ -9,6 +9,7 @@
     { "src": "/css/(.*)", "dest": "/php-frontend/css/$1" },
     { "src": "/js/(.*)", "dest": "/php-frontend/js/$1" },
     { "src": "/api/(.*)", "dest": "/php-frontend/api/$1" },
+    { "src": "/manifest.json", "dest": "/php-frontend/manifest.json" },
     { "src": "/php-frontend/(.*)", "dest": "/php-frontend/index.php" },
     { "src": "/(.*)", "dest": "/php-frontend/index.php" }
   ]

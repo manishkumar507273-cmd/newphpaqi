@@ -587,11 +587,12 @@ $init_border_colors = [
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
     border-radius: 8px !important;
-    padding: 3px 8px !important;
-    display: flex !important;
+    padding: 3px 10px !important;
+    display: inline-flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    width: 100% !important;
+    justify-content: flex-start !important;
+    width: fit-content !important;
+    gap: 8px !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
   }
   .weather-micro-label {
@@ -2008,12 +2009,12 @@ body.weather-backdrop-active #app-layout-root,
             <!-- Micro Metrics Row (Humidity Only) -->
             <div class="weather-metrics-grid" style="display: flex; padding-top: 8px; border-top: 1px solid rgba(203, 213, 225, 0.55); width: 100%;">
               <!-- Humidity -->
-              <div class="weather-micro-card" style="width: 100%; background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between;">
+              <div class="weather-micro-card" style="width: fit-content; max-width: 100%; background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 8px;">
                 <div class="weather-micro-label" style="font-size: 11px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 5px;">
                   <i data-lucide="droplets" style="width: 13px; height: 13px; color: #0284c7;"></i>
                   <span>Humidity</span>
                 </div>
-                <div id="weather-box-humidity" style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: #0f172a;"><?= $init_weather_hum ?></div>
+                <div id="weather-box-humidity" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_hum ?></div>
               </div>
             </div>
 

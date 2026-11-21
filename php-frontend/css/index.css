@@ -1689,14 +1689,23 @@ img, svg, video, canvas {
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 767px) {
   #mobile-user-initial-tag {
     display: none !important;
   }
   #mobile-user-btn {
-    padding: 2px !important;
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
     border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
   }
+}
+
+@media (max-width: 420px) {
   #mobile-brand-overview span span:last-child {
     font-size: 8.5px !important;
   }

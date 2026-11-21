@@ -586,7 +586,7 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
 <div id="app-layout-root" style="min-height: 100vh; <?= $active_layout_bg ?> position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.4s ease;">
 
   <!-- Sticky Header with Safe-Area Inset -->
-  <header style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding-left: 16px; padding-right: 16px;">
+  <header class="px-3 sm:px-4 md:px-6" style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box;">
     
     <!-- Left: Desktop Brand & Mobile Header Selector -->
     <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
@@ -656,12 +656,12 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
 
       <!-- Mobile Top App Bar (Brand always visible across all pages) -->
       <div class="flex md:hidden items-center gap-1.5 min-w-0" id="mobile-top-bar">
-        <a href="?page=overview&node=<?= $selected_node ?>" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0;">
-          <div style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
+        <a href="?page=overview&node=<?= $selected_node ?>" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0; flex-shrink: 0;">
+          <div style="width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
             <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
-          <div style="display: flex; flex-direction: column; overflow: hidden;">
-            <span style="font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
+          <div style="display: flex; flex-direction: column; flex-shrink: 0;">
+            <span style="font-size: 14.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
               Smart <span style="color: #00bfa5;">WeatherNet</span>
             </span>
             <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
@@ -757,11 +757,11 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
 
         <!-- Mobile User Account Pill (Always displays which account is signed in) -->
         <div id="mobile-user-container" style="display: flex; align-items: center;">
-          <button type="button" id="mobile-user-btn" onclick="openAccountModal()" title="Logged in as <?= htmlspecialchars($user_display_name) ?>" style="display: <?= $is_logged_in ? 'inline-flex' : 'none' ?>; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 999px; background: #ffffff; border: 1.5px solid #00bfa5; box-shadow: 0 2px 6px rgba(0, 191, 165, 0.15); cursor: pointer; -webkit-tap-highlight-color: transparent;">
-            <div id="mobile-user-avatar" style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.4); flex-shrink: 0;">
+          <button type="button" id="mobile-user-btn" onclick="openAccountModal()" title="Logged in as <?= htmlspecialchars($user_display_name) ?>" style="display: <?= $is_logged_in ? 'inline-flex' : 'none' ?>; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #ffffff; border: 1.5px solid #00bfa5; box-shadow: 0 2px 6px rgba(0, 191, 165, 0.15); cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; flex-shrink: 0;">
+            <div id="mobile-user-avatar" style="width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #00bfa5 0%, #0d9488 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 191, 165, 0.3); flex-shrink: 0;">
               <?= htmlspecialchars($user_initial) ?>
             </div>
-            <span id="mobile-user-initial-tag" style="font-size: 11.5px; font-weight: 700; color: #0f172a; max-width: 85px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= htmlspecialchars($user_display_name) ?></span>
+            <span id="mobile-user-initial-tag" style="display: none;"><?= htmlspecialchars($user_display_name) ?></span>
           </button>
           
           <button type="button" id="mobile-signin-btn" onclick="openAuthModal()" style="display: <?= $is_logged_in ? 'none' : 'inline-flex' ?>; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; background-color: #0f172a; border: none; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);">

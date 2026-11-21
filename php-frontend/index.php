@@ -226,26 +226,32 @@ if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
 $page = isset($_GET['page']) ? $_GET['page'] : 'overview';
 
 // Allowed pages to prevent directory traversal
-$allowed_pages = ['overview', 'live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather'];
+$allowed_pages = ['overview', 'live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather', 'soil', 'live-soil', 'soil-historical'];
 
 if (!in_array($page, $allowed_pages)) {
     $page = 'overview';
 }
 
-// Alias split pages or weather to single live feed
+// Alias split pages or weather/soil to dedicated feeds
 if ($page === 'live-aqi') {
     $_GET['tab'] = 'aqi';
     $page = 'live';
 } elseif ($page === 'weather' || $page === 'live-weather') {
     $_GET['tab'] = 'weather';
     $page = 'live';
+} elseif ($page === 'soil' || $page === 'live-soil') {
+    $_GET['tab'] = 'soil';
+    $page = 'live';
+} elseif ($page === 'soil-historical') {
+    $_GET['tab'] = 'soil';
+    $page = 'historical';
 }
 
 $is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']);
 $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
 
 // Pages requiring user login; overview is freely accessible to all guests
-$protected_pages = ['live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather'];
+$protected_pages = ['live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather', 'soil', 'live-soil', 'soil-historical'];
 
 if (in_array($page, $protected_pages) && !$is_logged_in) {
     if ($is_ajax) {

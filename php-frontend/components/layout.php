@@ -8,19 +8,25 @@ $node_config = smartairnet_get_node_config($selected_node);
 $active_node_cfg = $node_config;
 $is_node_2 = ($selected_node === '2');
 
-$allowed_pages = ['overview', 'live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather'];
+$allowed_pages = ['overview', 'live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather', 'soil', 'live-soil', 'soil-historical'];
 $current_page = (isset($_GET['page']) && in_array($_GET['page'], $allowed_pages)) ? $_GET['page'] : 'overview';
 
-// Alias split pages or weather to single live feed
+// Alias split pages or weather/soil to dedicated feeds
 if ($current_page === 'live-aqi') {
     $_GET['tab'] = 'aqi';
     $current_page = 'live';
 } elseif ($current_page === 'weather' || $current_page === 'live-weather') {
     $_GET['tab'] = 'weather';
     $current_page = 'live';
+} elseif ($current_page === 'soil' || $current_page === 'live-soil') {
+    $_GET['tab'] = 'soil';
+    $current_page = 'live';
+} elseif ($current_page === 'soil-historical') {
+    $_GET['tab'] = 'soil';
+    $current_page = 'historical';
 }
 
-$is_live_page_active = in_array($current_page, ['live', 'live-aqi', 'live-weather']);
+$is_live_page_active = in_array($current_page, ['live', 'live-aqi', 'live-weather', 'soil', 'live-soil']);
 
 $is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']);
 $user_display_name = !empty($_SESSION['user_name']) ? $_SESSION['user_name'] : (!empty($_SESSION['user_email']) ? explode('@', $_SESSION['user_email'])[0] : 'User');
@@ -57,12 +63,15 @@ $node_status_border = $is_telemetry_live ? '#bbf7d0' : '#fed7aa';
 $node_status_dot = $is_telemetry_live ? '#16a34a' : '#f97316';
 
 $page_titles = [
-    'overview'     => 'Atmosphere Snapshot',
-    'live'         => 'Live Data Stream',
-    'live-aqi'     => 'Live AQI Telemetry',
-    'live-weather' => 'Live Weather Telemetry',
-    'historical'   => 'Analytics Archive',
-    'predictive'   => 'Weather Forecast'
+    'overview'        => 'Atmosphere Snapshot',
+    'live'            => 'Live Data Stream',
+    'live-aqi'        => 'Live AQI Telemetry',
+    'live-weather'    => 'Live Weather Telemetry',
+    'soil'            => 'Live Soil Telemetry',
+    'live-soil'       => 'Live Soil Telemetry',
+    'soil-historical' => 'Soil Telemetry Archive',
+    'historical'      => 'Analytics Archive',
+    'predictive'      => 'Weather Forecast'
 ];
 $current_title = $page_titles[$current_page] ?? 'Smart WeatherNet';
 

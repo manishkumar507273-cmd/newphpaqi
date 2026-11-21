@@ -4,7 +4,8 @@ if (!function_exists('smartairnet_get_active_node_id')) {
 }
 $active_node_id = '2';
 $is_node_2 = true;
-$active_live_subtab = ((isset($_GET['tab']) && $_GET['tab'] === 'weather') || (isset($_GET['subtab']) && $_GET['subtab'] === 'weather')) ? 'weather' : 'aqi';
+$raw_tab = $_GET['tab'] ?? ($_GET['subtab'] ?? 'aqi');
+$active_live_subtab = in_array($raw_tab, ['aqi', 'weather', 'soil']) ? $raw_tab : 'aqi';
 
 // Load Node 2 configuration if not already available
 if (!isset($node_config) || empty($node_config) || !is_array($node_config)) {
@@ -243,7 +244,15 @@ $soil_ph_pct = $has_soil_ph ? max(5, min(95, round((($soil_ph_num - 3.0) / (10.0
 $soil_ph_status = $has_soil_ph ? (($soil_ph_num < 6.0) ? 'Slightly Acidic' : (($soil_ph_num > 7.5) ? 'Slightly Alkaline' : 'Optimal Neutral')) : '--';
 
 $has_soil_ec = isset($w_d['soil_conductivity']) && is_numeric($w_d['soil_conductivity']);
+$soil_ec_num = $has_soil_ec ? (float)$w_d['soil_conductivity'] : null;
 $init_soil_ec = $has_soil_ec ? round((float)$w_d['soil_conductivity']) . ' µS/cm' : '--';
+$soil_ec_pct = ($soil_ec_num !== null) ? max(5, min(95, round(($soil_ec_num / 200.0) * 100))) : 50;
+$soil_ec_status = $has_soil_ec ? (($soil_ec_num < 40) ? 'Low Salinity (Good)' : (($soil_ec_num > 150) ? 'Elevated Salinity' : 'Balanced Fertility')) : '--';
+
+$ambient_temp_num = is_numeric($init_weather_temp) ? (float)$init_weather_temp : null;
+$ambient_temp_pct = ($ambient_temp_num !== null) ? max(5, min(95, round((($ambient_temp_num - 15) / (45 - 15)) * 100))) : 50;
+$ambient_hum_num = is_numeric(str_replace('%', '', $init_weather_hum)) ? (float)str_replace('%', '', $init_weather_hum) : null;
+$ambient_hum_pct = ($ambient_hum_num !== null) ? max(5, min(95, round($ambient_hum_num))) : 50;
 
 $init_weather_today_rain = isset($init_bulk['today_rain_total']) ? number_format((float)$init_bulk['today_rain_total'], 1) . ' mm' : (isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '--');
 
@@ -1778,20 +1787,40 @@ body.weather-backdrop-active #app-layout-root,
       if (window.triggerHaptic) window.triggerHaptic('light');
       const aqiView = document.getElementById('node2-view-aqi');
       const weatherView = document.getElementById('node2-view-weather');
+      const soilView = document.getElementById('node2-view-soil');
       const btnAqi = document.getElementById('node2-tab-aqi');
       const btnWeather = document.getElementById('node2-tab-weather');
+      const btnSoil = document.getElementById('node2-tab-soil');
       const backdrop = document.getElementById('node2-weather-backdrop');
 
-      const activeCls = 'flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[42px]';
-      const inactiveCls = 'flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[42px]';
+      const activeCls = 'flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[38px] sm:min-h-[42px]';
+      const inactiveCls = 'flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[38px] sm:min-h-[42px]';
 
       const layoutRoot = document.getElementById('app-layout-root');
 
-      if (tab === 'weather') {
+      if (tab === 'soil') {
           if (aqiView) aqiView.style.display = 'none';
+          if (weatherView) weatherView.style.display = 'none';
+          if (soilView) soilView.style.display = 'flex';
+          if (btnSoil) btnSoil.className = activeCls;
+          if (btnAqi) btnAqi.className = inactiveCls;
+          if (btnWeather) btnWeather.className = inactiveCls;
+          if (backdrop) backdrop.style.display = 'none';
+          document.body.classList.remove('weather-backdrop-active');
+          if (layoutRoot) {
+              layoutRoot.style.removeProperty('background');
+              layoutRoot.style.removeProperty('background-image');
+              layoutRoot.style.backgroundColor = '#f0fdf4';
+              layoutRoot.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%)';
+          }
+          if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 50);
+      } else if (tab === 'weather') {
+          if (aqiView) aqiView.style.display = 'none';
+          if (soilView) soilView.style.display = 'none';
           if (weatherView) weatherView.style.display = 'flex';
           if (btnWeather) btnWeather.className = activeCls;
           if (btnAqi) btnAqi.className = inactiveCls;
+          if (btnSoil) btnSoil.className = inactiveCls;
           if (backdrop) backdrop.style.display = 'block';
           document.body.classList.add('weather-backdrop-active');
           if (layoutRoot) {
@@ -1801,9 +1830,11 @@ body.weather-backdrop-active #app-layout-root,
           if (typeof initLiveAmbientCanvas === 'function') initLiveAmbientCanvas();
       } else {
           if (weatherView) weatherView.style.display = 'none';
+          if (soilView) soilView.style.display = 'none';
           if (aqiView) aqiView.style.display = 'flex';
           if (btnAqi) btnAqi.className = activeCls;
           if (btnWeather) btnWeather.className = inactiveCls;
+          if (btnSoil) btnSoil.className = inactiveCls;
           if (backdrop) backdrop.style.display = 'none';
           document.body.classList.remove('weather-backdrop-active');
           if (layoutRoot) {
@@ -1833,6 +1864,15 @@ body.weather-backdrop-active #app-layout-root,
           lr.style.setProperty('background', 'transparent', 'important');
           lr.style.setProperty('background-image', 'none', 'important');
       }
+  } else if (<?= json_encode($active_live_subtab === 'soil') ?>) {
+      document.body.classList.remove('weather-backdrop-active');
+      const lr = document.getElementById('app-layout-root');
+      if (lr) {
+          lr.style.removeProperty('background');
+          lr.style.removeProperty('background-image');
+          lr.style.backgroundColor = '#f0fdf4';
+          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%)';
+      }
   } else {
       document.body.classList.remove('weather-backdrop-active');
       const lr = document.getElementById('app-layout-root');
@@ -1856,22 +1896,26 @@ body.weather-backdrop-active #app-layout-root,
   })();
   </script>
 
-  <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather -->
+  <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather vs Live Soil -->
   <div class="flex items-center justify-center mb-1 w-full px-1" id="node2-live-subnav">
-    <div class="w-full sm:w-auto max-w-[340px] grid grid-cols-2 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
-      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
+    <div class="w-full sm:w-auto max-w-[480px] grid grid-cols-3 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
+      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
         <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
         <span>AQI Live</span>
       </button>
-      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
+      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
         <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
         <span>Weather Live</span>
+      </button>
+      <button id="node2-tab-soil" type="button" onclick="switchNode2LiveTab('soil')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'soil') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
+        <i data-lucide="sprout" class="w-4 h-4 shrink-0"></i>
+        <span>Soil Live</span>
       </button>
     </div>
   </div>
 <?php endif; ?>
 
-<div id="node2-view-aqi" style="<?= ($is_node_2 && $active_live_subtab === 'weather') ? 'display: none;' : 'display: flex;' ?> width: 100%; flex-direction: column; gap: 14px;">
+<div id="node2-view-aqi" style="<?= ($is_node_2 && $active_live_subtab !== 'aqi') ? 'display: none;' : 'display: flex;' ?> width: 100%; flex-direction: column; gap: 14px;">
 
   <!-- Page Header Titles -->
   <div style="display: flex; justify-content: center; align-items: center; text-align: center; width: 100%; margin-top: 10px; margin-bottom: 6px;">
@@ -2752,37 +2796,28 @@ body.weather-backdrop-active #app-layout-root,
           </div>
         </div>
 
-        <!-- Card 6: Soil Temperature -->
-        <div class="weather-card-dark weather-card-soil-temp" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Top: Soil Probe Thermometer SVG + Value -->
+        <!-- Card 6: Ambient Temperature -->
+        <div class="weather-card-dark weather-card-ambient-temp" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Top: Thermometer SVG + Value -->
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <!-- Soil Temperature SVG Graphic -->
             <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
               <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
-                <!-- Ground Strata Lines -->
-                <path d="M 6 42 Q 20 40 34 42 Q 48 44 58 41" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.85" />
-                <path d="M 10 47 Q 24 45 36 47 Q 48 49 56 46" stroke="#92400e" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="3 3" fill="none" opacity="0.6" />
-                <path d="M 14 52 Q 28 50 40 52 Q 48 53 54 51" stroke="#92400e" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 4" fill="none" opacity="0.4" />
-                <!-- Thermometer Stem -->
-                <rect x="28" y="10" width="8" height="28" rx="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.7)" stroke-width="1.6" />
-                <!-- Thermometer Bulb in Subsurface -->
-                <circle cx="32" cy="38" r="7.5" class="soil-temp-bulb-anim" fill="#f59e0b" filter="drop-shadow(0 0 4px rgba(245, 158, 11, 0.6))" />
-                <!-- Mercury Column -->
-                <rect x="30" y="18" width="4" height="18" rx="2" class="soil-temp-bulb-anim" fill="#f59e0b" />
-                <!-- Measurement Ticks -->
-                <line x1="37" y1="14" x2="40" y2="14" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
-                <line x1="37" y1="20" x2="41" y2="20" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
-                <line x1="37" y1="26" x2="40" y2="26" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
+                <rect x="27" y="10" width="10" height="30" rx="5" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.6)" stroke-width="1.8" />
+                <circle cx="32" cy="44" r="9" fill="#f97316" filter="drop-shadow(0 0 5px rgba(249, 115, 22, 0.6))" />
+                <rect x="29" y="20" width="6" height="24" rx="3" fill="#f97316" />
+                <line x1="39" y1="16" x2="43" y2="16" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
+                <line x1="39" y1="23" x2="44" y2="23" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
+                <line x1="39" y1="30" x2="43" y2="30" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
               </svg>
             </div>
 
             <!-- Value Text -->
             <div style="text-align: right;">
               <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
-                Soil Temperature
+                Ambient Temperature
               </div>
-              <div id="card-soil-temp-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
-                <?= $init_soil_temp ?>
+              <div id="card-weather-temp-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_weather_temp ?> <?= is_numeric($init_weather_temp) ? '°C' : '' ?>
               </div>
             </div>
           </div>
@@ -2790,33 +2825,28 @@ body.weather-backdrop-active #app-layout-root,
           <!-- Middle: Thermal Spectrum Bar + Indicator Dot -->
           <div style="margin-top: 10px; width: 100%;">
             <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
-              <div id="soil-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_soil_temp ? $soil_temp_pct : 48 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.9); transition: left 1s ease-in-out;"></div>
+              <div id="weather-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f97316; box-shadow: 0 0 8px rgba(249,115,22,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
           <!-- Bottom note -->
           <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-            Root zone status: <span id="soil-temp-note-val" style="color: #fde68a; font-weight: 600;"><?= $has_soil_temp ? "{$init_soil_temp} (Optimal)" : '--' ?></span>
+            Thermal reading: <span id="weather-temp-note-val" style="color: #fed7aa; font-weight: 600;"><?= is_numeric($init_weather_temp) ? "{$init_weather_temp} °C (Ambient)" : '--' ?></span>
           </div>
         </div>
 
-        <!-- Card 7: Soil Humidity (Moisture) -->
-        <div class="weather-card-dark weather-card-soil-hum" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Top: Hydration Droplet & Soil Bed SVG + Value -->
+        <!-- Card 7: Ambient Humidity -->
+        <div class="weather-card-dark weather-card-ambient-hum" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Top: Humidity Droplet SVG + Value -->
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <!-- Soil Moisture SVG Graphic -->
             <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
               <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
-                <!-- Soil Mound Outline -->
-                <path d="M 8 48 C 16 38, 28 36, 40 40 C 48 42, 54 48, 56 50" stroke="#0d9488" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6" />
-                <!-- Hydration Droplet with Bobbing Animation -->
                 <g class="water-drop-anim">
-                  <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="url(#soilHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
-                  <!-- Droplet Inner Gloss -->
-                  <ellipse cx="26" cy="34" rx="3.5" ry="6" transform="rotate(-28 26 34)" fill="#ffffff" opacity="0.55" />
+                  <path d="M 32 10 C 32 10 16 28 16 38 C 16 46.8 23.2 54 32 54 C 40.8 54 48 46.8 48 38 C 48 28 32 10 32 10 Z" fill="url(#ambHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
+                  <ellipse cx="25" cy="35" rx="3.5" ry="7" transform="rotate(-25 25 35)" fill="#ffffff" opacity="0.55" />
                 </g>
                 <defs>
-                  <linearGradient id="soilHumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="ambHumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#38bdf8" />
                     <stop offset="100%" stop-color="#0284c7" />
                   </linearGradient>
@@ -2827,10 +2857,10 @@ body.weather-backdrop-active #app-layout-root,
             <!-- Value Text -->
             <div style="text-align: right;">
               <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
-                Soil Humidity
+                Relative Humidity
               </div>
-              <div id="card-soil-hum-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
-                <?= $init_soil_hum ?>
+              <div id="card-weather-hum-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_weather_hum ?>
               </div>
             </div>
           </div>
@@ -2838,62 +2868,13 @@ body.weather-backdrop-active #app-layout-root,
           <!-- Middle: Moisture Gradient Bar + Indicator Dot -->
           <div style="margin-top: 10px; width: 100%;">
             <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #00bfa5 45%, #0284c7 100%); position: relative;">
-              <div id="soil-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_soil_hum ? $soil_hum_pct : 50 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #00bfa5; box-shadow: 0 0 8px rgba(0,191,165,0.9); transition: left 1s ease-in-out;"></div>
+              <div id="weather-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2,132,199,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
           <!-- Bottom note -->
           <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-            Hydration level: <span id="soil-hum-note-val" style="color: #99f6e4; font-weight: 600;"><?= $has_soil_hum ? "Adequate Field Capacity ({$init_soil_hum})" . ($has_soil_ec ? " • EC: {$init_soil_ec}" : "") : '--' ?></span>
-          </div>
-        </div>
-
-        <!-- Card 8: Soil pH -->
-        <div class="weather-card-dark weather-card-soil-ph" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Top: pH Chemical Scale SVG + Value -->
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <!-- Soil pH SVG Graphic -->
-            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
-              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
-                <!-- Outer Circular Ring Gauge -->
-                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2" />
-                <circle class="ph-ring-anim" cx="32" cy="32" r="20" fill="none" stroke="url(#phRingGrad)" stroke-width="3" stroke-dasharray="14 4" />
-                <!-- Center Disk with pH Symbol with Breathing Pulse -->
-                <g class="ph-core-anim">
-                  <circle cx="32" cy="32" r="14" fill="#10b981" filter="drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45))" />
-                  <text x="32" y="32.5" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
-                </g>
-                <defs>
-                  <linearGradient id="phRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#ef4444" />
-                    <stop offset="50%" stop-color="#10b981" />
-                    <stop offset="100%" stop-color="#8b5cf6" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-
-            <!-- Value Text -->
-            <div style="text-align: right;">
-              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
-                Soil pH
-              </div>
-              <div id="card-soil-ph-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
-                <?= $init_soil_ph ?>
-              </div>
-            </div>
-          </div>
-
-          <!-- Middle: pH spectrum bar (Acidic 0-6 to Neutral 7 to Alkaline 8-14) -->
-          <div style="margin-top: 10px; width: 100%;">
-            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
-              <div id="soil-ph-slider-dot" class="soil-ph-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_soil_ph ? $soil_ph_pct : 50 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.9); transition: left 1s ease-in-out;"></div>
-            </div>
-          </div>
-
-          <!-- Bottom note -->
-          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-            Acidity level: <span id="soil-ph-note-val" style="color: #a7f3d0; font-weight: 600;"><?= $has_soil_ph ? "{$soil_ph_status} ({$init_soil_ph})" : '--' ?></span>
+            Atmospheric moisture: <span id="weather-hum-note-val" style="color: #bae6fd; font-weight: 600;"><?= $init_weather_hum !== '--%' ? "Relative RH {$init_weather_hum}" : '--' ?></span>
           </div>
         </div>
 
@@ -2922,16 +2903,18 @@ body.weather-backdrop-active #app-layout-root,
             <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <tr>
                 <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Soil Temp (°C)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #0369a1; font-size: 12px; white-space: nowrap;">Soil Humidity (%)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Soil pH</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #7c3aed; font-size: 12px; white-space: nowrap;">Soil EC (µS/cm)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Temp (°C)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #0369a1; font-size: 12px; white-space: nowrap;">Humidity (%)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Wind Speed</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #0d9488; font-size: 12px; white-space: nowrap;">Wind Gust</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Dir</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #2563eb; font-size: 12px; white-space: nowrap;">Rain (mm)</th>
               </tr>
             </thead>
             <tbody id="weather-tbody">
               <tr>
-                <td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">
-                  Loading soil telemetry...
+                <td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">
+                  Loading ambient weather telemetry...
                 </td>
               </tr>
             </tbody>
@@ -2941,6 +2924,273 @@ body.weather-backdrop-active #app-layout-root,
     </div>
 
   </div> <!-- End #node2-view-weather -->
+
+  <!-- ════════════════════════════════════════════════════════════════════════════
+       NODE 2 DEDICATED SOIL LIVE VIEW (ONLY SOIL PARAMETERS)
+       Design: Frosted glass KPI cards + Dark trend graph + Live streaming table
+       ════════════════════════════════════════════════════════════════════════════ -->
+  <div id="node2-view-soil" style="<?= ($active_live_subtab === 'soil') ? 'display: flex;' : 'display: none;' ?> width: 100%; flex-direction: column; gap: 14px;">
+
+    <!-- Soil Header / Location / Live status row -->
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+          <i data-lucide="sprout" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div>
+          <h1 style="font-size: clamp(18px, 2.2vw, 22px); font-weight: 800; color: #0f172a; margin: 0; font-family: var(--font-sans); letter-spacing: -0.01em;">
+            Subsurface Soil Telemetry &amp; Agrimet Grid
+          </h1>
+          <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0; font-weight: 500;">
+            Precision root-zone sensing &bull; Field Station 2
+          </p>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <!-- Coordinates Badge -->
+        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ffffff; border: 1.5px solid #a7f3d0; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08); font-size: 11.5px; font-weight: 700; color: #065f46;">
+          <i data-lucide="map-pin" style="width: 13px; height: 13px; color: #10b981;"></i>
+          <span>13°14'06" N, 74°44'31" E</span>
+        </div>
+
+        <!-- Last Updated Badge -->
+        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ffffff; border: 1.5px solid #e2e8f0; font-size: 11.5px; font-weight: 600; color: #475569;">
+          <span>Last Updated: <strong id="soil-last-updated-val" style="color: #0f172a; font-family: var(--font-mono);"><?= date('h:i A') ?></strong></span>
+        </div>
+
+        <!-- Live Pulse Pill -->
+        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ecfdf5; border: 1.5px solid #a7f3d0; color: #059669; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #10b981; animation: pulse 2s infinite;"></span>
+          <span>LIVE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 Soil Frosted Glass KPI Cards (Soil Moisture, Temperature, pH, EC) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+
+      <!-- Card 1: Soil Moisture / Humidity -->
+      <div class="weather-card-dark" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid #bae6fd; border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 24px rgba(2, 132, 199, 0.08); display: flex; flex-direction: column; justify-content: space-between; min-height: 146px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 34px; height: 34px;">
+              <g class="water-drop-anim">
+                <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="#ffffff" />
+                <ellipse cx="26" cy="34" rx="3.5" ry="6" transform="rotate(-28 26 34)" fill="rgba(255,255,255,0.7)" />
+              </g>
+            </svg>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 2px;">
+              Soil Moisture
+            </div>
+            <div id="soil-live-hum-val" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #0369a1; line-height: 1.1; letter-spacing: -0.02em;">
+              <?= $init_soil_hum ?>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; width: 100%;">
+          <div style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #10b981 45%, #0284c7 100%); position: relative;">
+            <div id="soil-live-hum-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #0284c7; box-shadow: 0 0 8px rgba(2, 132, 199, 0.9); transition: left 1s ease-in-out;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; font-size: 12px; color: #64748b; line-height: 1.35; font-weight: 500;">
+          Hydration status: <span id="soil-live-hum-note-val" style="color: #0284c7; font-weight: 700;"><?= $has_soil_hum ? "Adequate Field Capacity ({$init_soil_hum})" : '--' ?></span>
+        </div>
+      </div>
+
+      <!-- Card 2: Soil Temperature -->
+      <div class="weather-card-dark" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid #fed7aa; border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 24px rgba(234, 88, 12, 0.08); display: flex; flex-direction: column; justify-content: space-between; min-height: 146px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 34px; height: 34px;">
+              <rect x="28" y="10" width="8" height="26" rx="4" fill="rgba(255,255,255,0.3)" stroke="#ffffff" stroke-width="1.6" />
+              <circle cx="32" cy="38" r="7.5" fill="#ffffff" />
+              <rect x="30" y="18" width="4" height="18" rx="2" fill="#ea580c" />
+              <line x1="38" y1="14" x2="41" y2="14" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
+              <line x1="38" y1="20" x2="42" y2="20" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
+              <line x1="38" y1="26" x2="41" y2="26" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 2px;">
+              Soil Temperature
+            </div>
+            <div id="soil-live-temp-val" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #c2410c; line-height: 1.1; letter-spacing: -0.02em;">
+              <?= $init_soil_temp ?>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; width: 100%;">
+          <div style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
+            <div id="soil-live-temp-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #ea580c; box-shadow: 0 0 8px rgba(234, 88, 12, 0.9); transition: left 1s ease-in-out;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; font-size: 12px; color: #64748b; line-height: 1.35; font-weight: 500;">
+          Root zone: <span id="soil-live-temp-note-val" style="color: #ea580c; font-weight: 700;"><?= $has_soil_temp ? "{$init_soil_temp} (Optimal Range)" : '--' ?></span>
+        </div>
+      </div>
+
+      <!-- Card 3: Soil pH -->
+      <div class="weather-card-dark" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid #a7f3d0; border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.08); display: flex; flex-direction: column; justify-content: space-between; min-height: 146px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 34px; height: 34px;">
+              <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" />
+              <circle cx="32" cy="32" r="16" fill="#ffffff" />
+              <text x="32" y="33" font-size="11" font-weight="900" fill="#059669" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
+            </svg>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 2px;">
+              Soil Reaction (pH)
+            </div>
+            <div id="soil-live-ph-val" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #047857; line-height: 1.1; letter-spacing: -0.02em;">
+              <?= $init_soil_ph ?>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; width: 100%;">
+          <div style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
+            <div id="soil-live-ph-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.9); transition: left 1s ease-in-out;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; font-size: 12px; color: #64748b; line-height: 1.35; font-weight: 500;">
+          Acidity: <span id="soil-live-ph-note-val" style="color: #059669; font-weight: 700;"><?= $has_soil_ph ? "{$soil_ph_status} ({$init_soil_ph})" : '--' ?></span>
+        </div>
+      </div>
+
+      <!-- Card 4: Soil Electrical Conductivity (EC) -->
+      <div class="weather-card-dark" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid #e9d5ff; border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.08); display: flex; flex-direction: column; justify-content: space-between; min-height: 146px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 34px; height: 34px;">
+              <path d="M 34 10 L 22 34 L 32 34 L 28 54 L 44 28 L 34 28 Z" fill="#ffffff" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))" />
+            </svg>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 2px;">
+              Soil Conductivity (EC)
+            </div>
+            <div id="soil-live-ec-val" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #6d28d9; line-height: 1.1; letter-spacing: -0.02em;">
+              <?= $init_soil_ec ?>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; width: 100%;">
+          <div style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #10b981 0%, #06b6d4 40%, #8b5cf6 75%, #ef4444 100%); position: relative;">
+            <div id="soil-live-ec-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_ec_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.9); transition: left 1s ease-in-out;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; font-size: 12px; color: #64748b; line-height: 1.35; font-weight: 500;">
+          Salinity / Ion level: <span id="soil-live-ec-note-val" style="color: #7c3aed; font-weight: 700;"><?= $has_soil_ec ? "{$soil_ec_status} ({$init_soil_ec})" : '--' ?></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Soil Telemetry Trend Graph Card (Matching Sleek Dark Design) -->
+    <div class="trend-graph-card" style="margin-top: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <div style="font-size: 16px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="trending-up" style="width: 17px; height: 17px; color: #10b981;"></i>
+            <span id="soil-trend-chart-title">Soil Subsurface Trend Graph</span>
+          </div>
+          <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;" id="soil-trend-chart-subtitle">
+            Hourly soil moisture, temperature, pH and electrical conductivity diurnal progression
+          </div>
+        </div>
+
+        <!-- Parameter Switcher Buttons -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <button type="button" onclick="switchSoilLiveChartParam('soil_moisture')" id="btn-soil-param-moisture" class="trend-pill-btn" style="background: rgba(16, 185, 129, 0.25); border-color: #10b981; color: #34d399;">
+            <span>💧 Moisture (%)</span>
+          </button>
+          <button type="button" onclick="switchSoilLiveChartParam('soil_temperature')" id="btn-soil-param-temp" class="trend-pill-btn">
+            <span>🌱 Temp (°C)</span>
+          </button>
+          <button type="button" onclick="switchSoilLiveChartParam('soil_ph')" id="btn-soil-param-ph" class="trend-pill-btn">
+            <span>🧪 pH</span>
+          </button>
+          <button type="button" onclick="switchSoilLiveChartParam('soil_conductivity')" id="btn-soil-param-ec" class="trend-pill-btn">
+            <span>⚡ EC (µS/cm)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Chart Canvas Container -->
+      <div style="position: relative; height: 320px; width: 100%;">
+        <canvas id="soil-live-trend-chart"></canvas>
+        <div id="soil-live-chart-empty" style="position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(22, 28, 40, 0.85); color: #94a3b8; font-size: 13px; font-weight: 600;">
+          Waiting for live soil telemetry stream...
+        </div>
+      </div>
+
+      <!-- Diurnal Legend and Stats Bar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: #cbd5e1;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="soil-chart-legend-swatch" style="width: 18px; height: 3.5px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
+          <span id="soil-chart-legend-label" style="font-weight: 700; color: #ffffff;">Soil Moisture (Recorded Telemetry)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 11.5px; color: #94a3b8; flex-wrap: wrap;">
+          <span>Recorded: <strong id="soil-stat-recorded" style="color: #ffffff;">--</strong></span>
+          <span>Peak: <strong id="soil-stat-peak" style="color: #ffffff;">--</strong></span>
+          <span>Min: <strong id="soil-stat-min" style="color: #ffffff;">--</strong></span>
+          <span>Avg: <strong id="soil-stat-avg" style="color: #ffffff;">--</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Soil Telemetry Table Section -->
+    <div style="margin-top: 14px;">
+      <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
+          <i data-lucide="sprout" style="width: 18px; height: 18px; color: #10b981;"></i>
+          <span>Live Soil Telemetry Stream Records</span>
+        </h2>
+      </div>
+
+      <div id="soil-live-table-container" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 20px; border: 1.5px solid #d1fae5; overflow: hidden; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.08); width: 100%; box-sizing: border-box;">
+        <div class="block sm:hidden px-4 py-2 bg-emerald-50 border-b border-emerald-100 text-[11px] text-emerald-800 font-medium flex items-center justify-between">
+          <span>👈 Swipe horizontally to view all soil metrics</span>
+          <span class="font-mono text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">SOIL STREAM</span>
+        </div>
+
+        <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 650px;">
+            <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <tr>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #0369a1; font-size: 12px; white-space: nowrap;">Soil Moisture (%)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Soil Temp (°C)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Soil pH</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #7c3aed; font-size: 12px; white-space: nowrap;">Soil EC (µS/cm)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #0f172a; font-size: 12px; white-space: nowrap;">Agronomic Status</th>
+              </tr>
+            </thead>
+            <tbody id="soil-live-tbody">
+              <tr>
+                <td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">
+                  Loading subsurface soil telemetry...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- End #node2-view-soil -->
   <?php endif; ?>
 </div> <!-- End .live-content-container -->
 
@@ -3374,6 +3624,215 @@ function renderComparisonChart() {
     }
 }
 window.renderComparisonChart = renderComparisonChart;
+
+// ── Node 2 Soil Live Trend Chart & Parameter Switching ────────────────────────
+let currentSoilLiveChartParam = 'soil_moisture';
+let soilLiveChartInstance = null;
+
+function switchSoilLiveChartParam(param) {
+    if (window.triggerHaptic) window.triggerHaptic('light');
+    currentSoilLiveChartParam = param;
+    
+    // Update button states
+    const btnIds = {
+        'soil_moisture': 'btn-soil-param-moisture',
+        'soil_temperature': 'btn-soil-param-temp',
+        'soil_ph': 'btn-soil-param-ph',
+        'soil_conductivity': 'btn-soil-param-ec'
+    };
+    Object.keys(btnIds).forEach(k => {
+        const btn = document.getElementById(btnIds[k]);
+        if (!btn) return;
+        if (k === param) {
+            btn.style.backgroundColor = 'rgba(16, 185, 129, 0.25)';
+            btn.style.borderColor = '#10b981';
+            btn.style.color = '#34d399';
+        } else {
+            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+            btn.style.borderColor = 'rgba(255, 255, 255, 0.14)';
+            btn.style.color = '#f1f5f9';
+        }
+    });
+
+    renderSoilLiveTrendChart();
+}
+window.switchSoilLiveChartParam = switchSoilLiveChartParam;
+
+function renderSoilLiveTrendChart() {
+    const canvas = document.getElementById('soil-live-trend-chart');
+    if (!canvas) return;
+
+    const stream = (window.weatherHistory && window.weatherHistory.length > 0) 
+        ? window.weatherHistory 
+        : ((window.__liveDataStream && window.__liveDataStream.length > 0) ? window.__liveDataStream : []);
+
+    const empty = document.getElementById('soil-live-chart-empty');
+    if (!stream || stream.length === 0) {
+        if (empty) empty.style.display = 'flex';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    // Reverse so chronologically left-to-right (oldest -> newest)
+    const dataPoints = [...stream].reverse();
+
+    const labels = dataPoints.map(d => {
+        const ts = d.timestamp || d.created_at;
+        if (!ts) return '';
+        const dt = (typeof safeParseDate === 'function') ? safeParseDate(ts) : new Date(ts);
+        return isNaN(dt.getTime()) ? '' : dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+    });
+
+    const paramConfig = {
+        'soil_moisture': {
+            label: 'Soil Moisture (Recorded Telemetry)',
+            unit: '%',
+            color: '#0284c7',
+            bgColor: 'rgba(2, 132, 199, 0.14)',
+            extractor: d => (d.soil_moisture != null ? Number(d.soil_moisture) : (d.soil_humidity != null ? Number(d.soil_humidity) : null))
+        },
+        'soil_temperature': {
+            label: 'Soil Temperature (Recorded Telemetry)',
+            unit: '°C',
+            color: '#ea580c',
+            bgColor: 'rgba(234, 88, 12, 0.14)',
+            extractor: d => (d.soil_temperature != null ? Number(d.soil_temperature) : (d.soil_temp != null ? Number(d.soil_temp) : null))
+        },
+        'soil_ph': {
+            label: 'Soil pH (Recorded Telemetry)',
+            unit: '',
+            color: '#10b981',
+            bgColor: 'rgba(16, 185, 129, 0.14)',
+            extractor: d => (d.soil_ph != null ? Number(d.soil_ph) : (d.ph != null ? Number(d.ph) : null))
+        },
+        'soil_conductivity': {
+            label: 'Soil Conductivity (Recorded Telemetry)',
+            unit: ' µS/cm',
+            color: '#8b5cf6',
+            bgColor: 'rgba(139, 92, 246, 0.14)',
+            extractor: d => (d.soil_conductivity != null ? Number(d.soil_conductivity) : (d.ec != null ? Number(d.ec) : null))
+        }
+    };
+
+    const cfg = paramConfig[currentSoilLiveChartParam] || paramConfig['soil_moisture'];
+    const values = dataPoints.map(cfg.extractor);
+
+    // Compute stats
+    const validVals = values.filter(v => v !== null && !isNaN(v));
+    const statRec = document.getElementById('soil-stat-recorded');
+    const statPeak = document.getElementById('soil-stat-peak');
+    const statMin = document.getElementById('soil-stat-min');
+    const statAvg = document.getElementById('soil-stat-avg');
+    const legLabel = document.getElementById('soil-chart-legend-label');
+    const legSwatch = document.getElementById('soil-chart-legend-swatch');
+
+    if (legLabel) legLabel.innerText = cfg.label;
+    if (legSwatch) legSwatch.style.backgroundColor = cfg.color;
+
+    if (validVals.length > 0) {
+        const lastVal = validVals[validVals.length - 1];
+        const peakVal = Math.max(...validVals);
+        const minVal = Math.min(...validVals);
+        const avgVal = validVals.reduce((a, b) => a + b, 0) / validVals.length;
+
+        const isPh = currentSoilLiveChartParam === 'soil_ph';
+        const decimals = isPh ? 2 : 1;
+        if (statRec) statRec.innerText = `${lastVal.toFixed(decimals)}${cfg.unit}`;
+        if (statPeak) statPeak.innerText = `${peakVal.toFixed(decimals)}${cfg.unit}`;
+        if (statMin) statMin.innerText = `${minVal.toFixed(decimals)}${cfg.unit}`;
+        if (statAvg) statAvg.innerText = `${avgVal.toFixed(decimals)}${cfg.unit}`;
+    } else {
+        if (statRec) statRec.innerText = '--';
+        if (statPeak) statPeak.innerText = '--';
+        if (statMin) statMin.innerText = '--';
+        if (statAvg) statAvg.innerText = '--';
+    }
+
+    try {
+        if (soilLiveChartInstance && soilLiveChartInstance.ctx && soilLiveChartInstance.canvas === canvas) {
+            soilLiveChartInstance.data.labels = labels;
+            soilLiveChartInstance.data.datasets[0].label = cfg.label;
+            soilLiveChartInstance.data.datasets[0].data = values;
+            soilLiveChartInstance.data.datasets[0].borderColor = cfg.color;
+            soilLiveChartInstance.data.datasets[0].backgroundColor = cfg.bgColor;
+            soilLiveChartInstance.data.datasets[0].pointBorderColor = cfg.color;
+            soilLiveChartInstance.update('none');
+        } else {
+            if (soilLiveChartInstance) {
+                try { soilLiveChartInstance.destroy(); } catch(e) {}
+            }
+            const ctx = canvas.getContext('2d');
+            soilLiveChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: cfg.label,
+                        data: values,
+                        borderColor: cfg.color,
+                        backgroundColor: cfg.bgColor,
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: cfg.color,
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#cbd5e1',
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(ctx) {
+                                    const val = ctx.parsed.y;
+                                    return `${cfg.label.split(' ')[0]}: ${val != null ? val.toFixed(currentSoilLiveChartParam === 'soil_ph' ? 2 : 1) : '--'}${cfg.unit}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { family: 'var(--font-mono)', size: 10 },
+                                color: '#94a3b8',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 7
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            suggestedMin: 0,
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            ticks: {
+                                font: { family: 'var(--font-mono)', size: 10 },
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+            window.__soilLiveChartInstance = soilLiveChartInstance;
+        }
+    } catch(e) {
+        console.warn('Soil live chart render error:', e);
+    }
+}
+window.renderSoilLiveTrendChart = renderSoilLiveTrendChart;
 
 // Data Stream Formatting
 var liveDataStream = window.__liveDataStream || [];
@@ -3918,14 +4377,58 @@ async function refreshDashboard(forceNetwork = false) {
                 }
             }
 
-            // Soil Parameters (Soil Temperature, Soil Humidity, Soil pH)
-            const soilTempEl = document.getElementById('card-soil-temp-val');
-            const soilTempNote = document.getElementById('soil-temp-note-val');
-            const soilTempDot = document.getElementById('soil-temp-slider-dot');
+            // Ambient Weather Temperature & Humidity
+            const ambTempEl = document.getElementById('card-weather-temp-val');
+            const ambTempNote = document.getElementById('weather-temp-note-val');
+            const ambTempDot = document.getElementById('weather-temp-slider-dot');
+            if (w.temperature != null && !isNaN(Number(w.temperature))) {
+                const aT = Number(w.temperature).toFixed(1);
+                if (ambTempEl) ambTempEl.innerText = `${aT} °C`;
+                if (ambTempNote) ambTempNote.innerText = `${aT} °C (Ambient)`;
+                if (ambTempDot) {
+                    ambTempDot.style.display = '';
+                    ambTempDot.style.left = `${Math.max(5, Math.min(95, Math.round(((Number(aT) - 15) / (45 - 15)) * 100)))}%`;
+                }
+            } else {
+                if (ambTempEl) ambTempEl.innerText = '--';
+                if (ambTempNote) ambTempNote.innerText = '--';
+                if (ambTempDot) {
+                    ambTempDot.style.display = '';
+                    ambTempDot.style.left = '50%';
+                }
+            }
+
+            const ambHumEl = document.getElementById('card-weather-hum-val');
+            const ambHumNote = document.getElementById('weather-hum-note-val');
+            const ambHumDot = document.getElementById('weather-hum-slider-dot');
+            if (w.humidity != null && !isNaN(Number(w.humidity))) {
+                const aH = Number(w.humidity).toFixed(1);
+                if (ambHumEl) ambHumEl.innerText = `${aH}%`;
+                if (ambHumNote) ambHumNote.innerText = `Relative RH ${aH}%`;
+                if (ambHumDot) {
+                    ambHumDot.style.display = '';
+                    ambHumDot.style.left = `${Math.max(5, Math.min(95, Math.round(Number(aH))))}%`;
+                }
+            } else {
+                if (ambHumEl) ambHumEl.innerText = '--';
+                if (ambHumNote) ambHumNote.innerText = '--';
+                if (ambHumDot) {
+                    ambHumDot.style.display = '';
+                    ambHumDot.style.left = '50%';
+                }
+            }
+
+            // Dedicated Soil View Cards (Soil Temperature, Moisture, pH, EC)
+            const soilLastUpdated = document.getElementById('soil-last-updated-val');
+            if (soilLastUpdated) soilLastUpdated.innerText = currentFormattedTime || new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+
+            const soilTempEl = document.getElementById('soil-live-temp-val');
+            const soilTempNote = document.getElementById('soil-live-temp-note-val');
+            const soilTempDot = document.getElementById('soil-live-temp-slider-dot');
             if (w.soil_temperature != null && !isNaN(Number(w.soil_temperature))) {
                 const sT = Number(w.soil_temperature).toFixed(1);
                 if (soilTempEl) soilTempEl.innerText = `${sT} °C`;
-                if (soilTempNote) soilTempNote.innerText = `${sT} °C (Root Zone)`;
+                if (soilTempNote) soilTempNote.innerText = `${sT} °C (Optimal Range)`;
                 if (soilTempDot) {
                     soilTempDot.style.display = '';
                     soilTempDot.style.left = `${Math.max(5, Math.min(95, Math.round(((Number(sT) - 10) / (40 - 10)) * 100)))}%`;
@@ -3939,14 +4442,14 @@ async function refreshDashboard(forceNetwork = false) {
                 }
             }
 
-            const soilHumEl = document.getElementById('card-soil-hum-val');
-            const soilHumNote = document.getElementById('soil-hum-note-val');
-            const soilHumDot = document.getElementById('soil-hum-slider-dot');
+            const soilHumEl = document.getElementById('soil-live-hum-val');
+            const soilHumNote = document.getElementById('soil-live-hum-note-val');
+            const soilHumDot = document.getElementById('soil-live-hum-slider-dot');
             const rawSoilHum = w.soil_humidity != null ? w.soil_humidity : (w.soil_moisture != null ? w.soil_moisture : null);
             if (rawSoilHum != null && !isNaN(Number(rawSoilHum))) {
                 const sH = Number(rawSoilHum).toFixed(1);
                 if (soilHumEl) soilHumEl.innerText = `${sH}%`;
-                if (soilHumNote) soilHumNote.innerText = `Field Capacity (${sH}%)`;
+                if (soilHumNote) soilHumNote.innerText = `Adequate Field Capacity (${sH}%)`;
                 if (soilHumDot) {
                     soilHumDot.style.display = '';
                     soilHumDot.style.left = `${Math.max(5, Math.min(95, Math.round(Number(sH))))}%`;
@@ -3960,9 +4463,9 @@ async function refreshDashboard(forceNetwork = false) {
                 }
             }
 
-            const soilPhEl = document.getElementById('card-soil-ph-val');
-            const soilPhNote = document.getElementById('soil-ph-note-val');
-            const soilPhDot = document.getElementById('soil-ph-slider-dot');
+            const soilPhEl = document.getElementById('soil-live-ph-val');
+            const soilPhNote = document.getElementById('soil-live-ph-note-val');
+            const soilPhDot = document.getElementById('soil-live-ph-slider-dot');
             if (w.soil_ph != null && !isNaN(Number(w.soil_ph))) {
                 const sPh = Number(w.soil_ph).toFixed(2);
                 if (soilPhEl) soilPhEl.innerText = `${sPh}`;
@@ -3979,6 +4482,28 @@ async function refreshDashboard(forceNetwork = false) {
                 if (soilPhDot) {
                     soilPhDot.style.display = '';
                     soilPhDot.style.left = '50%';
+                }
+            }
+
+            const soilEcEl = document.getElementById('soil-live-ec-val');
+            const soilEcNote = document.getElementById('soil-live-ec-note-val');
+            const soilEcDot = document.getElementById('soil-live-ec-slider-dot');
+            if (w.soil_conductivity != null && !isNaN(Number(w.soil_conductivity))) {
+                const sEc = Number(w.soil_conductivity).toFixed(1);
+                if (soilEcEl) soilEcEl.innerText = `${sEc} µS/cm`;
+                const ecNum = Number(sEc);
+                const ecStatus = (ecNum < 40) ? 'Low Salinity (Good)' : ((ecNum > 150) ? 'Elevated Salinity' : 'Balanced Fertility');
+                if (soilEcNote) soilEcNote.innerText = `${ecStatus} (${sEc})`;
+                if (soilEcDot) {
+                    soilEcDot.style.display = '';
+                    soilEcDot.style.left = `${Math.max(5, Math.min(95, Math.round((ecNum / 200.0) * 100)))}%`;
+                }
+            } else {
+                if (soilEcEl) soilEcEl.innerText = '--';
+                if (soilEcNote) soilEcNote.innerText = '--';
+                if (soilEcDot) {
+                    soilEcDot.style.display = '';
+                    soilEcDot.style.left = '50%';
                 }
             }
             
@@ -4114,68 +4639,84 @@ async function refreshDashboard(forceNetwork = false) {
                 uvDot.style.display = '';
                 uvDot.style.left = '8%';
             }
-            const soilTempEl = document.getElementById('card-soil-temp-val');
+            const ambTempEl = document.getElementById('card-weather-temp-val');
+            if (ambTempEl) ambTempEl.innerText = '--';
+            const ambHumEl = document.getElementById('card-weather-hum-val');
+            if (ambHumEl) ambHumEl.innerText = '--';
+            const soilTempEl = document.getElementById('soil-live-temp-val');
             if (soilTempEl) soilTempEl.innerText = '--';
-            const soilTempNote = document.getElementById('soil-temp-note-val');
-            if (soilTempNote) soilTempNote.innerText = '--';
-            const soilTempDot = document.getElementById('soil-temp-slider-dot');
-            if (soilTempDot) {
-                soilTempDot.style.display = '';
-                soilTempDot.style.left = '48%';
-            }
-            const soilHumEl = document.getElementById('card-soil-hum-val');
+            const soilHumEl = document.getElementById('soil-live-hum-val');
             if (soilHumEl) soilHumEl.innerText = '--';
-            const soilHumNote = document.getElementById('soil-hum-note-val');
-            if (soilHumNote) soilHumNote.innerText = '--';
-            const soilHumDot = document.getElementById('soil-hum-slider-dot');
-            if (soilHumDot) {
-                soilHumDot.style.display = '';
-                soilHumDot.style.left = '50%';
-            }
-            const soilPhEl = document.getElementById('card-soil-ph-val');
+            const soilPhEl = document.getElementById('soil-live-ph-val');
             if (soilPhEl) soilPhEl.innerText = '--';
-            const soilPhNote = document.getElementById('soil-ph-note-val');
-            if (soilPhNote) soilPhNote.innerText = '--';
-            const soilPhDot = document.getElementById('soil-ph-slider-dot');
-            if (soilPhDot) {
-                soilPhDot.style.display = '';
-                soilPhDot.style.left = '50%';
-            }
+            const soilEcEl = document.getElementById('soil-live-ec-val');
+            if (soilEcEl) soilEcEl.innerText = '--';
         }
         
-        // WEATHER HISTORY TABLE & TODAY'S TEMP RANGE
+        // WEATHER & SOIL TABLES
         let wMinFormatted = '--';
         let wMaxFormatted = '--';
         const tbodyWeather = document.getElementById('weather-tbody');
+        const tbodySoil = document.getElementById('soil-live-tbody');
+
         if (weatherHistory && weatherHistory.length > 0) {
             let temps = [];
             
+            // 1. Ambient Weather Table
             if (tbodyWeather) {
                 tbodyWeather.innerHTML = weatherHistory.map((row, i) => {
                     const timeStr = formatStreamTimestamp(row);
-                    const soilTemp = (row.soil_temperature != null && !isNaN(Number(row.soil_temperature))) 
-                        ? `${Number(row.soil_temperature).toFixed(1)} °C` 
-                        : (row.soil_temp != null && !isNaN(Number(row.soil_temp)) ? `${Number(row.soil_temp).toFixed(1)} °C` : '--');
-                    const soilHum = (row.soil_humidity != null && !isNaN(Number(row.soil_humidity))) 
-                        ? `${Number(row.soil_humidity).toFixed(1)}%` 
-                        : (row.soil_moisture != null && !isNaN(Number(row.soil_moisture)) ? `${Number(row.soil_moisture).toFixed(1)}%` : '--');
-                    const soilPh = (row.soil_ph != null && !isNaN(Number(row.soil_ph))) 
-                        ? Number(row.soil_ph).toFixed(2) 
-                        : (row.ph != null && !isNaN(Number(row.ph)) ? Number(row.ph).toFixed(2) : '--');
-                    const soilEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity)))
-                        ? `${Number(row.soil_conductivity).toFixed(1)}`
-                        : '--';
+                    const temp = (row.temperature != null && !isNaN(Number(row.temperature))) ? `${Number(row.temperature).toFixed(1)} °C` : '--';
+                    const hum = (row.humidity != null && !isNaN(Number(row.humidity))) ? `${Number(row.humidity).toFixed(1)}%` : '--';
+                    const wSpd = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? `${Number(row.wind_speed).toFixed(1)} km/h` : '--';
+                    const gust = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? `${Number(row.wind_gust).toFixed(1)} m/s` : '--';
+                    const dir = (row.wind_direction != null && row.wind_direction !== '') ? getCompassDir(row.wind_direction) : '--';
+                    const rain = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? `${Number(row.rain_gauge).toFixed(1)} mm` : '--';
 
-                    if (row.soil_temperature != null && !isNaN(Number(row.soil_temperature))) {
-                        temps.push(Number(row.soil_temperature));
+                    if (row.temperature != null && !isNaN(Number(row.temperature))) {
+                        temps.push(Number(row.temperature));
                     }
                     
                     return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${soilTemp}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${soilHum}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${soilPh}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #7c3aed;">${soilEc}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${temp}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${hum}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${wSpd}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0d9488;">${gust}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #475569;">${dir}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #2563eb;">${rain}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+            // 2. Subsurface Soil Telemetry Table
+            if (tbodySoil) {
+                tbodySoil.innerHTML = weatherHistory.map((row, i) => {
+                    const timeStr = formatStreamTimestamp(row);
+                    const sHumRaw = (row.soil_moisture != null) ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null);
+                    const sHum = (sHumRaw != null && !isNaN(Number(sHumRaw))) ? `${Number(sHumRaw).toFixed(1)}%` : '--';
+                    const sTemp = (row.soil_temperature != null && !isNaN(Number(row.soil_temperature))) 
+                        ? `${Number(row.soil_temperature).toFixed(1)} °C` 
+                        : (row.soil_temp != null && !isNaN(Number(row.soil_temp)) ? `${Number(row.soil_temp).toFixed(1)} °C` : '--');
+                    const sPh = (row.soil_ph != null && !isNaN(Number(row.soil_ph))) 
+                        ? Number(row.soil_ph).toFixed(2) 
+                        : (row.ph != null && !isNaN(Number(row.ph)) ? Number(row.ph).toFixed(2) : '--');
+                    const sEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity))) 
+                        ? `${Number(row.soil_conductivity).toFixed(1)}` 
+                        : '--';
+
+                    let badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">Optimal</span>';
+                    if (sPh !== '--' && (Number(sPh) < 6.0 || Number(sPh) > 8.0)) {
+                        badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;">Attn pH</span>';
+                    }
+
+                    return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${sHum}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${sTemp}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${sPh}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #7c3aed;">${sEc}</td>
+                      <td style="padding: 11px 16px;">${badge}</td>
                     </tr>`;
                 }).join('');
             }
@@ -4190,8 +4731,9 @@ async function refreshDashboard(forceNetwork = false) {
                 const wMaxEl = document.getElementById('weather-hero-temp-max');
                 if (wMaxEl) wMaxEl.innerText = `${max}°C`;
             }
-        } else if (tbodyWeather) {
-            tbodyWeather.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">No live soil telemetry found.</td></tr>';
+        } else {
+            if (tbodyWeather) tbodyWeather.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
+            if (tbodySoil) tbodySoil.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">No live soil telemetry found.</td></tr>';
         }
 
         // Cache unified hero state for 0ms instant reload
@@ -4366,6 +4908,11 @@ async function refreshDashboard(forceNetwork = false) {
             console.warn("Comparison chart error:", chartErr);
         }
         try {
+            if (typeof renderSoilLiveTrendChart === 'function') renderSoilLiveTrendChart();
+        } catch(soilChartErr) {
+            console.warn("Soil live chart error:", soilChartErr);
+        }
+        try {
             renderLiveTable();
         } catch(tableErr) {
             console.warn("Live table error:", tableErr);
@@ -4401,6 +4948,11 @@ window.__cleanupCurrentPage = function() {
         try { aqiTrendChartInstance.destroy(); } catch(e) {}
         aqiTrendChartInstance = null;
         window.__aqiTrendChartInstance = null;
+    }
+    if (soilLiveChartInstance) {
+        try { soilLiveChartInstance.destroy(); } catch(e) {}
+        soilLiveChartInstance = null;
+        window.__soilLiveChartInstance = null;
     }
     if (window.__chartInstances) {
         Object.keys(window.__chartInstances).forEach(k => {

@@ -233,14 +233,7 @@ $t_val = (isset($w_d['temperature']) && is_numeric($w_d['temperature'])) ? (floa
 $h_val = (isset($w_d['humidity']) && is_numeric($w_d['humidity'])) ? (float)$w_d['humidity'] : null;
 $r_val = (isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge'])) ? (float)$w_d['rain_gauge'] : 0.0;
 
-$is_cloudy_initial = true; // Default in standby mode matches user reference screenshot
-if (isset($_GET['weather_mode'])) {
-    $is_cloudy_initial = ($_GET['weather_mode'] !== 'sunny');
-} elseif ($r_val > 0) {
-    $is_cloudy_initial = true;
-} elseif ($t_val !== null && $h_val !== null) {
-    $is_cloudy_initial = (($t_val <= 26 && $h_val >= 65) || $t_val <= 23 || $h_val >= 85);
-}
+$is_cloudy_initial = true; // Natural atmospheric drifting sunset cloud sky (no sun overlay)
 
 // Weather Min / Max calculation from history
 $init_weather_min = '--';
@@ -4361,63 +4354,38 @@ window.__cleanupCurrentPage = function() {
 
 var liveCanvasAnimId = null;
 var liveCanvasResizeHandler = null;
-window.__node2WeatherTheme = '<?= $is_cloudy_initial ? 'cloudy' : 'sunny' ?>';
-window.__node2TargetBlend = (window.__node2WeatherTheme === 'cloudy') ? 1.0 : 0.0;
-window.__node2CurrentBlend = window.__node2TargetBlend;
+window.__node2WeatherTheme = 'cloudy';
+window.__node2TargetBlend = 1.0;
+window.__node2CurrentBlend = 1.0;
 
 window.setWeatherBackdropTheme = function(theme) {
-    if (theme !== 'cloudy' && theme !== 'sunny') return;
-    window.__node2WeatherTheme = theme;
-    window.__node2TargetBlend = (theme === 'cloudy') ? 1.0 : 0.0;
+    window.__node2WeatherTheme = 'cloudy';
+    window.__node2TargetBlend = 1.0;
 
     const backdrop = document.getElementById('node2-weather-backdrop');
     if (backdrop) {
-        backdrop.classList.remove('cloudy', 'sunny');
-        backdrop.classList.add(theme);
+        backdrop.classList.remove('sunny');
+        backdrop.classList.add('cloudy');
     }
 
     const pillIcon = document.getElementById('weather-ambient-mode-icon');
     const pillText = document.getElementById('weather-ambient-mode-text');
     const pillBadge = document.getElementById('weather-ambient-mode-badge');
-    if (pillIcon) pillIcon.innerText = (theme === 'cloudy') ? '☁️' : '☀️';
-    if (pillText) pillText.innerText = (theme === 'cloudy') ? 'Atmosphere: Cloudy Drifting Sky' : 'Atmosphere: Sunny Radiant Sky';
+    if (pillIcon) pillIcon.innerText = '☁️';
+    if (pillText) pillText.innerText = 'Atmosphere: Dynamic Sunset Sky';
     if (pillBadge) {
-        pillBadge.innerText = (theme === 'cloudy') ? 'COOL & MOIST' : 'BRIGHT & WARM';
-        pillBadge.style.backgroundColor = (theme === 'cloudy') ? '#e2e8f0' : '#fef08a';
-        pillBadge.style.color = (theme === 'cloudy') ? '#475569' : '#854d0e';
+        pillBadge.innerText = 'NATURAL SKY';
+        pillBadge.style.backgroundColor = '#e2e8f0';
+        pillBadge.style.color = '#475569';
     }
 };
 
 window.toggleWeatherBackdropTheme = function() {
-    const next = (window.__node2WeatherTheme === 'cloudy') ? 'sunny' : 'cloudy';
-    window.setWeatherBackdropTheme(next);
+    window.setWeatherBackdropTheme('cloudy');
 };
 
 window.evaluateNode2WeatherTheme = function(temp, hum, rain) {
-    // User condition: "if temperature is low and humidity is high else a sunny bright animation in node 2"
-    let isCloudy = true; // Default in standby mode matches user reference screenshot
-    const t = (temp != null && !isNaN(Number(temp))) ? Number(temp) : null;
-    const h = (hum != null && !isNaN(Number(hum))) ? Number(hum) : null;
-    const r = (rain != null && !isNaN(Number(rain))) ? Number(rain) : 0;
-
-    if (r > 0) {
-        isCloudy = true;
-    } else if (t !== null && h !== null) {
-        // Temperature low (<= 26°C) AND humidity high (>= 65%), or cold (<= 23°C), or saturated (>= 85%)
-        if ((t <= 26 && h >= 65) || t <= 23 || h >= 85) {
-            isCloudy = true;
-        } else {
-            isCloudy = false; // Else sunny bright animation
-        }
-    } else if (t !== null) {
-        isCloudy = (t <= 24);
-    } else if (h !== null) {
-        isCloudy = (h >= 75);
-    } else {
-        isCloudy = true; // Standby default
-    }
-
-    window.setWeatherBackdropTheme(isCloudy ? 'cloudy' : 'sunny');
+    window.setWeatherBackdropTheme('cloudy');
 };
 
 function initNode2WeatherBackdrop() {
@@ -4611,13 +4579,6 @@ function initNode2WeatherBackdrop() {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // SUNNY BRIGHT ANIMATION ENGINE (Sunny Mode)
-    // ─────────────────────────────────────────────────────────────
-    let sunRays = [];
-    let sunMotes = [];
-    let rayRotationAngle = 0;
-
     function initElements() {
         clouds = [];
         const isMobile = (canvas.width < 640);
@@ -4643,25 +4604,6 @@ function initNode2WeatherBackdrop() {
             alpha: Math.random() * 0.6 + 0.2,
             pulse: Math.random() * Math.PI * 2
         }));
-
-        sunRays = Array.from({ length: 16 }, (_, i) => ({
-            angleOffset: (i * Math.PI * 2) / 16,
-            baseLen: (i % 2 === 0) ? (canvas.height * 0.42 + 60) : (canvas.height * 0.32 + 30),
-            pulseSpeed: 0.02 + (i % 4) * 0.008,
-            pulseOffset: i * 0.4,
-            width: (i % 2 === 0) ? 0.095 : 0.058
-        }));
-
-        sunMotes = Array.from({ length: 35 }, () => ({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            r: Math.random() * 2.8 + 1.2,
-            speedX: (Math.random() - 0.4) * 0.45,
-            speedY: -(Math.random() * 0.5 + 0.25),
-            alpha: Math.random() * 0.65 + 0.2,
-            pulse: Math.random() * Math.PI * 2,
-            sparkle: Math.random() > 0.7
-        }));
     }
 
     resize();
@@ -4671,102 +4613,8 @@ function initNode2WeatherBackdrop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         tick += 0.02;
 
-        if (Math.abs(window.__node2CurrentBlend - window.__node2TargetBlend) > 0.01) {
-            window.__node2CurrentBlend += (window.__node2TargetBlend - window.__node2CurrentBlend) * 0.04;
-        } else {
-            window.__node2CurrentBlend = window.__node2TargetBlend;
-        }
-
-        const cloudyWeight = window.__node2CurrentBlend; // 1 = fully cloudy (sunset clouds)
-        const sunnyWeight = 1.0 - cloudyWeight;         // 1 = fully sunny
-
-        // ═════════════════════════════════════════════════════════════
-        // RENDER SUNNY MODE (Radiant Sun, Rays, Golden Motes)
-        // ═════════════════════════════════════════════════════════════
-        if (sunnyWeight > 0.015) {
-            const sunX = Math.round(canvas.width * (canvas.width < 768 ? 0.75 : 0.80));
-            const sunY = Math.round(Math.min(125, Math.max(70, canvas.height * 0.16)));
-            const sunRadius = canvas.width < 768 ? 32 : 42;
-
-            ctx.save();
-            const pulse1 = Math.sin(tick * 1.6) * 8;
-            const halo1 = ctx.createRadialGradient(sunX, sunY, sunRadius * 0.5, sunX, sunY, 140 + pulse1);
-            halo1.addColorStop(0, `rgba(254, 240, 138, ${sunnyWeight * 0.55})`);
-            halo1.addColorStop(0.5, `rgba(251, 191, 36, ${sunnyWeight * 0.25})`);
-            halo1.addColorStop(1, `rgba(245, 158, 11, 0)`);
-            ctx.fillStyle = halo1;
-            ctx.beginPath();
-            ctx.arc(sunX, sunY, 140 + pulse1, 0, Math.PI * 2);
-            ctx.fill();
-
-            const pulse2 = Math.cos(tick * 1.2) * 14;
-            const halo2 = ctx.createRadialGradient(sunX, sunY, sunRadius, sunX, sunY, 280 + pulse2);
-            halo2.addColorStop(0, `rgba(253, 224, 71, ${sunnyWeight * 0.28})`);
-            halo2.addColorStop(0.65, `rgba(245, 158, 11, ${sunnyWeight * 0.10})`);
-            halo2.addColorStop(1, `rgba(251, 146, 60, 0)`);
-            ctx.fillStyle = halo2;
-            ctx.beginPath();
-            ctx.arc(sunX, sunY, 280 + pulse2, 0, Math.PI * 2);
-            ctx.fill();
-
-            rayRotationAngle += 0.0016;
-            for (const ray of sunRays) {
-                const ang = rayRotationAngle + ray.angleOffset;
-                const len = ray.baseLen + Math.sin(tick * ray.pulseSpeed + ray.pulseOffset) * 20;
-                ctx.beginPath();
-                ctx.moveTo(sunX, sunY);
-                ctx.lineTo(sunX + Math.cos(ang - ray.width) * len, sunY + Math.sin(ang - ray.width) * len);
-                ctx.lineTo(sunX + Math.cos(ang + ray.width) * len, sunY + Math.sin(ang + ray.width) * len);
-                ctx.closePath();
-                const rayGrad = ctx.createRadialGradient(sunX, sunY, 20, sunX, sunY, len);
-                rayGrad.addColorStop(0, `rgba(254, 240, 138, ${sunnyWeight * 0.42})`);
-                rayGrad.addColorStop(0.45, `rgba(253, 224, 71, ${sunnyWeight * 0.20})`);
-                rayGrad.addColorStop(1, `rgba(254, 240, 138, 0)`);
-                ctx.fillStyle = rayGrad;
-                ctx.fill();
-            }
-
-            const coreGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius * 1.35);
-            coreGrad.addColorStop(0, `rgba(255, 255, 255, ${sunnyWeight * 1.0})`);
-            coreGrad.addColorStop(0.4, `rgba(254, 240, 138, ${sunnyWeight * 0.98})`);
-            coreGrad.addColorStop(0.75, `rgba(245, 158, 11, ${sunnyWeight * 0.85})`);
-            coreGrad.addColorStop(1, `rgba(217, 119, 6, 0)`);
-            ctx.fillStyle = coreGrad;
-            ctx.beginPath();
-            ctx.arc(sunX, sunY, sunRadius * 1.35, 0, Math.PI * 2);
-            ctx.fill();
-
-            for (const m of sunMotes) {
-                m.pulse += 0.035;
-                const alpha = (m.alpha + Math.sin(m.pulse) * 0.18) * sunnyWeight;
-                if (alpha > 0.05) {
-                    ctx.beginPath();
-                    ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(253, 224, 71, ${alpha})`;
-                    ctx.fill();
-                    if (m.sparkle && alpha > 0.35) {
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
-                        ctx.lineWidth = 1.0;
-                        ctx.beginPath();
-                        ctx.moveTo(m.x - m.r * 2.2, m.y);
-                        ctx.lineTo(m.x + m.r * 2.2, m.y);
-                        ctx.moveTo(m.x, m.y - m.r * 2.2);
-                        ctx.lineTo(m.x, m.y + m.r * 2.2);
-                        ctx.stroke();
-                    }
-                }
-                m.x += m.speedX;
-                m.y += m.speedY;
-                if (m.y < -20) { m.y = canvas.height + 20; m.x = Math.random() * canvas.width; }
-                if (m.x < -20) m.x = canvas.width + 20;
-                if (m.x > canvas.width + 20) m.x = -20;
-            }
-            ctx.restore();
-        }
-
-        // ═════════════════════════════════════════════════════════════
-        // RENDER CLOUDY MODE (Sunset Cumulus Clouds & Stratus Wisps)
-        // ═════════════════════════════════════════════════════════════
+        // Render natural sunset cumulus clouds & stratus wisps across sky (no sun overlay)
+        const cloudyWeight = 1.0;
         if (cloudyWeight > 0.015) {
             for (const cloud of clouds) {
                 cloud.update(tick);

@@ -125,9 +125,9 @@
             mobileSecondary.style.display = 'none';
         }
 
-        // Update Cool & Light Page Background
+        // Update Warm Golden Page Background for Live AQI and Cool/Light for other pages
         const pageBgStyles = {
-            'live': 'background-color: #f0f7ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
+            'live': 'background-color: #fefce8; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%);',
             'weather': 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
             'historical': 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
             'predictive': 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',

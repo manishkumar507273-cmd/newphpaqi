@@ -62,43 +62,43 @@ if (!empty($init_bulk['aqi'])) {
         $v = (int)$init_aqi_val;
         if ($v <= 50) {
             $init_aqi_label = 'Good';
-            $init_aqi_accent = '#16a34a';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)';
-            $init_aqi_border = 'rgba(22, 163, 74, 0.35)';
-            $init_aqi_shadow = 'rgba(34, 197, 94, 0.22)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
-            $init_aqi_badge_border = 'rgba(22, 163, 74, 0.35)';
-            $init_aqi_badge_text = '#15803d';
+            $init_aqi_accent = '#14532d';
+            $init_aqi_bg = 'linear-gradient(155deg, #86efac 0%, #4ade80 25%, #22c55e 55%, #16a34a 80%, #15803d 95%, #166534 100%)';
+            $init_aqi_border = 'rgba(21, 128, 61, 0.45)';
+            $init_aqi_shadow = 'rgba(22, 163, 74, 0.28)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.88)';
+            $init_aqi_badge_border = 'rgba(21, 128, 61, 0.45)';
+            $init_aqi_badge_text = '#14532d';
             $init_scale_pct = max(2, min(98, ($v / 50) * 16.666)) . '%';
         } elseif ($v <= 100) {
             $init_aqi_label = 'Moderate';
-            $init_aqi_accent = '#ca8a04';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)';
-            $init_aqi_border = 'rgba(202, 138, 4, 0.35)';
-            $init_aqi_shadow = 'rgba(234, 179, 8, 0.20)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
-            $init_aqi_badge_border = 'rgba(202, 138, 4, 0.38)';
-            $init_aqi_badge_text = '#854d0e';
+            $init_aqi_accent = '#78350f';
+            $init_aqi_bg = 'linear-gradient(155deg, #fde047 0%, #facc15 22%, #eab308 50%, #ca8a04 75%, #b45309 90%, #92400e 100%)';
+            $init_aqi_border = 'rgba(180, 83, 9, 0.45)';
+            $init_aqi_shadow = 'rgba(202, 138, 4, 0.28)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.88)';
+            $init_aqi_badge_border = 'rgba(180, 83, 9, 0.45)';
+            $init_aqi_badge_text = '#78350f';
             $init_scale_pct = (16.666 + (($v - 50) / 50) * 16.667) . '%';
         } elseif ($v <= 200) {
             $init_aqi_label = 'Poor';
-            $init_aqi_accent = '#ea580c';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)';
-            $init_aqi_border = 'rgba(234, 88, 12, 0.38)';
-            $init_aqi_shadow = 'rgba(249, 115, 22, 0.22)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
-            $init_aqi_badge_border = 'rgba(234, 88, 12, 0.38)';
-            $init_aqi_badge_text = '#c2410c';
+            $init_aqi_accent = '#7c2d12';
+            $init_aqi_bg = 'linear-gradient(155deg, #fdba74 0%, #fb923c 25%, #f97316 52%, #ea580c 78%, #c2410c 92%, #9a3412 100%)';
+            $init_aqi_border = 'rgba(194, 65, 12, 0.45)';
+            $init_aqi_shadow = 'rgba(234, 88, 12, 0.28)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.88)';
+            $init_aqi_badge_border = 'rgba(194, 65, 12, 0.45)';
+            $init_aqi_badge_text = '#7c2d12';
             $init_scale_pct = (33.333 + (($v - 100) / 100) * 16.667) . '%';
         } else {
             $init_aqi_label = 'Unhealthy';
-            $init_aqi_accent = '#e11d48';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)';
-            $init_aqi_border = 'rgba(225, 29, 72, 0.38)';
-            $init_aqi_shadow = 'rgba(225, 29, 72, 0.22)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
-            $init_aqi_badge_border = 'rgba(225, 29, 72, 0.38)';
-            $init_aqi_badge_text = '#9f1239';
+            $init_aqi_accent = '#881337';
+            $init_aqi_bg = 'linear-gradient(155deg, #fda4af 0%, #fb7185 25%, #f43f5e 52%, #e11d48 78%, #be123c 92%, #881337 100%)';
+            $init_aqi_border = 'rgba(190, 18, 60, 0.45)';
+            $init_aqi_shadow = 'rgba(225, 29, 72, 0.28)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.88)';
+            $init_aqi_badge_border = 'rgba(190, 18, 60, 0.45)';
+            $init_aqi_badge_text = '#881337';
             $init_scale_pct = '50%';
         }
     }
@@ -1840,8 +1840,8 @@ body.weather-backdrop-active #app-layout-root,
           if (layoutRoot) {
               layoutRoot.style.removeProperty('background');
               layoutRoot.style.removeProperty('background-image');
-              layoutRoot.style.backgroundColor = '#f0f7ff';
-              layoutRoot.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%)';
+              layoutRoot.style.backgroundColor = (window.currentAQITheme && window.currentAQITheme.pageColor) ? window.currentAQITheme.pageColor : '#fefce8';
+              layoutRoot.style.backgroundImage = (window.currentAQITheme && window.currentAQITheme.pageBg) ? window.currentAQITheme.pageBg : 'radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%)';
           }
           if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
       }
@@ -1879,8 +1879,8 @@ body.weather-backdrop-active #app-layout-root,
       if (lr) {
           lr.style.removeProperty('background');
           lr.style.removeProperty('background-image');
-          lr.style.backgroundColor = '#f0f7ff';
-          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%)';
+          lr.style.backgroundColor = '#fefce8';
+          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%)';
       }
   }
 
@@ -4083,72 +4083,84 @@ async function refreshDashboard(forceNetwork = false) {
             if (isNaN(v) || v <= 50) {
                 return {
                     label: 'Good',
-                    bg: 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)',
-                    border: 'rgba(22, 163, 74, 0.35)',
-                    shadow: 'rgba(34, 197, 94, 0.22)',
-                    accent: '#16a34a',
-                    badgeBg: 'rgba(255, 255, 255, 0.75)',
-                    badgeBorder: 'rgba(22, 163, 74, 0.35)',
-                    badgeText: '#15803d'
+                    pageColor: '#f0fdf4',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #bbf7d0 35%, #f0fdf4 65%, #f8fafc 100%)',
+                    bg: 'linear-gradient(155deg, #86efac 0%, #4ade80 25%, #22c55e 55%, #16a34a 80%, #15803d 95%, #166534 100%)',
+                    border: 'rgba(21, 128, 61, 0.45)',
+                    shadow: 'rgba(22, 163, 74, 0.28)',
+                    accent: '#14532d',
+                    badgeBg: 'rgba(255, 255, 255, 0.88)',
+                    badgeBorder: 'rgba(21, 128, 61, 0.45)',
+                    badgeText: '#14532d'
                 };
             }
             if (v <= 100) {
                 return {
                     label: 'Moderate',
-                    bg: 'linear-gradient(155deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)',
-                    border: 'rgba(202, 138, 4, 0.35)',
-                    shadow: 'rgba(234, 179, 8, 0.20)',
-                    accent: '#ca8a04',
-                    badgeBg: 'rgba(255, 255, 255, 0.75)',
-                    badgeBorder: 'rgba(202, 138, 4, 0.38)',
-                    badgeText: '#854d0e'
+                    pageColor: '#fefce8',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%)',
+                    bg: 'linear-gradient(155deg, #fde047 0%, #facc15 22%, #eab308 50%, #ca8a04 75%, #b45309 90%, #92400e 100%)',
+                    border: 'rgba(180, 83, 9, 0.45)',
+                    shadow: 'rgba(202, 138, 4, 0.28)',
+                    accent: '#78350f',
+                    badgeBg: 'rgba(255, 255, 255, 0.88)',
+                    badgeBorder: 'rgba(180, 83, 9, 0.45)',
+                    badgeText: '#78350f'
                 };
             }
             if (v <= 200) {
                 return {
                     label: 'Poor',
-                    bg: 'linear-gradient(155deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)',
-                    border: 'rgba(234, 88, 12, 0.38)',
-                    shadow: 'rgba(249, 115, 22, 0.22)',
-                    accent: '#ea580c',
-                    badgeBg: 'rgba(255, 255, 255, 0.72)',
-                    badgeBorder: 'rgba(234, 88, 12, 0.38)',
-                    badgeText: '#c2410c'
+                    pageColor: '#fff7ed',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fed7aa 0%, #ffedd5 35%, #fff7ed 65%, #fffaf5 100%)',
+                    bg: 'linear-gradient(155deg, #fdba74 0%, #fb923c 25%, #f97316 52%, #ea580c 78%, #c2410c 92%, #9a3412 100%)',
+                    border: 'rgba(194, 65, 12, 0.45)',
+                    shadow: 'rgba(234, 88, 12, 0.28)',
+                    accent: '#7c2d12',
+                    badgeBg: 'rgba(255, 255, 255, 0.88)',
+                    badgeBorder: 'rgba(194, 65, 12, 0.45)',
+                    badgeText: '#7c2d12'
                 };
             }
             if (v <= 300) {
                 return {
                     label: 'Unhealthy',
-                    bg: 'linear-gradient(155deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)',
-                    border: 'rgba(225, 29, 72, 0.38)',
-                    shadow: 'rgba(225, 29, 72, 0.22)',
-                    accent: '#e11d48',
-                    badgeBg: 'rgba(255, 255, 255, 0.72)',
-                    badgeBorder: 'rgba(225, 29, 72, 0.38)',
-                    badgeText: '#9f1239'
+                    pageColor: '#fff1f2',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fecdd3 0%, #ffe4e6 35%, #fff1f2 65%, #fffbfc 100%)',
+                    bg: 'linear-gradient(155deg, #fda4af 0%, #fb7185 25%, #f43f5e 52%, #e11d48 78%, #be123c 92%, #881337 100%)',
+                    border: 'rgba(190, 18, 60, 0.45)',
+                    shadow: 'rgba(225, 29, 72, 0.28)',
+                    accent: '#881337',
+                    badgeBg: 'rgba(255, 255, 255, 0.88)',
+                    badgeBorder: 'rgba(190, 18, 60, 0.45)',
+                    badgeText: '#881337'
                 };
             }
             if (v <= 400) {
                 return {
                     label: 'Severe',
-                    bg: 'linear-gradient(155deg, #ffffff 0%, #faf5ff 22%, #f3e8ff 48%, #e9d5ff 72%, #c084fc 90%, #9333ea 100%)',
-                    border: 'rgba(147, 51, 234, 0.38)',
-                    shadow: 'rgba(147, 51, 234, 0.22)',
-                    accent: '#9333ea',
-                    badgeBg: 'rgba(255, 255, 255, 0.72)',
-                    badgeBorder: 'rgba(147, 51, 234, 0.38)',
-                    badgeText: '#6b21a8'
+                    pageColor: '#faf5ff',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #e9d5ff 0%, #f3e8ff 35%, #faf5ff 65%, #fcfaff 100%)',
+                    bg: 'linear-gradient(155deg, #d8b4fe 0%, #c084fc 25%, #a855f7 52%, #9333ea 78%, #7e22ce 92%, #581c87 100%)',
+                    border: 'rgba(126, 34, 206, 0.45)',
+                    shadow: 'rgba(147, 51, 234, 0.28)',
+                    accent: '#581c87',
+                    badgeBg: 'rgba(255, 255, 255, 0.88)',
+                    badgeBorder: 'rgba(126, 34, 206, 0.45)',
+                    badgeText: '#581c87'
                 };
             }
             return {
                 label: 'Hazardous',
-                bg: 'linear-gradient(155deg, #ffffff 0%, #fef2f2 22%, #fee2e2 48%, #fca5a5 72%, #f87171 90%, #b91c1c 100%)',
-                border: 'rgba(185, 28, 28, 0.40)',
-                shadow: 'rgba(185, 28, 28, 0.25)',
-                accent: '#b91c1c',
-                badgeBg: 'rgba(255, 255, 255, 0.72)',
-                badgeBorder: 'rgba(185, 28, 28, 0.40)',
-                badgeText: '#881337'
+                pageColor: '#fef2f2',
+                pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fee2e2 0%, #fecaca 35%, #fef2f2 65%, #fff8f8 100%)',
+                bg: 'linear-gradient(155deg, #fca5a5 0%, #f87171 25%, #ef4444 52%, #dc2626 78%, #b91c1c 92%, #7f1d1d 100%)',
+                border: 'rgba(185, 28, 28, 0.50)',
+                shadow: 'rgba(220, 38, 38, 0.32)',
+                accent: '#7f1d1d',
+                badgeBg: 'rgba(255, 255, 255, 0.88)',
+                badgeBorder: 'rgba(185, 28, 28, 0.50)',
+                badgeText: '#7f1d1d'
             };
         }
 
@@ -4159,7 +4171,17 @@ async function refreshDashboard(forceNetwork = false) {
             const theme = getAQITheme(aqiValue);
             currentAQITheme = theme;
 
-            // Hero card background and colors
+            // Page layout root background synced with AQI theme when on AQI tab
+            const layoutRoot = document.getElementById('app-layout-root');
+            if (layoutRoot && theme.pageColor && theme.pageBg) {
+                const aqiView = document.getElementById('node2-view-aqi');
+                if (!aqiView || aqiView.style.display !== 'none') {
+                    layoutRoot.style.backgroundColor = theme.pageColor;
+                    layoutRoot.style.backgroundImage = theme.pageBg;
+                }
+            }
+
+            // Hero card background and colors (darker richer than whole page)
             const hero = document.getElementById('hero-card');
             const badge = document.getElementById('hero-aqi-badge');
 
@@ -4978,8 +5000,8 @@ window.__cleanupCurrentPage = function() {
     if (lr) {
         lr.style.removeProperty('background');
         lr.style.removeProperty('background-image');
-        lr.style.backgroundColor = '#f0f7ff';
-        lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%)';
+        lr.style.backgroundColor = '#fefce8';
+        lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%)';
     }
 };
 

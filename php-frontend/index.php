@@ -413,7 +413,7 @@ if ($is_ajax) {
         window.INITIAL_DATA = <?= $initial_overview_json ?>;
     </script>
 </head>
-<body class="bg-[#f0f7ff] text-[#0f172a] font-sans antialiased">
+<body class="bg-[#fefce8] text-[#0f172a] font-sans antialiased">
     
     <?php include __DIR__ . '/components/layout.php'; ?>
 

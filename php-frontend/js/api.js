@@ -86,29 +86,7 @@ window.calcSubindex = calcSubindex;
  */
 function adjustTempByHour(tempC, isoTimestamp) {
     if (tempC === null || tempC === undefined) return tempC;
-    if (!isoTimestamp) return Number(Number(tempC).toFixed(1));
-    try {
-        let tsStr = String(isoTimestamp).trim().replace(' ', 'T');
-        if (!/[Zz]$/.test(tsStr) && !/[+\-]\d{2}(:?\d{2})?$/.test(tsStr)) {
-            tsStr += '+05:30';
-        }
-        const dt = new Date(tsStr);
-        if (isNaN(dt.getTime())) return Number(Number(tempC).toFixed(1));
-        const istDt = new Date(dt.getTime() + 5.5 * 3600 * 1000);
-        const hour = istDt.getUTCHours();
-        let offset = 0;
-        if (hour === 8) offset = -0.5;
-        else if (hour === 9) offset = -1.0;
-        else if (hour === 10) offset = -1.5;
-        else if (hour >= 11 && hour <= 16) offset = -2.0;
-        else if (hour === 17) offset = -1.5;
-        else if (hour === 18) offset = -1.0;
-        else if (hour === 19) offset = -0.5;
-        // hour >= 20 or hour <= 7: offset = 0 (original value as in supabase)
-        return Number((Number(tempC) + offset).toFixed(1));
-    } catch (e) {
-        return Number(Number(tempC).toFixed(1));
-    }
+    return Number(Number(tempC).toFixed(1));
 }
 window.adjustTempByHour = adjustTempByHour;
 

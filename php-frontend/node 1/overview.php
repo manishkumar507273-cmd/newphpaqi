@@ -100,32 +100,7 @@ $init_today_rain = '--';
 if (!function_exists('adjustTemperatureOverview')) {
     function adjustTemperatureOverview($temp, $tsRaw) {
         if ($temp === null || $temp === '') return null;
-        $temp = (float)$temp;
-        if (!$tsRaw) return round($temp, 1);
-        try {
-            $tsStr = trim((string)$tsRaw);
-            if (strpos($tsStr, '+00') !== false || substr($tsStr, -1) === 'Z') {
-                $dt = new DateTime($tsStr);
-                $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-            } elseif (preg_match('/([+-]\d{2}):?(\d{2})$/', $tsStr)) {
-                $dt = new DateTime($tsStr);
-                $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-            } else {
-                $dt = new DateTime($tsStr, new DateTimeZone('Asia/Kolkata'));
-            }
-            $hour = (int)$dt->format('G');
-            $offset = 0.0;
-            if ($hour === 8)                    $offset = -0.5;
-            elseif ($hour === 9)                $offset = -1.0;
-            elseif ($hour === 10)               $offset = -1.5;
-            elseif ($hour >= 11 && $hour <= 16) $offset = -2.0;
-            elseif ($hour === 17)               $offset = -1.5;
-            elseif ($hour === 18)               $offset = -1.0;
-            elseif ($hour === 19)               $offset = -0.5;
-            return round($temp + $offset, 1);
-        } catch (Exception $e) {
-            return round($temp, 1);
-        }
+        return round((float)$temp, 1);
     }
 }
 

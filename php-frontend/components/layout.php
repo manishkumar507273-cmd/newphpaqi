@@ -162,28 +162,64 @@ window.switchActiveNode = function(nodeId) {
     window.location.href = url.toString();
 };
 
-window.toggleNodeDropdown = function(e) {
+window.toggleNodeDropdown = function(e, target) {
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    var menu = document.getElementById('node-dropdown-menu');
-    var chevron = document.getElementById('node-dropdown-chevron');
+    var isMobile = (target === 'mobile');
+    if (!target && e && e.currentTarget) {
+        if (e.currentTarget.id === 'mobile-node-dropdown-trigger' || (e.currentTarget.closest && e.currentTarget.closest('#mobile-node-dropdown-container'))) {
+            isMobile = true;
+        }
+    }
+    var menu = document.getElementById(isMobile ? 'mobile-node-dropdown-menu' : 'node-dropdown-menu');
+    var chevron = document.getElementById(isMobile ? 'mobile-node-dropdown-chevron' : 'node-dropdown-chevron');
+    
+    // Close the other one if open
+    var otherMenu = document.getElementById(isMobile ? 'node-dropdown-menu' : 'mobile-node-dropdown-menu');
+    var otherChevron = document.getElementById(isMobile ? 'node-dropdown-chevron' : 'mobile-node-dropdown-chevron');
+    if (otherMenu) otherMenu.style.display = 'none';
+    if (otherChevron) otherChevron.style.transform = 'rotate(0deg)';
+
     if (!menu) return;
     var isOpen = menu.style.display === 'block';
-    menu.style.display = isOpen ? 'none' : 'block';
-    if (chevron) {
-        chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    if (isOpen) {
+        menu.style.display = 'none';
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    } else {
+        menu.style.display = 'block';
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+        if (window.lucide && lucide.createIcons) lucide.createIcons();
+        
+        // Auto boundary alignment for mobile
+        if (isMobile) {
+            menu.style.left = '0px';
+            menu.style.right = 'auto';
+            var rect = menu.getBoundingClientRect();
+            if (rect.right > window.innerWidth - 8) {
+                menu.style.left = 'auto';
+                menu.style.right = '0px';
+            }
+        }
     }
 };
 
 document.addEventListener('click', function(e) {
-    var container = document.getElementById('desktop-node-dropdown-container');
-    var menu = document.getElementById('node-dropdown-menu');
-    var chevron = document.getElementById('node-dropdown-chevron');
-    if (menu && container && !container.contains(e.target)) {
-        menu.style.display = 'none';
-        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    var desktopContainer = document.getElementById('desktop-node-dropdown-container');
+    var desktopMenu = document.getElementById('node-dropdown-menu');
+    var desktopChevron = document.getElementById('node-dropdown-chevron');
+    if (desktopMenu && desktopContainer && !desktopContainer.contains(e.target)) {
+        desktopMenu.style.display = 'none';
+        if (desktopChevron) desktopChevron.style.transform = 'rotate(0deg)';
+    }
+
+    var mobileContainer = document.getElementById('mobile-node-dropdown-container');
+    var mobileMenu = document.getElementById('mobile-node-dropdown-menu');
+    var mobileChevron = document.getElementById('mobile-node-dropdown-chevron');
+    if (mobileMenu && mobileContainer && !mobileContainer.contains(e.target)) {
+        mobileMenu.style.display = 'none';
+        if (mobileChevron) mobileChevron.style.transform = 'rotate(0deg)';
     }
 });
 
@@ -643,7 +679,7 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
                 </div>
               </div>
               <?php if ($selected_node === '2'): ?>
-                <i data-lucide="check" style="width: 14px; height: 14px; color: #0f172a; stroke-width: 2.5;"></i>
+                <i data-lucide="check" style="width: 14px; height: 14px; color: #10b981; stroke-width: 2.5;"></i>
               <?php endif; ?>
             </button>
           </div>
@@ -652,29 +688,64 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
 
       <!-- Mobile Top App Bar (Brand always visible across all pages) -->
       <div class="flex md:hidden items-center gap-1.5 min-w-0" id="mobile-top-bar">
-        <a href="?page=overview&node=<?= $selected_node ?>" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0; flex-shrink: 0;">
+        <a href="?page=overview&node=<?= $selected_node ?>" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 7px; text-decoration: none; min-width: 0; flex-shrink: 0;">
           <div style="width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
             <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
           <div style="display: flex; flex-direction: column; flex-shrink: 0;">
-            <span style="font-size: 14.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
+            <span style="font-size: 14px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
               Smart <span style="color: #00bfa5;">WeatherNet</span>
             </span>
             <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
               <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
               <span style="font-size: 9.5px; font-weight: 700; color: #64748b; white-space: nowrap;"><?= htmlspecialchars($node_config['short_name'] ?? 'Node 1') ?></span>
-              <span id="navbar-station-coords-mobile" style="font-size: 9px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 4px; margin-left: 1px; white-space: nowrap;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : ($is_node_2 ? '--' : '') ?></span>
+              <span id="navbar-station-coords-mobile" class="hidden min-[380px]:inline" style="font-size: 9px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 4px; margin-left: 1px; white-space: nowrap;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : ($is_node_2 ? '--' : '') ?></span>
             </div>
           </div>
         </a>
 
-        <!-- Mobile Node Switcher Dropdown -->
-        <div class="relative ml-1 shrink-0" id="mobile-node-dropdown-container" style="position: relative; display: inline-flex; align-items: center;">
-          <select id="mobile-node-select" onchange="switchActiveNode(this.value)" style="appearance: none; -webkit-appearance: none; background: #ffffff; padding: 4px 22px 4px 8px; border-radius: 999px; border: 1.5px solid <?= $selected_node === '1' ? '#00bfa5' : '#cbd5e1' ?>; font-size: 10.5px; font-weight: 800; color: <?= $selected_node === '1' ? '#00bfa5' : '#475569' ?>; cursor: pointer; outline: none; box-shadow: 0 1px 3px rgba(15,23,42,0.06);">
-            <option value="1" <?= $selected_node === '1' ? 'selected' : '' ?>>● Node 1</option>
-            <option value="2" <?= $selected_node === '2' ? 'selected' : '' ?>>○ Node 2</option>
-          </select>
-          <i data-lucide="chevron-down" style="position: absolute; right: 6px; width: 11px; height: 11px; pointer-events: none; color: #64748b;"></i>
+        <!-- Mobile Node Selector Dropdown (Custom styled matching desktop) -->
+        <div class="relative ml-1 shrink-0" id="mobile-node-dropdown-container" style="position: relative;">
+          <button type="button" id="mobile-node-dropdown-trigger" onclick="window.toggleNodeDropdown(event, 'mobile')" style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05); transition: all 0.18s ease; outline: none; -webkit-tap-highlight-color: transparent;" onmouseover="this.style.borderColor='#00bfa5';" onmouseout="this.style.borderColor='#e2e8f0';">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#94a3b8' ?>; display: inline-block; flex-shrink: 0;" class="<?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>"></span>
+            <span style="font-size: 11px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Node 1 (SMVITM)' : 'Node 2 (Field Station)' ?></span>
+            <i data-lucide="chevron-down" id="mobile-node-dropdown-chevron" style="width: 12px; height: 12px; color: #64748b; transition: transform 0.2s;"></i>
+          </button>
+
+          <!-- Mobile Dropdown Popup Menu -->
+          <div id="mobile-node-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; min-width: 245px; max-width: calc(100vw - 20px); background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.18); z-index: 1000; padding: 6px; animation: modal-pop 0.15s ease-out;">
+            <div style="padding: 6px 10px 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">
+              Select Station
+            </div>
+            
+            <!-- Option: Node 1 -->
+            <button type="button" onclick="switchActiveNode('1')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '1' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s;" onmouseover="if('<?= $selected_node ?>' !== '1') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '1') this.style.background='transparent';">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '1' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 1 - SMVITM Campus</span>
+                  <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
+                </div>
+              </div>
+              <?php if ($selected_node === '1'): ?>
+                <i data-lucide="check" style="width: 14px; height: 14px; color: #10b981; stroke-width: 2.5;"></i>
+              <?php endif; ?>
+            </button>
+
+            <!-- Option: Node 2 -->
+            <button type="button" onclick="switchActiveNode('2')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '2' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s; margin-top: 2px;" onmouseover="if('<?= $selected_node ?>' !== '2') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '2') this.style.background='transparent';">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '2' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 2 - Field Station</span>
+                  <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active • Air & Soil Grid</span>
+                </div>
+              </div>
+              <?php if ($selected_node === '2'): ?>
+                <i data-lucide="check" style="width: 14px; height: 14px; color: #10b981; stroke-width: 2.5;"></i>
+              <?php endif; ?>
+            </button>
+          </div>
         </div>
 
         <!-- Secondary Page Mobile App Bar: hidden so brand is always shown -->

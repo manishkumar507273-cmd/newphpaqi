@@ -1771,12 +1771,21 @@ function renderUI(skipDayFilter = false) {
             }
         ];
 
+        const yMin = (minVal !== null && minVal < 0) ? undefined : 0;
+        const ySuggestedMax = (peakVal !== null && peakVal > 0) ? undefined : 1.0;
+
         try {
             if (chartInstance && chartInstance.ctx && chartInstance.canvas === chartCanvas) {
                 chartInstance.data.labels = labels;
                 chartInstance.data.datasets = datasets;
-                if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.y && chartInstance.options.scales.y.title) {
-                    chartInstance.options.scales.y.title.text = meta.unit ? `${meta.label} (${meta.unit})` : meta.label;
+                if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.y) {
+                    if (chartInstance.options.scales.y.title) {
+                        chartInstance.options.scales.y.title.text = meta.unit ? `${meta.label} (${meta.unit})` : meta.label;
+                    }
+                    chartInstance.options.scales.y.min = yMin;
+                    chartInstance.options.scales.y.suggestedMin = 0;
+                    chartInstance.options.scales.y.suggestedMax = ySuggestedMax;
+                    chartInstance.options.scales.y.beginAtZero = true;
                 }
                 chartInstance.update();
             } else {
@@ -1828,6 +1837,10 @@ function renderUI(skipDayFilter = false) {
                                 title: { display: true, text: days > 1 ? 'Days Progression' : 'Hours (24-Hour Diurnal Progression)', color: '#64748b', font: { size: 11, weight: '600' } }
                             },
                             y: {
+                                min: yMin,
+                                suggestedMin: 0,
+                                suggestedMax: ySuggestedMax,
+                                beginAtZero: true,
                                 grid: { color: 'rgba(255, 255, 255, 0.07)', borderDash: [3, 3] },
                                 ticks: { color: '#94a3b8', font: { family: 'var(--font-mono)', size: 10 } },
                                 title: { display: true, text: meta.unit ? `${meta.label} (${meta.unit})` : meta.label, color: '#94a3b8', font: { size: 11, weight: '700' } }

@@ -2212,6 +2212,11 @@ function renderComparisonChart() {
         if (comparisonChartInstance && comparisonChartInstance.ctx && comparisonChartInstance.canvas === canvas) {
             comparisonChartInstance.data.labels = labels;
             comparisonChartInstance.data.datasets = datasets;
+            if (comparisonChartInstance.options && comparisonChartInstance.options.scales && comparisonChartInstance.options.scales.y) {
+                comparisonChartInstance.options.scales.y.min = 0;
+                comparisonChartInstance.options.scales.y.suggestedMin = 0;
+                comparisonChartInstance.options.scales.y.beginAtZero = true;
+            }
             comparisonChartInstance.update('none');
         } else {
             if (comparisonChartInstance) {
@@ -2259,6 +2264,9 @@ function renderComparisonChart() {
                             }
                         },
                         y: {
+                            min: 0,
+                            suggestedMin: 0,
+                            beginAtZero: true,
                             grid: { color: '#f1f5f9' },
                             ticks: {
                                 font: { family: 'var(--font-mono)', size: 10 },

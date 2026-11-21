@@ -1505,6 +1505,15 @@ function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
                 if (existingChart.data.datasets && existingChart.data.datasets[0]) {
                     existingChart.data.datasets[0].data = data;
                 }
+                const validOv = (data || []).filter(v => v !== null && !isNaN(v));
+                const ovMin = validOv.length ? Math.min(...validOv) : 0;
+                const ovMax = validOv.length ? Math.max(...validOv) : 0;
+                if (existingChart.options && existingChart.options.scales && existingChart.options.scales.y) {
+                    existingChart.options.scales.y.min = (ovMin < 0) ? undefined : 0;
+                    existingChart.options.scales.y.suggestedMin = 0;
+                    existingChart.options.scales.y.suggestedMax = (ovMax > 0) ? undefined : 1.0;
+                    existingChart.options.scales.y.beginAtZero = true;
+                }
                 existingChart.update('none');
                 return;
             } else {
@@ -1539,6 +1548,12 @@ function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
     
     gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.4)`);
     gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
+
+    const validOverview = (data || []).filter(v => v !== null && !isNaN(v));
+    const ovMin = validOverview.length ? Math.min(...validOverview) : 0;
+    const ovMax = validOverview.length ? Math.max(...validOverview) : 0;
+    const yMinOv = (ovMin < 0) ? undefined : 0;
+    const yMaxOv = (ovMax > 0) ? undefined : 1.0;
 
     chartInstances[canvasId] = new Chart(ctx, {
         type: 'line',
@@ -1594,6 +1609,9 @@ function renderGenericChart(canvasId, labels, data, labelName, colorHex) {
                     }
                 },
                 y: {
+                    min: yMinOv,
+                    suggestedMin: 0,
+                    suggestedMax: yMaxOv,
                     grid: {
                         color: '#e2e8f0',
                         borderDash: [3, 3]

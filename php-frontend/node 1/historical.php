@@ -1408,6 +1408,11 @@ function renderUI(skipDayFilter = false) {
 
         // Preserve valid 0 values so Supabase zeros are displayed
         const dataPoints = filteredDayData.map(d => (d[currentParam] != null ? d[currentParam] : null));
+        const validPts = dataPoints.filter(v => v !== null && !isNaN(v));
+        const ptMin = validPts.length ? Math.min(...validPts) : 0;
+        const ptMax = validPts.length ? Math.max(...validPts) : 0;
+        const yMin1 = (ptMin < 0) ? undefined : 0;
+        const yMax1 = (ptMax > 0) ? undefined : 1.0;
         const hasScale = Boolean(POLLUTANT_SCALES[currentParam]);
         const itemColors = hasScale ? dataPoints.map(v => getParamColor(currentParam, v)) : null;
         const color = PARAM_COLORS[currentParam] || '#00bfa5';
@@ -1447,6 +1452,12 @@ function renderUI(skipDayFilter = false) {
         if (chartInstance && chartInstance.config && chartInstance.config.type === currentChartType) {
             if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.x) {
                 chartInstance.options.scales.x.display = false;
+            }
+            if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.y) {
+                chartInstance.options.scales.y.min = yMin1;
+                chartInstance.options.scales.y.suggestedMin = 0;
+                chartInstance.options.scales.y.suggestedMax = yMax1;
+                chartInstance.options.scales.y.beginAtZero = true;
             }
             chartInstance.data.labels = labels;
             if (chartInstance.data.datasets && chartInstance.data.datasets[0]) {
@@ -1573,7 +1584,14 @@ function renderUI(skipDayFilter = false) {
                     },
                     scales: {
                         x: { display: false },
-                        y: { grid: { color: '#e2e8f0', borderDash: [3, 3] }, ticks: { color: '#64748b' }, beginAtZero: true }
+                        y: {
+                            min: yMin1,
+                            suggestedMin: 0,
+                            suggestedMax: yMax1,
+                            beginAtZero: true,
+                            grid: { color: '#e2e8f0', borderDash: [3, 3] },
+                            ticks: { color: '#64748b' }
+                        }
                     }
                 }
             });

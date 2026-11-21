@@ -15,7 +15,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+if os.path.basename(os.path.abspath(os.path.join(BASE_DIR, ".."))).lower() == "php-backend":
+    PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+else:
+    PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
@@ -329,6 +332,7 @@ def main():
     parser = argparse.ArgumentParser(description="AQI Forecast Engine - 48h Neural Inference")
     parser.add_argument("--aqi-table", type=str, default=None, help="Supabase table storing hourly AQI node data (e.g. AQI_NODE1)")
     parser.add_argument("--weather-table", type=str, default=None, help="Supabase table storing hourly weather data (e.g. WEATHER_NODE1)")
+    parser.add_argument("--dry-run", action="store_true", help="Run model inference without syncing to Supabase")
     args = parser.parse_args()
 
     aqi_table = args.aqi_table or ENV.get("SOURCE_AQI_TABLE") or ENV.get("TABLE_AQI_HISTORICAL") or "AQI_NODE1"
@@ -721,8 +725,11 @@ def main():
     with open(OUTPUT_JSON_PATH, 'w', encoding='utf-8') as f:
         json.dump(payload, f, indent=2)
 
-    # Sync to Supabase
-    sync_supabase_forecast_table(hourly_list, now_ist)
+    # Sync to Supabase unless dry-run is specified
+    if not args.dry_run:
+        sync_supabase_forecast_table(hourly_list, now_ist)
+    else:
+        print("[DRY RUN] Skipping Supabase table sync per --dry-run flag.", file=sys.stderr)
     print(f"Successfully generated AQI forecast using {model_display_name} with 48h inputs. Saved to {OUTPUT_JSON_PATH}", file=sys.stderr)
     print(json.dumps(payload))
 

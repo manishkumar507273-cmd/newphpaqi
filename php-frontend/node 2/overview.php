@@ -5,8 +5,30 @@ if (!function_exists('smartairnet_get_active_node_id')) {
 $active_node_id = '2';
 $is_node_2 = true;
 
-// Standby state definitions for Node 2 Overview
+// Load Node 2 cached live telemetry if available
+$CACHE_DIR = sys_get_temp_dir() . '/smartairnet_cache';
+$cache_candidates = [
+    $CACHE_DIR . '/' . md5('overview_bulk_node_2') . '.json',
+    $CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json',
+    $CACHE_DIR . '/' . md5('live_bulk_node_2_50') . '.json',
+    $CACHE_DIR . '/last_known_hero_node_2.json',
+    $CACHE_DIR . '/overview_bulk_node_2.json',
+];
 $init_bulk = null;
+foreach ($cache_candidates as $cf) {
+    if (file_exists($cf)) {
+        $raw_cache = @file_get_contents($cf);
+        if ($raw_cache && strlen($raw_cache) > 20) {
+            $parsed = @json_decode($raw_cache, true);
+            if ($parsed && (!empty($parsed['aqi']) || !empty($parsed['weather']))) {
+                $init_bulk = $parsed;
+                break;
+            }
+        }
+    }
+}
+
+// AQI pre-calculated fields
 $init_aqi = null;
 $init_aqi_color = '#94a3b8';
 $init_aqi_bg = '#f1f5f9';
@@ -16,26 +38,46 @@ $init_aqi_label = 'Standby';
 $init_aqi_dom = '--';
 $init_aqi_bar_width = '0%';
 
-// Weather pre-calculated fields
-$init_temp = '--';
-$init_temp_bar_width = '0%';
+if (!empty($init_bulk['aqi'])) {
+    $aqi_d = $init_bulk['aqi'];
+    $init_aqi = $aqi_d['cpcb_aqi'] ?? ($aqi_d['aqi_info']['value'] ?? null);
+    if ($init_aqi !== null && is_numeric($init_aqi)) {
+        $v = (int)$init_aqi;
+        $init_aqi_dom = $aqi_d['dominant_pollutant'] ?? 'PM2.5';
+        if ($v <= 50) {
+            $init_aqi_color = '#16a34a'; $init_aqi_bg = '#f0fdf4'; $init_aqi_border = 'rgba(22, 163, 74, 0.45)'; $init_aqi_text = '#15803d'; $init_aqi_label = 'Good'; $init_aqi_bar_width = max(5, round(($v/50)*16.66)) . '%';
+        } elseif ($v <= 100) {
+            $init_aqi_color = '#ca8a04'; $init_aqi_bg = '#fefce8'; $init_aqi_border = 'rgba(202, 138, 4, 0.45)'; $init_aqi_text = '#854d0e'; $init_aqi_label = 'Moderate'; $init_aqi_bar_width = round(16.66 + (($v-50)/50)*16.66) . '%';
+        } elseif ($v <= 200) {
+            $init_aqi_color = '#ea8c34'; $init_aqi_bg = '#fff7ed'; $init_aqi_border = 'rgba(234, 140, 52, 0.45)'; $init_aqi_text = '#9a3412'; $init_aqi_label = 'Poor'; $init_aqi_bar_width = round(33.33 + (($v-100)/100)*16.66) . '%';
+        } else {
+            $init_aqi_color = '#e11d48'; $init_aqi_bg = '#fff1f2'; $init_aqi_border = 'rgba(225, 29, 72, 0.45)'; $init_aqi_text = '#9f1239'; $init_aqi_label = 'Unhealthy'; $init_aqi_bar_width = '50%';
+        }
+    }
+}
 
-$init_hum = '--';
+// Weather / Soil pre-calculated fields
+$w_d = !empty($init_bulk['weather']) ? $init_bulk['weather'] : [];
+$init_temp = (isset($w_d['temperature']) && is_numeric($w_d['temperature'])) ? number_format((float)$w_d['temperature'], 1) : ((isset($w_d['soil_temperature']) && is_numeric($w_d['soil_temperature'])) ? number_format((float)$w_d['soil_temperature'], 1) : '--');
+$init_temp_bar_width = is_numeric($init_temp) ? max(5, min(95, round(((float)$init_temp / 50) * 100))) . '%' : '0%';
+
+$hum_val = $w_d['humidity'] ?? ($w_d['soil_moisture'] ?? ($w_d['soil_humidity'] ?? null));
+$init_hum = ($hum_val !== null && is_numeric($hum_val)) ? number_format((float)$hum_val, 1) : '--';
 $init_hum_badge = '';
-$init_hum_bar_width = '0%';
+$init_hum_bar_width = is_numeric($init_hum) ? max(5, min(95, round((float)$init_hum))) . '%' : '0%';
 
-$init_wind = '--';
-$init_wind_badge = 'Calm';
-$init_wind_bar_width = '0%';
-$init_wind_kmh = 0.0;
+$init_wind = (isset($w_d['wind_speed']) && is_numeric($w_d['wind_speed'])) ? number_format((float)$w_d['wind_speed'], 1) : '--';
+$init_wind_badge = is_numeric($init_wind) ? ((float)$init_wind > 10 ? 'Breezy' : 'Gentle') : 'Calm';
+$init_wind_bar_width = is_numeric($init_wind) ? max(5, min(95, round(((float)$init_wind / 30) * 100))) . '%' : '0%';
+$init_wind_kmh = is_numeric($init_wind) ? (float)$init_wind : 0.0;
 
-$init_live_rain = '--';
-$init_today_rain = '--';
-$init_is_raining = false;
-$init_rain_bar_width = '0%';
+$init_live_rain = isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) : '--';
+$init_today_rain = isset($init_bulk['today_rain_total']) ? number_format((float)$init_bulk['today_rain_total'], 1) : '0.0';
+$init_is_raining = is_numeric($init_live_rain) && (float)$init_live_rain > 0;
+$init_rain_bar_width = is_numeric($init_live_rain) ? max(5, min(95, round(((float)$init_live_rain / 20) * 100))) . '%' : '0%';
 
-$is_overview_offline = false;
-$overview_offline_time_str = '--';
+$is_overview_offline = empty($init_bulk);
+$overview_offline_time_str = !empty($init_bulk['aqi']['timestamp']) ? date('h:i A', strtotime($init_bulk['aqi']['timestamp'])) : '--';
 ?>
 <div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow: hidden; padding: clamp(14px, 2.5vw, 20px); margin-bottom: 6px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
   
@@ -1061,7 +1103,7 @@ async function refreshData(isSilent = false, forceNetwork = false) {
         }
 
         const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-        if (activeNode === '2' || (bulkData && bulkData.node === '2') || (bulkData && bulkData.status === 'STANDBY')) {
+        if (!bulkData || (!bulkData.aqi && !bulkData.weather) || (bulkData && bulkData.status === 'STANDBY')) {
             const aqiVal = document.getElementById('aqi-val');
             if (aqiVal) aqiVal.innerText = '--';
             const aqiBadgeText = document.getElementById('aqi-badge-text');

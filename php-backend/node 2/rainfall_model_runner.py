@@ -13,7 +13,10 @@ import torch
 import joblib
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+if os.path.basename(os.path.abspath(os.path.join(BASE_DIR, ".."))).lower() == "php-backend":
+    PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+else:
+    PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 MODEL_DIR = os.path.join(PROJECT_DIR, "forcast", "rainfall_model")
 
 # Compass direction mapping to meteorological degrees

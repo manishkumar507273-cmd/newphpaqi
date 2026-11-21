@@ -30,35 +30,31 @@ $user_initial = strtoupper(substr($user_display_name, 0, 1));
 // Check server-side telemetry cache to determine if cloud data is currently live (received <= 6 mins)
 $is_telemetry_live = true;
 $telemetry_last_updated_time = '';
-if ($is_node_2) {
-    $is_telemetry_live = false;
-    $node_status_label = 'STANDBY';
-    $node_status_bg = '#f1f5f9';
-    $node_status_color = '#64748b';
-    $node_status_border = '#e2e8f0';
-    $node_status_dot = '#94a3b8';
-} else {
-    $telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
-    if (file_exists($telemetry_cache_file)) {
-        $raw_cache = @file_get_contents($telemetry_cache_file);
-        if ($raw_cache && strlen($raw_cache) > 50) {
-            $cached_data = json_decode($raw_cache, true);
-            $aqi_ts = $cached_data['aqi']['timestamp'] ?? ($cached_data['aqi']['created_at'] ?? null);
-            $weather_ts = $cached_data['weather']['timestamp'] ?? ($cached_data['weather']['created_at'] ?? null);
-            $aqi_epoch = $aqi_ts ? strtotime($aqi_ts) : 0;
-            $weather_epoch = $weather_ts ? strtotime($weather_ts) : 0;
-            $latest_epoch = max($aqi_epoch, $weather_epoch);
-            if ($latest_epoch > 0) {
-                $telemetry_last_updated_time = date('h:i A', $latest_epoch);
-            }
+$telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5($is_node_2 ? 'overview_bulk_node_2' : 'overview_bulk') . '.json';
+if (!file_exists($telemetry_cache_file)) {
+    $telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5($is_node_2 ? 'live_bulk_node_2_60' : 'live_bulk_60') . '.json';
+}
+if (file_exists($telemetry_cache_file)) {
+    $raw_cache = @file_get_contents($telemetry_cache_file);
+    if ($raw_cache && strlen($raw_cache) > 50) {
+        $cached_data = json_decode($raw_cache, true);
+        $aqi_ts = $cached_data['aqi']['timestamp'] ?? ($cached_data['aqi']['created_at'] ?? null);
+        $weather_ts = $cached_data['weather']['timestamp'] ?? ($cached_data['weather']['created_at'] ?? null);
+        $aqi_epoch = $aqi_ts ? strtotime($aqi_ts) : 0;
+        $weather_epoch = $weather_ts ? strtotime($weather_ts) : 0;
+        $latest_epoch = max($aqi_epoch, $weather_epoch);
+        if ($latest_epoch > 0) {
+            $telemetry_last_updated_time = date('h:i A', $latest_epoch);
+            $diff_seconds = time() - $latest_epoch;
+            $is_telemetry_live = ($diff_seconds >= -600 && $diff_seconds <= 5400);
         }
     }
-    $node_status_label = $is_telemetry_live ? 'LIVE' : 'OFFLINE';
-    $node_status_bg = $is_telemetry_live ? '#dcfce7' : '#fff7ed';
-    $node_status_color = $is_telemetry_live ? '#15803d' : '#c2410c';
-    $node_status_border = $is_telemetry_live ? '#bbf7d0' : '#fed7aa';
-    $node_status_dot = $is_telemetry_live ? '#16a34a' : '#f97316';
 }
+$node_status_label = $is_telemetry_live ? 'LIVE' : 'OFFLINE';
+$node_status_bg = $is_telemetry_live ? '#dcfce7' : '#fff7ed';
+$node_status_color = $is_telemetry_live ? '#15803d' : '#c2410c';
+$node_status_border = $is_telemetry_live ? '#bbf7d0' : '#fed7aa';
+$node_status_dot = $is_telemetry_live ? '#16a34a' : '#f97316';
 
 $page_titles = [
     'overview'     => 'Atmosphere Snapshot',
@@ -612,8 +608,8 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
         <!-- Desktop Node Selector Dropdown -->
         <div class="relative ml-2" id="desktop-node-dropdown-container" style="position: relative;">
           <button type="button" id="node-dropdown-trigger" onclick="window.toggleNodeDropdown(event)" style="display: flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05); transition: all 0.18s ease; outline: none;" onmouseover="this.style.borderColor='#00bfa5';" onmouseout="this.style.borderColor='#e2e8f0';">
-            <span style="width: 7.5px; height: 7.5px; border-radius: 50%; background-color: <?= $selected_node === '1' ? '#10b981' : '#94a3b8' ?>; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '1' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
-            <span style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Node 1 (SMVITM)' : 'Node 2 (Standby)' ?></span>
+            <span style="width: 7.5px; height: 7.5px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#94a3b8' ?>; display: inline-block; flex-shrink: 0;" class="<?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>"></span>
+            <span style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Node 1 (SMVITM)' : 'Node 2 (Field Station)' ?></span>
             <i data-lucide="chevron-down" id="node-dropdown-chevron" style="width: 13px; height: 13px; color: #64748b; transition: transform 0.2s;"></i>
           </button>
 
@@ -626,7 +622,7 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
             <!-- Option: Node 1 -->
             <button type="button" onclick="switchActiveNode('1')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '1' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s;" onmouseover="if('<?= $selected_node ?>' !== '1') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '1') this.style.background='transparent';">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '1' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
                   <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 1 - SMVITM Campus</span>
                   <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
@@ -638,12 +634,12 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
             </button>
 
             <!-- Option: Node 2 -->
-            <button type="button" onclick="switchActiveNode('2')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '2' ? '#f1f5f9' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s; margin-top: 2px;" onmouseover="if('<?= $selected_node ?>' !== '2') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '2') this.style.background='transparent';">
+            <button type="button" onclick="switchActiveNode('2')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '2' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s; margin-top: 2px;" onmouseover="if('<?= $selected_node ?>' !== '2') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '2') this.style.background='transparent';">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #94a3b8; display: inline-block; flex-shrink: 0;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '2' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
-                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 2 - Station 2</span>
-                  <span style="font-size: 10px; color: #64748b; font-weight: 600;">Standby • Reserved Station</span>
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 2 - Field Station</span>
+                  <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active • Air & Soil Grid</span>
                 </div>
               </div>
               <?php if ($selected_node === '2'): ?>
@@ -741,8 +737,8 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
         </button>
         
         <!-- Live / Standby / Offline Badge (Desktop) -->
-        <div id="header-live-badge-desktop" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_node_2 ? 'Node 2 is currently in standby mode' : ($is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >90 mins') ?>" style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: <?= $node_status_bg ?>; color: <?= $node_status_color ?>; border: 1.5px solid <?= $node_status_border ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer;">
-          <span class="status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $node_status_dot ?>;"></span>
+        <div id="header-live-badge-desktop" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >90 mins' ?>" style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: <?= $node_status_bg ?>; color: <?= $node_status_color ?>; border: 1.5px solid <?= $node_status_border ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer;">
+          <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $node_status_dot ?>;"></span>
           <span class="status-text"><?= $node_status_label ?></span>
         </div>
       </div>
@@ -750,8 +746,8 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
       <!-- Mobile Right Items (Visible on mobile screens) -->
       <div class="flex md:hidden items-center gap-2 flex-shrink-0">
         <!-- Live / Standby / Offline Badge (Mobile) -->
-        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_node_2 ? 'Node 2 is currently in standby mode' : ($is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline') ?>" style="display: flex; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 4px; background-color: <?= $node_status_bg ?>; color: <?= $node_status_color ?>; border: 1.5px solid <?= $node_status_border ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
-          <span class="status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>;"></span>
+        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline' ?>" style="display: flex; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 4px; background-color: <?= $node_status_bg ?>; color: <?= $node_status_color ?>; border: 1.5px solid <?= $node_status_border ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
+          <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>;"></span>
           <span class="status-text"><?= $node_status_label ?></span>
         </div>
 

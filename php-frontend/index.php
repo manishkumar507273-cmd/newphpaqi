@@ -24,10 +24,10 @@ $active_node_id = $active_node;
 $active_node_config = smartairnet_get_active_node_config();
 $is_node_2 = ($active_node === '2');
 
-if (!empty($active_node_config['tables']['aqi_live'])) $TABLE_AQI_LIVE = $active_node_config['tables']['aqi_live'];
-if (!empty($active_node_config['tables']['aqi_historical'])) $TABLE_AQI_HISTORICAL = $active_node_config['tables']['aqi_historical'];
-if (!empty($active_node_config['tables']['weather_live'])) $TABLE_WEATHER_LIVE = $active_node_config['tables']['weather_live'];
-if (!empty($active_node_config['tables']['weather_historical'])) $TABLE_WEATHER_HIST = $active_node_config['tables']['weather_historical'];
+$supabaseUrlNode1 = 'https://sgkdpliqlhgiqsabxzxe.supabase.co';
+$supabaseKeyNode1 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30';
+$supabaseUrlNode2 = getenv('SUPABASE_URL_NODE2') ?: (getenv('VITE_SUPABASE_URL_NODE2') ?: 'https://nahabhzcaeppbteuxogg.supabase.co');
+$supabaseKeyNode2 = getenv('SUPABASE_KEY_NODE2') ?: (getenv('SUPABASE_ANON_KEY_NODE2') ?: (getenv('VITE_SUPABASE_ANON_KEY_NODE2') ?: ''));
 
 foreach ($env_paths as $ep) {
     if (file_exists($ep)) {
@@ -37,17 +37,35 @@ foreach ($env_paths as $ep) {
             if (strpos($line, '=') !== false) {
                 list($k, $v) = explode('=', $line, 2);
                 $k = trim($k); $v = trim($v);
-                if (($k === 'VITE_SUPABASE_URL' || $k === 'SUPABASE_URL') && $v) $supabaseUrl = $v;
-                if (($k === 'VITE_SUPABASE_ANON_KEY' || $k === 'SUPABASE_KEY') && $v) $supabaseKey = $v;
-                if ($k === 'TABLE_AQI_LIVE' && $v) $TABLE_AQI_LIVE = $v;
-                if (($k === 'TABLE_AQI_HISTORICAL' || $k === 'SOURCE_AQI_TABLE') && $v) $TABLE_AQI_HISTORICAL = $v;
-                if ($k === 'TABLE_WEATHER_LIVE' && $v) $TABLE_WEATHER_LIVE = $v;
-                if ($k === 'TABLE_WEATHER_HISTORICAL' && $v) $TABLE_WEATHER_HIST = $v;
+                if (($k === 'VITE_SUPABASE_URL' || $k === 'SUPABASE_URL') && $v) $supabaseUrlNode1 = $v;
+                if (($k === 'VITE_SUPABASE_ANON_KEY' || $k === 'SUPABASE_KEY') && $v) $supabaseKeyNode1 = $v;
+                if (($k === 'VITE_SUPABASE_URL_NODE2' || $k === 'SUPABASE_URL_NODE2') && $v) $supabaseUrlNode2 = $v;
+                if (($k === 'SUPABASE_KEY_NODE2' || $k === 'SUPABASE_ANON_KEY_NODE2' || $k === 'VITE_SUPABASE_ANON_KEY_NODE2') && $v) $supabaseKeyNode2 = $v;
             }
         }
-        break;
     }
 }
+
+if ($is_node_2) {
+    $supabaseUrl = $supabaseUrlNode2;
+    $supabaseKey = $supabaseKeyNode2;
+    $TABLE_AQI_LIVE = 'AQI_LIVE_NODE2';
+    $TABLE_AQI_HISTORICAL = 'AQI_NODE2';
+    $TABLE_WEATHER_LIVE = 'SOIL_LIVE_NODE2';
+    $TABLE_WEATHER_HIST = 'SOIL_NODE2';
+} else {
+    $supabaseUrl = $supabaseUrlNode1;
+    $supabaseKey = $supabaseKeyNode1;
+    $TABLE_AQI_LIVE = 'AQI_LIVE_NODE1';
+    $TABLE_AQI_HISTORICAL = 'AQI_NODE1';
+    $TABLE_WEATHER_LIVE = 'WEATHER_LIVE_NODE1';
+    $TABLE_WEATHER_HIST = 'WEATHER_NODE1';
+}
+
+if (!empty($active_node_config['tables']['aqi_live'])) $TABLE_AQI_LIVE = $active_node_config['tables']['aqi_live'];
+if (!empty($active_node_config['tables']['aqi_historical'])) $TABLE_AQI_HISTORICAL = $active_node_config['tables']['aqi_historical'];
+if (!empty($active_node_config['tables']['weather_live'])) $TABLE_WEATHER_LIVE = $active_node_config['tables']['weather_live'];
+if (!empty($active_node_config['tables']['weather_historical'])) $TABLE_WEATHER_HIST = $active_node_config['tables']['weather_historical'];
 // Configure 1-year persistent session cookies (365 days) for mobile and laptop re-entry
 $session_lifetime = 60 * 60 * 24 * 365;
 ini_set('session.gc_maxlifetime', (string)$session_lifetime);
@@ -337,43 +355,35 @@ if ($is_ajax) {
 
     <?php
     $initial_overview_json = 'null';
-    if ($is_node_2) {
-        $initial_overview_json = json_encode([
-            'aqi'              => null,
-            'weather'          => null,
-            'history'          => [],
-            'aqi_history'      => [],
-            'weather_history'  => [],
-            'today_rain_total' => 0.0,
-            'node'             => '2',
-            'status'           => 'STANDBY'
-        ]);
-    } else {
-        $cache_dir = sys_get_temp_dir() . '/smartairnet_cache';
-        $candidates = [
-            $cache_dir . '/' . md5('overview_bulk') . '.json',
-            $cache_dir . '/' . md5('live_bulk_60') . '.json',
-            $cache_dir . '/' . md5('live_bulk_50') . '.json',
-            $cache_dir . '/last_known_hero.json',
-        ];
-        $best_epoch = 0;
-        foreach ($candidates as $cf) {
-            if (file_exists($cf)) {
-                $raw_c = @file_get_contents($cf);
-                if ($raw_c && strlen($raw_c) > 20) {
-                    $parsed = @json_decode($raw_c, true);
-                    if ($parsed) {
-                        if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
-                            $parsed = ['aqi' => $parsed, 'history' => [$parsed], 'aqi_history' => [$parsed]];
-                            $raw_c = json_encode($parsed);
-                        }
-                        $aqi_item = !empty($parsed['aqi']) ? (isset($parsed['aqi'][0]) ? $parsed['aqi'][0] : $parsed['aqi']) : null;
-                        $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
-                        $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
-                        if ($e > $best_epoch) {
-                            $best_epoch = $e;
-                            $initial_overview_json = $raw_c;
-                        }
+    $cache_dir = sys_get_temp_dir() . '/smartairnet_cache';
+    $candidates = $is_node_2 ? [
+        $cache_dir . '/' . md5('overview_bulk_node_2') . '.json',
+        $cache_dir . '/' . md5('live_bulk_node_2_60') . '.json',
+        $cache_dir . '/' . md5('live_bulk_node_2_50') . '.json',
+        $cache_dir . '/last_known_hero_node_2.json',
+    ] : [
+        $cache_dir . '/' . md5('overview_bulk') . '.json',
+        $cache_dir . '/' . md5('live_bulk_60') . '.json',
+        $cache_dir . '/' . md5('live_bulk_50') . '.json',
+        $cache_dir . '/last_known_hero.json',
+    ];
+    $best_epoch = 0;
+    foreach ($candidates as $cf) {
+        if (file_exists($cf)) {
+            $raw_c = @file_get_contents($cf);
+            if ($raw_c && strlen($raw_c) > 20) {
+                $parsed = @json_decode($raw_c, true);
+                if ($parsed && (!empty($parsed['aqi']) || !empty($parsed['weather']))) {
+                    if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
+                        $parsed = ['aqi' => $parsed, 'history' => [$parsed], 'aqi_history' => [$parsed]];
+                        $raw_c = json_encode($parsed);
+                    }
+                    $aqi_item = !empty($parsed['aqi']) ? (isset($parsed['aqi'][0]) ? $parsed['aqi'][0] : $parsed['aqi']) : null;
+                    $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
+                    $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
+                    if ($e > $best_epoch) {
+                        $best_epoch = $e;
+                        $initial_overview_json = $raw_c;
                     }
                 }
             }

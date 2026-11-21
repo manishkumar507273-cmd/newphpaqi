@@ -15,7 +15,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+if os.path.basename(os.path.abspath(os.path.join(BASE_DIR, ".."))).lower() == "php-backend":
+    PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+else:
+    PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)

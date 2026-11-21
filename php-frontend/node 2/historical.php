@@ -973,10 +973,11 @@ async function fetchRangeData(queryDate, days, force = false) {
     const fetchPromise = (async () => {
         try {
             let payload;
+            const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '2'));
             if (typeof window.fetchHistoryBulk === 'function') {
                 payload = await window.fetchHistoryBulk(normDate, days, force);
             } else {
-                const response = await fetch(`api/telemetry.php?action=history_bulk&date=${normDate}&days=${days}&_t=${Date.now()}`);
+                const response = await fetch(`api/telemetry.php?action=history_bulk&node=${activeNode}&date=${normDate}&days=${days}&_t=${Date.now()}`);
                 const data = await response.json();
                 payload = {
                     aqi: data.aqi || [],

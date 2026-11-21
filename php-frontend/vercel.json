@@ -1,5 +1,9 @@
 {
   "builds": [
+    { "src": "assets/**", "use": "@vercel/static" },
+    { "src": "css/**", "use": "@vercel/static" },
+    { "src": "js/**", "use": "@vercel/static" },
+    { "src": "manifest.json", "use": "@vercel/static" },
     { "src": "api/**/*.php", "use": "vercel-php@0.6.2" },
     { "src": "index.php", "use": "vercel-php@0.6.2" }
   ],

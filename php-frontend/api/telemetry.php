@@ -39,6 +39,10 @@ $env_paths = [
 
 $supabaseUrl = '';
 $supabaseKey = '';
+$supabaseUrlNode1 = '';
+$supabaseKeyNode1 = '';
+$supabaseUrlNode2 = '';
+$supabaseKeyNode2 = '';
 
 $TABLE_AQI_LIVE        = 'AQI_LIVE_NODE1';
 $TABLE_AQI_HISTORICAL  = 'AQI_NODE1';
@@ -51,11 +55,6 @@ $reqNode = smartairnet_get_active_node_id();
 $nodeConfig = smartairnet_get_node_config($reqNode);
 $isNode2 = ($reqNode === '2');
 
-if (!empty($nodeConfig['tables']['aqi_live'])) $TABLE_AQI_LIVE = $nodeConfig['tables']['aqi_live'];
-if (!empty($nodeConfig['tables']['aqi_historical'])) $TABLE_AQI_HISTORICAL = $nodeConfig['tables']['aqi_historical'];
-if (!empty($nodeConfig['tables']['weather_live'])) $TABLE_WEATHER_LIVE = $nodeConfig['tables']['weather_live'];
-if (!empty($nodeConfig['tables']['weather_historical'])) $TABLE_WEATHER_HIST = $nodeConfig['tables']['weather_historical'];
-
 foreach ($env_paths as $env_path) {
     if (file_exists($env_path)) {
         $lines = file($env_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -65,15 +64,14 @@ foreach ($env_paths as $env_path) {
                 list($name, $value) = explode('=', $line, 2);
                 $name  = trim($name);
                 $value = trim($value);
-                if (($name === 'VITE_SUPABASE_URL'      || $name === 'SUPABASE_URL')      && empty($supabaseUrl)) $supabaseUrl = $value;
-                if (($name === 'VITE_SUPABASE_ANON_KEY' || $name === 'SUPABASE_KEY')      && empty($supabaseKey)) $supabaseKey = $value;
-                if ($name === 'TABLE_AQI_LIVE') $TABLE_AQI_LIVE = $value;
-                if ($name === 'TABLE_AQI_HISTORICAL' || $name === 'SOURCE_AQI_TABLE') $TABLE_AQI_HISTORICAL = $value;
-                if ($name === 'TABLE_WEATHER_LIVE') $TABLE_WEATHER_LIVE = $value;
-                if ($name === 'TABLE_WEATHER_HISTORICAL') $TABLE_WEATHER_HIST = $value;
+                if (($name === 'VITE_SUPABASE_URL'      || $name === 'SUPABASE_URL')            && empty($supabaseUrlNode1)) $supabaseUrlNode1 = $value;
+                if (($name === 'VITE_SUPABASE_ANON_KEY' || $name === 'SUPABASE_KEY')            && empty($supabaseKeyNode1)) $supabaseKeyNode1 = $value;
+                if (($name === 'VITE_SUPABASE_URL_NODE2' || $name === 'SUPABASE_URL_NODE2')     && empty($supabaseUrlNode2)) $supabaseUrlNode2 = $value;
+                if (($name === 'SUPABASE_KEY_NODE2' || $name === 'SUPABASE_ANON_KEY_NODE2' || $name === 'VITE_SUPABASE_ANON_KEY_NODE2') && empty($supabaseKeyNode2)) {
+                    $supabaseKeyNode2 = $value;
+                }
             }
         }
-        if ($supabaseUrl && $supabaseKey) break;
     }
 }
 
@@ -81,12 +79,25 @@ foreach ($env_paths as $env_path) {
 $get_v_env = function($key) {
     return $_ENV[$key] ?? ($_SERVER[$key] ?? (getenv($key) ?: ''));
 };
-if (empty($supabaseUrl)) $supabaseUrl = $get_v_env('VITE_SUPABASE_URL') ?: $get_v_env('SUPABASE_URL');
-if (empty($supabaseKey)) $supabaseKey = $get_v_env('VITE_SUPABASE_ANON_KEY') ?: $get_v_env('SUPABASE_KEY');
-$TABLE_AQI_LIVE        = $get_v_env('TABLE_AQI_LIVE') ?: $TABLE_AQI_LIVE;
-$TABLE_AQI_HISTORICAL  = $get_v_env('TABLE_AQI_HISTORICAL') ?: ($get_v_env('SOURCE_AQI_TABLE') ?: $TABLE_AQI_HISTORICAL);
-$TABLE_WEATHER_LIVE    = $get_v_env('TABLE_WEATHER_LIVE') ?: $TABLE_WEATHER_LIVE;
-$TABLE_WEATHER_HIST    = $get_v_env('TABLE_WEATHER_HISTORICAL') ?: $TABLE_WEATHER_HIST;
+
+if ($isNode2) {
+    $supabaseUrl = $supabaseUrlNode2 ?: ($get_v_env('SUPABASE_URL_NODE2') ?: ($get_v_env('VITE_SUPABASE_URL_NODE2') ?: ($nodeConfig['supabase']['url'] ?? 'https://nahabhzcaeppbteuxogg.supabase.co')));
+    $supabaseKey = $supabaseKeyNode2 ?: ($get_v_env('SUPABASE_KEY_NODE2') ?: ($get_v_env('SUPABASE_ANON_KEY_NODE2') ?: ($get_v_env('VITE_SUPABASE_ANON_KEY_NODE2') ?: ($nodeConfig['supabase']['secret_key'] ?? ($nodeConfig['supabase']['anon_key'] ?? '')))));
+    $TABLE_AQI_LIVE        = $get_v_env('TABLE_AQI_LIVE_NODE2') ?: ($nodeConfig['tables']['aqi_live'] ?? 'AQI_LIVE_NODE2');
+    $TABLE_AQI_HISTORICAL  = $get_v_env('TABLE_AQI_HISTORICAL_NODE2') ?: ($nodeConfig['tables']['aqi_historical'] ?? 'AQI_NODE2');
+    $TABLE_WEATHER_LIVE    = $get_v_env('TABLE_WEATHER_LIVE_NODE2') ?: ($get_v_env('TABLE_SOIL_LIVE_NODE2') ?: ($nodeConfig['tables']['weather_live'] ?? 'SOIL_LIVE_NODE2'));
+    $TABLE_WEATHER_HIST    = $get_v_env('TABLE_WEATHER_HISTORICAL_NODE2') ?: ($get_v_env('TABLE_SOIL_HISTORICAL_NODE2') ?: ($nodeConfig['tables']['weather_historical'] ?? 'SOIL_NODE2'));
+} else {
+    $supabaseUrl = $supabaseUrlNode1 ?: ($get_v_env('VITE_SUPABASE_URL') ?: $get_v_env('SUPABASE_URL'));
+    $supabaseKey = $supabaseKeyNode1 ?: ($get_v_env('VITE_SUPABASE_ANON_KEY') ?: $get_v_env('SUPABASE_KEY'));
+    $TABLE_AQI_LIVE        = $get_v_env('TABLE_AQI_LIVE') ?: ($nodeConfig['tables']['aqi_live'] ?? 'AQI_LIVE_NODE1');
+    $TABLE_AQI_HISTORICAL  = $get_v_env('TABLE_AQI_HISTORICAL') ?: ($get_v_env('SOURCE_AQI_TABLE') ?: ($nodeConfig['tables']['aqi_historical'] ?? 'AQI_NODE1'));
+    $TABLE_WEATHER_LIVE    = $get_v_env('TABLE_WEATHER_LIVE') ?: ($nodeConfig['tables']['weather_live'] ?? 'WEATHER_LIVE_NODE1');
+    $TABLE_WEATHER_HIST    = $get_v_env('TABLE_WEATHER_HISTORICAL') ?: ($nodeConfig['tables']['weather_historical'] ?? 'WEATHER_NODE1');
+}
+
+$orderColLive = $isNode2 ? 'id.desc' : 'created_at.desc.nullslast';
+$orderColHist = $isNode2 ? 'timestamp.desc.nullslast' : 'timestamp_hour.desc';
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $limit  = isset($_GET['limit'])  ? intval($_GET['limit'])  : 50;
@@ -285,8 +296,13 @@ function formatWeatherReading($row) {
     if (isset($row['wind_gust']) && $row['wind_gust'] !== null) $row['wind_gust'] = round((float)$row['wind_gust'], 2);
     if (isset($row['rain_gauge']) && $row['rain_gauge'] !== null) $row['rain_gauge'] = round((float)$row['rain_gauge'], 2);
     if (isset($row['soil_temperature']) && $row['soil_temperature'] !== null) $row['soil_temperature'] = round((float)$row['soil_temperature'], 1);
-    if (isset($row['soil_humidity']) && $row['soil_humidity'] !== null) $row['soil_humidity'] = round((float)$row['soil_humidity'], 1);
+    $soil_hum = $row['soil_moisture'] ?? ($row['soil_humidity'] ?? null);
+    if ($soil_hum !== null && $soil_hum !== '') {
+        $row['soil_humidity'] = round((float)$soil_hum, 1);
+        $row['soil_moisture'] = round((float)$soil_hum, 1);
+    }
     if (isset($row['soil_ph']) && $row['soil_ph'] !== null) $row['soil_ph'] = round((float)$row['soil_ph'], 2);
+    if (isset($row['soil_conductivity']) && $row['soil_conductivity'] !== null) $row['soil_conductivity'] = round((float)$row['soil_conductivity'], 1);
     if (isset($row['latitude']) && $row['latitude'] !== null && $row['latitude'] !== '') $row['latitude'] = round((float)$row['latitude'], 4);
     if (isset($row['longitude']) && $row['longitude'] !== null && $row['longitude'] !== '') $row['longitude'] = round((float)$row['longitude'], 4);
     if (isset($row['coords_display']) && $row['coords_display'] !== null) {
@@ -301,7 +317,7 @@ function formatRawReading($raw) {
     if (!$raw) return null;
     $tsRaw = $raw['timestamp_hour'] ?? $raw['created_at'] ?? $raw['timestamp'] ?? null;
 
-    $rawPm25 = (isset($raw['pm25']) && $raw['pm25'] !== null && $raw['pm25'] !== '') ? (float)$raw['pm25'] : ((isset($raw['pm2.5']) && $raw['pm2.5'] !== null && $raw['pm2.5'] !== '') ? (float)$raw['pm2.5'] : null);
+    $rawPm25 = (isset($raw['pm2_5']) && $raw['pm2_5'] !== null && $raw['pm2_5'] !== '') ? (float)$raw['pm2_5'] : ((isset($raw['pm25']) && $raw['pm25'] !== null && $raw['pm25'] !== '') ? (float)$raw['pm25'] : ((isset($raw['pm2.5']) && $raw['pm2.5'] !== null && $raw['pm2.5'] !== '') ? (float)$raw['pm2.5'] : null));
     $rawPm10 = (isset($raw['pm10']) && $raw['pm10'] !== null && $raw['pm10'] !== '') ? (float)$raw['pm10'] : null;
     $rawCo   = (isset($raw['co']) && $raw['co'] !== null && $raw['co'] !== '') ? (float)$raw['co'] : null;
     $rawO3   = (isset($raw['o3']) && $raw['o3'] !== null && $raw['o3'] !== '') ? (float)$raw['o3'] : null;
@@ -352,6 +368,7 @@ function formatRawReading($raw) {
         'humidity'          => isset($raw['humidity']) && $raw['humidity'] !== null ? round((float)$raw['humidity'], 2) : null,
         'pm25'              => $rawPm25,
         'pm2.5'             => $rawPm25,
+        'pm2_5'             => $rawPm25,
         'pm10'              => $rawPm10,
         'co'                => $rawCo,
         'o3'                => $rawO3,
@@ -780,71 +797,23 @@ function buildForecastPayloadFromDbRows(array $rows, ?array $weatherRows = null)
 }
 
 // ── Route ─────────────────────────────────────────────────────────────────────
-// If Node 2 is requested, return safe empty/standby responses immediately
-if ($isNode2) {
-    switch ($action) {
-        case 'aqi_live':
-        case 'weather_live':
-            echo json_encode(null);
-            exit;
-        case 'aqi_live_history':
-        case 'weather_live_history':
-            echo json_encode([]);
-            exit;
-        case 'aqi_history':
-        case 'weather_history':
-            echo json_encode(['history' => []]);
-            exit;
-        case 'live_bulk':
-        case 'overview_bulk':
-            echo json_encode([
-                'aqi'              => null,
-                'weather'          => null,
-                'aqi_history'      => [],
-                'weather_history'  => [],
-                'history'          => [],
-                'today_rain_total' => 0.0,
-                'today_temp_min'   => null,
-                'today_temp_max'   => null,
-                'node'             => '2',
-                'status'           => 'STANDBY'
-            ]);
-            exit;
-        case 'history_bulk':
-            $days = isset($_GET['days']) ? max(1, min(60, intval($_GET['days']))) : 1;
-            echo json_encode([
-                'status' => 'success',
-                'node'   => '2',
-                'days'   => $days,
-                'count'  => 0,
-                'data'   => []
-            ]);
-            exit;
-        case 'forecast':
-            echo json_encode([
-                'status'  => 'standby',
-                'node'    => '2',
-                'message' => 'Node 2 is currently in standby mode; no telemetry or forecast available.',
-                'hourly'  => [],
-                'phases'  => [],
-                'hero'    => null
-            ]);
-            exit;
-        default:
-            echo json_encode([
-                'node'   => '2',
-                'status' => 'STANDBY',
-                'data'   => null
-            ]);
-            exit;
-    }
+if ($isNode2 && $action === 'forecast') {
+    echo json_encode([
+        'status'  => 'success',
+        'node'    => '2',
+        'message' => 'Node 2 telemetry connected. Forecast model scheduled for next cycle.',
+        'hourly'  => [],
+        'phases'  => [],
+        'hero'    => null
+    ]);
+    exit;
 }
 
 switch ($action) {
 
     // ── Single-endpoint reads (still use parallel internally but only 1 URL) ──
     case 'aqi_live': {
-        $ckey = "aqi_live";
+        $ckey = "aqi_live_node_{$reqNode}";
         $cached = cacheGet($ckey, 30);
         if ($cached !== null && !empty($cached['data'])) { echo json_encode($cached); break; }
 
@@ -861,7 +830,7 @@ switch ($action) {
     }
 
     case 'weather_live': {
-        $ckey = "weather_live";
+        $ckey = "weather_live_node_{$reqNode}";
         $cached = cacheGet($ckey, 30);
         if ($cached !== null && !empty($cached['data'])) { echo json_encode($cached); break; }
 
@@ -879,11 +848,11 @@ switch ($action) {
 
     case 'aqi_live_history': {
         $lim   = min($limit, 120);
-        $ckey  = "aqi_live_history_{$lim}";
+        $ckey  = "aqi_live_history_node_{$reqNode}_{$lim}";
         $cached = cacheGet($ckey, 30);
         if ($cached !== null) { echo json_encode($cached); break; }
 
-        $data   = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}", $supabaseKey);
+        $data   = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order={$orderColLive}&limit={$lim}", $supabaseKey);
         $result = [];
         if ($data) { foreach ($data as $row) { $f = formatRawReading($row); if ($f) $result[] = $f; } }
         cacheSet($ckey, $result);
@@ -893,11 +862,11 @@ switch ($action) {
 
     case 'weather_live_history': {
         $lim   = min($limit, 120);
-        $ckey  = "weather_live_history_{$lim}";
+        $ckey  = "weather_live_history_node_{$reqNode}_{$lim}";
         $cached = cacheGet($ckey, 30);
         if ($cached !== null) { echo json_encode($cached); break; }
 
-        $data = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order=created_at.desc.nullslast&limit={$lim}", $supabaseKey);
+        $data = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order={$orderColLive}&limit={$lim}", $supabaseKey);
         $out  = [];
         if ($data) { foreach ($data as $row) { $w = formatWeatherReading($row); if ($w) $out[] = $w; } }
         cacheSet($ckey, $out);
@@ -907,11 +876,11 @@ switch ($action) {
 
     case 'aqi_history': {
         $lim   = isset($_GET['limit']) ? intval($_GET['limit']) : 500;
-        $ckey  = "aqi_history_{$lim}";
+        $ckey  = "aqi_history_node_{$reqNode}_{$lim}";
         $cached = cacheGet($ckey, 300); // 5 min TTL — historical data is hourly
         if ($cached !== null) { echo json_encode($cached); break; }
 
-        $data   = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_AQI_HISTORICAL}?order=timestamp_hour.desc&limit={$lim}", $supabaseKey);
+        $data   = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_AQI_HISTORICAL}?order={$orderColHist}&limit={$lim}", $supabaseKey);
         $result = [];
         if ($data) { foreach ($data as $row) { $f = formatRawReading($row); if ($f) $result[] = $f; } }
         $out = ['history' => $result];
@@ -922,11 +891,14 @@ switch ($action) {
 
     case 'weather_history': {
         $lim   = isset($_GET['limit']) ? intval($_GET['limit']) : 500;
-        $ckey  = "weather_history_{$lim}";
+        $ckey  = "weather_history_node_{$reqNode}_{$lim}";
         $cached = cacheGet($ckey, 300);
         if ($cached !== null) { echo json_encode($cached); break; }
 
-        $data   = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_HIST}?order=timestamp_hour.desc&limit={$lim}", $supabaseKey);
+        $data   = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_HIST}?order={$orderColHist}&limit={$lim}", $supabaseKey);
+        if (empty($data) && $isNode2) {
+            $data = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order={$orderColLive}&limit={$lim}", $supabaseKey);
+        }
         $result = [];
         if ($data) {
             foreach ($data as $row) {
@@ -944,7 +916,7 @@ switch ($action) {
 
     case 'live_bulk': {
         $lim   = min($limit, 120);
-        $ckey  = "live_bulk_{$lim}";
+        $ckey  = "live_bulk_node_{$reqNode}_{$lim}";
         $cached = cacheGet($ckey, 3);
         if ($cached !== null) { echo json_encode($cached); break; }
 
@@ -952,20 +924,22 @@ switch ($action) {
         $dtMidnightIst->setTimezone(new DateTimeZone('UTC'));
         $today_utc = $dtMidnightIst->format('Y-m-d\TH:i:s\Z');
 
-        $cachedRainSum = cacheGet('today_rain_sum', 60);
+        $cachedRainSum = $isNode2 ? null : cacheGet('today_rain_sum_node_' . $reqNode, 60);
 
         // Fire parallel requests; omit expensive midnight rain query if cached within 60s
         $fetchUrls = [
-            'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
-            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order=created_at.desc.nullslast&limit={$lim}",
+            'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order={$orderColLive}&limit={$lim}",
+            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order={$orderColLive}&limit={$lim}",
         ];
-        if ($cachedRainSum === null) {
+        if (!$isNode2 && $cachedRainSum === null) {
             $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0&limit=100";
         }
 
         $raw = fetchParallel($fetchUrls, $supabaseKey);
 
         $res = [];
+        $res['node']    = $reqNode;
+        $res['status']  = 'ONLINE';
         $res['aqi']     = ($raw['aqi_hist']     && count($raw['aqi_hist'])     > 0) ? formatRawReading($raw['aqi_hist'][0])     : null;
         $res['weather'] = ($raw['weather_hist'] && count($raw['weather_hist']) > 0) ? formatWeatherReading($raw['weather_hist'][0]) : null;
 
@@ -986,7 +960,7 @@ switch ($action) {
                     if ($rg > 0) $today_rain_sum += $rg;
                 }
             }
-            cacheSet('today_rain_sum', ['total' => round($today_rain_sum, 2)]);
+            cacheSet('today_rain_sum_node_' . $reqNode, ['total' => round($today_rain_sum, 2)]);
         } elseif ($cachedRainSum !== null && isset($cachedRainSum['total'])) {
             $today_rain_sum = (float)$cachedRainSum['total'];
         }
@@ -999,11 +973,14 @@ switch ($action) {
         $res['today_rain_total'] = round($today_rain_sum, 2);
 
         cacheSet($ckey, $res);
-        cacheSet('overview_bulk', $res);
-        cacheSet('live_bulk_60', $res);
-        cacheSet('live_bulk_50', $res);
+        cacheSet("overview_bulk_node_{$reqNode}", $res);
+        if (!$isNode2) {
+            cacheSet('overview_bulk', $res);
+            cacheSet('live_bulk_60', $res);
+            cacheSet('live_bulk_50', $res);
+        }
         if ($res['aqi'] && isset($res['aqi']['cpcb_aqi'])) {
-            @file_put_contents($CACHE_DIR . '/last_known_hero.json', json_encode([
+            @file_put_contents($CACHE_DIR . "/last_known_hero_node_{$reqNode}.json", json_encode([
                 'cpcb_aqi' => $res['aqi']['cpcb_aqi'],
                 'pm25' => $res['aqi']['pm25'] ?? $res['aqi']['pm2.5'] ?? null,
                 'pm10' => $res['aqi']['pm10'] ?? null,
@@ -1017,7 +994,7 @@ switch ($action) {
 
     case 'overview_bulk': {
         $lim   = 60;
-        $ckey  = "overview_bulk";
+        $ckey  = "overview_bulk_node_{$reqNode}";
         $cached = cacheGet($ckey, 3);
         if ($cached !== null && (!empty($cached['aqi']) || !empty($cached['weather']))) { echo json_encode($cached); break; }
 
@@ -1025,19 +1002,21 @@ switch ($action) {
         $dtMidnightIst->setTimezone(new DateTimeZone('UTC'));
         $today_utc = $dtMidnightIst->format('Y-m-d\TH:i:s\Z');
 
-        $cachedRainSum = cacheGet('today_rain_sum', 60);
+        $cachedRainSum = $isNode2 ? null : cacheGet('today_rain_sum_node_' . $reqNode, 60);
 
         $fetchUrls = [
-            'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
-            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order=created_at.desc.nullslast&limit={$lim}",
+            'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order={$orderColLive}&limit={$lim}",
+            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order={$orderColLive}&limit={$lim}",
         ];
-        if ($cachedRainSum === null) {
+        if (!$isNode2 && $cachedRainSum === null) {
             $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0&limit=100";
         }
 
         $raw = fetchParallel($fetchUrls, $supabaseKey);
 
         $res = [];
+        $res['node']    = $reqNode;
+        $res['status']  = 'ONLINE';
         $res['aqi']     = ($raw['aqi_hist']     && count($raw['aqi_hist'])     > 0) ? formatRawReading($raw['aqi_hist'][0])     : null;
         $res['weather'] = ($raw['weather_hist'] && count($raw['weather_hist']) > 0) ? formatWeatherReading($raw['weather_hist'][0]) : null;
 
@@ -1067,7 +1046,7 @@ switch ($action) {
                     if ($rg > 0) $today_rain_sum += $rg;
                 }
             }
-            cacheSet('today_rain_sum', ['total' => round($today_rain_sum, 2)]);
+            cacheSet('today_rain_sum_node_' . $reqNode, ['total' => round($today_rain_sum, 2)]);
         } elseif ($cachedRainSum !== null && isset($cachedRainSum['total'])) {
             $today_rain_sum = (float)$cachedRainSum['total'];
         }
@@ -1081,10 +1060,13 @@ switch ($action) {
 
         if ($res['aqi'] !== null || $res['weather'] !== null) {
             cacheSet($ckey, $res);
-            cacheSet('live_bulk_60', $res);
-            cacheSet('live_bulk_50', $res);
+            if (!$isNode2) {
+                cacheSet('overview_bulk', $res);
+                cacheSet('live_bulk_60', $res);
+                cacheSet('live_bulk_50', $res);
+            }
             if ($res['aqi'] && isset($res['aqi']['cpcb_aqi'])) {
-                @file_put_contents($CACHE_DIR . '/last_known_hero.json', json_encode([
+                @file_put_contents($CACHE_DIR . "/last_known_hero_node_{$reqNode}.json", json_encode([
                     'cpcb_aqi' => $res['aqi']['cpcb_aqi'],
                     'pm25' => $res['aqi']['pm25'] ?? $res['aqi']['pm2.5'] ?? null,
                     'pm10' => $res['aqi']['pm10'] ?? null,
@@ -1104,37 +1086,42 @@ switch ($action) {
         if (!$date) $date = $today_ist;
         $is_today = (!$date || ($date === $today_ist && $days === 1));
         $filter = '';
+        $tsCol = $isNode2 ? 'timestamp' : 'timestamp_hour';
 
         if ($days > 1) {
             $start_date = date('Y-m-d', strtotime($date . ' -' . $days . ' days'));
             $end_date   = date('Y-m-d', strtotime($date . ' +2 days'));
-            $filter = "&timestamp_hour=gte.{$start_date}T00:00:00&timestamp_hour=lt.{$end_date}T00:00:00";
+            $filter = "&{$tsCol}=gte.{$start_date}T00:00:00&{$tsCol}=lt.{$end_date}T00:00:00";
             $lim = min(1500, max(150, ($days * 35)));
         } else if ($date) {
             $start_date = date('Y-m-d', strtotime($date . ' -1 day'));
             $end_date   = date('Y-m-d', strtotime($date . ' +2 days'));
-            $filter = "&timestamp_hour=gte.{$start_date}T00:00:00&timestamp_hour=lt.{$end_date}T00:00:00";
+            $filter = "&{$tsCol}=gte.{$start_date}T00:00:00&{$tsCol}=lt.{$end_date}T00:00:00";
             $lim = 150;
         } else {
             $lim = isset($_GET['limit']) ? intval($_GET['limit']) : 500;
         }
 
-        $ckey   = "history_bulk_" . md5($date . '_' . $days . '_' . $lim);
+        $ckey   = "history_bulk_node_{$reqNode}_" . md5($date . '_' . $days . '_' . $lim);
         $ttl    = $is_today ? 15 : 300; // 15s TTL for today so live telemetry updates dynamically
         $cached = cacheGet($ckey, $ttl);
         if ($cached !== null) { echo json_encode($cached); break; }
 
         $urls = [
-            'aqi'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_HISTORICAL}?order=timestamp_hour.desc&limit={$lim}{$filter}",
-            'weather' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_HIST}?order=timestamp_hour.desc&limit={$lim}{$filter}",
+            'aqi'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_HISTORICAL}?order={$tsCol}.desc&limit={$lim}{$filter}",
+            'weather' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_HIST}?order={$tsCol}.desc&limit={$lim}{$filter}",
         ];
 
         // Fire requests in parallel
         $raw = fetchParallel($urls, $supabaseKey);
 
-        $res = ['aqi' => [], 'weather' => []];
-        if ($raw['aqi'])     { foreach ($raw['aqi']     as $row) { $f = formatRawReading($row);    if ($f) $res['aqi'][]     = $f; } }
-        if ($raw['weather']) { foreach ($raw['weather'] as $row) { $f = formatWeatherReading($row); if ($f) $res['weather'][] = $f; } }
+        if ($isNode2 && empty($raw['weather'])) {
+            $raw['weather'] = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order={$tsCol}.desc&limit={$lim}", $supabaseKey);
+        }
+
+        $res = ['status' => 'success', 'node' => $reqNode, 'aqi' => [], 'weather' => []];
+        if (!empty($raw['aqi']))     { foreach ($raw['aqi']     as $row) { $f = formatRawReading($row);    if ($f) $res['aqi'][]     = $f; } }
+        if (!empty($raw['weather'])) { foreach ($raw['weather'] as $row) { $w = formatWeatherReading($row); if ($w) $res['weather'][] = $f; } }
 
         cacheSet($ckey, $res);
         echo json_encode($res);

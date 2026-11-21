@@ -16,7 +16,31 @@ if (!isset($node_config) || empty($node_config) || !is_array($node_config)) {
     }
 }
 
-// AQI pre-calculated fields for Node 2 (Station 2 Standby)
+// Load Node 2 cached live telemetry if available
+$CACHE_DIR = sys_get_temp_dir() . '/smartairnet_cache';
+$cache_candidates = [
+    $CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json',
+    $CACHE_DIR . '/' . md5('live_bulk_node_2_50') . '.json',
+    $CACHE_DIR . '/' . md5('overview_bulk_node_2') . '.json',
+    $CACHE_DIR . '/last_known_hero_node_2.json',
+    $CACHE_DIR . '/live_bulk_node_2_60.json',
+    $CACHE_DIR . '/overview_bulk_node_2.json',
+];
+$init_bulk = null;
+foreach ($cache_candidates as $cf) {
+    if (file_exists($cf)) {
+        $raw_cache = @file_get_contents($cf);
+        if ($raw_cache && strlen($raw_cache) > 20) {
+            $parsed = @json_decode($raw_cache, true);
+            if ($parsed && (!empty($parsed['aqi']) || !empty($parsed['weather']))) {
+                $init_bulk = $parsed;
+                break;
+            }
+        }
+    }
+}
+
+// AQI pre-calculated fields for Node 2
 $init_aqi_val = '--';
 $init_aqi_label = 'Standby';
 $init_aqi_accent = '#94a3b8';
@@ -30,10 +54,62 @@ $init_scale_pct = '0%';
 $init_pm25 = '--';
 $init_pm10 = '--';
 
-// Weather pre-calculated fields - Node 2 defaults to Standby
-$w_d = [];
-$init_weather_temp = '--';
-$init_weather_hum = '--%';
+if (!empty($init_bulk['aqi'])) {
+    $aqi_d = $init_bulk['aqi'];
+    $init_aqi_val = $aqi_d['cpcb_aqi'] ?? ($aqi_d['aqi_info']['value'] ?? '--');
+    if (is_numeric($init_aqi_val)) {
+        $v = (int)$init_aqi_val;
+        if ($v <= 50) {
+            $init_aqi_label = 'Good';
+            $init_aqi_accent = '#16a34a';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)';
+            $init_aqi_border = 'rgba(22, 163, 74, 0.35)';
+            $init_aqi_shadow = 'rgba(34, 197, 94, 0.22)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
+            $init_aqi_badge_border = 'rgba(22, 163, 74, 0.35)';
+            $init_aqi_badge_text = '#15803d';
+            $init_scale_pct = max(2, min(98, ($v / 50) * 16.666)) . '%';
+        } elseif ($v <= 100) {
+            $init_aqi_label = 'Moderate';
+            $init_aqi_accent = '#ca8a04';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)';
+            $init_aqi_border = 'rgba(202, 138, 4, 0.35)';
+            $init_aqi_shadow = 'rgba(234, 179, 8, 0.20)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
+            $init_aqi_badge_border = 'rgba(202, 138, 4, 0.38)';
+            $init_aqi_badge_text = '#854d0e';
+            $init_scale_pct = (16.666 + (($v - 50) / 50) * 16.667) . '%';
+        } elseif ($v <= 200) {
+            $init_aqi_label = 'Poor';
+            $init_aqi_accent = '#ea580c';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)';
+            $init_aqi_border = 'rgba(234, 88, 12, 0.38)';
+            $init_aqi_shadow = 'rgba(249, 115, 22, 0.22)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
+            $init_aqi_badge_border = 'rgba(234, 88, 12, 0.38)';
+            $init_aqi_badge_text = '#c2410c';
+            $init_scale_pct = (33.333 + (($v - 100) / 100) * 16.667) . '%';
+        } else {
+            $init_aqi_label = 'Unhealthy';
+            $init_aqi_accent = '#e11d48';
+            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)';
+            $init_aqi_border = 'rgba(225, 29, 72, 0.38)';
+            $init_aqi_shadow = 'rgba(225, 29, 72, 0.22)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
+            $init_aqi_badge_border = 'rgba(225, 29, 72, 0.38)';
+            $init_aqi_badge_text = '#9f1239';
+            $init_scale_pct = '50%';
+        }
+    }
+    $pm25_val = $aqi_d['pm25'] ?? ($aqi_d['pm2.5'] ?? ($aqi_d['pm2_5'] ?? null));
+    $init_pm25 = ($pm25_val !== null && is_numeric($pm25_val)) ? number_format((float)$pm25_val, 1) : '--';
+    $init_pm10 = (isset($aqi_d['pm10']) && is_numeric($aqi_d['pm10'])) ? number_format((float)$aqi_d['pm10'], 1) : '--';
+}
+
+// Weather pre-calculated fields
+$w_d = !empty($init_bulk['weather']) ? $init_bulk['weather'] : [];
+$init_weather_temp = (isset($w_d['temperature']) && is_numeric($w_d['temperature'])) ? number_format((float)$w_d['temperature'], 1) : '--';
+$init_weather_hum = (isset($w_d['humidity']) && is_numeric($w_d['humidity'])) ? number_format((float)$w_d['humidity'], 1) . '%' : '--%';
 $init_weather_rain = isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '--';
 $init_weather_wind = isset($w_d['wind_speed']) && is_numeric($w_d['wind_speed']) ? number_format((float)$w_d['wind_speed'], 1) . ' km/h' : '--';
 $init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) . ' m/s' : '--';
@@ -135,16 +211,19 @@ $init_soil_temp = $has_soil_temp ? number_format((float)$w_d['soil_temperature']
 $soil_temp_num = $has_soil_temp ? (float)$w_d['soil_temperature'] : null;
 $soil_temp_pct = $has_soil_temp ? max(5, min(95, round((($soil_temp_num - 10) / (40 - 10)) * 100))) : 50;
 
-$has_soil_hum = isset($w_d['soil_humidity']) && is_numeric($w_d['soil_humidity']);
-$init_soil_hum = $has_soil_hum ? number_format((float)$w_d['soil_humidity'], 1) . '%' : '--';
-$soil_hum_num = $has_soil_hum ? (float)$w_d['soil_humidity'] : null;
-$soil_hum_pct = $has_soil_hum ? max(5, min(95, round($soil_hum_num))) : 50;
+$has_soil_hum = (isset($w_d['soil_moisture']) && is_numeric($w_d['soil_moisture'])) || (isset($w_d['soil_humidity']) && is_numeric($w_d['soil_humidity']));
+$soil_hum_num = (isset($w_d['soil_moisture']) && is_numeric($w_d['soil_moisture'])) ? (float)$w_d['soil_moisture'] : ((isset($w_d['soil_humidity']) && is_numeric($w_d['soil_humidity'])) ? (float)$w_d['soil_humidity'] : null);
+$init_soil_hum = ($soil_hum_num !== null) ? number_format((float)$soil_hum_num, 1) . '%' : '--';
+$soil_hum_pct = ($soil_hum_num !== null) ? max(5, min(95, round($soil_hum_num))) : 50;
 
 $has_soil_ph = isset($w_d['soil_ph']) && is_numeric($w_d['soil_ph']);
 $init_soil_ph = $has_soil_ph ? number_format((float)$w_d['soil_ph'], 2) : '--';
 $soil_ph_num = $has_soil_ph ? (float)$w_d['soil_ph'] : null;
 $soil_ph_pct = $has_soil_ph ? max(5, min(95, round((($soil_ph_num - 3.0) / (10.0 - 3.0)) * 100))) : 50;
 $soil_ph_status = $has_soil_ph ? (($soil_ph_num < 6.0) ? 'Slightly Acidic' : (($soil_ph_num > 7.5) ? 'Slightly Alkaline' : 'Optimal Neutral')) : '--';
+
+$has_soil_ec = isset($w_d['soil_conductivity']) && is_numeric($w_d['soil_conductivity']);
+$init_soil_ec = $has_soil_ec ? round((float)$w_d['soil_conductivity']) . ' µS/cm' : '--';
 
 $init_weather_today_rain = isset($init_bulk['today_rain_total']) ? number_format((float)$init_bulk['today_rain_total'], 1) . ' mm' : (isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '--');
 
@@ -1075,10 +1154,120 @@ $init_border_colors = [
 
 @keyframes uvGlowPulse {
   0%, 100% { box-shadow: 0 0 6px rgba(244, 63, 94, 0.8), 0 0 12px rgba(244, 63, 94, 0.4); }
-  50% { box-shadow: 0 0 12px rgba(244, 63, 94, 1), 0 0 20px rgba(244, 63, 94, 0.7); }
+  50% { box-shadow: 0 0 14px rgba(244, 63, 94, 1), 0 0 22px rgba(244, 63, 94, 0.7); }
 }
 .uv-pulse-dot {
   animation: uvGlowPulse 2.2s ease-in-out infinite;
+}
+
+/* ══ Compass Radar / Idle Scan Animation ══ */
+@keyframes compassIdleScan {
+  0% { transform: rotate(-35deg); }
+  50% { transform: rotate(35deg); }
+  100% { transform: rotate(-35deg); }
+}
+.compass-idle-scan {
+  animation: compassIdleScan 5.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite !important;
+  transform-origin: 50px 50px;
+}
+
+/* ══ Pressure Needle Gauge Breathing ══ */
+@keyframes pressureNeedleBreathe {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(8deg); }
+}
+.pressure-needle-breathe {
+  animation: pressureNeedleBreathe 4s ease-in-out infinite;
+  transform-origin: 50px 50px;
+}
+
+/* ══ Pressure Slider Pulse Dot ══ */
+@keyframes pressureGlowPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(236, 72, 153, 0.8), 0 0 12px rgba(236, 72, 153, 0.4); }
+  50% { box-shadow: 0 0 14px rgba(236, 72, 153, 1), 0 0 22px rgba(236, 72, 153, 0.75); }
+}
+.pressure-pulse-dot {
+  animation: pressureGlowPulse 2.4s ease-in-out infinite;
+}
+
+/* ══ Soil Temperature Probe Thermal Glow ══ */
+@keyframes soilThermalGlow {
+  0%, 100% {
+    fill: #f59e0b;
+    filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.5));
+  }
+  50% {
+    fill: #fbbf24;
+    filter: drop-shadow(0 0 9px rgba(251, 191, 36, 0.9));
+  }
+}
+.soil-temp-bulb-anim {
+  animation: soilThermalGlow 3s ease-in-out infinite;
+}
+
+@keyframes soilTempGlowPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(245, 158, 11, 0.8), 0 0 12px rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 14px rgba(245, 158, 11, 1), 0 0 22px rgba(245, 158, 11, 0.75); }
+}
+.soil-temp-pulse-dot {
+  animation: soilTempGlowPulse 2.3s ease-in-out infinite;
+}
+
+/* ══ Soil Humidity Water Drop Glisten & Bob ══ */
+@keyframes waterDropGlisten {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5));
+  }
+  50% {
+    transform: translateY(-2.5px) scale(1.04);
+    filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.85));
+  }
+}
+.water-drop-anim {
+  animation: waterDropGlisten 3.2s ease-in-out infinite;
+  transform-origin: 32px 36px;
+}
+
+@keyframes soilHumGlowPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(0, 191, 165, 0.8), 0 0 12px rgba(0, 191, 165, 0.4); }
+  50% { box-shadow: 0 0 14px rgba(0, 191, 165, 1), 0 0 22px rgba(0, 191, 165, 0.75); }
+}
+.soil-hum-pulse-dot {
+  animation: soilHumGlowPulse 2.5s ease-in-out infinite;
+}
+
+/* ══ Soil pH Chemical Ring Rotation & Core Breathing ══ */
+@keyframes phRingSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.ph-ring-anim {
+  animation: phRingSpin 16s linear infinite;
+  transform-origin: 32px 32px;
+}
+
+@keyframes phCoreBreathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45));
+  }
+  50% {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.85));
+  }
+}
+.ph-core-anim {
+  animation: phCoreBreathe 2.8s ease-in-out infinite;
+  transform-origin: 32px 32px;
+}
+
+@keyframes soilPhGlowPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(16, 185, 129, 0.8), 0 0 12px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 14px rgba(16, 185, 129, 1), 0 0 22px rgba(16, 185, 129, 0.75); }
+}
+.soil-ph-pulse-dot {
+  animation: soilPhGlowPulse 2.6s ease-in-out infinite;
 }
 
 @media (max-width: 900px) {
@@ -1219,7 +1408,12 @@ $init_border_colors = [
     display: none !important;
   }
   .wind-turbine-wrap {
-    display: none !important;
+    display: flex !important;
+    width: 36px !important;
+    height: 54px !important;
+    flex-shrink: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   .weather-metric-block {
     display: block !important;
@@ -1317,6 +1511,7 @@ $init_border_colors = [
   overflow: hidden;
   transition: opacity 0.8s ease;
   background-color: #3882c2;
+  background: linear-gradient(180deg, #1e3a8a 0%, #0284c7 35%, #f59e0b 80%, #ea580c 100%);
 }
 
 body.weather-backdrop-active {
@@ -1342,7 +1537,7 @@ body.weather-backdrop-active #app-layout-root,
   display: flex;
   width: 400vw;
   height: 100%;
-  animation: continuousCloudDrift 130s linear infinite;
+  animation: continuousCloudDrift 42s linear infinite;
   will-change: transform;
 }
 
@@ -1350,9 +1545,11 @@ body.weather-backdrop-active #app-layout-root,
   width: 100vw;
   height: 100%;
   flex-shrink: 0;
+  background-color: #3882c2;
   background-image: url('assets/sunset_clouds_backdrop.jpg');
   background-size: cover;
   background-position: center bottom;
+  background-repeat: no-repeat;
 }
 
 .cloud-drift-panel.mirrored {
@@ -1625,6 +1822,17 @@ body.weather-backdrop-active #app-layout-root,
           lr.style.setProperty('background-image', 'none', 'important');
       }
   }
+
+  // Pre-check and guarantee cloud drift background image path
+  (function() {
+      const testImg = new Image();
+      testImg.src = 'assets/sunset_clouds_backdrop.jpg';
+      testImg.onerror = function() {
+          document.querySelectorAll('.cloud-drift-panel').forEach(function(p) {
+              p.style.backgroundImage = "url('/assets/sunset_clouds_backdrop.jpg')";
+          });
+      };
+  })();
   </script>
 
   <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather -->
@@ -1686,15 +1894,15 @@ body.weather-backdrop-active #app-layout-root,
             <!-- Left: Live AQI & Big Value -->
             <div style="display: flex; flex-direction: column;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
-                <div id="status-dot-container" class="<?= ($init_is_aqi_offline || $is_node_2) ? 'status-dot-offline' : 'status-dot-glowing' ?>" style="display: flex; align-items: center; gap: 7px; color: <?= $init_aqi_accent ?>;">
-                  <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background-color: <?= ($init_is_aqi_offline || $is_node_2) ? 'rgba(148, 163, 184, 0.20)' : $init_aqi_accent . '33' ?>; color: <?= ($init_is_aqi_offline || $is_node_2) ? '#94a3b8' : $init_aqi_accent ?>; transition: background-color 0.5s ease, color 0.5s ease;">
-                    <span id="status-dot" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= ($init_is_aqi_offline || $is_node_2) ? '#94a3b8' : $init_aqi_accent ?>; color: <?= ($init_is_aqi_offline || $is_node_2) ? '#94a3b8' : $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease, color 0.5s ease;"></span>
+                <div id="status-dot-container" class="<?= ($init_is_aqi_offline) ? 'status-dot-offline' : 'status-dot-glowing' ?>" style="display: flex; align-items: center; gap: 7px; color: <?= $init_aqi_accent ?>;">
+                  <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background-color: <?= ($init_is_aqi_offline) ? 'rgba(148, 163, 184, 0.20)' : $init_aqi_accent . '33' ?>; color: <?= ($init_is_aqi_offline) ? '#94a3b8' : $init_aqi_accent ?>; transition: background-color 0.5s ease, color 0.5s ease;">
+                    <span id="status-dot" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= ($init_is_aqi_offline) ? '#94a3b8' : $init_aqi_accent ?>; color: <?= ($init_is_aqi_offline) ? '#94a3b8' : $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease, color 0.5s ease;"></span>
                   </span>
-                  <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;"><?= $is_node_2 ? 'Standby Mode' : ($init_is_aqi_offline ? 'Cached AQI' : 'Live AQI') ?></span>
+                  <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;"><?= ($init_is_aqi_offline ? 'Cached AQI' : 'Live AQI') ?></span>
                 </div>
                 <span id="hero-live-time-chip" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); color: #475569; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.9); padding: 1.5px 7px; border-radius: 6px; box-shadow: 0 1px 2px rgba(15,23,42,0.03);">
                   <i data-lucide="clock" id="hero-clock-icon" style="width: 11px; height: 11px; color: <?= $init_aqi_accent ?>;"></i>
-                  <span id="hero-latest-time"><?= $is_node_2 ? 'Standby' : htmlspecialchars($init_time_str) ?></span>
+                  <span id="hero-latest-time"><?= htmlspecialchars($init_time_str) ?></span>
                 </span>
               </div>
               <div style="display: flex; align-items: baseline; gap: 8px;">
@@ -2175,16 +2383,16 @@ body.weather-backdrop-active #app-layout-root,
         <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #ffffff; text-shadow: 0 2px 10px rgba(15, 23, 42, 0.6); font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
           Live Weather Conditions
         </h1>
-        <span style="font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.9); color: #475569; border: 1px solid rgba(255, 255, 255, 0.7); padding: 2px 8px; border-radius: 999px; backdrop-filter: blur(8px); box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
-          Node 2 (Standby)
+        <span style="font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.9); color: #047857; border: 1px solid rgba(255, 255, 255, 0.7); padding: 2px 8px; border-radius: 999px; backdrop-filter: blur(8px); box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
+          Node 2 (Field Station)
         </span>
       </div>
 
       <div style="font-size: 12px; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
-        <span>Last Updated: <strong id="weather-latest-time" style="color: #ffffff; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.6);">--</strong></span>
-        <span id="weather-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background-color: rgba(255, 255, 255, 0.92); color: #64748b; border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px);">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #94a3b8;"></span>
-          <span>STANDBY</span>
+        <span>Last Updated: <strong id="weather-latest-time" style="color: #ffffff; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.6);"><?= htmlspecialchars($init_time_str) ?></strong></span>
+        <span id="weather-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background-color: rgba(255, 255, 255, 0.92); color: #15803d; border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px);">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22c55e;"></span>
+          <span>LIVE</span>
         </span>
       </div>
     </div>
@@ -2218,8 +2426,8 @@ body.weather-backdrop-active #app-layout-root,
               <circle cx="50" cy="50" r="18.5" fill="#607282" />
               <text id="compass-cardinal-label" x="50" y="50.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="central" style="letter-spacing: -0.01em; font-family: var(--font-sans); text-transform: lowercase;"><?= htmlspecialchars(strtolower($init_weather_cardinal)) ?></text>
               <!-- Rotating blue pointer arrow sitting on track between center disc and outer ticks -->
-              <g id="compass-needle-group" style="transform-origin: 50px 50px; transform: rotate(<?= $compass_angle ?>deg); <?= $has_wind_dir ? '' : 'display: none;' ?> transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
-                <polygon points="50,18 45.8,29.5 54.2,29.5" fill="#38bdf8" stroke="#38bdf8" stroke-width="0.8" stroke-linejoin="round" filter="drop-shadow(0 0 3px rgba(56, 189, 248, 0.75))" />
+              <g id="compass-needle-group" class="<?= $has_wind_dir ? '' : 'compass-idle-scan' ?>" style="transform-origin: 50px 50px; transform: rotate(<?= $compass_angle ?>deg); transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                <polygon points="50,18 45.8,29.5 54.2,29.5" fill="#38bdf8" stroke="#38bdf8" stroke-width="0.8" stroke-linejoin="round" filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.9))" />
               </g>
             </svg>
           </div>
@@ -2455,7 +2663,7 @@ body.weather-backdrop-active #app-layout-root,
                 <text x="22" y="29" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1010</text>
                 <text x="15" y="52" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1005</text>
                 <!-- Pink/Magenta needle -->
-                <g id="pressure-needle" style="transform-origin: 50px 50px; transform: rotate(<?= $pressure_angle ?>deg); <?= $has_pressure ? '' : 'display: none;' ?> transition: transform 1.2s ease-out;">
+                <g id="pressure-needle" class="<?= $has_pressure ? '' : 'pressure-needle-breathe' ?>" style="transform-origin: 50px 50px; transform: rotate(<?= $has_pressure ? $pressure_angle : 0 ?>deg); transition: transform 1.2s ease-out;">
                   <polygon points="50,47 78,50 50,53" fill="#ec4899" filter="drop-shadow(0 0 4px #db2777)" />
                   <circle cx="50" cy="50" r="4.2" fill="#ec4899" />
                   <circle cx="50" cy="50" r="1.6" fill="#ffffff" />
@@ -2477,7 +2685,7 @@ body.weather-backdrop-active #app-layout-root,
           <!-- Middle: Gradient track + indicator dot -->
           <div style="margin-top: 10px; width: 100%;">
             <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 35%, #ef4444 70%, #ec4899 100%); position: relative;">
-              <div id="pressure-slider-dot" style="position: absolute; top: 50%; left: <?= $pressure_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ec4899; box-shadow: 0 0 8px rgba(236,72,153,0.9); <?= $has_pressure ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+              <div id="pressure-slider-dot" class="pressure-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_pressure ? $pressure_pct : 50 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ec4899; box-shadow: 0 0 8px rgba(236,72,153,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
@@ -2502,7 +2710,7 @@ body.weather-backdrop-active #app-layout-root,
           <!-- Middle: Gradient track + glowing indicator dot -->
           <div style="margin-top: 14px; width: 100%;">
             <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 25%, #f97316 50%, #ef4444 75%, #a855f7 100%); position: relative;">
-              <div id="uv-slider-dot" class="uv-pulse-dot" style="position: absolute; top: 50%; left: <?= $uv_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f43f5e; box-shadow: 0 0 8px rgba(244,63,94,0.95); <?= $has_uv ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+              <div id="uv-slider-dot" class="uv-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_uv ? $uv_pct : 8 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f43f5e; box-shadow: 0 0 8px rgba(244,63,94,0.95); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
@@ -2526,9 +2734,9 @@ body.weather-backdrop-active #app-layout-root,
                 <!-- Thermometer Stem -->
                 <rect x="28" y="10" width="8" height="28" rx="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.7)" stroke-width="1.6" />
                 <!-- Thermometer Bulb in Subsurface -->
-                <circle cx="32" cy="38" r="7.5" fill="#f59e0b" filter="drop-shadow(0 0 4px rgba(245, 158, 11, 0.6))" />
+                <circle cx="32" cy="38" r="7.5" class="soil-temp-bulb-anim" fill="#f59e0b" filter="drop-shadow(0 0 4px rgba(245, 158, 11, 0.6))" />
                 <!-- Mercury Column -->
-                <rect x="30" y="18" width="4" height="18" rx="2" fill="#f59e0b" />
+                <rect x="30" y="18" width="4" height="18" rx="2" class="soil-temp-bulb-anim" fill="#f59e0b" />
                 <!-- Measurement Ticks -->
                 <line x1="37" y1="14" x2="40" y2="14" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
                 <line x1="37" y1="20" x2="41" y2="20" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
@@ -2550,7 +2758,7 @@ body.weather-backdrop-active #app-layout-root,
           <!-- Middle: Thermal Spectrum Bar + Indicator Dot -->
           <div style="margin-top: 10px; width: 100%;">
             <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
-              <div id="soil-temp-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.9); <?= $has_soil_temp ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+              <div id="soil-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_soil_temp ? $soil_temp_pct : 48 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
@@ -2569,10 +2777,12 @@ body.weather-backdrop-active #app-layout-root,
               <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
                 <!-- Soil Mound Outline -->
                 <path d="M 8 48 C 16 38, 28 36, 40 40 C 48 42, 54 48, 56 50" stroke="#0d9488" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6" />
-                <!-- Hydration Droplet -->
-                <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="url(#soilHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
-                <!-- Droplet Inner Gloss -->
-                <ellipse cx="26" cy="34" rx="3.5" ry="6" transform="rotate(-28 26 34)" fill="#ffffff" opacity="0.55" />
+                <!-- Hydration Droplet with Bobbing Animation -->
+                <g class="water-drop-anim">
+                  <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="url(#soilHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
+                  <!-- Droplet Inner Gloss -->
+                  <ellipse cx="26" cy="34" rx="3.5" ry="6" transform="rotate(-28 26 34)" fill="#ffffff" opacity="0.55" />
+                </g>
                 <defs>
                   <linearGradient id="soilHumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#38bdf8" />
@@ -2596,13 +2806,13 @@ body.weather-backdrop-active #app-layout-root,
           <!-- Middle: Moisture Gradient Bar + Indicator Dot -->
           <div style="margin-top: 10px; width: 100%;">
             <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #00bfa5 45%, #0284c7 100%); position: relative;">
-              <div id="soil-hum-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #00bfa5; box-shadow: 0 0 8px rgba(0,191,165,0.9); <?= $has_soil_hum ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+              <div id="soil-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_soil_hum ? $soil_hum_pct : 50 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #00bfa5; box-shadow: 0 0 8px rgba(0,191,165,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
           <!-- Bottom note -->
           <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-            Hydration level: <span id="soil-hum-note-val" style="color: #99f6e4; font-weight: 600;"><?= $has_soil_hum ? "Adequate Field Capacity ({$init_soil_hum})" : '--' ?></span>
+            Hydration level: <span id="soil-hum-note-val" style="color: #99f6e4; font-weight: 600;"><?= $has_soil_hum ? "Adequate Field Capacity ({$init_soil_hum})" . ($has_soil_ec ? " • EC: {$init_soil_ec}" : "") : '--' ?></span>
           </div>
         </div>
 
@@ -2615,10 +2825,12 @@ body.weather-backdrop-active #app-layout-root,
               <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
                 <!-- Outer Circular Ring Gauge -->
                 <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2" />
-                <circle cx="32" cy="32" r="20" fill="none" stroke="url(#phRingGrad)" stroke-width="3" stroke-dasharray="14 4" />
-                <!-- Center Disk with pH Symbol -->
-                <circle cx="32" cy="32" r="14" fill="#10b981" filter="drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45))" />
-                <text x="32" y="32.5" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
+                <circle class="ph-ring-anim" cx="32" cy="32" r="20" fill="none" stroke="url(#phRingGrad)" stroke-width="3" stroke-dasharray="14 4" />
+                <!-- Center Disk with pH Symbol with Breathing Pulse -->
+                <g class="ph-core-anim">
+                  <circle cx="32" cy="32" r="14" fill="#10b981" filter="drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45))" />
+                  <text x="32" y="32.5" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
+                </g>
                 <defs>
                   <linearGradient id="phRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#ef4444" />
@@ -2643,7 +2855,7 @@ body.weather-backdrop-active #app-layout-root,
           <!-- Middle: pH spectrum bar (Acidic 0-6 to Neutral 7 to Alkaline 8-14) -->
           <div style="margin-top: 10px; width: 100%;">
             <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
-              <div id="soil-ph-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.9); <?= $has_soil_ph ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+              <div id="soil-ph-slider-dot" class="soil-ph-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_soil_ph ? $soil_ph_pct : 50 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
@@ -3220,7 +3432,7 @@ function renderLiveTable() {
     tbody.innerHTML = liveDataStream.map((d, i) => {
         const timeStr = formatStreamTimestamp(d);
         const aqiVal = d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '--';
-        const pm25 = formatSupabaseValue(d.pm25 ?? d['pm2.5']);
+        const pm25 = formatSupabaseValue(d.pm2_5 ?? d.pm25 ?? d['pm2.5']);
         const pm10 = formatSupabaseValue(d.pm10);
         const co = formatSupabaseValue(d.co);
         const no2 = formatSupabaseValue(d.no2);
@@ -3252,7 +3464,7 @@ async function refreshDashboard(forceNetwork = false) {
             bulkData = await res.json();
         }
 
-        if (activeNode === '2' || (bulkData && bulkData.node === '2') || (bulkData && bulkData.status === 'STANDBY')) {
+        if (!bulkData || (!bulkData.aqi && !bulkData.weather) || (bulkData && bulkData.status === 'STANDBY')) {
             const valEl = document.getElementById('hero-aqi-val') || document.getElementById('hero-aqi-value');
             if (valEl) {
                 valEl.innerText = '--';
@@ -3354,6 +3566,12 @@ async function refreshDashboard(forceNetwork = false) {
         const weatherHistory = bulkData.weather_history;
         const historyData = bulkData.aqi_history;
         let currentAQITheme = null;
+
+        if (window.updateGlobalLiveBadge) {
+            window.updateGlobalLiveBadge(true, 'Live telemetry streaming from Node 2 Field Station.', 'LIVE');
+        }
+        const streamText = document.getElementById('hero-stream-text');
+        if (streamText) streamText.innerText = 'Live Stream';
 
         function getAQIScalePercentage(aqi) {
             const v = Number(aqi);
@@ -3494,13 +3712,13 @@ async function refreshDashboard(forceNetwork = false) {
             // Quick PM2.5 & PM10 row
             const heroPm25 = document.getElementById('hero-pm25');
             const heroPm10 = document.getElementById('hero-pm10');
-            const pm25Raw = d.pm25 ?? d['pm2.5'];
+            const pm25Raw = d.pm2_5 ?? d.pm25 ?? d['pm2.5'];
             if (heroPm25) heroPm25.innerText = pm25Raw != null && !isNaN(pm25Raw) ? Math.round(pm25Raw) : (pm25Raw || '--');
             if (heroPm10) heroPm10.innerText = d.pm10 != null && !isNaN(d.pm10) ? Math.round(d.pm10) : (d.pm10 || '--');
 
             // Cards: Raw values
             const cardPm25 = document.getElementById('card-pm25');
-            if (cardPm25) cardPm25.innerText = formatSupabaseValue(d.pm25 ?? d['pm2.5']);
+            if (cardPm25) cardPm25.innerText = formatSupabaseValue(d.pm2_5 ?? d.pm25 ?? d['pm2.5']);
             const cardPm10 = document.getElementById('card-pm10');
             if (cardPm10) cardPm10.innerText = formatSupabaseValue(d.pm10);
             const cardCo = document.getElementById('card-co');
@@ -3510,13 +3728,13 @@ async function refreshDashboard(forceNetwork = false) {
             const cardO3 = document.getElementById('card-o3');
             if (cardO3) cardO3.innerText = formatSupabaseValue(d.o3);
 
-            updateTag('tag-pm25', d.pm25 ?? d['pm2.5'], 60);
+            updateTag('tag-pm25', d.pm2_5 ?? d.pm25 ?? d['pm2.5'], 60);
             updateTag('tag-pm10', d.pm10, 100);
             updateTag('tag-co', d.co, 2);
             updateTag('tag-no2', d.no2, 80);
             updateTag('tag-o3', d.o3, 100);
 
-            updateCardBorderAccent('card-box-pm25', 'pm25', d.pm25 ?? d['pm2.5']);
+            updateCardBorderAccent('card-box-pm25', 'pm25', d.pm2_5 ?? d.pm25 ?? d['pm2.5']);
             updateCardBorderAccent('card-box-pm10', 'pm10', d.pm10);
             updateCardBorderAccent('card-box-co', 'co', d.co);
             updateCardBorderAccent('card-box-no2', 'no2', d.no2);
@@ -3589,17 +3807,24 @@ async function refreshDashboard(forceNetwork = false) {
                 if (cardDirVal) cardDirVal.innerText = parsedDir.display;
                 if (compassCardinal) compassCardinal.innerText = parsedDir.cardinal;
                 if (compassNeedle) {
+                    compassNeedle.classList.remove('compass-idle-scan');
                     compassNeedle.style.display = '';
                     compassNeedle.style.transform = `rotate(${parsedDir.deg}deg)`;
                 }
             } else if (w.wind_direction != null && w.wind_direction !== '') {
                 if (cardDirVal) cardDirVal.innerText = String(w.wind_direction);
                 if (compassCardinal) compassCardinal.innerText = '--';
-                if (compassNeedle) compassNeedle.style.display = 'none';
+                if (compassNeedle) {
+                    compassNeedle.classList.add('compass-idle-scan');
+                    compassNeedle.style.display = '';
+                }
             } else {
                 if (cardDirVal) cardDirVal.innerText = '--';
                 if (compassCardinal) compassCardinal.innerText = '--';
-                if (compassNeedle) compassNeedle.style.display = 'none';
+                if (compassNeedle) {
+                    compassNeedle.classList.add('compass-idle-scan');
+                    compassNeedle.style.display = '';
+                }
             }
 
             const pressEl = document.getElementById('card-pressure-val');
@@ -3611,6 +3836,7 @@ async function refreshDashboard(forceNetwork = false) {
                 if (pressEl) pressEl.innerText = `${pressVal} mb`;
                 if (pressNote) pressNote.innerText = `${pressVal} mb`;
                 if (pressNeedle) {
+                    pressNeedle.classList.remove('pressure-needle-breathe');
                     pressNeedle.style.display = '';
                     pressNeedle.style.transform = `rotate(${Math.round(((pressVal - 1000) / 25) * 60)}deg)`;
                 }
@@ -3621,8 +3847,14 @@ async function refreshDashboard(forceNetwork = false) {
             } else {
                 if (pressEl) pressEl.innerText = '--';
                 if (pressNote) pressNote.innerText = '--';
-                if (pressNeedle) pressNeedle.style.display = 'none';
-                if (pressDot) pressDot.style.display = 'none';
+                if (pressNeedle) {
+                    pressNeedle.classList.add('pressure-needle-breathe');
+                    pressNeedle.style.display = '';
+                }
+                if (pressDot) {
+                    pressDot.style.display = '';
+                    pressDot.style.left = '50%';
+                }
             }
 
             const uvEl = document.getElementById('card-uv-val');
@@ -3645,7 +3877,10 @@ async function refreshDashboard(forceNetwork = false) {
             } else {
                 if (uvEl) uvEl.innerText = '--';
                 if (uvNote) uvNote.innerText = '--';
-                if (uvDot) uvDot.style.display = 'none';
+                if (uvDot) {
+                    uvDot.style.display = '';
+                    uvDot.style.left = '8%';
+                }
             }
 
             // Soil Parameters (Soil Temperature, Soil Humidity, Soil pH)
@@ -3663,14 +3898,18 @@ async function refreshDashboard(forceNetwork = false) {
             } else {
                 if (soilTempEl) soilTempEl.innerText = '--';
                 if (soilTempNote) soilTempNote.innerText = '--';
-                if (soilTempDot) soilTempDot.style.display = 'none';
+                if (soilTempDot) {
+                    soilTempDot.style.display = '';
+                    soilTempDot.style.left = '48%';
+                }
             }
 
             const soilHumEl = document.getElementById('card-soil-hum-val');
             const soilHumNote = document.getElementById('soil-hum-note-val');
             const soilHumDot = document.getElementById('soil-hum-slider-dot');
-            if (w.soil_humidity != null && !isNaN(Number(w.soil_humidity))) {
-                const sH = Number(w.soil_humidity).toFixed(1);
+            const rawSoilHum = w.soil_humidity != null ? w.soil_humidity : (w.soil_moisture != null ? w.soil_moisture : null);
+            if (rawSoilHum != null && !isNaN(Number(rawSoilHum))) {
+                const sH = Number(rawSoilHum).toFixed(1);
                 if (soilHumEl) soilHumEl.innerText = `${sH}%`;
                 if (soilHumNote) soilHumNote.innerText = `Field Capacity (${sH}%)`;
                 if (soilHumDot) {
@@ -3680,7 +3919,10 @@ async function refreshDashboard(forceNetwork = false) {
             } else {
                 if (soilHumEl) soilHumEl.innerText = '--';
                 if (soilHumNote) soilHumNote.innerText = '--';
-                if (soilHumDot) soilHumDot.style.display = 'none';
+                if (soilHumDot) {
+                    soilHumDot.style.display = '';
+                    soilHumDot.style.left = '50%';
+                }
             }
 
             const soilPhEl = document.getElementById('card-soil-ph-val');
@@ -3699,7 +3941,10 @@ async function refreshDashboard(forceNetwork = false) {
             } else {
                 if (soilPhEl) soilPhEl.innerText = '--';
                 if (soilPhNote) soilPhNote.innerText = '--';
-                if (soilPhDot) soilPhDot.style.display = 'none';
+                if (soilPhDot) {
+                    soilPhDot.style.display = '';
+                    soilPhDot.style.left = '50%';
+                }
             }
             
             const todayRainEl = document.getElementById('card-today-rain');
@@ -3765,7 +4010,10 @@ async function refreshDashboard(forceNetwork = false) {
             const cardDirVal = document.getElementById('card-dir-val');
             if (cardDirVal) cardDirVal.innerText = '--';
             const compassNeedle = document.getElementById('compass-needle-group');
-            if (compassNeedle) compassNeedle.style.display = 'none';
+            if (compassNeedle) {
+                compassNeedle.classList.add('compass-idle-scan');
+                compassNeedle.style.display = '';
+            }
             const compassCardinal = document.getElementById('compass-cardinal-label');
             if (compassCardinal) compassCardinal.innerText = '--';
             const pressEl = document.getElementById('card-pressure-val');
@@ -3773,33 +4021,51 @@ async function refreshDashboard(forceNetwork = false) {
             const pressNote = document.getElementById('pressure-note-val');
             if (pressNote) pressNote.innerText = '--';
             const pressNeedle = document.getElementById('pressure-needle');
-            if (pressNeedle) pressNeedle.style.display = 'none';
+            if (pressNeedle) {
+                pressNeedle.classList.add('pressure-needle-breathe');
+                pressNeedle.style.display = '';
+            }
             const pressDot = document.getElementById('pressure-slider-dot');
-            if (pressDot) pressDot.style.display = 'none';
+            if (pressDot) {
+                pressDot.style.display = '';
+                pressDot.style.left = '50%';
+            }
             const uvEl = document.getElementById('card-uv-val');
             if (uvEl) uvEl.innerText = '--';
             const uvNote = document.getElementById('uv-note-val');
             if (uvNote) uvNote.innerText = '--';
             const uvDot = document.getElementById('uv-slider-dot');
-            if (uvDot) uvDot.style.display = 'none';
+            if (uvDot) {
+                uvDot.style.display = '';
+                uvDot.style.left = '8%';
+            }
             const soilTempEl = document.getElementById('card-soil-temp-val');
             if (soilTempEl) soilTempEl.innerText = '--';
             const soilTempNote = document.getElementById('soil-temp-note-val');
             if (soilTempNote) soilTempNote.innerText = '--';
             const soilTempDot = document.getElementById('soil-temp-slider-dot');
-            if (soilTempDot) soilTempDot.style.display = 'none';
+            if (soilTempDot) {
+                soilTempDot.style.display = '';
+                soilTempDot.style.left = '48%';
+            }
             const soilHumEl = document.getElementById('card-soil-hum-val');
             if (soilHumEl) soilHumEl.innerText = '--';
             const soilHumNote = document.getElementById('soil-hum-note-val');
             if (soilHumNote) soilHumNote.innerText = '--';
             const soilHumDot = document.getElementById('soil-hum-slider-dot');
-            if (soilHumDot) soilHumDot.style.display = 'none';
+            if (soilHumDot) {
+                soilHumDot.style.display = '';
+                soilHumDot.style.left = '50%';
+            }
             const soilPhEl = document.getElementById('card-soil-ph-val');
             if (soilPhEl) soilPhEl.innerText = '--';
             const soilPhNote = document.getElementById('soil-ph-note-val');
             if (soilPhNote) soilPhNote.innerText = '--';
             const soilPhDot = document.getElementById('soil-ph-slider-dot');
-            if (soilPhDot) soilPhDot.style.display = 'none';
+            if (soilPhDot) {
+                soilPhDot.style.display = '';
+                soilPhDot.style.left = '50%';
+            }
         }
         
         // WEATHER HISTORY TABLE & TODAY'S TEMP RANGE

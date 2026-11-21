@@ -2384,9 +2384,6 @@ body.weather-backdrop-active #app-layout-root,
         <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #ffffff; text-shadow: 0 2px 10px rgba(15, 23, 42, 0.6); font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
           Live Weather Conditions
         </h1>
-        <span style="font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.9); color: #047857; border: 1px solid rgba(255, 255, 255, 0.7); padding: 2px 8px; border-radius: 999px; backdrop-filter: blur(8px); box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
-          Node 2 (Field Station)
-        </span>
       </div>
 
       <div style="font-size: 12px; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">

@@ -393,7 +393,7 @@ $init_history_json = 'null';
 
             <!-- AQI Items for Node 2 -->
             <div id="trend-menu-aqi" style="display: <?= $req_subtab === 'aqi' ? 'block' : 'none' ?>;">
-              <div class="trend-dropdown-item <?= $req_param === 'cpcb_aqi' ? 'active' : '' ?>" data-param="cpcb_aqi" onclick="selectTrendParam('cpcb_aqi', '🌿', 'CPCB AQI', 'AQI')">
+              <div class="trend-dropdown-item <?= $req_param === 'cpcb_aqi' ? 'active' : '' ?>" data-param="cpcb_aqi" onclick="selectTrendParam('cpcb_aqi', '🌿', 'CPCB AQI', '')">
                 <div class="flex items-center gap-2.5">
                   <span class="text-base">🌿</span>
                   <span>CPCB AQI</span>
@@ -894,7 +894,7 @@ var PARAM_UNITS = {
     temperature: '°C', humidity: '%',
     wind_speed: 'km/h', wind_gust: 'km/h', wind_direction: '°', rain_gauge: 'mm',
     pressure: 'mb', uv_index: '',
-    soil_temperature: '°C', soil_humidity: '%', soil_ph: 'pH'
+    soil_temperature: '°C', soil_humidity: '%', soil_moisture: '%', soil_ph: 'pH', soil_conductivity: 'µS/cm'
 };
 
 function getParamTierInfo(param, val) {
@@ -1315,7 +1315,7 @@ function setParam(param, skipRender = false) {
         'rain_gauge': { icon: '🌧️', label: 'Rain Gauge', unit: 'mm', color: '#2563eb' },
         'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
         'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
-        'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: 'AQI', color: '#00bfa5' },
+        'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' },
         'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
         'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
         'co': { icon: '🧪', label: 'CO', unit: 'mg/m³', color: '#10b981' },
@@ -1326,7 +1326,7 @@ function setParam(param, skipRender = false) {
         ? { icon: '💧', label: 'Soil Moisture', unit: '%', color: '#0284c7' }
         : (currentSubTab === 'weather'
             ? { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' }
-            : { icon: '🌿', label: 'CPCB AQI', unit: 'AQI', color: '#00bfa5' }));
+            : { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' }));
 
     const iconEl = document.getElementById('trend-param-icon');
     const labelEl = document.getElementById('trend-param-label');
@@ -1818,7 +1818,7 @@ function renderUI(skipDayFilter = false) {
             'rain_gauge': { icon: '🌧️', label: 'Rain Gauge', unit: 'mm', color: '#2563eb' },
             'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
             'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
-            'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: 'AQI', color: '#00bfa5' },
+            'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' },
             'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
             'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
             'co': { icon: '🧪', label: 'CO', unit: 'mg/m³', color: '#10b981' },
@@ -1829,7 +1829,7 @@ function renderUI(skipDayFilter = false) {
             ? { icon: '💧', label: 'Soil Moisture', unit: '%', color: '#0284c7' }
             : (isWeather 
                 ? { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' } 
-                : { icon: '🌿', label: 'CPCB AQI', unit: 'AQI', color: '#00bfa5' }));
+                : { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' }));
 
         // Update top param button & legend
         const pIcon = document.getElementById('trend-param-icon');
@@ -1923,7 +1923,9 @@ function renderUI(skipDayFilter = false) {
         const primaryColor = meta.color || '#00bfa5';
         const datasets = [
             {
-                label: `${meta.label}${meta.unit ? ` (${meta.unit})` : ''}`,
+                label: meta.label,
+                paramKey: currentParam,
+                paramUnit: meta.unit || '',
                 data: actualData,
                 borderColor: primaryColor,
                 borderWidth: 2.4,
@@ -1995,8 +1997,21 @@ function renderUI(skipDayFilter = false) {
                                         return `${items[0].label} • ${dateInput}`;
                                     },
                                     label: function(c) {
-                                        const unit = meta.unit ? ` ${meta.unit}` : '';
-                                        return `${c.dataset.label}: ${c.parsed.y}${unit}`;
+                                        const ds = c.dataset || {};
+                                        const pKey = ds.paramKey || currentParam;
+                                        const u = (ds.paramUnit !== undefined) ? ds.paramUnit : (PARAM_UNITS[pKey] || '');
+                                        const unitStr = u ? ` ${u}` : '';
+                                        const rawVal = c.parsed.y;
+                                        if (rawVal == null || isNaN(rawVal)) return ` ${ds.label || 'Value'}: No data`;
+
+                                        if (pKey === 'cpcb_aqi' || pKey === 'aqi') {
+                                            const aqiVal = Math.round(rawVal);
+                                            const cat = getAqiCategory(aqiVal);
+                                            return ` ${ds.label || 'CPCB AQI'}: ${aqiVal} (${cat.label})`;
+                                        }
+
+                                        const dispVal = Number.isInteger(rawVal) ? rawVal : Number(rawVal).toFixed(1);
+                                        return ` ${ds.label || meta.label}: ${dispVal}${unitStr}`;
                                     }
                                 }
                             }

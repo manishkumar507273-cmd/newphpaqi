@@ -3753,6 +3753,7 @@ function renderSoilLiveTrendChart() {
             soilLiveChartInstance.data.labels = labels;
             soilLiveChartInstance.data.datasets[0].label = cfg.label;
             soilLiveChartInstance.data.datasets[0].data = values;
+            soilLiveChartInstance.data.datasets[0].unit = cfg.unit;
             soilLiveChartInstance.data.datasets[0].borderColor = cfg.color;
             soilLiveChartInstance.data.datasets[0].backgroundColor = cfg.bgColor;
             soilLiveChartInstance.data.datasets[0].pointBorderColor = cfg.color;
@@ -3769,6 +3770,7 @@ function renderSoilLiveTrendChart() {
                     datasets: [{
                         label: cfg.label,
                         data: values,
+                        unit: cfg.unit,
                         borderColor: cfg.color,
                         backgroundColor: cfg.bgColor,
                         fill: true,
@@ -3797,7 +3799,10 @@ function renderSoilLiveTrendChart() {
                             callbacks: {
                                 label: function(ctx) {
                                     const val = ctx.parsed.y;
-                                    return `${cfg.label.split(' ')[0]}: ${val != null ? val.toFixed(currentSoilLiveChartParam === 'soil_ph' ? 2 : 1) : '--'}${cfg.unit}`;
+                                    const ds = ctx.dataset || {};
+                                    const u = ds.unit !== undefined ? ds.unit : cfg.unit;
+                                    const lbl = (ds.label || cfg.label).split(' ')[0];
+                                    return `${lbl}: ${val != null ? val.toFixed(currentSoilLiveChartParam === 'soil_ph' ? 2 : 1) : '--'}${u}`;
                                 }
                             }
                         }

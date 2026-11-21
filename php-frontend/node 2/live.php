@@ -1,166 +1,167 @@
 <?php
-// Retrieve cached bulk telemetry for 0ms instant first-paint on both desktop and mobile
-$cache_candidates = [
-    sys_get_temp_dir() . '/smartairnet_cache/' . md5('live_bulk_60') . '.json',
-    sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json',
-    sys_get_temp_dir() . '/smartairnet_cache/last_known_hero.json',
-];
-$init_bulk = null;
-$best_epoch = 0;
-foreach ($cache_candidates as $cf) {
-    if (file_exists($cf)) {
-        $raw_cache = @file_get_contents($cf);
-        if ($raw_cache && strlen($raw_cache) > 20) {
-            $parsed = @json_decode($raw_cache, true);
-            if ($parsed) {
-                if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
-                    $parsed = ['aqi' => $parsed];
-                }
-                $aqi_item = null;
-                if (!empty($parsed['aqi'])) {
-                    if (isset($parsed['aqi'][0]) && is_array($parsed['aqi'][0])) {
-                        $aqi_item = $parsed['aqi'][0];
-                    } elseif (is_array($parsed['aqi'])) {
-                        $aqi_item = $parsed['aqi'];
-                    }
-                }
-                $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
-                $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
-                if ($e > $best_epoch && $aqi_item) {
-                    $best_epoch = $e;
-                    $init_bulk = $parsed;
-                    if (isset($init_bulk['aqi'][0])) {
-                        $init_bulk['aqi'] = $init_bulk['aqi'][0];
-                    }
-                }
-            }
-        }
+if (!function_exists('smartairnet_get_active_node_id')) {
+    require_once __DIR__ . '/../config/nodes.php';
+}
+$active_node_id = '2';
+$is_node_2 = true;
+$active_live_subtab = ((isset($_GET['tab']) && $_GET['tab'] === 'weather') || (isset($_GET['subtab']) && $_GET['subtab'] === 'weather')) ? 'weather' : 'aqi';
+
+// Load Node 2 configuration if not already available
+if (!isset($node_config) || empty($node_config) || !is_array($node_config)) {
+    if (function_exists('smartairnet_get_node_config')) {
+        $node_config = smartairnet_get_node_config('2');
+    }
+    if (empty($node_config) && file_exists(__DIR__ . '/config.php')) {
+        $node_config = require __DIR__ . '/config.php';
     }
 }
 
-// Fallback to cookie if server disk cache was flushed
-if ($init_bulk === null && !empty($_COOKIE['aqi_last_hero'])) {
-    $c = @json_decode(urldecode($_COOKIE['aqi_last_hero']), true);
-    if ($c && !empty($c['aqi'])) {
-        $init_bulk = [
-            'aqi' => [
-                'cpcb_aqi' => $c['aqi'],
-                'pm25' => $c['pm25'] ?? null,
-                'pm10' => $c['pm10'] ?? null,
-                'timestamp' => $c['timestamp'] ?? date('c'),
-            ]
-        ];
-    }
-}
-
-// AQI pre-calculated fields matching the exact 6 tiers with high light-and-dark gradient contrast
+// AQI pre-calculated fields for Node 2 (Station 2 Standby)
 $init_aqi_val = '--';
-$init_aqi_label = 'Moderate';
-$init_aqi_accent = '#ca8a04';
-$init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)';
-$init_aqi_border = 'rgba(202, 138, 4, 0.35)';
-$init_aqi_shadow = 'rgba(234, 179, 8, 0.20)';
-$init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
-$init_aqi_badge_border = 'rgba(202, 138, 4, 0.38)';
-$init_aqi_badge_text = '#854d0e';
-$init_scale_pct = '25%';
+$init_aqi_label = 'Standby';
+$init_aqi_accent = '#94a3b8';
+$init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)';
+$init_aqi_border = 'rgba(148, 163, 184, 0.35)';
+$init_aqi_shadow = 'rgba(148, 163, 184, 0.15)';
+$init_aqi_badge_bg = 'rgba(255, 255, 255, 0.85)';
+$init_aqi_badge_border = 'rgba(148, 163, 184, 0.38)';
+$init_aqi_badge_text = '#64748b';
+$init_scale_pct = '0%';
 $init_pm25 = '--';
 $init_pm10 = '--';
 
-if (!empty($init_bulk['aqi'])) {
-    $aqi_d = $init_bulk['aqi'];
-    if (isset($aqi_d[0]) && is_array($aqi_d[0])) $aqi_d = $aqi_d[0];
-    $v = isset($aqi_d['cpcb_aqi']) ? (int)round($aqi_d['cpcb_aqi']) : (isset($aqi_d['aqi_info']['value']) ? (int)round($aqi_d['aqi_info']['value']) : null);
-    if ($v !== null) {
-        $init_aqi_val = (string)$v;
-        if ($v <= 50) {
-            $init_aqi_label = 'Good';
-            $init_aqi_accent = '#16a34a';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)';
-            $init_aqi_border = 'rgba(22, 163, 74, 0.35)';
-            $init_aqi_shadow = 'rgba(34, 197, 94, 0.22)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
-            $init_aqi_badge_border = 'rgba(22, 163, 74, 0.35)';
-            $init_aqi_badge_text = '#15803d';
-            $init_scale_pct = round(max(2, ($v / 50) * 16.66), 2) . '%';
-        } elseif ($v <= 100) {
-            $init_aqi_label = 'Moderate';
-            $init_aqi_accent = '#ca8a04';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)';
-            $init_aqi_border = 'rgba(202, 138, 4, 0.35)';
-            $init_aqi_shadow = 'rgba(234, 179, 8, 0.20)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.75)';
-            $init_aqi_badge_border = 'rgba(202, 138, 4, 0.38)';
-            $init_aqi_badge_text = '#854d0e';
-            $init_scale_pct = round(16.66 + (($v - 50) / 50) * 16.67, 2) . '%';
-        } elseif ($v <= 200) {
-            $init_aqi_label = 'Poor';
-            $init_aqi_accent = '#ea580c';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)';
-            $init_aqi_border = 'rgba(234, 88, 12, 0.38)';
-            $init_aqi_shadow = 'rgba(249, 115, 22, 0.22)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
-            $init_aqi_badge_border = 'rgba(234, 88, 12, 0.38)';
-            $init_aqi_badge_text = '#c2410c';
-            $init_scale_pct = round(33.33 + (($v - 100) / 100) * 16.67, 2) . '%';
-        } elseif ($v <= 300) {
-            $init_aqi_label = 'Unhealthy';
-            $init_aqi_accent = '#e11d48';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)';
-            $init_aqi_border = 'rgba(225, 29, 72, 0.38)';
-            $init_aqi_shadow = 'rgba(225, 29, 72, 0.22)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
-            $init_aqi_badge_border = 'rgba(225, 29, 72, 0.38)';
-            $init_aqi_badge_text = '#9f1239';
-            $init_scale_pct = round(50 + (($v - 200) / 100) * 16.66, 2) . '%';
-        } elseif ($v <= 400) {
-            $init_aqi_label = 'Severe';
-            $init_aqi_accent = '#9333ea';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #faf5ff 22%, #f3e8ff 48%, #e9d5ff 72%, #c084fc 90%, #9333ea 100%)';
-            $init_aqi_border = 'rgba(147, 51, 234, 0.38)';
-            $init_aqi_shadow = 'rgba(147, 51, 234, 0.22)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
-            $init_aqi_badge_border = 'rgba(147, 51, 234, 0.38)';
-            $init_aqi_badge_text = '#6b21a8';
-            $init_scale_pct = round(66.66 + (($v - 300) / 100) * 16.67, 2) . '%';
-        } else {
-            $init_aqi_label = 'Hazardous';
-            $init_aqi_accent = '#b91c1c';
-            $init_aqi_bg = 'linear-gradient(155deg, #ffffff 0%, #fef2f2 22%, #fee2e2 48%, #fca5a5 72%, #f87171 90%, #b91c1c 100%)';
-            $init_aqi_border = 'rgba(185, 28, 28, 0.40)';
-            $init_aqi_shadow = 'rgba(185, 28, 28, 0.25)';
-            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.72)';
-            $init_aqi_badge_border = 'rgba(185, 28, 28, 0.40)';
-            $init_aqi_badge_text = '#881337';
-            $init_scale_pct = round(min(98, 83.33 + min(1, ($v - 400) / 100) * 15.67), 2) . '%';
+// Weather pre-calculated fields - Node 2 defaults to Standby
+$w_d = [];
+$init_weather_temp = '--';
+$init_weather_hum = '--%';
+$init_weather_rain = isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '--';
+$init_weather_wind = isset($w_d['wind_speed']) && is_numeric($w_d['wind_speed']) ? number_format((float)$w_d['wind_speed'], 1) . ' km/h' : '--';
+$init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) . ' m/s' : '--';
+
+if (!function_exists('smartairnet_parse_wind_direction')) {
+    function smartairnet_parse_wind_direction($raw) {
+        if ($raw === null || $raw === '' || $raw === '--') {
+            return null;
         }
-        if (isset($aqi_d['pm25'])) $init_pm25 = is_numeric($aqi_d['pm25']) ? (string)round((float)$aqi_d['pm25']) : (string)$aqi_d['pm25'];
-        elseif (isset($aqi_d['pm2.5'])) $init_pm25 = is_numeric($aqi_d['pm2.5']) ? (string)round((float)$aqi_d['pm2.5']) : (string)$aqi_d['pm2.5'];
-        if (isset($aqi_d['pm10'])) $init_pm10 = is_numeric($aqi_d['pm10']) ? (string)round((float)$aqi_d['pm10']) : (string)$aqi_d['pm10'];
+        $cardinals = [
+            'n' => 0, 'north' => 0,
+            'nne' => 22.5, 'north-northeast' => 22.5, 'north northeast' => 22.5,
+            'ne' => 45, 'northeast' => 45,
+            'ene' => 67.5, 'east-northeast' => 67.5, 'east northeast' => 67.5,
+            'e' => 90, 'east' => 90,
+            'ese' => 112.5, 'east-southeast' => 112.5, 'east southeast' => 112.5,
+            'se' => 135, 'southeast' => 135,
+            'sse' => 157.5, 'south-southeast' => 157.5, 'south southeast' => 157.5,
+            's' => 180, 'south' => 180,
+            'ssw' => 202.5, 'south-southwest' => 202.5, 'south southwest' => 202.5,
+            'sw' => 225, 'southwest' => 225,
+            'wsw' => 247.5, 'west-southwest' => 247.5, 'west southwest' => 247.5,
+            'w' => 270, 'west' => 270,
+            'wnw' => 292.5, 'west-northwest' => 292.5, 'west northwest' => 292.5,
+            'nw' => 315, 'northwest' => 315,
+            'nnw' => 337.5, 'north-northwest' => 337.5, 'north northwest' => 337.5
+        ];
+        $dirs = ['n','nne','ne','ene','e','ese','se','sse','s','ssw','sw','wsw','w','wnw','nw','nnw'];
+        $str = trim(strtolower((string)$raw));
+        if (preg_match('/(-?\d+(?:\.\d+)?)/', $str, $m)) {
+            $deg = (float)$m[1];
+            $deg = fmod($deg, 360);
+            if ($deg < 0) $deg += 360;
+            $deg_round = (int)round($deg);
+            $card = $dirs[(int)round($deg / 22.5) % 16];
+            return [
+                'deg' => $deg_round,
+                'cardinal' => $card,
+                'display' => "{$deg_round}° {$card}"
+            ];
+        }
+        $clean = preg_replace('/[^a-z\- ]/', '', $str);
+        if (isset($cardinals[$clean])) {
+            $deg = $cardinals[$clean];
+            $deg_round = (int)round($deg);
+            $card = $dirs[(int)round($deg / 22.5) % 16];
+            return [
+                'deg' => $deg_round,
+                'cardinal' => $card,
+                'display' => "{$deg_round}° {$card}"
+            ];
+        }
+        return null;
     }
 }
 
-// Weather pre-calculated fields
-$w_d = !empty($init_bulk['weather']) ? $init_bulk['weather'] : [];
-$init_weather_temp = isset($w_d['temperature']) && is_numeric($w_d['temperature']) ? number_format((float)$w_d['temperature'], 1) : '--';
-$init_weather_hum = isset($w_d['humidity']) && is_numeric($w_d['humidity']) ? number_format((float)$w_d['humidity'], 1) . '%' : '--%';
-$init_weather_rain = isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '-- mm';
-$init_weather_wind = isset($w_d['wind_speed']) && is_numeric($w_d['wind_speed']) ? number_format((float)$w_d['wind_speed'], 1) . ' km/h' : '-- km/h';
-$init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) : '--';
-
-$init_weather_dir = '--';
-if (!empty($w_d['wind_direction'])) {
-    if (is_numeric($w_d['wind_direction'])) {
-        $deg = (int)round((float)$w_d['wind_direction']) % 360;
-        $dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-        $idx = (int)round($deg / 22.5) % 16;
-        $init_weather_dir = $dirs[$idx] . " ({$deg}°)";
-    } else {
-        $init_weather_dir = (string)$w_d['wind_direction'];
-    }
+$parsed_wind = !empty($w_d['wind_direction']) ? smartairnet_parse_wind_direction($w_d['wind_direction']) : null;
+if ($parsed_wind) {
+    $compass_angle = $parsed_wind['deg'];
+    $init_weather_cardinal = $parsed_wind['cardinal'];
+    $init_weather_dir_deg = $parsed_wind['display'];
+    $init_weather_dir = $parsed_wind['display'];
+    $has_wind_dir = true;
+} else {
+    $compass_angle = 0;
+    $init_weather_cardinal = '--';
+    $init_weather_dir_deg = '--';
+    $init_weather_dir = '--';
+    $has_wind_dir = false;
 }
 
-$init_weather_today_rain = isset($init_bulk['today_rain_total']) ? number_format((float)$init_bulk['today_rain_total'], 1) . ' mm' : (isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '0.0 mm');
+// Pressure & UV Index for Node 2 Meteorological Dashboard
+$has_pressure = isset($w_d['pressure']) && is_numeric($w_d['pressure']);
+$init_weather_pressure = $has_pressure ? round((float)$w_d['pressure']) . ' mb' : '--';
+$pressure_num = $has_pressure ? (float)$w_d['pressure'] : null;
+$pressure_pct = $has_pressure ? max(5, min(95, round((($pressure_num - 995) / (1025 - 995)) * 100))) : 50;
+$pressure_angle = $has_pressure ? round((($pressure_num - 1000) / 25) * 60) : 0;
+
+$has_uv = isset($w_d['uv_index']) && is_numeric($w_d['uv_index']);
+if ($has_uv) {
+    $init_weather_uv_num = number_format((float)$w_d['uv_index'], 1);
+    $uv_f = (float)$init_weather_uv_num;
+    if ($uv_f < 3) $uv_level = 'Low';
+    elseif ($uv_f < 6) $uv_level = 'Moderate';
+    elseif ($uv_f < 8) $uv_level = 'High';
+    elseif ($uv_f < 11) $uv_level = 'Very High';
+    else $uv_level = 'Extreme';
+    $init_weather_uv_display = "{$init_weather_uv_num} {$uv_level}";
+    $uv_pct = max(5, min(95, round(($uv_f / 11) * 100)));
+} else {
+    $init_weather_uv_num = '--';
+    $init_weather_uv_display = '--';
+    $uv_pct = 50;
+}
+
+// Soil Parameters for Node 2 Agrimet & Environmental Telemetry
+$has_soil_temp = isset($w_d['soil_temperature']) && is_numeric($w_d['soil_temperature']);
+$init_soil_temp = $has_soil_temp ? number_format((float)$w_d['soil_temperature'], 1) . ' °C' : '--';
+$soil_temp_num = $has_soil_temp ? (float)$w_d['soil_temperature'] : null;
+$soil_temp_pct = $has_soil_temp ? max(5, min(95, round((($soil_temp_num - 10) / (40 - 10)) * 100))) : 50;
+
+$has_soil_hum = isset($w_d['soil_humidity']) && is_numeric($w_d['soil_humidity']);
+$init_soil_hum = $has_soil_hum ? number_format((float)$w_d['soil_humidity'], 1) . '%' : '--';
+$soil_hum_num = $has_soil_hum ? (float)$w_d['soil_humidity'] : null;
+$soil_hum_pct = $has_soil_hum ? max(5, min(95, round($soil_hum_num))) : 50;
+
+$has_soil_ph = isset($w_d['soil_ph']) && is_numeric($w_d['soil_ph']);
+$init_soil_ph = $has_soil_ph ? number_format((float)$w_d['soil_ph'], 2) : '--';
+$soil_ph_num = $has_soil_ph ? (float)$w_d['soil_ph'] : null;
+$soil_ph_pct = $has_soil_ph ? max(5, min(95, round((($soil_ph_num - 3.0) / (10.0 - 3.0)) * 100))) : 50;
+$soil_ph_status = $has_soil_ph ? (($soil_ph_num < 6.0) ? 'Slightly Acidic' : (($soil_ph_num > 7.5) ? 'Slightly Alkaline' : 'Optimal Neutral')) : '--';
+
+$init_weather_today_rain = isset($init_bulk['today_rain_total']) ? number_format((float)$init_bulk['today_rain_total'], 1) . ' mm' : (isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '--');
+
+// Determine initial dynamic weather backdrop theme (Node 2)
+// User rule: Cloud animation if temperature is low and humidity is high, else sunny bright animation
+$t_val = (isset($w_d['temperature']) && is_numeric($w_d['temperature'])) ? (float)$w_d['temperature'] : null;
+$h_val = (isset($w_d['humidity']) && is_numeric($w_d['humidity'])) ? (float)$w_d['humidity'] : null;
+$r_val = (isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge'])) ? (float)$w_d['rain_gauge'] : 0.0;
+
+$is_cloudy_initial = true; // Default in standby mode matches user reference screenshot
+if (isset($_GET['weather_mode'])) {
+    $is_cloudy_initial = ($_GET['weather_mode'] !== 'sunny');
+} elseif ($r_val > 0) {
+    $is_cloudy_initial = true;
+} elseif ($t_val !== null && $h_val !== null) {
+    $is_cloudy_initial = (($t_val <= 26 && $h_val >= 65) || $t_val <= 23 || $h_val >= 85);
+}
 
 // Weather Min / Max calculation from history
 $init_weather_min = '--';
@@ -497,35 +498,38 @@ $init_border_colors = [
     font-size: 10px !important;
   }
   .weather-metrics-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
+    display: flex !important;
     gap: 4px !important;
     padding-top: 4px !important;
     border-top: 1px solid rgba(226, 232, 240, 0.75) !important;
+    width: 100% !important;
   }
   .weather-micro-card {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 6px !important;
-    padding: 2px 3px !important;
-    text-align: center !important;
+    border-radius: 8px !important;
+    padding: 3px 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
   }
   .weather-micro-label {
-    font-size: 8px !important;
+    font-size: 9px !important;
     font-weight: 700 !important;
     color: #64748b !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 2px !important;
-    margin-bottom: 1px !important;
+    gap: 3px !important;
+    margin-bottom: 0 !important;
   }
   .weather-micro-label svg {
-    width: 9px !important;
-    height: 9px !important;
+    width: 10px !important;
+    height: 10px !important;
   }
-  #weather-box-humidity, #weather-box-rain, #weather-box-wind {
-    font-size: 11px !important;
+  #weather-box-humidity {
+    font-size: 12px !important;
     font-weight: 800 !important;
     line-height: 1.1 !important;
   }
@@ -850,14 +854,706 @@ $init_border_colors = [
   0% { transform: scale(0.94); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   ANIMATED METEOROLOGICAL WEATHER DASHBOARD (NODE 2)
+   Matches Reference: Compass, Windmill, Gust Tree, Rain, Pressure, UV
+   ───────────────────────────────────────────────────────────── */
+.weather-card-dark {
+  background: #334155;
+  background: linear-gradient(135deg, rgba(62, 75, 88, 0.88) 0%, rgba(40, 50, 62, 0.92) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  padding: 22px 24px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.30);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.weather-card-dark:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -4px rgba(15, 23, 42, 0.38);
+}
+.weather-card-uv {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.22) 0%, rgba(20, 83, 45, 0.32) 100%),
+              linear-gradient(135deg, rgba(62, 75, 88, 0.90) 0%, rgba(40, 50, 62, 0.94) 100%) !important;
+}
+
+.weather-grid-params {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* Animations */
+@keyframes spinTurbine {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.wind-turbine-blades {
+  animation: spinTurbine 3s linear infinite;
+  transform-origin: 30px 35px;
+}
+
+@keyframes windGustBlowTree {
+  0%, 100% { transform: rotate(0deg) skewX(0deg); }
+  25% { transform: rotate(2deg) skewX(-1.5deg); }
+  50% { transform: rotate(5.5deg) skewX(-3.5deg); }
+  75% { transform: rotate(2.5deg) skewX(-1.8deg); }
+}
+.swaying-tree {
+  animation: windGustBlowTree 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  transform-origin: 102px 58px;
+}
+
+@keyframes canopyFlutter {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  40% { transform: scale(1.03, 0.97) rotate(1.5deg); }
+  70% { transform: scale(1.05, 0.95) rotate(2deg); }
+}
+.tree-canopy-group {
+  animation: canopyFlutter 1.8s ease-in-out infinite;
+  transform-origin: 105px 36px;
+}
+
+/* ══ Dynamic Twister Whirlwind Animations (Matches Reference Tornado Icon) ══ */
+@keyframes twisterFunnelSway {
+  0%, 100% {
+    transform: rotate(0deg) skewX(0deg);
+  }
+  25% {
+    transform: rotate(-4.5deg) skewX(3.5deg) translateX(-2px);
+  }
+  70% {
+    transform: rotate(4deg) skewX(-3deg) translateX(2.5px);
+  }
+}
+
+@keyframes vortexBandSpin {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -120;
+  }
+}
+
+@keyframes vortexBandPulse {
+  0%, 100% {
+    transform: scaleX(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scaleX(0.96) scaleY(1.03);
+    opacity: 1;
+  }
+}
+
+@keyframes debrisOrbitUp1 {
+  0% {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-10px, -12px) scale(0.9);
+  }
+  60% {
+    opacity: 0.95;
+    transform: translate(12px, -28px) scale(1.1);
+  }
+  90% {
+    opacity: 0.7;
+    transform: translate(-14px, -45px) scale(0.8);
+  }
+  100% {
+    transform: translate(8px, -58px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes debrisOrbitUp2 {
+  0% {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+    transform: translate(12px, -10px) scale(0.95);
+  }
+  65% {
+    opacity: 0.95;
+    transform: translate(-12px, -26px) scale(1.05);
+  }
+  85% {
+    opacity: 0.8;
+    transform: translate(14px, -42px) scale(0.85);
+  }
+  100% {
+    transform: translate(-8px, -55px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.twister-container {
+  animation: twisterFunnelSway 1.9s ease-in-out infinite;
+  transform-origin: 50px 75px;
+}
+
+.vortex-band {
+  animation: vortexBandSpin 1.4s linear infinite, vortexBandPulse 2.1s ease-in-out infinite;
+  stroke-dasharray: 24 8 16 6;
+}
+.band-1 { animation-duration: 1.1s, 1.8s; }
+.band-2 { animation-duration: 1.25s, 1.9s; animation-delay: -0.2s; }
+.band-3 { animation-duration: 1.35s, 2.0s; animation-delay: -0.4s; }
+.band-4 { animation-duration: 1.45s, 2.1s; animation-delay: -0.6s; }
+.band-5 { animation-duration: 1.55s, 2.2s; animation-delay: -0.8s; }
+.band-6 { animation-duration: 1.65s, 2.3s; animation-delay: -1.0s; }
+
+.deb-orbit-1 {
+  animation: debrisOrbitUp1 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.deb-orbit-2 {
+  animation: debrisOrbitUp2 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite 0.4s;
+}
+.deb-orbit-3 {
+  animation: debrisOrbitUp1 1.7s cubic-bezier(0.4, 0, 0.2, 1) infinite 0.85s;
+}
+.deb-orbit-4 {
+  animation: debrisOrbitUp2 1.9s cubic-bezier(0.4, 0, 0.2, 1) infinite 1.2s;
+}
+
+@keyframes leafFlutterFly {
+  0% { transform: translate(0, 0) rotate(0deg) scale(0.9); opacity: 0; }
+  15% { opacity: 1; }
+  50% { transform: translate(10px, -2px) rotate(100deg) scale(1); opacity: 0.95; }
+  85% { transform: translate(20px, 4px) rotate(220deg) scale(0.95); opacity: 0.8; }
+  100% { transform: translate(30px, 8px) rotate(340deg) scale(0.7); opacity: 0; }
+}
+.flying-leaf {
+  animation: leafFlutterFly 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+.flying-leaf-1 { animation-delay: 0s; }
+.flying-leaf-2 { animation-delay: 0.35s; }
+.flying-leaf-3 { animation-delay: 0.7s; }
+.flying-leaf-4 { animation-delay: 1.05s; }
+.flying-leaf-5 { animation-delay: 1.4s; }
+.flying-leaf-6 { animation-delay: 1.75s; }
+
+@keyframes cloudFloatLeftRight {
+  0% { transform: translateX(0px); }
+  25% { transform: translateX(6px) translateY(-1px); }
+  50% { transform: translateX(0px); }
+  75% { transform: translateX(-6px) translateY(1px); }
+  100% { transform: translateX(0px); }
+}
+.floating-rain-cloud {
+  animation: cloudFloatLeftRight 4.5s ease-in-out infinite;
+}
+
+@keyframes sunPuffGlow {
+  0%, 100% { transform: scale(1); opacity: 0.92; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+.sun-puff-behind {
+  animation: sunPuffGlow 3.2s ease-in-out infinite;
+  transform-origin: 50px 20px;
+}
+
+@keyframes rainDropFall {
+  0% { transform: translateY(-4px); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: translateY(14px); opacity: 0; }
+}
+.drop-1 { animation: rainDropFall 1.1s linear infinite; }
+.drop-2 { animation: rainDropFall 1.1s linear infinite 0.35s; }
+.drop-3 { animation: rainDropFall 1.1s linear infinite 0.7s; }
+
+@keyframes uvGlowPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(244, 63, 94, 0.8), 0 0 12px rgba(244, 63, 94, 0.4); }
+  50% { box-shadow: 0 0 12px rgba(244, 63, 94, 1), 0 0 20px rgba(244, 63, 94, 0.7); }
+}
+.uv-pulse-dot {
+  animation: uvGlowPulse 2.2s ease-in-out infinite;
+}
+
+@media (max-width: 900px) {
+  .weather-row-top {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .weather-grid-params {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  .weather-card-dark {
+    padding: 16px 18px !important;
+    border-radius: 18px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Strict mobile layout: eliminate all horizontal overflow */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+  }
+  #app-layout-root,
+  main,
+  #page-content-wrapper,
+  .live-page-root,
+  .live-content-container,
+  #node2-view-weather {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Mobile header safe spacing */
+  header {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    gap: 4px !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  #mobile-top-bar {
+    gap: 4px !important;
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
+  }
+  #mobile-brand-overview {
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
+    gap: 6px !important;
+  }
+  #mobile-user-initial-tag {
+    display: none !important;
+  }
+
+  /* Sub-navigation selector pills on mobile */
+  #node2-live-subnav {
+    width: 100% !important;
+    padding: 0 4px !important;
+    box-sizing: border-box !important;
+  }
+  #node2-live-subnav > div {
+    width: 100% !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+  #node2-tab-aqi, #node2-tab-weather {
+    padding: 7px 8px !important;
+    font-size: 11.5px !important;
+    min-height: 36px !important;
+    gap: 4px !important;
+  }
+
+  /* Title font on mobile */
+  .live-page-title {
+    font-size: 17px !important;
+  }
+
+  /* Row 1: Direction & Speed (~60%) + Gust (~40%) Side-by-Side */
+  .weather-row-top {
+    display: grid !important;
+    grid-template-columns: 1.55fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Parameter Grid: 6 cards in 2 equal columns */
+  .weather-grid-params {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .weather-card-dark {
+    padding: 11px 12px !important;
+    border-radius: 18px !important;
+    min-height: 128px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
+  /* Card 1: Side-by-Side Compass + Stacked Metrics (Direction on top, Wind Speed on bottom) */
+  .weather-card-wind {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding: 10px 10px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+  }
+  .compass-widget-wrap {
+    width: 54px !important;
+    height: 54px !important;
+    flex-shrink: 0 !important;
+  }
+  .weather-wind-metrics-group {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+  .weather-wind-divider {
+    display: none !important;
+  }
+  .wind-turbine-wrap {
+    display: none !important;
+  }
+  .weather-metric-block {
+    display: block !important;
+    margin: 0 !important;
+  }
+  .weather-metric-large {
+    font-size: 17px !important;
+    line-height: 1.1 !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+  }
+  .weather-metric-label {
+    font-size: 10.5px !important;
+    color: #94a3b8 !important;
+    margin-top: 1px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Card 2: Gust Speed */
+  .weather-card-gust {
+    padding: 10px 10px !important;
+    text-align: center !important;
+  }
+  .weather-gust-graphic-wrap {
+    height: 44px !important;
+  }
+  .weather-gust-val {
+    font-size: 17px !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Parameter cards typography & sizing */
+  .weather-card-number {
+    font-size: 18px !important;
+    line-height: 1.1 !important;
+  }
+  .weather-precip-icon-wrap,
+  .weather-pressure-dial-wrap,
+  .weather-soil-icon-wrap {
+    width: 34px !important;
+    height: 34px !important;
+  }
+  .weather-card-divider {
+    margin: 8px 0 6px 0 !important;
+  }
+  .weather-metric-note {
+    font-size: 9.5px !important;
+    line-height: 1.25 !important;
+    margin-top: 6px !important;
+    color: #94a3b8 !important;
+  }
+
+  /* Weather coords header */
+  .weather-coords-header {
+    gap: 5px !important;
+    margin-top: 2px !important;
+  }
+  .weather-coords-header > div {
+    padding: 3px 10px !important;
+    font-size: 10.5px !important;
+  }
+
+  /* Weather Telemetry Table Container & Scroll on mobile */
+  #live-weather-table-container {
+    border-radius: 16px !important;
+    margin-top: 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  #live-weather-table-container > div:last-child {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+  }
+  #live-weather-table-container table {
+    min-width: 680px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NODE 2 ATMOSPHERIC DYNAMIC WEATHER BACKDROP (FULL-BLEED)
+   Matches Reference: Moving Sunset Clouds + Radiant Sky
+   ═══════════════════════════════════════════════════════════════ */
+.node2-weather-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition: opacity 0.8s ease;
+  background-color: #3882c2;
+}
+
+body.weather-backdrop-active {
+  background-color: #3882c2 !important;
+}
+
+body.weather-backdrop-active #app-layout-root,
+.weather-backdrop-active #app-layout-root {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Infinite GPU-accelerated horizontal cloud drift */
+@keyframes continuousCloudDrift {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.cloud-drift-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: 400vw;
+  height: 100%;
+  animation: continuousCloudDrift 130s linear infinite;
+  will-change: transform;
+}
+
+.cloud-drift-panel {
+  width: 100vw;
+  height: 100%;
+  flex-shrink: 0;
+  background-image: url('assets/sunset_clouds_backdrop.jpg');
+  background-size: cover;
+  background-position: center bottom;
+}
+
+.cloud-drift-panel.mirrored {
+  transform: scaleX(-1);
+}
+
+.sky-ambient-vignette {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 110% 75% at 50% 12%, rgba(20, 60, 120, 0.10) 0%, rgba(0, 0, 0, 0) 55%),
+              linear-gradient(180deg, rgba(15, 23, 42, 0.12) 0%, rgba(0, 0, 0, 0) 35%, rgba(245, 158, 11, 0.08) 85%, rgba(249, 115, 22, 0.16) 100%);
+}
+
+#weather-sky-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   METEOROLOGICAL & AIR QUALITY TREND GRAPH (MATCHING REFERENCE)
+   ═══════════════════════════════════════════════════════════════ */
+.trend-graph-card {
+  background: #252a37;
+  background: linear-gradient(135deg, #2b3040 0%, #1e2230 100%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 24px;
+  padding: 22px 26px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.28);
+  color: #ffffff;
+  position: relative;
+  overflow: visible;
+  margin-top: 10px;
+}
+.trend-graph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.trend-card-title {
+  font-size: clamp(17px, 2vw, 21px);
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trend-controls-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trend-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  position: relative;
+}
+.trend-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.trend-date-input-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 5;
+}
+.trend-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  min-width: 205px;
+  background: #1e2230;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  padding: 6px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  animation: modal-pop 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.trend-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.trend-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.trend-dropdown-item.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+.trend-dropdown-item .trend-check {
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.30);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: transparent;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.trend-dropdown-item.active .trend-check {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+.trend-legend-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  color: #cbd5e1;
+  font-family: var(--font-sans);
+}
+.trend-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+}
+.trend-legend-swatch-solid {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+}
+.trend-legend-swatch-dotted {
+  width: 16px;
+  height: 0px;
+  border-top: 2px dashed rgba(255, 255, 255, 0.65);
+}
 </style>
 
-<div class="live-page-root p-2.5 sm:p-6" style="position: relative; display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out; padding-top: 14px;">
-  <!-- Dynamic Ambient Canvas (Enhanced Bubbles & Wind Streaks) -->
-  <canvas id="live-ambient-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.95; width: 100%; height: 100%;"></canvas>
+  <!-- ═══════════════════════════════════════════════════════════════
+       ATMOSPHERIC DYNAMIC WEATHER BACKDROP (NODE 2)
+       Matches Reference: Rolling Green Hills + Dynamic Animated Sky
+       (Drifting Cloud Animation if Temp Low & Hum High, else Sunny Bright)
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="node2-weather-backdrop" class="node2-weather-backdrop <?= $is_cloudy_initial ? 'cloudy' : 'sunny' ?>" style="<?= ($is_node_2 && $active_live_subtab !== 'weather') ? 'display: none;' : '' ?>" aria-hidden="true">
+    <!-- Seamless Infinite Horizontal Drifting Panoramic Cloud Track -->
+    <div class="cloud-drift-track">
+      <div class="cloud-drift-panel"></div>
+      <div class="cloud-drift-panel mirrored"></div>
+      <div class="cloud-drift-panel"></div>
+      <div class="cloud-drift-panel mirrored"></div>
+    </div>
+    <div class="sky-ambient-vignette"></div>
+    <canvas id="weather-sky-canvas"></canvas>
+  </div>
 
   <!-- Live Content Container -->
-  <div class="live-content-container" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: 100%;">
+  <div class="live-page-root live-content-container p-2 sm:p-6" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 1200px; margin: 0 auto; min-width: 0; box-sizing: border-box; overflow-x: hidden;">
 
 <!-- Offline Banner -->
 <div id="live-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
@@ -867,6 +1563,86 @@ $init_border_colors = [
   </div>
   <div id="live-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</div>
 </div>
+
+<?php if ($is_node_2): ?>
+  <!-- Instant Switcher Script to ensure 100% reliable click response -->
+  <script>
+  window.switchNode2LiveTab = function(tab) {
+      if (window.triggerHaptic) window.triggerHaptic('light');
+      const aqiView = document.getElementById('node2-view-aqi');
+      const weatherView = document.getElementById('node2-view-weather');
+      const btnAqi = document.getElementById('node2-tab-aqi');
+      const btnWeather = document.getElementById('node2-tab-weather');
+      const backdrop = document.getElementById('node2-weather-backdrop');
+
+      const activeCls = 'flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[42px]';
+      const inactiveCls = 'flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[42px]';
+
+      const layoutRoot = document.getElementById('app-layout-root');
+
+      if (tab === 'weather') {
+          if (aqiView) aqiView.style.display = 'none';
+          if (weatherView) weatherView.style.display = 'flex';
+          if (btnWeather) btnWeather.className = activeCls;
+          if (btnAqi) btnAqi.className = inactiveCls;
+          if (backdrop) backdrop.style.display = 'block';
+          document.body.classList.add('weather-backdrop-active');
+          if (layoutRoot) {
+              layoutRoot.style.setProperty('background', 'transparent', 'important');
+              layoutRoot.style.setProperty('background-image', 'none', 'important');
+          }
+          if (typeof initLiveAmbientCanvas === 'function') initLiveAmbientCanvas();
+      } else {
+          if (weatherView) weatherView.style.display = 'none';
+          if (aqiView) aqiView.style.display = 'flex';
+          if (btnAqi) btnAqi.className = activeCls;
+          if (btnWeather) btnWeather.className = inactiveCls;
+          if (backdrop) backdrop.style.display = 'none';
+          document.body.classList.remove('weather-backdrop-active');
+          if (layoutRoot) {
+              layoutRoot.style.removeProperty('background');
+              layoutRoot.style.removeProperty('background-image');
+          }
+          if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
+      }
+
+      try {
+          const url = new URL(window.location.href);
+          url.searchParams.set('tab', tab);
+          window.history.replaceState({ page: 'live', node: '2', tab: tab }, '', url.toString());
+      } catch (e) {}
+
+      if (window.lucide && lucide.createIcons) {
+          lucide.createIcons();
+      }
+  };
+
+  if (<?= json_encode($active_live_subtab === 'weather') ?>) {
+      document.body.classList.add('weather-backdrop-active');
+      const lr = document.getElementById('app-layout-root');
+      if (lr) {
+          lr.style.setProperty('background', 'transparent', 'important');
+          lr.style.setProperty('background-image', 'none', 'important');
+      }
+  }
+  </script>
+
+  <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather -->
+  <div class="flex items-center justify-center mb-1 w-full px-1" id="node2-live-subnav">
+    <div class="w-full sm:w-auto max-w-[340px] grid grid-cols-2 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
+      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
+        <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
+        <span>AQI Live</span>
+      </button>
+      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
+        <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
+        <span>Weather Live</span>
+      </button>
+    </div>
+  </div>
+<?php endif; ?>
+
+<div id="node2-view-aqi" style="<?= ($is_node_2 && $active_live_subtab === 'weather') ? 'display: none;' : 'display: flex;' ?> width: 100%; flex-direction: column; gap: 14px;">
 
   <!-- Page Header Titles -->
   <div style="display: flex; justify-content: center; align-items: center; text-align: center; width: 100%; margin-top: 10px; margin-bottom: 6px;">
@@ -910,15 +1686,15 @@ $init_border_colors = [
             <!-- Left: Live AQI & Big Value -->
             <div style="display: flex; flex-direction: column;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
-                <div id="status-dot-container" class="<?= $init_is_aqi_offline ? 'status-dot-offline' : 'status-dot-glowing' ?>" style="display: flex; align-items: center; gap: 7px; color: <?= $init_aqi_accent ?>;">
-                  <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background-color: <?= $init_is_aqi_offline ? 'rgba(148, 163, 184, 0.20)' : $init_aqi_accent . '33' ?>; color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; transition: background-color 0.5s ease, color 0.5s ease;">
-                    <span id="status-dot" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; color: <?= $init_is_aqi_offline ? '#94a3b8' : $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease, color 0.5s ease;"></span>
+                <div id="status-dot-container" class="<?= ($init_is_aqi_offline || $is_node_2) ? 'status-dot-offline' : 'status-dot-glowing' ?>" style="display: flex; align-items: center; gap: 7px; color: <?= $init_aqi_accent ?>;">
+                  <span id="status-dot-halo" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background-color: <?= ($init_is_aqi_offline || $is_node_2) ? 'rgba(148, 163, 184, 0.20)' : $init_aqi_accent . '33' ?>; color: <?= ($init_is_aqi_offline || $is_node_2) ? '#94a3b8' : $init_aqi_accent ?>; transition: background-color 0.5s ease, color 0.5s ease;">
+                    <span id="status-dot" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= ($init_is_aqi_offline || $is_node_2) ? '#94a3b8' : $init_aqi_accent ?>; color: <?= ($init_is_aqi_offline || $is_node_2) ? '#94a3b8' : $init_aqi_accent ?>; display: inline-block; transition: background-color 0.5s ease, color 0.5s ease;"></span>
                   </span>
-                  <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;"><?= $init_is_aqi_offline ? 'Cached AQI' : 'Live AQI' ?></span>
+                  <span id="hero-stream-text" style="font-size: 13px; font-weight: 700; color: #334155; font-family: var(--font-sans); letter-spacing: -0.01em;"><?= $is_node_2 ? 'Standby Mode' : ($init_is_aqi_offline ? 'Cached AQI' : 'Live AQI') ?></span>
                 </div>
                 <span id="hero-live-time-chip" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); color: #475569; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.9); padding: 1.5px 7px; border-radius: 6px; box-shadow: 0 1px 2px rgba(15,23,42,0.03);">
                   <i data-lucide="clock" id="hero-clock-icon" style="width: 11px; height: 11px; color: <?= $init_aqi_accent ?>;"></i>
-                  <span id="hero-latest-time"><?= htmlspecialchars($init_time_str) ?></span>
+                  <span id="hero-latest-time"><?= $is_node_2 ? 'Standby' : htmlspecialchars($init_time_str) ?></span>
                 </span>
               </div>
               <div style="display: flex; align-items: baseline; gap: 8px;">
@@ -983,7 +1759,7 @@ $init_border_colors = [
         </div>
 
         <!-- RIGHT COLUMN: Weather Box (Pinned to Far-Right Corner, Ultra-Sleek & Compact) -->
-        <div class="hero-weather-col flex flex-col justify-between w-full md:w-auto shrink-0" style="width: 100%; max-width: 320px; margin-left: auto; margin-right: 0;">
+        <div class="hero-weather-col flex flex-col justify-between w-full md:w-auto shrink-0" style="width: 100%; max-width: 250px; margin-left: auto; margin-right: 0;">
           <div id="weather-hero-box" style="background: rgba(255, 255, 255, 0.76); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 12px 14px; box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04); height: 100%; display: flex; flex-direction: column; justify-content: space-between; width: 100%;">
             
             <!-- Box Header -->
@@ -1014,30 +1790,15 @@ $init_border_colors = [
               </div>
             </div>
 
-            <!-- Micro Metrics Row (Humidity, Rainfall, Wind Speed) -->
-            <div class="weather-metrics-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-top: 8px; border-top: 1px solid rgba(203, 213, 225, 0.55);">
+            <!-- Micro Metrics Row (Humidity Only) -->
+            <div class="weather-metrics-grid" style="display: flex; padding-top: 8px; border-top: 1px solid rgba(203, 213, 225, 0.55); width: 100%;">
               <!-- Humidity -->
-              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 6px; text-align: center;">
-                <div class="weather-micro-label" style="font-size: 9.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 2.5px; margin-bottom: 1px;">
-                  <i data-lucide="droplets" style="width: 11px; height: 11px; color: #0284c7;"></i> Humidity
+              <div class="weather-micro-card" style="width: 100%; background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between;">
+                <div class="weather-micro-label" style="font-size: 11px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 5px;">
+                  <i data-lucide="droplets" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                  <span>Humidity</span>
                 </div>
-                <div id="weather-box-humidity" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_hum ?></div>
-              </div>
-
-              <!-- Rainfall -->
-              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 6px; text-align: center;">
-                <div class="weather-micro-label" style="font-size: 9.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 2.5px; margin-bottom: 1px;">
-                  <i data-lucide="cloud-rain" style="width: 11px; height: 11px; color: #0891b2;"></i> Rainfall
-                </div>
-                <div id="weather-box-rain" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_rain ?></div>
-              </div>
-
-              <!-- Wind Speed -->
-              <div class="weather-micro-card" style="background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 6px; text-align: center;">
-                <div class="weather-micro-label" style="font-size: 9.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 2.5px; margin-bottom: 1px;">
-                  <i data-lucide="wind" style="width: 11px; height: 11px; color: #6366f1;"></i> Wind
-                </div>
-                <div id="weather-box-wind" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_wind ?></div>
+                <div id="weather-box-humidity" style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: #0f172a;"><?= $init_weather_hum ?></div>
               </div>
             </div>
 
@@ -1048,109 +1809,20 @@ $init_border_colors = [
     </div>
   </div>
 
-  <!-- Instant Synchronous Hydration from LocalStorage (0ms Shield to guarantee zero flash/shift on mobile) -->
-  <script>
-  (function() {
-    try {
-      var raw = localStorage.getItem('aqi_last_known_hero');
-      if (!raw) return;
-      var h = JSON.parse(raw);
-      if (!h) return;
 
-      var card = document.getElementById('hero-card');
-      if (card && h.bg) {
-        card.style.background = h.bg;
-        if (h.border) card.style.borderColor = h.border;
-        if (h.shadow) card.style.boxShadow = '0 10px 30px ' + h.shadow + ', 0 1px 3px rgba(15,23,42,0.04)';
-      }
-      var valEl = document.getElementById('hero-aqi-val');
-      if (valEl && h.aqi) {
-        valEl.innerText = h.aqi;
-        if (h.accent) valEl.style.color = h.accent;
-      }
-      var labelEl = document.getElementById('hero-aqi-label');
-      if (labelEl && h.label) {
-        labelEl.innerText = h.label;
-        if (h.badgeText) labelEl.style.color = h.badgeText;
-      }
-      var badgeEl = document.getElementById('hero-aqi-badge');
-      if (badgeEl && h.badgeBg) {
-        badgeEl.style.background = h.badgeBg;
-        if (h.badgeBorder) badgeEl.style.borderColor = h.badgeBorder;
-      }
-      var dot = document.getElementById('status-dot');
-      if (dot && h.accent) {
-        dot.style.backgroundColor = h.accent;
-        dot.style.color = h.accent;
-      }
-      var dotHalo = document.getElementById('status-dot-halo');
-      if (dotHalo && h.accent) {
-        dotHalo.style.backgroundColor = h.accent + '33';
-        dotHalo.style.color = h.accent;
-      }
-      var statusContainer = document.getElementById('status-dot-container');
-      if (statusContainer && h.accent) {
-        statusContainer.style.color = h.accent;
-      }
-      var indicator = document.getElementById('hero-scale-indicator');
-      if (indicator && h.scalePct) {
-        indicator.style.left = h.scalePct;
-        if (h.accent) indicator.style.borderColor = h.accent;
-      }
-      var skyline = document.getElementById('hero-skyline-svg');
-      if (skyline && h.accent) {
-        skyline.style.fill = h.accent;
-      }
-      var pm25El = document.getElementById('hero-pm25');
-      if (pm25El && h.pm25) pm25El.innerText = h.pm25;
-      var pm10El = document.getElementById('hero-pm10');
-      if (pm10El && h.pm10) pm10El.innerText = h.pm10;
 
-      // Hydrate Weather fields if stored
-      if (h.weatherTemp) {
-        var wTemp = document.getElementById('weather-hero-temp');
-        if (wTemp) wTemp.innerText = h.weatherTemp;
-      }
-      if (h.weatherMax) {
-        var wMax = document.getElementById('weather-hero-temp-max');
-        if (wMax) wMax.innerText = h.weatherMax;
-      }
-      if (h.weatherMin) {
-        var wMin = document.getElementById('weather-hero-temp-min');
-        if (wMin) wMin.innerText = h.weatherMin;
-      }
-      if (h.weatherComfort) {
-        var wCom = document.getElementById('weather-comfort-badge');
-        if (wCom) wCom.innerText = h.weatherComfort;
-      }
-      if (h.weatherHum) {
-        var wHum = document.getElementById('weather-box-humidity');
-        if (wHum) wHum.innerText = h.weatherHum;
-      }
-      if (h.weatherRain) {
-        var wRain = document.getElementById('weather-box-rain');
-        if (wRain) wRain.innerText = h.weatherRain;
-      }
-      if (h.weatherWind) {
-        var wWind = document.getElementById('weather-box-wind');
-        if (wWind) wWind.innerText = h.weatherWind;
-      }
-    } catch(e) {}
-  })();
-  </script>
-
-  <!-- PARAMETERS GRID (Pollutants & Weather Telemetry) -->
+  <!-- PARAMETERS GRID (Air Quality Pollutants - 5 Criteria Parameters) -->
   <div style="margin-top: 14px;">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
       <div>
         <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; font-family: var(--font-sans);">
-          Environmental &amp; Air Quality Parameters
+          Air Quality Pollutants
         </h2>
       </div>
     </div>
 
-    <!-- 7 Parameter Cards Responsive Grid -->
-    <div class="pollutants-grid-responsive grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+    <!-- 5 Criteria Pollutant Cards Responsive Grid -->
+    <div class="pollutants-grid-responsive grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
       
       <!-- 1. PM2.5 -->
       <div id="card-box-pm25" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" style="border-left: 5px solid <?= $init_border_colors['pm25'] ?>;" onclick="openPollutantModal('pm25')">
@@ -1297,52 +1969,6 @@ $init_border_colors = [
         </div>
       </div>
 
-      <!-- 6. Wind Direction -->
-      <div id="card-box-dir" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-default shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden">
-        <div class="pollutant-card-top flex items-center justify-between w-full">
-          <div class="flex items-center gap-2">
-            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-sm sm:text-lg shrink-0">🧭</div>
-            <div class="pollutant-title-box">
-              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">Wind Direction</div>
-              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">Compass Heading</div>
-            </div>
-          </div>
-        </div>
-        <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
-          <div class="pollutant-val-wrap flex flex-col">
-            <div id="card-dir" class="font-mono text-base sm:text-xl font-extrabold text-teal-600 leading-tight truncate"><?= $init_weather_dir ?></div>
-            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">Degrees / Cardinal</div>
-          </div>
-          <div id="tag-dir" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="background-color: #ccfbf1; border: 1px solid #99f6e4; color: #0f766e;">
-            <span class="w-1.5 h-1.5 rounded-full" style="background-color: #0d9488;"></span>
-            <span>Live</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 7. Wind Gust -->
-      <div id="card-box-gust" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-default shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden">
-        <div class="pollutant-card-top flex items-center justify-between w-full">
-          <div class="flex items-center gap-2">
-            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center text-sm sm:text-lg shrink-0">🌪️</div>
-            <div class="pollutant-title-box">
-              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">Wind Gust</div>
-              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">Peak Velocity</div>
-            </div>
-          </div>
-        </div>
-        <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
-          <div class="pollutant-val-wrap flex flex-col">
-            <div id="card-gust" class="font-mono text-lg sm:text-2xl font-extrabold text-violet-600 leading-none"><?= $init_weather_gust ?></div>
-            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">km/h</div>
-          </div>
-          <div id="tag-gust" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1" style="background-color: #ede9fe; border: 1px solid #ddd6fe; color: #6d28d9;">
-            <span class="w-1.5 h-1.5 rounded-full" style="background-color: #7c3aed;"></span>
-            <span>Peak</span>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -1391,33 +2017,21 @@ $init_border_colors = [
 
         <div style="width: 100%; height: 250px; position: relative;">
           <canvas id="comparison-chart"></canvas>
-          <div id="comparison-chart-empty" style="display: none; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); color: #64748b; font-size: 13px;">
-            Loading comparison graph...
+          <div id="comparison-chart-empty" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); color: #64748b; font-size: 13px;">
+            <?= $is_node_2 ? 'Currently in standby mode. Chart active when live stream begins.' : 'Loading comparison graph...' ?>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- NETWORK READINGS & STATUS SECTION -->
+  <!-- NETWORK READINGS & STATUS SECTION (AQI Stream) -->
   <div style="margin-top: 14px;">
     <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
       <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
         <i data-lucide="table" style="width: 18px; height: 18px; color: #00bfa5;"></i>
-        <span>Network Readings &amp; Status</span>
+        <span>Air Quality Telemetry Records</span>
       </h2>
-      
-      <!-- Table Stream Segmented Toggle (Left: Air Quality, Right: Weather) -->
-      <div class="stream-toggle-wrap" style="display: inline-flex; align-items: center; background-color: #f1f5f9; padding: 3px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);">
-        <button type="button" id="stream-toggle-aqi" onclick="switchLiveTableStream('aqi')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(15,23,42,0.1); transition: all 0.2s ease; white-space: nowrap;">
-          <i data-lucide="wind" style="width: 13px; height: 13px; color: #00bfa5;"></i>
-          <span>Air Quality</span>
-        </button>
-        <button type="button" id="stream-toggle-weather" onclick="switchLiveTableStream('weather')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background-color: transparent; color: #64748b; box-shadow: none; transition: all 0.2s ease; white-space: nowrap;">
-          <i data-lucide="cloud-sun" style="width: 13px; height: 13px; color: #64748b;"></i>
-          <span>Weather</span>
-        </button>
-      </div>
     </div>
 
     <!-- AQI Telemetry Table Container -->
@@ -1444,39 +2058,7 @@ $init_border_colors = [
           <tbody id="live-table-body">
             <tr>
               <td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">
-                Loading stream...
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Weather Telemetry Table Container (Initially Hidden) -->
-    <div id="live-weather-table-container" style="display: none; background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); transition: opacity 0.2s ease;">
-      <!-- Mobile swipe indicator -->
-      <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
-        <span>👈 Swipe horizontally to view all weather parameters</span>
-        <span class="font-mono text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-bold">WEATHER STREAM</span>
-      </div>
-
-      <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 800px;">
-          <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-            <tr>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Temperature (°C)</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Humidity (%)</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Speed (km/h)</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Gust (km/h)</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Direction</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Rain Gauge (mm)</th>
-            </tr>
-          </thead>
-          <tbody id="weather-tbody">
-            <tr>
-              <td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">
-                Loading weather telemetry...
+                <?= $is_node_2 ? 'Currently in standby mode. No live telemetry recorded yet.' : 'Loading stream...' ?>
               </td>
             </tr>
           </tbody>
@@ -1579,60 +2161,554 @@ $init_border_colors = [
     </div>
   </div>
 
-  </div>
-</div>
+  </div> <!-- End #node2-view-aqi -->
 
-<?php if (!empty($init_bulk)): ?>
-<script>
-window.INITIAL_DATA = <?= json_encode($init_bulk, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
-</script>
-<?php endif; ?>
+  <?php if ($is_node_2): ?>
+  <!-- ═══════════════════════════════════════════════════════════════
+       NODE 2: DEDICATED LIVE WEATHER VIEW (STANDBY MODE)
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="node2-view-weather" style="<?= ($active_live_subtab === 'weather') ? 'display: flex;' : 'display: none;' ?> width: 100%; max-width: 100%; min-width: 0; flex-direction: column; gap: 14px; box-sizing: border-box;">
+    
+    <!-- Page Header Row (matching Node 1 weather header layout) -->
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 6px; margin-bottom: 12px; width: 100%;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #ffffff; text-shadow: 0 2px 10px rgba(15, 23, 42, 0.6); font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
+          Live Weather Conditions
+        </h1>
+        <span style="font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.9); color: #475569; border: 1px solid rgba(255, 255, 255, 0.7); padding: 2px 8px; border-radius: 999px; backdrop-filter: blur(8px); box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
+          Node 2 (Standby)
+        </span>
+      </div>
+
+      <div style="font-size: 12px; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
+        <span>Last Updated: <strong id="weather-latest-time" style="color: #ffffff; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.6);">--</strong></span>
+        <span id="weather-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background-color: rgba(255, 255, 255, 0.92); color: #64748b; border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px);">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #94a3b8;"></span>
+          <span>STANDBY</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         ANIMATED WEATHER DASHBOARD (Matches Reference Designs 1 & 2)
+         ═══════════════════════════════════════════════════════════════ -->
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 10px;">
+
+      <!-- ROW 1: Direction & Wind Speed (Wide Card) + Gust Speed Card -->
+      <div class="weather-row-top" style="display: grid; grid-template-columns: 1.85fr 1fr; gap: 16px;">
+
+        <!-- Card 1: Combined Direction & Wind Speed -->
+        <div class="weather-card-dark weather-card-wind" style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+          <!-- Left: Compass Widget -->
+          <div class="compass-widget-wrap" style="position: relative; width: 84px; height: 84px; flex-shrink: 0;">
+            <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+              <!-- Outer circle dashed ticks -->
+              <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.6" stroke-dasharray="2 3.5" />
+              <!-- 4 Cardinal ticks crossing the ring -->
+              <line x1="50" y1="29" x2="50" y2="38" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" />
+              <line x1="50" y1="62" x2="50" y2="71" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" />
+              <line x1="29" y1="50" x2="38" y2="50" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" />
+              <line x1="62" y1="50" x2="71" y2="50" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" />
+              <!-- Cardinal text N, E, S, W -->
+              <text x="50" y="17" font-size="8.5" font-weight="700" fill="#cbd5e1" text-anchor="middle" dominant-baseline="central">N</text>
+              <text x="83" y="50" font-size="8.5" font-weight="700" fill="#cbd5e1" text-anchor="middle" dominant-baseline="central">E</text>
+              <text x="50" y="83" font-size="8.5" font-weight="700" fill="#cbd5e1" text-anchor="middle" dominant-baseline="central">S</text>
+              <text x="17" y="50" font-size="8.5" font-weight="700" fill="#cbd5e1" text-anchor="middle" dominant-baseline="central">W</text>
+              <!-- Center circle disc -->
+              <circle cx="50" cy="50" r="18.5" fill="#607282" />
+              <text id="compass-cardinal-label" x="50" y="50.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="central" style="letter-spacing: -0.01em; font-family: var(--font-sans); text-transform: lowercase;"><?= htmlspecialchars(strtolower($init_weather_cardinal)) ?></text>
+              <!-- Rotating blue pointer arrow sitting on track between center disc and outer ticks -->
+              <g id="compass-needle-group" style="transform-origin: 50px 50px; transform: rotate(<?= $compass_angle ?>deg); <?= $has_wind_dir ? '' : 'display: none;' ?> transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                <polygon points="50,18 45.8,29.5 54.2,29.5" fill="#38bdf8" stroke="#38bdf8" stroke-width="0.8" stroke-linejoin="round" filter="drop-shadow(0 0 3px rgba(56, 189, 248, 0.75))" />
+              </g>
+            </svg>
+          </div>
+
+          <!-- Metrics Container: Row on desktop, vertical stacked column on mobile -->
+          <div class="weather-wind-metrics-group" style="display: flex; align-items: center; justify-content: space-between; flex: 1; gap: 18px; min-width: 0;">
+            <!-- Direction Text Block -->
+            <div class="weather-metric-block weather-dir-block">
+              <div id="card-dir-val" class="weather-metric-large" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= htmlspecialchars($init_weather_dir_deg) ?>
+              </div>
+              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-top: 4px;">
+                Direction
+              </div>
+            </div>
+
+            <!-- Divider (Desktop Only) -->
+            <div class="weather-wind-divider" style="width: 1px; height: 55px; background: rgba(255,255,255,0.14);"></div>
+
+            <!-- Animated Wind Turbine SVG (Desktop Only) -->
+            <div class="wind-turbine-wrap" style="width: 50px; height: 75px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 60 90" style="width: 100%; height: 100%; overflow: visible;">
+                <!-- Mast -->
+                <path d="M28 85 L29 36 L31 36 L32 85 Z" fill="#94a3b8" opacity="0.8" />
+                <path d="M24 85 L36 85" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" />
+                <!-- Nacelle -->
+                <circle cx="30" cy="35" r="4" fill="#e2e8f0" />
+                <!-- Rotating 3-blade rotor -->
+                <g class="wind-turbine-blades" style="transform-origin: 30px 35px;">
+                  <!-- Blade 1 -->
+                  <path d="M30 35 C28.5 24 28.5 10 30 4 C31.5 10 31.5 24 30 35" fill="#f8fafc" />
+                  <!-- Blade 2 -->
+                  <path d="M30 35 C39 40 50 47 57 51 C50 54 39 48 30 35" fill="#f8fafc" />
+                  <!-- Blade 3 -->
+                  <path d="M30 35 C21 40 10 47 3 51 C10 54 21 48 30 35" fill="#f8fafc" />
+                  <!-- Center green pivot dot -->
+                  <circle cx="30" cy="35" r="2.8" fill="#22c55e" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- Wind Speed Text Block -->
+            <div class="weather-metric-block weather-speed-block">
+              <div id="card-wind-val" class="weather-metric-large" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_weather_wind ?>
+              </div>
+              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-top: 4px;">
+                Wind Speed
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Gust Speed with Animated Swaying Tree in Wind (Matches Reference Design) -->
+        <div class="weather-card-dark weather-card-gust" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Graphic: Wind stream dashes & snowflakes + Swaying Autumn Tree with Flying Leaves -->
+          <div class="weather-gust-graphic-wrap" style="display: flex; align-items: center; justify-content: center; height: 75px; width: 100%;">
+            <svg viewBox="0 0 100 80" style="width: 100%; height: 100%; max-width: 140px; overflow: visible;">
+              <defs>
+                <!-- Gradient for main rotating bands: White highlight to Cyan glow to Slate outline -->
+                <linearGradient id="bandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#38bdf8" />
+                  <stop offset="25%" stop-color="#ffffff" />
+                  <stop offset="60%" stop-color="#e0f2fe" />
+                  <stop offset="85%" stop-color="#0284c7" />
+                  <stop offset="100%" stop-color="#38bdf8" />
+                </linearGradient>
+              </defs>
+
+              <!-- ══ Animated Funnel Body ══ -->
+              <g class="twister-container">
+                <!-- Translucent cone volume giving subtle 3D vortex depth without overhang -->
+                <path d="M 22 15 Q 36 45 46 67 Q 50 74 51 67 Q 62 45 78 15 Q 50 11 22 15 Z" fill="rgba(56, 189, 248, 0.08)" />
+
+                <!-- ── Top Rim (Tilted Elliptical Mouth) ── -->
+                <g transform="rotate(-8 50 14)">
+                  <!-- Outer Lip -->
+                  <ellipse class="vortex-band band-1" cx="50" cy="14" rx="30" ry="8" fill="none" stroke="url(#bandGrad)" stroke-width="3" stroke-linecap="round" />
+                  <!-- Inner Rim -->
+                  <ellipse cx="50" cy="14" rx="21" ry="5.5" fill="none" stroke="#ffffff" stroke-width="1.6" opacity="0.85" />
+                </g>
+
+                <!-- ── Tier 2 Band (Upper Funnel Ring) ── -->
+                <g transform="rotate(-5 50 24)">
+                  <ellipse class="vortex-band band-2" cx="49" cy="24" rx="25" ry="6.8" fill="none" stroke="url(#bandGrad)" stroke-width="3" stroke-linecap="round" />
+                  <path d="M 28 25 Q 49 20 70 25" stroke="#ffffff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.9" />
+                </g>
+
+                <!-- ── Tier 3 Band (Mid-Upper Ring) ── -->
+                <g transform="rotate(-2 49 35)">
+                  <ellipse class="vortex-band band-3" cx="49" cy="35" rx="20" ry="5.5" fill="none" stroke="url(#bandGrad)" stroke-width="2.8" stroke-linecap="round" />
+                  <path d="M 32 36 Q 49 32 66 36" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.9" />
+                </g>
+
+                <!-- ── Tier 4 Band (Mid-Lower Ring) ── -->
+                <g transform="rotate(2 49 46)">
+                  <ellipse class="vortex-band band-4" cx="49" cy="46" rx="15" ry="4.2" fill="none" stroke="url(#bandGrad)" stroke-width="2.6" stroke-linecap="round" />
+                  <path d="M 37 47 Q 49 43 61 47" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.9" />
+                </g>
+
+                <!-- ── Tier 5 Band (Lower Ring) ── -->
+                <g transform="rotate(5 50 56)">
+                  <ellipse class="vortex-band band-5" cx="50" cy="56" rx="10.5" ry="3.2" fill="none" stroke="url(#bandGrad)" stroke-width="2.4" stroke-linecap="round" />
+                  <path d="M 42 57 Q 50 54 58 57" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.9" />
+                </g>
+
+                <!-- ── Tier 6 Band (Near-Tip Ring) ── -->
+                <ellipse class="vortex-band band-6" cx="50" cy="65" rx="6.5" ry="2.2" fill="none" stroke="url(#bandGrad)" stroke-width="2" stroke-linecap="round" />
+
+                <!-- ── Whipping Touchdown Tail Tip (Exact match to reference S-tip) ── -->
+                <path d="M 50 67 
+                         C 51 70, 48 72, 47 74 
+                         C 46 76, 49 77, 51 77 
+                         C 53 77, 54 79, 52 80" 
+                      stroke="url(#bandGrad)" stroke-width="2.2" stroke-linecap="round" fill="none" />
+              </g>
+
+              <!-- ══ Orbiting Wind Particles & Diamond Sparkles ══ -->
+              <g transform="translate(50, 72)">
+                <g class="deb-orbit-1">
+                  <circle cx="0" cy="0" r="1.8" fill="#38bdf8" />
+                </g>
+              </g>
+              <g transform="translate(50, 70)">
+                <g class="deb-orbit-2">
+                  <polygon points="0,-3.5 2.5,0 0,3.5 -2.5,0" fill="#7dd3fc" />
+                </g>
+              </g>
+              <g transform="translate(50, 68)">
+                <g class="deb-orbit-3">
+                  <circle cx="0" cy="0" r="1.5" fill="#ffffff" />
+                </g>
+              </g>
+              <g transform="translate(50, 66)">
+                <g class="deb-orbit-4">
+                  <polygon points="0,-3 2,0 0,3 -2,0" fill="#38bdf8" />
+                </g>
+              </g>
+
+              </svg>
+          </div>
+
+          <!-- Gust Speed Text -->
+          <div style="text-align: center; margin-top: 6px;">
+            <div class="weather-metric-label" style="font-size: 14px; font-weight: 500; color: #cbd5e1; margin-bottom: 3px;">
+              Gust Speed
+            </div>
+            <div id="card-gust-val" class="weather-gust-val" style="font-family: var(--font-sans); font-size: 32px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+              <?= $init_weather_gust ?>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PARAMS GRID: 6 Cards (Precipitation, Pressure, UV Index, Soil Temp, Soil Humidity, Soil pH) -->
+      <!-- Desktop: 2 rows of 3 cards | Mobile: 3 rows of 2 cards (Matches Reference) -->
+      <div class="weather-grid-params">
+
+        <!-- Card 3: Precipitation with Animated Left-Right Floating Rain Cloud (Matches Reference Design) -->
+        <div class="weather-card-dark weather-card-precip" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Top: Animated Floating Rain Cloud + Value -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <!-- Cloud & Falling Rain SVG -->
+            <div class="weather-precip-icon-wrap" style="width: 72px; height: 56px; flex-shrink: 0;">
+              <svg viewBox="0 0 84 62" style="width: 100%; height: 100%; overflow: visible;">
+                <!-- Tiny sparkle star dot -->
+                <circle cx="16" cy="27" r="1.5" fill="#ffffff" opacity="0.85" />
+
+                <!-- Glowing Sun puff behind cloud -->
+                <g class="sun-puff-behind">
+                  <circle cx="43" cy="11" r="2.2" fill="#f97316" />
+                  <circle cx="44" cy="18" r="6" fill="#f97316" />
+                  <circle cx="51" cy="20" r="5.5" fill="#fb923c" />
+                  <circle cx="57" cy="23" r="4.5" fill="#f97316" />
+                  <circle cx="50" cy="20" r="2.4" fill="#ffffff" />
+                </g>
+
+                <!-- Floating Rain Cloud (Smoothly moves left & right) -->
+                <g class="floating-rain-cloud">
+                  <!-- Cloud body -->
+                  <path d="M 22 36 
+                           C 18 36, 15 32, 16 28 
+                           C 17 24, 21 22, 24 23 
+                           C 26 18, 31 15, 36 16 
+                           C 42 17, 45 20, 46 24 
+                           C 50 23, 54 26, 54 30 
+                           C 54 34, 51 36, 48 36 Z" 
+                        fill="#ffffff" 
+                        filter="drop-shadow(0 2px 5px rgba(0,0,0,0.22))" />
+
+                  <!-- Falling Raindrops beneath cloud -->
+                  <ellipse cx="24" cy="45" rx="1.6" ry="2.2" fill="#38bdf8" class="drop-1" />
+                  <ellipse cx="32" cy="46" rx="1.6" ry="2.2" fill="#38bdf8" class="drop-2" />
+                  <ellipse cx="40" cy="45" rx="1.6" ry="2.2" fill="#38bdf8" class="drop-3" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- Text: Precipitation / 0 mm -->
+            <div style="text-align: right;">
+              <div class="weather-metric-label" style="font-size: 14px; font-weight: 500; color: #cbd5e1; margin-bottom: 3px;">
+                Precipitation
+              </div>
+              <div id="card-rain-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 32px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_weather_rain ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Divider line -->
+          <div style="height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); margin: 12px 0 10px 0;"></div>
+
+          <!-- Bottom note -->
+          <div class="weather-metric-note" style="font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+            Current precipitation chances sit at <span id="precipitation-note-val"><?= $init_weather_rain ?></span>
+          </div>
+        </div>
+
+        <!-- Card 4: Pressure with Circular Gauge & Gradient Bar -->
+        <div class="weather-card-dark weather-card-pressure" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Top: Barometer Dial + Value -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <!-- Circular Dial Gauge SVG -->
+            <div class="weather-pressure-dial-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
+              <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+                <!-- Outer ticks -->
+                <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="1.8" stroke-dasharray="2 4" />
+                <!-- Dial numbers -->
+                <text x="50" y="15" font-size="6.5" font-weight="700" fill="#94a3b8" text-anchor="middle">1013</text>
+                <text x="78" y="29" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1015</text>
+                <text x="85" y="52" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1020</text>
+                <text x="22" y="29" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1010</text>
+                <text x="15" y="52" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1005</text>
+                <!-- Pink/Magenta needle -->
+                <g id="pressure-needle" style="transform-origin: 50px 50px; transform: rotate(<?= $pressure_angle ?>deg); <?= $has_pressure ? '' : 'display: none;' ?> transition: transform 1.2s ease-out;">
+                  <polygon points="50,47 78,50 50,53" fill="#ec4899" filter="drop-shadow(0 0 4px #db2777)" />
+                  <circle cx="50" cy="50" r="4.2" fill="#ec4899" />
+                  <circle cx="50" cy="50" r="1.6" fill="#ffffff" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- Text: Pressure -->
+            <div style="text-align: right;">
+              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
+                Pressure
+              </div>
+              <div id="card-pressure-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_weather_pressure ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Middle: Gradient track + indicator dot -->
+          <div style="margin-top: 10px; width: 100%;">
+            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 35%, #ef4444 70%, #ec4899 100%); position: relative;">
+              <div id="pressure-slider-dot" style="position: absolute; top: 50%; left: <?= $pressure_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ec4899; box-shadow: 0 0 8px rgba(236,72,153,0.9); <?= $has_pressure ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+            </div>
+          </div>
+
+          <!-- Bottom note -->
+          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+            Current pressure level is <span id="pressure-note-val"><?= $init_weather_pressure ?></span>.
+          </div>
+        </div>
+
+        <!-- Card 5: UV Index with Rose Gradient Accent & Bar Slider -->
+        <div class="weather-card-dark weather-card-uv" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Top: Label + Value -->
+          <div>
+            <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 3px;">
+              UV Index
+            </div>
+            <div id="card-uv-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 26px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+              <?= $init_weather_uv_display ?>
+            </div>
+          </div>
+
+          <!-- Middle: Gradient track + glowing indicator dot -->
+          <div style="margin-top: 14px; width: 100%;">
+            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 25%, #f97316 50%, #ef4444 75%, #a855f7 100%); position: relative;">
+              <div id="uv-slider-dot" class="uv-pulse-dot" style="position: absolute; top: 50%; left: <?= $uv_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f43f5e; box-shadow: 0 0 8px rgba(244,63,94,0.95); <?= $has_uv ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+            </div>
+          </div>
+
+          <!-- Bottom note -->
+          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+            The present UV index is <span id="uv-note-val"><?= $init_weather_uv_num ?></span><?= $has_uv ? ', consider suggestions for the same!' : '' ?>
+          </div>
+        </div>
+
+        <!-- Card 6: Soil Temperature -->
+        <div class="weather-card-dark weather-card-soil-temp" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Top: Soil Probe Thermometer SVG + Value -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <!-- Soil Temperature SVG Graphic -->
+            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
+              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
+                <!-- Ground Strata Lines -->
+                <path d="M 6 42 Q 20 40 34 42 Q 48 44 58 41" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.85" />
+                <path d="M 10 47 Q 24 45 36 47 Q 48 49 56 46" stroke="#92400e" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="3 3" fill="none" opacity="0.6" />
+                <path d="M 14 52 Q 28 50 40 52 Q 48 53 54 51" stroke="#92400e" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 4" fill="none" opacity="0.4" />
+                <!-- Thermometer Stem -->
+                <rect x="28" y="10" width="8" height="28" rx="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.7)" stroke-width="1.6" />
+                <!-- Thermometer Bulb in Subsurface -->
+                <circle cx="32" cy="38" r="7.5" fill="#f59e0b" filter="drop-shadow(0 0 4px rgba(245, 158, 11, 0.6))" />
+                <!-- Mercury Column -->
+                <rect x="30" y="18" width="4" height="18" rx="2" fill="#f59e0b" />
+                <!-- Measurement Ticks -->
+                <line x1="37" y1="14" x2="40" y2="14" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
+                <line x1="37" y1="20" x2="41" y2="20" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
+                <line x1="37" y1="26" x2="40" y2="26" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
+              </svg>
+            </div>
+
+            <!-- Value Text -->
+            <div style="text-align: right;">
+              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
+                Soil Temperature
+              </div>
+              <div id="card-soil-temp-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_soil_temp ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Middle: Thermal Spectrum Bar + Indicator Dot -->
+          <div style="margin-top: 10px; width: 100%;">
+            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
+              <div id="soil-temp-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.9); <?= $has_soil_temp ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+            </div>
+          </div>
+
+          <!-- Bottom note -->
+          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+            Root zone status: <span id="soil-temp-note-val" style="color: #fde68a; font-weight: 600;"><?= $has_soil_temp ? "{$init_soil_temp} (Optimal)" : '--' ?></span>
+          </div>
+        </div>
+
+        <!-- Card 7: Soil Humidity (Moisture) -->
+        <div class="weather-card-dark weather-card-soil-hum" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Top: Hydration Droplet & Soil Bed SVG + Value -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <!-- Soil Moisture SVG Graphic -->
+            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
+              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
+                <!-- Soil Mound Outline -->
+                <path d="M 8 48 C 16 38, 28 36, 40 40 C 48 42, 54 48, 56 50" stroke="#0d9488" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6" />
+                <!-- Hydration Droplet -->
+                <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="url(#soilHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
+                <!-- Droplet Inner Gloss -->
+                <ellipse cx="26" cy="34" rx="3.5" ry="6" transform="rotate(-28 26 34)" fill="#ffffff" opacity="0.55" />
+                <defs>
+                  <linearGradient id="soilHumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#38bdf8" />
+                    <stop offset="100%" stop-color="#0284c7" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
+            <!-- Value Text -->
+            <div style="text-align: right;">
+              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
+                Soil Humidity
+              </div>
+              <div id="card-soil-hum-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_soil_hum ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Middle: Moisture Gradient Bar + Indicator Dot -->
+          <div style="margin-top: 10px; width: 100%;">
+            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #00bfa5 45%, #0284c7 100%); position: relative;">
+              <div id="soil-hum-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #00bfa5; box-shadow: 0 0 8px rgba(0,191,165,0.9); <?= $has_soil_hum ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+            </div>
+          </div>
+
+          <!-- Bottom note -->
+          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+            Hydration level: <span id="soil-hum-note-val" style="color: #99f6e4; font-weight: 600;"><?= $has_soil_hum ? "Adequate Field Capacity ({$init_soil_hum})" : '--' ?></span>
+          </div>
+        </div>
+
+        <!-- Card 8: Soil pH -->
+        <div class="weather-card-dark weather-card-soil-ph" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <!-- Top: pH Chemical Scale SVG + Value -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <!-- Soil pH SVG Graphic -->
+            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
+              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
+                <!-- Outer Circular Ring Gauge -->
+                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2" />
+                <circle cx="32" cy="32" r="20" fill="none" stroke="url(#phRingGrad)" stroke-width="3" stroke-dasharray="14 4" />
+                <!-- Center Disk with pH Symbol -->
+                <circle cx="32" cy="32" r="14" fill="#10b981" filter="drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45))" />
+                <text x="32" y="32.5" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
+                <defs>
+                  <linearGradient id="phRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ef4444" />
+                    <stop offset="50%" stop-color="#10b981" />
+                    <stop offset="100%" stop-color="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
+            <!-- Value Text -->
+            <div style="text-align: right;">
+              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
+                Soil pH
+              </div>
+              <div id="card-soil-ph-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_soil_ph ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Middle: pH spectrum bar (Acidic 0-6 to Neutral 7 to Alkaline 8-14) -->
+          <div style="margin-top: 10px; width: 100%;">
+            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
+              <div id="soil-ph-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.9); <?= $has_soil_ph ? '' : 'display: none;' ?> transition: left 1s ease-in-out;"></div>
+            </div>
+          </div>
+
+          <!-- Bottom note -->
+          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+            Acidity level: <span id="soil-ph-note-val" style="color: #a7f3d0; font-weight: 600;"><?= $has_soil_ph ? "{$soil_ph_status} ({$init_soil_ph})" : '--' ?></span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Weather Telemetry Table Section -->
+    <div style="margin-top: 14px;">
+      <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <h2 style="font-size: 18px; font-weight: 700; color: #ffffff; text-shadow: 0 2px 10px rgba(15, 23, 42, 0.6); margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
+          <i data-lucide="cloud-sun" style="width: 18px; height: 18px; color: #00bfa5;"></i>
+          <span>Live Weather Telemetry Records</span>
+        </h2>
+      </div>
+
+      <div id="live-weather-table-container" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.7); overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); transition: opacity 0.2s ease; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
+        <!-- Mobile swipe indicator -->
+        <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
+          <span>👈 Swipe horizontally to view all weather parameters</span>
+          <span class="font-mono text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-bold">WEATHER STREAM</span>
+        </div>
+
+        <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 1100px;">
+            <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <tr>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Speed (km/h)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Gust (km/h)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Direction</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Rain Gauge (mm)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Pressure (mb)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">UV Index</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Soil Temp (°C)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #0369a1; font-size: 12px; white-space: nowrap;">Soil Humidity (%)</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Soil pH</th>
+              </tr>
+            </thead>
+            <tbody id="weather-tbody">
+              <tr>
+                <td colspan="10" style="padding: 40px; text-align: center; color: #64748b;">
+                  <?= $is_node_2 ? 'Currently in standby mode. No live weather telemetry recorded yet.' : 'Loading weather telemetry...' ?>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- End #node2-view-weather -->
+  <?php endif; ?>
+</div> <!-- End .live-content-container -->
 
 <script>
-// Switch between Air Quality and Weather stream tables (Segmented Toggle)
+// Stream tables are now cleanly separated per view: AQI table in node2-view-aqi, Weather table in node2-view-weather
 function switchLiveTableStream(type) {
     if (window.triggerHaptic) window.triggerHaptic('light');
-    const aqiTable = document.getElementById('live-aqi-table-container');
-    const weatherTable = document.getElementById('live-weather-table-container');
-    const btnAqi = document.getElementById('stream-toggle-aqi');
-    const btnWeather = document.getElementById('stream-toggle-weather');
-    if (!aqiTable || !weatherTable) return;
-
-    if (type === 'weather') {
-        aqiTable.style.display = 'none';
-        weatherTable.style.display = 'block';
-
-        if (btnWeather && btnAqi) {
-            btnWeather.style.backgroundColor = '#ffffff';
-            btnWeather.style.color = '#0f172a';
-            btnWeather.style.boxShadow = '0 1px 3px rgba(15,23,42,0.1)';
-            const wIcon = btnWeather.querySelector('i, svg');
-            if (wIcon) wIcon.style.color = '#0284c7';
-
-            btnAqi.style.backgroundColor = 'transparent';
-            btnAqi.style.color = '#64748b';
-            btnAqi.style.boxShadow = 'none';
-            const aIcon = btnAqi.querySelector('i, svg');
-            if (aIcon) aIcon.style.color = '#64748b';
-        }
-    } else {
-        weatherTable.style.display = 'none';
-        aqiTable.style.display = 'block';
-
-        if (btnWeather && btnAqi) {
-            btnAqi.style.backgroundColor = '#ffffff';
-            btnAqi.style.color = '#0f172a';
-            btnAqi.style.boxShadow = '0 1px 3px rgba(15,23,42,0.1)';
-            const aIcon = btnAqi.querySelector('i, svg');
-            if (aIcon) aIcon.style.color = '#00bfa5';
-
-            btnWeather.style.backgroundColor = 'transparent';
-            btnWeather.style.color = '#64748b';
-            btnWeather.style.boxShadow = 'none';
-            const wIcon = btnWeather.querySelector('i, svg');
-            if (wIcon) wIcon.style.color = '#64748b';
-        }
-    }
     if (window.lucide && lucide.createIcons) lucide.createIcons();
 }
 
@@ -1870,7 +2946,9 @@ function getPollutantScaleInfo(param, value) {
     };
 }
 
-// Comparison Chart
+// ═══════════════════════════════════════════════════════════════
+// LIVE AQI COMPARISON CHART CONTROLLER (ORIGINAL GRAPH)
+// ═══════════════════════════════════════════════════════════════
 var comparisonChartInstance = window.__liveComparisonChartInstance || null;
 var activePollutants = window.__liveActivePollutants || {
     pm25: true,
@@ -2033,7 +3111,7 @@ function renderComparisonChart() {
                             }
                         },
                         y: {
-                            grid: { color: '#f1f5f9' },
+                            grid: { color: 'rgba(226, 232, 240, 0.6)' },
                             ticks: {
                                 font: { family: 'var(--font-mono)', size: 10 },
                                 color: '#94a3b8'
@@ -2044,10 +3122,11 @@ function renderComparisonChart() {
             });
             window.__liveComparisonChartInstance = comparisonChartInstance;
         }
-    } catch (chartErr) {
-        console.warn('Comparison chart render error:', chartErr);
+    } catch(e) {
+        console.warn('Comparison chart render error:', e);
     }
 }
+window.renderComparisonChart = renderComparisonChart;
 
 // Data Stream Formatting
 var liveDataStream = window.__liveDataStream || [];
@@ -2058,7 +3137,7 @@ function formatStreamTimestamp(row) {
     if (!rawTs) return '--';
     const dt = (typeof safeParseDate === 'function') ? safeParseDate(rawTs) : new Date(rawTs);
     if (isNaN(dt.getTime())) return '--';
-    return dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    return dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 function formatSupabaseValue(val, unit = '') {
@@ -2073,13 +3152,60 @@ function formatWeatherOneDecimal(val, unit = '') {
     return isNaN(num) ? '--' : num.toFixed(1) + unit;
 }
 
+function parseWindDirection(raw) {
+    if (raw === null || raw === undefined || raw === '' || raw === '--') {
+        return null;
+    }
+    const cardinals = {
+        'n': 0, 'north': 0,
+        'nne': 22.5, 'north-northeast': 22.5, 'north northeast': 22.5,
+        'ne': 45, 'northeast': 45,
+        'ene': 67.5, 'east-northeast': 67.5, 'east northeast': 67.5,
+        'e': 90, 'east': 90,
+        'ese': 112.5, 'east-southeast': 112.5, 'east southeast': 112.5,
+        'se': 135, 'southeast': 135,
+        'sse': 157.5, 'south-southeast': 157.5, 'south southeast': 157.5,
+        's': 180, 'south': 180,
+        'ssw': 202.5, 'south-southwest': 202.5, 'south southwest': 202.5,
+        'sw': 225, 'southwest': 225,
+        'wsw': 247.5, 'west-southwest': 247.5, 'west southwest': 247.5,
+        'w': 270, 'west': 270,
+        'wnw': 292.5, 'west-northwest': 292.5, 'west northwest': 292.5,
+        'nw': 315, 'northwest': 315,
+        'nnw': 337.5, 'north-northwest': 337.5, 'north northwest': 337.5
+    };
+    const dirs = ['n','nne','ne','ene','e','ese','se','sse','s','ssw','sw','wsw','w','wnw','nw','nnw'];
+    const str = String(raw).trim().toLowerCase();
+    const match = str.match(/(-?\d+(?:\.\d+)?)/);
+    if (match) {
+        let deg = parseFloat(match[1]) % 360;
+        if (deg < 0) deg += 360;
+        const degRound = Math.round(deg);
+        const card = dirs[Math.round(deg / 22.5) % 16];
+        return {
+            deg: degRound,
+            cardinal: card,
+            display: `${degRound}° ${card}`
+        };
+    }
+    const clean = str.replace(/[^a-z\- ]/g, '').trim();
+    if (cardinals.hasOwnProperty(clean)) {
+        const deg = cardinals[clean];
+        const degRound = Math.round(deg);
+        const card = dirs[Math.round(deg / 22.5) % 16];
+        return {
+            deg: degRound,
+            cardinal: card,
+            display: `${degRound}° ${card}`
+        };
+    }
+    return null;
+}
+
 function getCompassDir(val) {
-    if (val == null) return '--';
-    const deg = Math.round(Number(val) % 360);
-    if (isNaN(deg)) return String(val);
-    const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-    const dirName = dirs[Math.round(deg / 22.5) % 16];
-    return `${dirName} (${deg}°)`;
+    if (val == null || val === '') return '--';
+    const p = parseWindDirection(val);
+    return p ? p.display : String(val);
 }
 
 function renderLiveTable() {
@@ -2115,14 +3241,101 @@ function renderLiveTable() {
 async function refreshDashboard(forceNetwork = false) {
     try {
         let bulkData;
+        const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
 
         if (typeof window.fetchLiveBulk === 'function') {
             bulkData = await window.fetchLiveBulk(forceNetwork);
         } else {
-            const endpoint = 'telemetry.php?action=live_bulk&limit=60';
+            const endpoint = `telemetry.php?action=live_bulk&node=${activeNode}&limit=60`;
             const fetchUrl = (typeof window.getApiUrl === 'function') ? window.getApiUrl(endpoint) : ('api/' + endpoint);
             const res = await fetch(fetchUrl);
             bulkData = await res.json();
+        }
+
+        if (activeNode === '2' || (bulkData && bulkData.node === '2') || (bulkData && bulkData.status === 'STANDBY')) {
+            const valEl = document.getElementById('hero-aqi-val') || document.getElementById('hero-aqi-value');
+            if (valEl) {
+                valEl.innerText = '--';
+                valEl.style.color = '#94a3b8';
+            }
+            const labelEl = document.getElementById('hero-aqi-label');
+            if (labelEl) {
+                labelEl.innerText = 'Standby';
+                labelEl.style.color = '#64748b';
+            }
+            const badgeEl = document.getElementById('hero-aqi-badge');
+            if (badgeEl) {
+                badgeEl.style.background = 'rgba(255, 255, 255, 0.85)';
+                badgeEl.style.borderColor = 'rgba(148, 163, 184, 0.38)';
+            }
+            const heroCard = document.getElementById('hero-card');
+            if (heroCard) {
+                heroCard.style.background = 'linear-gradient(155deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)';
+                heroCard.style.borderColor = 'rgba(148, 163, 184, 0.35)';
+                heroCard.style.boxShadow = '0 10px 30px rgba(148, 163, 184, 0.15), 0 1px 3px rgba(15,23,42,0.04)';
+            }
+            const scaleInd = document.getElementById('hero-scale-indicator');
+            if (scaleInd) {
+                scaleInd.style.left = '0%';
+                scaleInd.style.borderColor = '#94a3b8';
+            }
+            const skyline = document.getElementById('hero-skyline-svg');
+            if (skyline) skyline.style.fill = '#94a3b8';
+
+            const streamText = document.getElementById('hero-stream-text');
+            if (streamText) streamText.innerText = 'Standby Mode';
+            const latestTime = document.getElementById('hero-latest-time');
+            if (latestTime) latestTime.innerText = 'Standby';
+
+            const pm25El = document.getElementById('hero-pm25');
+            if (pm25El) pm25El.innerText = '--';
+            const pm10El = document.getElementById('hero-pm10');
+            if (pm10El) pm10El.innerText = '--';
+
+            ['card-pm25', 'card-pm10', 'card-co', 'card-no2', 'card-o3'].forEach(id => {
+                const vel = document.getElementById(id);
+                if (vel) vel.innerText = '--';
+            });
+            ['val-pm25', 'val-pm10', 'val-co', 'val-no2', 'val-o3'].forEach(id => {
+                const vel = document.getElementById(id);
+                if (vel) vel.innerText = '--';
+            });
+            ['pm25-val', 'pm10-val', 'co-val', 'no2-val', 'o3-val', 'weather-temp-val', 'weather-hum-val', 'weather-wind-val', 'weather-gust-val', 'weather-rain-val', 'weather-dir-val'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = '--';
+            });
+            const wHeroTemp = document.getElementById('weather-hero-temp');
+            if (wHeroTemp) wHeroTemp.innerText = '--';
+            const wMaxEl = document.getElementById('weather-hero-temp-max');
+            if (wMaxEl) wMaxEl.innerText = '--°C';
+            const wMinEl = document.getElementById('weather-hero-temp-min');
+            if (wMinEl) wMinEl.innerText = '--°C';
+            const wBoxHum = document.getElementById('weather-box-humidity');
+            if (wBoxHum) wBoxHum.innerText = '--%';
+            const wBoxRain = document.getElementById('weather-box-rain');
+            if (wBoxRain) wBoxRain.innerText = '-- mm';
+            const wBoxWind = document.getElementById('weather-box-wind');
+            if (wBoxWind) wBoxWind.innerText = '-- km/h';
+            const tbody = document.getElementById('live-table-body');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b; font-size: 13px;">Currently in standby mode. No live telemetry recorded yet.</td></tr>';
+            }
+            const weatherTbody = document.getElementById('weather-tbody');
+            if (weatherTbody) {
+                weatherTbody.innerHTML = '<tr><td colspan="10" style="padding: 40px; text-align: center; color: #64748b; font-size: 13px;">Currently in standby mode. No weather telemetry recorded yet.</td></tr>';
+            }
+            const compEmpty = document.getElementById('comparison-chart-empty');
+            if (compEmpty) {
+                compEmpty.innerText = 'Comparison chart in standby mode.';
+                compEmpty.style.display = 'flex';
+            }
+            if (window.updateGlobalLiveBadge) {
+                window.updateGlobalLiveBadge(false, 'Currently in standby mode.', 'Standby');
+            }
+            if (window.evaluateNode2WeatherTheme) {
+                window.evaluateNode2WeatherTheme(null, null, null);
+            }
+            return;
         }
 
         if (!bulkData || (!bulkData.aqi && !bulkData.weather)) {
@@ -2324,6 +3537,12 @@ async function refreshDashboard(forceNetwork = false) {
             wHumFormatted = formatWeatherOneDecimal(w.humidity, '%');
             wRainFormatted = formatWeatherOneDecimal(w.rain_gauge, ' mm');
             wWindFormatted = formatWeatherOneDecimal(w.wind_speed, ' km/h');
+
+            // Dynamically update Node 2 Atmospheric Backdrop:
+            // Rule: Cloud animation if temperature is low and humidity is high, else sunny bright animation
+            if (window.evaluateNode2WeatherTheme) {
+                window.evaluateNode2WeatherTheme(w.temperature, w.humidity, w.rain_gauge);
+            }
             
             // Hero weather box
             const wHeroTemp = document.getElementById('weather-hero-temp');
@@ -2338,12 +3557,150 @@ async function refreshDashboard(forceNetwork = false) {
             const wBoxWind = document.getElementById('weather-box-wind');
             if (wBoxWind) wBoxWind.innerText = wWindFormatted;
 
-            // Cards: Wind Gust, Wind Direction, Rain
+            // Cards: Wind Gust, Wind Direction, Rain, Pressure, UV Index
             const cardGust = document.getElementById('card-gust');
             if (cardGust) cardGust.innerText = formatWeatherOneDecimal(w.wind_gust);
             
             const cardRain = document.getElementById('card-rain');
             if (cardRain) cardRain.innerText = wRainFormatted;
+
+            // Animated Meteorological Cards Updates (Node 2)
+            const cardWindVal = document.getElementById('card-wind-val');
+            if (cardWindVal) {
+                cardWindVal.innerText = (w.wind_speed != null && !isNaN(Number(w.wind_speed))) ? (Number(w.wind_speed).toFixed(1) + ' km/h') : '--';
+            }
+
+            const cardGustVal = document.getElementById('card-gust-val');
+            if (cardGustVal) {
+                cardGustVal.innerText = (w.wind_gust != null && !isNaN(Number(w.wind_gust))) ? (Number(w.wind_gust).toFixed(1) + ' m/s') : '--';
+            }
+
+            const cardRainVal = document.getElementById('card-rain-val');
+            const rainNoteVal = document.getElementById('precipitation-note-val');
+            const rainStr = (w.rain_gauge != null && !isNaN(Number(w.rain_gauge))) ? (Number(w.rain_gauge).toFixed(1) + ' mm') : '--';
+            if (cardRainVal) cardRainVal.innerText = rainStr;
+            if (rainNoteVal) rainNoteVal.innerText = rainStr;
+
+            const cardDirVal = document.getElementById('card-dir-val');
+            const compassNeedle = document.getElementById('compass-needle-group');
+            const compassCardinal = document.getElementById('compass-cardinal-label');
+            const parsedDir = parseWindDirection(w.wind_direction);
+            if (parsedDir) {
+                if (cardDirVal) cardDirVal.innerText = parsedDir.display;
+                if (compassCardinal) compassCardinal.innerText = parsedDir.cardinal;
+                if (compassNeedle) {
+                    compassNeedle.style.display = '';
+                    compassNeedle.style.transform = `rotate(${parsedDir.deg}deg)`;
+                }
+            } else if (w.wind_direction != null && w.wind_direction !== '') {
+                if (cardDirVal) cardDirVal.innerText = String(w.wind_direction);
+                if (compassCardinal) compassCardinal.innerText = '--';
+                if (compassNeedle) compassNeedle.style.display = 'none';
+            } else {
+                if (cardDirVal) cardDirVal.innerText = '--';
+                if (compassCardinal) compassCardinal.innerText = '--';
+                if (compassNeedle) compassNeedle.style.display = 'none';
+            }
+
+            const pressEl = document.getElementById('card-pressure-val');
+            const pressNote = document.getElementById('pressure-note-val');
+            const pressNeedle = document.getElementById('pressure-needle');
+            const pressDot = document.getElementById('pressure-slider-dot');
+            if (w.pressure != null && !isNaN(Number(w.pressure))) {
+                const pressVal = Math.round(Number(w.pressure));
+                if (pressEl) pressEl.innerText = `${pressVal} mb`;
+                if (pressNote) pressNote.innerText = `${pressVal} mb`;
+                if (pressNeedle) {
+                    pressNeedle.style.display = '';
+                    pressNeedle.style.transform = `rotate(${Math.round(((pressVal - 1000) / 25) * 60)}deg)`;
+                }
+                if (pressDot) {
+                    pressDot.style.display = '';
+                    pressDot.style.left = `${Math.max(5, Math.min(95, Math.round(((pressVal - 995) / (1025 - 995)) * 100)))}%`;
+                }
+            } else {
+                if (pressEl) pressEl.innerText = '--';
+                if (pressNote) pressNote.innerText = '--';
+                if (pressNeedle) pressNeedle.style.display = 'none';
+                if (pressDot) pressDot.style.display = 'none';
+            }
+
+            const uvEl = document.getElementById('card-uv-val');
+            const uvNote = document.getElementById('uv-note-val');
+            const uvDot = document.getElementById('uv-slider-dot');
+            if (w.uv_index != null && !isNaN(Number(w.uv_index))) {
+                const uvVal = Number(w.uv_index).toFixed(1);
+                let uvLvl = 'Low';
+                const uvF = Number(uvVal);
+                if (uvF >= 11) uvLvl = 'Extreme';
+                else if (uvF >= 8) uvLvl = 'Very High';
+                else if (uvF >= 6) uvLvl = 'High';
+                else if (uvF >= 3) uvLvl = 'Moderate';
+                if (uvEl) uvEl.innerText = `${uvVal} ${uvLvl}`;
+                if (uvNote) uvNote.innerText = uvVal;
+                if (uvDot) {
+                    uvDot.style.display = '';
+                    uvDot.style.left = `${Math.max(5, Math.min(95, Math.round((uvF / 11) * 100)))}%`;
+                }
+            } else {
+                if (uvEl) uvEl.innerText = '--';
+                if (uvNote) uvNote.innerText = '--';
+                if (uvDot) uvDot.style.display = 'none';
+            }
+
+            // Soil Parameters (Soil Temperature, Soil Humidity, Soil pH)
+            const soilTempEl = document.getElementById('card-soil-temp-val');
+            const soilTempNote = document.getElementById('soil-temp-note-val');
+            const soilTempDot = document.getElementById('soil-temp-slider-dot');
+            if (w.soil_temperature != null && !isNaN(Number(w.soil_temperature))) {
+                const sT = Number(w.soil_temperature).toFixed(1);
+                if (soilTempEl) soilTempEl.innerText = `${sT} °C`;
+                if (soilTempNote) soilTempNote.innerText = `${sT} °C (Root Zone)`;
+                if (soilTempDot) {
+                    soilTempDot.style.display = '';
+                    soilTempDot.style.left = `${Math.max(5, Math.min(95, Math.round(((Number(sT) - 10) / (40 - 10)) * 100)))}%`;
+                }
+            } else {
+                if (soilTempEl) soilTempEl.innerText = '--';
+                if (soilTempNote) soilTempNote.innerText = '--';
+                if (soilTempDot) soilTempDot.style.display = 'none';
+            }
+
+            const soilHumEl = document.getElementById('card-soil-hum-val');
+            const soilHumNote = document.getElementById('soil-hum-note-val');
+            const soilHumDot = document.getElementById('soil-hum-slider-dot');
+            if (w.soil_humidity != null && !isNaN(Number(w.soil_humidity))) {
+                const sH = Number(w.soil_humidity).toFixed(1);
+                if (soilHumEl) soilHumEl.innerText = `${sH}%`;
+                if (soilHumNote) soilHumNote.innerText = `Field Capacity (${sH}%)`;
+                if (soilHumDot) {
+                    soilHumDot.style.display = '';
+                    soilHumDot.style.left = `${Math.max(5, Math.min(95, Math.round(Number(sH))))}%`;
+                }
+            } else {
+                if (soilHumEl) soilHumEl.innerText = '--';
+                if (soilHumNote) soilHumNote.innerText = '--';
+                if (soilHumDot) soilHumDot.style.display = 'none';
+            }
+
+            const soilPhEl = document.getElementById('card-soil-ph-val');
+            const soilPhNote = document.getElementById('soil-ph-note-val');
+            const soilPhDot = document.getElementById('soil-ph-slider-dot');
+            if (w.soil_ph != null && !isNaN(Number(w.soil_ph))) {
+                const sPh = Number(w.soil_ph).toFixed(2);
+                if (soilPhEl) soilPhEl.innerText = `${sPh}`;
+                const phNum = Number(sPh);
+                const phStatus = (phNum < 6.0) ? 'Slightly Acidic' : ((phNum > 7.5) ? 'Slightly Alkaline' : 'Optimal Neutral');
+                if (soilPhNote) soilPhNote.innerText = `${phStatus} (${sPh})`;
+                if (soilPhDot) {
+                    soilPhDot.style.display = '';
+                    soilPhDot.style.left = `${Math.max(5, Math.min(95, Math.round(((phNum - 3.0) / (10.0 - 3.0)) * 100)))}%`;
+                }
+            } else {
+                if (soilPhEl) soilPhEl.innerText = '--';
+                if (soilPhNote) soilPhNote.innerText = '--';
+                if (soilPhDot) soilPhDot.style.display = 'none';
+            }
             
             const todayRainEl = document.getElementById('card-today-rain');
             if (todayRainEl) {
@@ -2354,9 +3711,95 @@ async function refreshDashboard(forceNetwork = false) {
                 todayRainEl.innerText = trVal.toFixed(1) + ' mm';
             }
 
-            const dir = (w.wind_direction != null && isNaN(Number(w.wind_direction))) ? w.wind_direction : getCompassDir(w.wind_direction);
+            const dir = (w.wind_direction != null && w.wind_direction !== '') ? getCompassDir(w.wind_direction) : '--';
             const cardDir = document.getElementById('card-dir');
             if (cardDir) cardDir.innerText = dir;
+
+            // Dynamically hydrate coordinates from cloud telemetry
+            const latVal = (w.latitude != null) ? w.latitude : (bulkData && bulkData.latitude != null ? bulkData.latitude : null);
+            const lonVal = (w.longitude != null) ? w.longitude : (bulkData && bulkData.longitude != null ? bulkData.longitude : null);
+            const coordsDisplay = w.coords_display || (bulkData && bulkData.coords_display) || null;
+
+            const latEl = document.getElementById('weather-header-lat');
+            const lonEl = document.getElementById('weather-header-lon');
+            const dmsEl = document.getElementById('weather-header-dms');
+            const navCoordsEl = document.getElementById('navbar-station-coords');
+
+            if (latVal != null && lonVal != null && !isNaN(Number(latVal)) && !isNaN(Number(lonVal))) {
+                const latFormatted = `${Number(latVal).toFixed(4)}° N`;
+                const lonFormatted = `${Number(lonVal).toFixed(4)}° E`;
+                if (latEl) latEl.innerText = latFormatted;
+                if (lonEl) lonEl.innerText = lonFormatted;
+                const dmsStr = coordsDisplay || `${latFormatted}, ${lonFormatted}`;
+                if (dmsEl) dmsEl.innerText = dmsStr;
+                if (navCoordsEl) {
+                    navCoordsEl.innerText = dmsStr;
+                    navCoordsEl.style.display = 'inline-block';
+                }
+            } else if (coordsDisplay && coordsDisplay !== '--') {
+                if (dmsEl) dmsEl.innerText = coordsDisplay;
+                if (navCoordsEl) {
+                    navCoordsEl.innerText = coordsDisplay;
+                    navCoordsEl.style.display = 'inline-block';
+                }
+            }
+        } else {
+            // Standby or no weather telemetry - coordinates come from cloud when active
+            const latEl = document.getElementById('weather-header-lat');
+            const lonEl = document.getElementById('weather-header-lon');
+            const dmsEl = document.getElementById('weather-header-dms');
+            const navCoordsEl = document.getElementById('navbar-station-coords');
+            if (latEl) latEl.innerText = '--';
+            if (lonEl) lonEl.innerText = '--';
+            if (dmsEl) dmsEl.innerText = 'Awaiting GPS Sync';
+            if (navCoordsEl) navCoordsEl.style.display = 'none';
+
+            const cardWindVal = document.getElementById('card-wind-val');
+            if (cardWindVal) cardWindVal.innerText = '--';
+            const cardGustVal = document.getElementById('card-gust-val');
+            if (cardGustVal) cardGustVal.innerText = '--';
+            const cardRainVal = document.getElementById('card-rain-val');
+            if (cardRainVal) cardRainVal.innerText = '--';
+            const rainNoteVal = document.getElementById('precipitation-note-val');
+            if (rainNoteVal) rainNoteVal.innerText = '--';
+            const cardDirVal = document.getElementById('card-dir-val');
+            if (cardDirVal) cardDirVal.innerText = '--';
+            const compassNeedle = document.getElementById('compass-needle-group');
+            if (compassNeedle) compassNeedle.style.display = 'none';
+            const compassCardinal = document.getElementById('compass-cardinal-label');
+            if (compassCardinal) compassCardinal.innerText = '--';
+            const pressEl = document.getElementById('card-pressure-val');
+            if (pressEl) pressEl.innerText = '--';
+            const pressNote = document.getElementById('pressure-note-val');
+            if (pressNote) pressNote.innerText = '--';
+            const pressNeedle = document.getElementById('pressure-needle');
+            if (pressNeedle) pressNeedle.style.display = 'none';
+            const pressDot = document.getElementById('pressure-slider-dot');
+            if (pressDot) pressDot.style.display = 'none';
+            const uvEl = document.getElementById('card-uv-val');
+            if (uvEl) uvEl.innerText = '--';
+            const uvNote = document.getElementById('uv-note-val');
+            if (uvNote) uvNote.innerText = '--';
+            const uvDot = document.getElementById('uv-slider-dot');
+            if (uvDot) uvDot.style.display = 'none';
+            const soilTempEl = document.getElementById('card-soil-temp-val');
+            if (soilTempEl) soilTempEl.innerText = '--';
+            const soilTempNote = document.getElementById('soil-temp-note-val');
+            if (soilTempNote) soilTempNote.innerText = '--';
+            const soilTempDot = document.getElementById('soil-temp-slider-dot');
+            if (soilTempDot) soilTempDot.style.display = 'none';
+            const soilHumEl = document.getElementById('card-soil-hum-val');
+            if (soilHumEl) soilHumEl.innerText = '--';
+            const soilHumNote = document.getElementById('soil-hum-note-val');
+            if (soilHumNote) soilHumNote.innerText = '--';
+            const soilHumDot = document.getElementById('soil-hum-slider-dot');
+            if (soilHumDot) soilHumDot.style.display = 'none';
+            const soilPhEl = document.getElementById('card-soil-ph-val');
+            if (soilPhEl) soilPhEl.innerText = '--';
+            const soilPhNote = document.getElementById('soil-ph-note-val');
+            if (soilPhNote) soilPhNote.innerText = '--';
+            const soilPhDot = document.getElementById('soil-ph-slider-dot');
+            if (soilPhDot) soilPhDot.style.display = 'none';
         }
         
         // WEATHER HISTORY TABLE & TODAY'S TEMP RANGE
@@ -2369,12 +3812,25 @@ async function refreshDashboard(forceNetwork = false) {
             if (tbodyWeather) {
                 tbodyWeather.innerHTML = weatherHistory.map((row, i) => {
                     const timeStr = formatStreamTimestamp(row);
-                    const temp = formatWeatherOneDecimal(row.temperature);
-                    const hum = formatWeatherOneDecimal(row.humidity);
                     const wind = formatWeatherOneDecimal(row.wind_speed);
                     const gust = formatWeatherOneDecimal(row.wind_gust);
-                    const dir = (row.wind_direction != null && isNaN(Number(row.wind_direction))) ? row.wind_direction : getCompassDir(row.wind_direction);
+                    const dir = (row.wind_direction != null && row.wind_direction !== '') ? getCompassDir(row.wind_direction) : '--';
                     const rain = formatWeatherOneDecimal(row.rain_gauge);
+                    const press = (row.pressure != null && !isNaN(Number(row.pressure))) 
+                        ? `${Math.round(Number(row.pressure))} mb` 
+                        : (row.pressure_mb != null && !isNaN(Number(row.pressure_mb)) ? `${Math.round(Number(row.pressure_mb))} mb` : '--');
+                    const uv = (row.uv_index != null && !isNaN(Number(row.uv_index))) 
+                        ? Number(row.uv_index).toFixed(1) 
+                        : (row.uv != null && !isNaN(Number(row.uv)) ? Number(row.uv).toFixed(1) : '--');
+                    const soilTemp = (row.soil_temperature != null && !isNaN(Number(row.soil_temperature))) 
+                        ? `${Number(row.soil_temperature).toFixed(1)} °C` 
+                        : (row.soil_temp != null && !isNaN(Number(row.soil_temp)) ? `${Number(row.soil_temp).toFixed(1)} °C` : '--');
+                    const soilHum = (row.soil_humidity != null && !isNaN(Number(row.soil_humidity))) 
+                        ? `${Number(row.soil_humidity).toFixed(1)}%` 
+                        : (row.soil_moisture != null && !isNaN(Number(row.soil_moisture)) ? `${Number(row.soil_moisture).toFixed(1)}%` : '--');
+                    const soilPh = (row.soil_ph != null && !isNaN(Number(row.soil_ph))) 
+                        ? Number(row.soil_ph).toFixed(2) 
+                        : (row.ph != null && !isNaN(Number(row.ph)) ? Number(row.ph).toFixed(2) : '--');
 
                     if (row.temperature != null && !isNaN(Number(row.temperature))) {
                         temps.push(Number(row.temperature));
@@ -2382,12 +3838,15 @@ async function refreshDashboard(forceNetwork = false) {
                     
                     return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;">${temp}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${hum}</td>
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${wind}</td>
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${gust}</td>
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${dir}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${rain}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0284c7;">${rain}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #db2777;">${press}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #ea580c;">${uv}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${soilTemp}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${soilHum}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${soilPh}</td>
                     </tr>`;
                 }).join('');
             }
@@ -2573,7 +4032,7 @@ async function refreshDashboard(forceNetwork = false) {
             window.__liveDataStream = liveDataStream;
         }
         try {
-            renderComparisonChart();
+            if (typeof renderComparisonChart === 'function') renderComparisonChart();
         } catch(chartErr) {
             console.warn("Comparison chart error:", chartErr);
         }
@@ -2604,10 +4063,15 @@ window.__cleanupCurrentPage = function() {
         autoRefreshInterval = null;
     }
     document.removeEventListener('visibilitychange', onLiveVisibilityChange);
-    if (comparisonChartInstance) {
-        try { comparisonChartInstance.destroy(); } catch(e) {}
-        comparisonChartInstance = null;
-        window.__liveComparisonChartInstance = null;
+    if (weatherTrendChartInstance) {
+        try { weatherTrendChartInstance.destroy(); } catch(e) {}
+        weatherTrendChartInstance = null;
+        window.__weatherTrendChartInstance = null;
+    }
+    if (aqiTrendChartInstance) {
+        try { aqiTrendChartInstance.destroy(); } catch(e) {}
+        aqiTrendChartInstance = null;
+        window.__aqiTrendChartInstance = null;
     }
     if (window.__chartInstances) {
         Object.keys(window.__chartInstances).forEach(k => {
@@ -2632,9 +4096,67 @@ window.__cleanupCurrentPage = function() {
 
 var liveCanvasAnimId = null;
 var liveCanvasResizeHandler = null;
+window.__node2WeatherTheme = '<?= $is_cloudy_initial ? 'cloudy' : 'sunny' ?>';
+window.__node2TargetBlend = (window.__node2WeatherTheme === 'cloudy') ? 1.0 : 0.0;
+window.__node2CurrentBlend = window.__node2TargetBlend;
 
-function initLiveAmbientCanvas() {
-    const canvas = document.getElementById('live-ambient-canvas');
+window.setWeatherBackdropTheme = function(theme) {
+    if (theme !== 'cloudy' && theme !== 'sunny') return;
+    window.__node2WeatherTheme = theme;
+    window.__node2TargetBlend = (theme === 'cloudy') ? 1.0 : 0.0;
+
+    const backdrop = document.getElementById('node2-weather-backdrop');
+    if (backdrop) {
+        backdrop.classList.remove('cloudy', 'sunny');
+        backdrop.classList.add(theme);
+    }
+
+    const pillIcon = document.getElementById('weather-ambient-mode-icon');
+    const pillText = document.getElementById('weather-ambient-mode-text');
+    const pillBadge = document.getElementById('weather-ambient-mode-badge');
+    if (pillIcon) pillIcon.innerText = (theme === 'cloudy') ? '☁️' : '☀️';
+    if (pillText) pillText.innerText = (theme === 'cloudy') ? 'Atmosphere: Cloudy Drifting Sky' : 'Atmosphere: Sunny Radiant Sky';
+    if (pillBadge) {
+        pillBadge.innerText = (theme === 'cloudy') ? 'COOL & MOIST' : 'BRIGHT & WARM';
+        pillBadge.style.backgroundColor = (theme === 'cloudy') ? '#e2e8f0' : '#fef08a';
+        pillBadge.style.color = (theme === 'cloudy') ? '#475569' : '#854d0e';
+    }
+};
+
+window.toggleWeatherBackdropTheme = function() {
+    const next = (window.__node2WeatherTheme === 'cloudy') ? 'sunny' : 'cloudy';
+    window.setWeatherBackdropTheme(next);
+};
+
+window.evaluateNode2WeatherTheme = function(temp, hum, rain) {
+    // User condition: "if temperature is low and humidity is high else a sunny bright animation in node 2"
+    let isCloudy = true; // Default in standby mode matches user reference screenshot
+    const t = (temp != null && !isNaN(Number(temp))) ? Number(temp) : null;
+    const h = (hum != null && !isNaN(Number(hum))) ? Number(hum) : null;
+    const r = (rain != null && !isNaN(Number(rain))) ? Number(rain) : 0;
+
+    if (r > 0) {
+        isCloudy = true;
+    } else if (t !== null && h !== null) {
+        // Temperature low (<= 26°C) AND humidity high (>= 65%), or cold (<= 23°C), or saturated (>= 85%)
+        if ((t <= 26 && h >= 65) || t <= 23 || h >= 85) {
+            isCloudy = true;
+        } else {
+            isCloudy = false; // Else sunny bright animation
+        }
+    } else if (t !== null) {
+        isCloudy = (t <= 24);
+    } else if (h !== null) {
+        isCloudy = (h >= 75);
+    } else {
+        isCloudy = true; // Standby default
+    }
+
+    window.setWeatherBackdropTheme(isCloudy ? 'cloudy' : 'sunny');
+};
+
+function initNode2WeatherBackdrop() {
+    const canvas = document.getElementById('weather-sky-canvas') || document.getElementById('live-ambient-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -2645,105 +4167,368 @@ function initLiveAmbientCanvas() {
     }
 
     function resize() {
-        if (!canvas || !canvas.parentElement) return;
-        canvas.width = canvas.parentElement.offsetWidth || window.innerWidth;
-        canvas.height = canvas.parentElement.offsetHeight || window.innerHeight;
+        if (!canvas) return;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initElements();
     }
     liveCanvasResizeHandler = resize;
     window.addEventListener('resize', liveCanvasResizeHandler);
+
+    // ─────────────────────────────────────────────────────────────
+    // REALISTIC VOLUMETRIC SUNSET CLOUD ENGINE (Cloudy Mode)
+    // Matches Reference Design: Volumetric Cumulus + Glowing Crests
+    // ─────────────────────────────────────────────────────────────
+    let clouds = [];
+    let wisps = [];
+    let twilightMotes = [];
+
+    // Pre-render soft Gaussian cloud puff brushes (Zero sharp circle edges)
+    function makeGaussianPuff(r, g, b, maxAlpha) {
+        const s = 140;
+        const off = document.createElement('canvas');
+        off.width = s;
+        off.height = s;
+        const octx = off.getContext('2d');
+        const imgData = octx.createImageData(s, s);
+        const data = imgData.data;
+        const half = s / 2;
+        for (let y = 0; y < s; y++) {
+            for (let x = 0; x < s; x++) {
+                const dx = (x - half) / half;
+                const dy = (y - half) / half;
+                const distSq = dx * dx + dy * dy;
+                if (distSq < 1.0) {
+                    const d = Math.sqrt(distSq);
+                    const falloff = 0.5 * (1 + Math.cos(Math.PI * d));
+                    const a = falloff * falloff * maxAlpha;
+                    const idx = (y * s + x) * 4;
+                    data[idx] = r;
+                    data[idx + 1] = g;
+                    data[idx + 2] = b;
+                    data[idx + 3] = Math.round(a * 255);
+                }
+            }
+        }
+        octx.putImageData(imgData, 0, 0);
+        return off;
+    }
+
+    const sprCrest = makeGaussianPuff(255, 185, 138, 0.40);
+    const sprPeak = makeGaussianPuff(255, 238, 220, 0.46);
+    const sprMauve = makeGaussianPuff(182, 135, 150, 0.38);
+    const sprBase = makeGaussianPuff(48, 54, 70, 0.48);
+
+    class DriftingSunsetCloud {
+        constructor(layer, initSpread = true) {
+            this.layer = layer; // 0 = distant haze, 1 = midground, 2 = foreground
+            this.reset(initSpread);
+        }
+
+        reset(initSpread = false) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const isMobile = (w < 640);
+            const scale = (isMobile ? 0.70 : 1.0) * ((this.layer === 0) ? (0.75 + Math.random() * 0.25) :
+                          (this.layer === 1) ? (1.05 + Math.random() * 0.35) :
+                                               (1.40 + Math.random() * 0.40));
+
+            this.width = (320 + Math.random() * 240) * scale;
+            this.height = this.width * (0.32 + Math.random() * 0.08);
+            this.x = initSpread ? (Math.random() * (w + this.width * 2) - this.width) : (-this.width - Math.random() * 120);
+
+            if (this.layer === 0) {
+                this.y = (0.14 + Math.random() * 0.26) * h;
+                this.speed = 0.16 + Math.random() * 0.08;
+                this.alpha = 0.55 + Math.random() * 0.15;
+            } else if (this.layer === 1) {
+                this.y = (0.26 + Math.random() * 0.30) * h;
+                this.speed = 0.28 + Math.random() * 0.10;
+                this.alpha = 0.75 + Math.random() * 0.12;
+            } else {
+                this.y = (0.38 + Math.random() * 0.30) * h;
+                this.speed = 0.42 + Math.random() * 0.12;
+                this.alpha = 0.88 + Math.random() * 0.10;
+            }
+
+            this.phase = Math.random() * Math.PI * 2;
+            this.puffs = [];
+
+            // 1. Underbelly base puffs (flat condensation base with dark slate shade)
+            const nBase = isMobile ? 14 : 22;
+            for (let i = 0; i < nBase; i++) {
+                const rx = (i / (nBase - 1) - 0.5) * (this.width * 0.86) + (Math.random() - 0.5) * 25;
+                const ry = this.height * 0.16 + (Math.random() - 0.5) * (this.height * 0.12);
+                const sz = (this.height * 0.55) + Math.random() * (this.height * 0.30);
+                this.puffs.push({ x: rx, y: ry, size: sz, spr: sprBase, phase: Math.random() * Math.PI * 2, pulse: sz * 0.05 });
+            }
+
+            // 2. Mid volumetric body puffs
+            const nMid = isMobile ? 18 : 28;
+            for (let i = 0; i < nMid; i++) {
+                const rx = ((i + 0.5) / nMid - 0.5) * (this.width * 0.74) + (Math.random() - 0.5) * 28;
+                const ry = (Math.random() - 0.5) * (this.height * 0.18);
+                const sz = (this.height * 0.60) + Math.random() * (this.height * 0.35);
+                this.puffs.push({ x: rx, y: ry, size: sz, spr: sprMauve, phase: Math.random() * Math.PI * 2, pulse: sz * 0.06 });
+            }
+
+            // 3. Sunlit cauliflower top crests (golden peach & apricot)
+            const nCrest = isMobile ? 14 : 20;
+            for (let i = 0; i < nCrest; i++) {
+                const rx = ((i + 0.5) / nCrest - 0.5) * (this.width * 0.66) + (Math.random() - 0.5) * 22;
+                const ry = -this.height * 0.18 - Math.random() * (this.height * 0.24);
+                const sz = (this.height * 0.50) + Math.random() * (this.height * 0.30);
+                this.puffs.push({ x: rx, y: ry, size: sz, spr: (Math.random() > 0.35) ? sprCrest : sprPeak, phase: Math.random() * Math.PI * 2, pulse: sz * 0.05 });
+            }
+        }
+
+        update(t) {
+            this.x += this.speed;
+            this.phase += 0.005;
+            for (const p of this.puffs) {
+                p.curSize = p.size + Math.sin(p.phase + t * 0.8) * p.pulse;
+            }
+            if (this.x > canvas.width + this.width) {
+                this.reset(false);
+            }
+        }
+
+        draw(ctx, opacity) {
+            const effAlpha = this.alpha * opacity;
+            if (effAlpha <= 0.02) return;
+            const cy = this.y + Math.sin(this.phase) * 3;
+            ctx.save();
+            ctx.globalAlpha = effAlpha;
+            for (const p of this.puffs) {
+                const s = p.curSize || p.size;
+                ctx.drawImage(p.spr, this.x + p.x - s * 0.5, cy + p.y - s * 0.5, s, s);
+            }
+            ctx.restore();
+        }
+    }
+
+    // Horizontal Sunset Stratus Wisps (Matches low horizon streaks in reference)
+    class SunsetStratusWisp {
+        constructor(initSpread = true) {
+            this.reset(initSpread);
+        }
+        reset(initSpread = false) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const isMobile = (w < 640);
+            this.width = (isMobile ? 200 : 260) + Math.random() * (isMobile ? 180 : 300);
+            this.height = (isMobile ? 12 : 16) + Math.random() * (isMobile ? 12 : 18);
+            this.x = initSpread ? (Math.random() * (w + this.width) - this.width * 0.5) : (-this.width - Math.random() * 80);
+            this.y = (0.50 + Math.random() * 0.38) * h;
+            this.speed = 0.44 + Math.random() * 0.18;
+            this.alpha = 0.50 + Math.random() * 0.22;
+            this.phase = Math.random() * Math.PI * 2;
+        }
+        update(t) {
+            this.x += this.speed;
+            this.phase += 0.006;
+            if (this.x > canvas.width + this.width) this.reset(false);
+        }
+        draw(ctx, opacity) {
+            const effAlpha = this.alpha * opacity;
+            if (effAlpha <= 0.02) return;
+            const cy = this.y + Math.sin(this.phase) * 2;
+            ctx.save();
+            ctx.globalAlpha = effAlpha;
+            const steps = 12;
+            for (let i = 0; i < steps; i++) {
+                const rx = (i / (steps - 1) - 0.5) * (this.width * 0.85);
+                const puffH = this.height * (0.8 + Math.random() * 0.4);
+                const puffW = puffH * 3.6;
+                ctx.drawImage(sprCrest, this.x + rx - puffW * 0.5, cy - puffH * 0.5, puffW, puffH);
+            }
+            ctx.restore();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // SUNNY BRIGHT ANIMATION ENGINE (Sunny Mode)
+    // ─────────────────────────────────────────────────────────────
+    let sunRays = [];
+    let sunMotes = [];
+    let rayRotationAngle = 0;
+
+    function initElements() {
+        clouds = [];
+        const isMobile = (canvas.width < 640);
+        const numPerLayer = isMobile ? 2 : 3;
+        for (let l = 0; l < 3; l++) {
+            for (let c = 0; c < numPerLayer; c++) {
+                clouds.push(new DriftingSunsetCloud(l, true));
+            }
+        }
+
+        wisps = [];
+        const numWisps = isMobile ? 4 : 7;
+        for (let s = 0; s < numWisps; s++) {
+            wisps.push(new SunsetStratusWisp(true));
+        }
+
+        twilightMotes = Array.from({ length: isMobile ? 20 : 35 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 2.2 + 0.8,
+            speedX: (Math.random() - 0.3) * 0.4,
+            speedY: -(Math.random() * 0.35 + 0.15),
+            alpha: Math.random() * 0.6 + 0.2,
+            pulse: Math.random() * Math.PI * 2
+        }));
+
+        sunRays = Array.from({ length: 16 }, (_, i) => ({
+            angleOffset: (i * Math.PI * 2) / 16,
+            baseLen: (i % 2 === 0) ? (canvas.height * 0.42 + 60) : (canvas.height * 0.32 + 30),
+            pulseSpeed: 0.02 + (i % 4) * 0.008,
+            pulseOffset: i * 0.4,
+            width: (i % 2 === 0) ? 0.095 : 0.058
+        }));
+
+        sunMotes = Array.from({ length: 35 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 2.8 + 1.2,
+            speedX: (Math.random() - 0.4) * 0.45,
+            speedY: -(Math.random() * 0.5 + 0.25),
+            alpha: Math.random() * 0.65 + 0.2,
+            pulse: Math.random() * Math.PI * 2,
+            sparkle: Math.random() > 0.7
+        }));
+    }
+
     resize();
 
-    const rawWind = (window.INITIAL_DATA && window.INITIAL_DATA.weather && window.INITIAL_DATA.weather.wind_speed)
-        ? Number(window.INITIAL_DATA.weather.wind_speed)
-        : 3.5;
-    const speedFactor = Math.max(0.6, (rawWind / 10.0));
-
-    // 80 Floating Ambient Bubbles
-    const particles = Array.from({ length: 80 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        radius: Math.random() * 4.2 + 2.0,
-        speedX: (0.5 + Math.random() * 0.9) * speedFactor,
-        speedY: (Math.random() - 0.5) * 0.35,
-        alpha: Math.random() * 0.28 + 0.18,
-        angle: Math.random() * Math.PI * 2,
-        waveFreq: Math.random() * 0.02 + 0.012,
-        waveAmp: Math.random() * 1.8 + 0.8,
-    }));
-
-    // 7 Flowing Wind Stream Ribbons
-    const streamRibbons = Array.from({ length: 7 }, (_, i) => ({
-        y: (canvas.height / 8) * (i + 1) + (Math.random() - 0.5) * 45,
-        length: canvas.width * 0.5 + Math.random() * 120,
-        x: Math.random() * canvas.width,
-        speed: (1.3 + i * 0.35) * speedFactor,
-        thickness: 1.8 + Math.random() * 1.6,
-        opacity: 0.20 + Math.random() * 0.18,
-    }));
-
     let tick = 0;
-
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         tick += 0.02;
 
-        // Render Flowing Wind Stream Ribbons
-        for (const rib of streamRibbons) {
-            ctx.beginPath();
-            const grad = ctx.createLinearGradient(rib.x, rib.y, rib.x + rib.length, rib.y);
-            grad.addColorStop(0, 'rgba(0, 191, 165, 0)');
-            grad.addColorStop(0.2, `rgba(0, 191, 165, ${rib.opacity * 0.75})`);
-            grad.addColorStop(0.55, `rgba(14, 165, 233, ${rib.opacity})`);
-            grad.addColorStop(0.8, `rgba(56, 189, 248, ${rib.opacity * 0.65})`);
-            grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
-
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = rib.thickness;
-            ctx.lineCap = 'round';
-
-            ctx.moveTo(rib.x, rib.y);
-            for (let x = 0; x < rib.length; x += 18) {
-                const cy = rib.y + Math.sin((rib.x + x) * 0.009 + tick) * 9 + Math.cos((rib.x + x) * 0.018 + tick * 0.5) * 3;
-                ctx.lineTo(rib.x + x, cy);
-            }
-            ctx.stroke();
-
-            rib.x += rib.speed;
-            if (rib.x > canvas.width + 120) {
-                rib.x = -rib.length - 60;
-                rib.y = (canvas.height / 8) * (Math.floor(Math.random() * 7) + 1);
-            }
+        if (Math.abs(window.__node2CurrentBlend - window.__node2TargetBlend) > 0.01) {
+            window.__node2CurrentBlend += (window.__node2TargetBlend - window.__node2CurrentBlend) * 0.04;
+        } else {
+            window.__node2CurrentBlend = window.__node2TargetBlend;
         }
 
-        // Render Floating Iridescent Bubbles
-        for (const p of particles) {
+        const cloudyWeight = window.__node2CurrentBlend; // 1 = fully cloudy (sunset clouds)
+        const sunnyWeight = 1.0 - cloudyWeight;         // 1 = fully sunny
+
+        // ═════════════════════════════════════════════════════════════
+        // RENDER SUNNY MODE (Radiant Sun, Rays, Golden Motes)
+        // ═════════════════════════════════════════════════════════════
+        if (sunnyWeight > 0.015) {
+            const sunX = Math.round(canvas.width * (canvas.width < 768 ? 0.75 : 0.80));
+            const sunY = Math.round(Math.min(125, Math.max(70, canvas.height * 0.16)));
+            const sunRadius = canvas.width < 768 ? 32 : 42;
+
+            ctx.save();
+            const pulse1 = Math.sin(tick * 1.6) * 8;
+            const halo1 = ctx.createRadialGradient(sunX, sunY, sunRadius * 0.5, sunX, sunY, 140 + pulse1);
+            halo1.addColorStop(0, `rgba(254, 240, 138, ${sunnyWeight * 0.55})`);
+            halo1.addColorStop(0.5, `rgba(251, 191, 36, ${sunnyWeight * 0.25})`);
+            halo1.addColorStop(1, `rgba(245, 158, 11, 0)`);
+            ctx.fillStyle = halo1;
             ctx.beginPath();
-            p.angle += p.waveFreq;
-            const currentY = p.y + Math.sin(p.angle) * p.waveAmp;
-
-            const particleGrad = ctx.createRadialGradient(
-                p.x - p.radius * 0.35, currentY - p.radius * 0.35, p.radius * 0.15,
-                p.x, currentY, p.radius * 2
-            );
-            particleGrad.addColorStop(0, `rgba(255, 255, 255, ${p.alpha * 1.3})`);
-            particleGrad.addColorStop(0.3, `rgba(0, 191, 165, ${p.alpha * 0.95})`);
-            particleGrad.addColorStop(0.7, `rgba(14, 165, 233, ${p.alpha * 0.75})`);
-            particleGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-            ctx.fillStyle = particleGrad;
-            ctx.arc(p.x, currentY, p.radius * 2, 0, Math.PI * 2);
+            ctx.arc(sunX, sunY, 140 + pulse1, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.strokeStyle = `rgba(0, 191, 165, ${p.alpha * 0.65})`;
-            ctx.lineWidth = 0.85;
-            ctx.stroke();
+            const pulse2 = Math.cos(tick * 1.2) * 14;
+            const halo2 = ctx.createRadialGradient(sunX, sunY, sunRadius, sunX, sunY, 280 + pulse2);
+            halo2.addColorStop(0, `rgba(253, 224, 71, ${sunnyWeight * 0.28})`);
+            halo2.addColorStop(0.65, `rgba(245, 158, 11, ${sunnyWeight * 0.10})`);
+            halo2.addColorStop(1, `rgba(251, 146, 60, 0)`);
+            ctx.fillStyle = halo2;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 280 + pulse2, 0, Math.PI * 2);
+            ctx.fill();
 
-            p.y += p.speedY;
-            p.x += p.speedX;
+            rayRotationAngle += 0.0016;
+            for (const ray of sunRays) {
+                const ang = rayRotationAngle + ray.angleOffset;
+                const len = ray.baseLen + Math.sin(tick * ray.pulseSpeed + ray.pulseOffset) * 20;
+                ctx.beginPath();
+                ctx.moveTo(sunX, sunY);
+                ctx.lineTo(sunX + Math.cos(ang - ray.width) * len, sunY + Math.sin(ang - ray.width) * len);
+                ctx.lineTo(sunX + Math.cos(ang + ray.width) * len, sunY + Math.sin(ang + ray.width) * len);
+                ctx.closePath();
+                const rayGrad = ctx.createRadialGradient(sunX, sunY, 20, sunX, sunY, len);
+                rayGrad.addColorStop(0, `rgba(254, 240, 138, ${sunnyWeight * 0.42})`);
+                rayGrad.addColorStop(0.45, `rgba(253, 224, 71, ${sunnyWeight * 0.20})`);
+                rayGrad.addColorStop(1, `rgba(254, 240, 138, 0)`);
+                ctx.fillStyle = rayGrad;
+                ctx.fill();
+            }
 
-            if (p.x > canvas.width + 25) p.x = -25;
-            if (p.y > canvas.height + 25) p.y = -25;
-            if (p.y < -25) p.y = canvas.height + 25;
+            const coreGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius * 1.35);
+            coreGrad.addColorStop(0, `rgba(255, 255, 255, ${sunnyWeight * 1.0})`);
+            coreGrad.addColorStop(0.4, `rgba(254, 240, 138, ${sunnyWeight * 0.98})`);
+            coreGrad.addColorStop(0.75, `rgba(245, 158, 11, ${sunnyWeight * 0.85})`);
+            coreGrad.addColorStop(1, `rgba(217, 119, 6, 0)`);
+            ctx.fillStyle = coreGrad;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunRadius * 1.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (const m of sunMotes) {
+                m.pulse += 0.035;
+                const alpha = (m.alpha + Math.sin(m.pulse) * 0.18) * sunnyWeight;
+                if (alpha > 0.05) {
+                    ctx.beginPath();
+                    ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(253, 224, 71, ${alpha})`;
+                    ctx.fill();
+                    if (m.sparkle && alpha > 0.35) {
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
+                        ctx.lineWidth = 1.0;
+                        ctx.beginPath();
+                        ctx.moveTo(m.x - m.r * 2.2, m.y);
+                        ctx.lineTo(m.x + m.r * 2.2, m.y);
+                        ctx.moveTo(m.x, m.y - m.r * 2.2);
+                        ctx.lineTo(m.x, m.y + m.r * 2.2);
+                        ctx.stroke();
+                    }
+                }
+                m.x += m.speedX;
+                m.y += m.speedY;
+                if (m.y < -20) { m.y = canvas.height + 20; m.x = Math.random() * canvas.width; }
+                if (m.x < -20) m.x = canvas.width + 20;
+                if (m.x > canvas.width + 20) m.x = -20;
+            }
+            ctx.restore();
+        }
+
+        // ═════════════════════════════════════════════════════════════
+        // RENDER CLOUDY MODE (Sunset Cumulus Clouds & Stratus Wisps)
+        // ═════════════════════════════════════════════════════════════
+        if (cloudyWeight > 0.015) {
+            for (const cloud of clouds) {
+                cloud.update(tick);
+                cloud.draw(ctx, cloudyWeight);
+            }
+            for (const wisp of wisps) {
+                wisp.update(tick);
+                wisp.draw(ctx, cloudyWeight);
+            }
+            // Ambient twilight floating motes
+            ctx.save();
+            for (const tm of twilightMotes) {
+                tm.pulse += 0.025;
+                const alpha = (tm.alpha + Math.sin(tm.pulse) * 0.15) * cloudyWeight;
+                if (alpha > 0.04) {
+                    ctx.beginPath();
+                    ctx.arc(tm.x, tm.y, tm.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(254, 215, 170, ${alpha * 0.75})`;
+                    ctx.fill();
+                }
+                tm.x += tm.speedX;
+                tm.y += tm.speedY;
+                if (tm.y < -10) { tm.y = canvas.height + 10; tm.x = Math.random() * canvas.width; }
+                if (tm.x < -10) tm.x = canvas.width + 10;
+                if (tm.x > canvas.width + 10) tm.x = -10;
+            }
+            ctx.restore();
         }
 
         liveCanvasAnimId = requestAnimationFrame(render);
@@ -2751,9 +4536,12 @@ function initLiveAmbientCanvas() {
     render();
 }
 
+window.initLiveAmbientCanvas = initNode2WeatherBackdrop;
+
 setTimeout(() => {
     refreshDashboard();
     initLiveAmbientCanvas();
+    if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 60);
     
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {

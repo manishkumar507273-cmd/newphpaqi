@@ -1,77 +1,20 @@
 <?php
-// Retrieve cached bulk telemetry for 0ms instant first-paint on both desktop and mobile
-$cache_candidates = [
-    sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json',
-    sys_get_temp_dir() . '/smartairnet_cache/' . md5('live_bulk_60') . '.json',
-    sys_get_temp_dir() . '/smartairnet_cache/last_known_hero.json',
-];
+if (!function_exists('smartairnet_get_active_node_id')) {
+    require_once __DIR__ . '/../config/nodes.php';
+}
+$active_node_id = '2';
+$is_node_2 = true;
+
+// Standby state definitions for Node 2 Overview
 $init_bulk = null;
-$best_epoch = 0;
-foreach ($cache_candidates as $cf) {
-    if (file_exists($cf)) {
-        $raw_cache = @file_get_contents($cf);
-        if ($raw_cache && strlen($raw_cache) > 20) {
-            $parsed = @json_decode($raw_cache, true);
-            if ($parsed) {
-                if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
-                    $parsed = ['aqi' => $parsed];
-                }
-                $aqi_item = null;
-                if (!empty($parsed['aqi'])) {
-                    if (isset($parsed['aqi'][0]) && is_array($parsed['aqi'][0])) {
-                        $aqi_item = $parsed['aqi'][0];
-                    } elseif (is_array($parsed['aqi'])) {
-                        $aqi_item = $parsed['aqi'];
-                    }
-                }
-                $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
-                $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
-                if ($e > $best_epoch && $aqi_item) {
-                    $best_epoch = $e;
-                    $init_bulk = $parsed;
-                    if (isset($init_bulk['aqi'][0])) {
-                        $init_bulk['aqi'] = $init_bulk['aqi'][0];
-                    }
-                }
-            }
-        }
-    }
-}
-
-// AQI pre-calculated fields
 $init_aqi = null;
-$init_aqi_color = '#ea8c34';
-$init_aqi_bg = '#fff7ed';
-$init_aqi_border = 'rgba(234, 140, 52, 0.45)';
-$init_aqi_text = '#9a3412';
-$init_aqi_label = 'Poor';
-$init_aqi_dom = 'PM2.5';
-$init_aqi_bar_width = '30%';
-
-if (!empty($init_bulk['aqi'])) {
-    $aqi_data = $init_bulk['aqi'];
-    if (isset($aqi_data[0]) && is_array($aqi_data[0])) $aqi_data = $aqi_data[0];
-    $calc_v = isset($aqi_data['cpcb_aqi']) ? (int)round($aqi_data['cpcb_aqi']) : (isset($aqi_data['aqi_info']['value']) ? (int)round($aqi_data['aqi_info']['value']) : null);
-    if ($calc_v !== null) {
-        $init_aqi = $calc_v;
-        $init_aqi_dom = !empty($aqi_data['dominant_pollutant']) ? htmlspecialchars($aqi_data['dominant_pollutant']) : 'PM2.5';
-        
-        if ($init_aqi <= 50) {
-            $init_aqi_label = 'Good'; $init_aqi_color = '#59b61f'; $init_aqi_bg = '#f0fdf4'; $init_aqi_border = 'rgba(89, 182, 31, 0.4)'; $init_aqi_text = '#15803d';
-        } elseif ($init_aqi <= 100) {
-            $init_aqi_label = 'Moderate'; $init_aqi_color = '#eec732'; $init_aqi_bg = '#fefce8'; $init_aqi_border = 'rgba(238, 199, 50, 0.45)'; $init_aqi_text = '#854d0e';
-        } elseif ($init_aqi <= 200) {
-            $init_aqi_label = 'Poor'; $init_aqi_color = '#ea8c34'; $init_aqi_bg = '#fff7ed'; $init_aqi_border = 'rgba(234, 140, 52, 0.45)'; $init_aqi_text = '#9a3412';
-        } elseif ($init_aqi <= 300) {
-            $init_aqi_label = 'Unhealthy'; $init_aqi_color = '#e95478'; $init_aqi_bg = '#fff1f2'; $init_aqi_border = 'rgba(233, 84, 120, 0.45)'; $init_aqi_text = '#991b1b';
-        } elseif ($init_aqi <= 400) {
-            $init_aqi_label = 'Severe'; $init_aqi_color = '#b33fba'; $init_aqi_bg = '#faf5ff'; $init_aqi_border = 'rgba(179, 63, 186, 0.45)'; $init_aqi_text = '#6b21a8';
-        } else {
-            $init_aqi_label = 'Hazardous'; $init_aqi_color = '#c92033'; $init_aqi_bg = '#fef2f2'; $init_aqi_border = 'rgba(201, 32, 51, 0.45)'; $init_aqi_text = '#9f1239';
-        }
-        $init_aqi_bar_width = min(100, max(4, round(($init_aqi / 500) * 100))) . '%';
-    }
-}
+$init_aqi_color = '#94a3b8';
+$init_aqi_bg = '#f1f5f9';
+$init_aqi_border = 'rgba(148, 163, 184, 0.45)';
+$init_aqi_text = '#64748b';
+$init_aqi_label = 'Standby';
+$init_aqi_dom = '--';
+$init_aqi_bar_width = '0%';
 
 // Weather pre-calculated fields
 $init_temp = '--';
@@ -88,88 +31,11 @@ $init_wind_kmh = 0.0;
 
 $init_live_rain = '--';
 $init_today_rain = '--';
-
-if (!function_exists('adjustTemperatureOverview')) {
-    function adjustTemperatureOverview($temp, $tsRaw) {
-        if ($temp === null || $temp === '') return null;
-        $temp = (float)$temp;
-        if (!$tsRaw) return round($temp, 1);
-        try {
-            $tsStr = trim((string)$tsRaw);
-            if (strpos($tsStr, '+00') !== false || substr($tsStr, -1) === 'Z') {
-                $dt = new DateTime($tsStr);
-                $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-            } elseif (preg_match('/([+-]\d{2}):?(\d{2})$/', $tsStr)) {
-                $dt = new DateTime($tsStr);
-                $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
-            } else {
-                $dt = new DateTime($tsStr, new DateTimeZone('Asia/Kolkata'));
-            }
-            $hour = (int)$dt->format('G');
-            $offset = 0.0;
-            if ($hour === 8)                    $offset = -0.5;
-            elseif ($hour === 9)                $offset = -1.0;
-            elseif ($hour === 10)               $offset = -1.5;
-            elseif ($hour >= 11 && $hour <= 16) $offset = -2.0;
-            elseif ($hour === 17)               $offset = -1.5;
-            elseif ($hour === 18)               $offset = -1.0;
-            elseif ($hour === 19)               $offset = -0.5;
-            return round($temp + $offset, 1);
-        } catch (Exception $e) {
-            return round($temp, 1);
-        }
-    }
-}
-
-if (!empty($init_bulk['weather'])) {
-    $w = $init_bulk['weather'];
-    if (isset($w['temperature']) && $w['temperature'] !== null) {
-        $raw_t = (float)$w['temperature'];
-        $init_temp = number_format($raw_t, 1, '.', '');
-        $init_temp_bar_width = min(100, max(5, round((($raw_t - 10) / 35) * 100))) . '%';
-    }
-    if (isset($w['humidity']) && $w['humidity'] !== null) {
-        $init_hum = number_format((float)$w['humidity'], 1, '.', '');
-        $init_hum_bar_width = min(100, max(5, round((float)$w['humidity']))) . '%';
-    }
-    if (isset($w['wind_speed']) && $w['wind_speed'] !== null) {
-        $init_wind_kmh = (float)$w['wind_speed'];
-        $init_wind = number_format($init_wind_kmh, 1, '.', '');
-        $init_wind_badge = ($init_wind_kmh > 15) ? 'Breezy' : (($init_wind_kmh > 2) ? 'Gentle' : 'Light');
-        $init_wind_bar_width = min(100, max(4, round(($init_wind_kmh / 30) * 100))) . '%';
-    }
-    if (isset($w['rain_gauge']) && $w['rain_gauge'] !== null) {
-        $init_live_rain = number_format((float)$w['rain_gauge'], 1, '.', '');
-    }
-}
-
-$init_is_raining = (!empty($init_bulk['weather']['rain_gauge']) && (float)$init_bulk['weather']['rain_gauge'] > 0);
-if (isset($_GET['rain'])) {
-    $init_is_raining = ($_GET['rain'] === '1' || $_GET['rain'] === 'true');
-}
+$init_is_raining = false;
 $init_rain_bar_width = '0%';
-if ($init_is_raining) {
-    $init_rain_val = (float)$init_bulk['weather']['rain_gauge'];
-    $init_rain_bar_width = min(100, max(8, round(($init_rain_val / 15) * 100))) . '%';
-}
 
-if (isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null) {
-    $init_today_rain = number_format((float)$init_bulk['today_rain_total'], 1, '.', '');
-}
-
-$aqi_ts = $init_bulk['aqi']['timestamp'] ?? ($init_bulk['aqi']['created_at'] ?? null);
-$weather_ts = $init_bulk['weather']['timestamp'] ?? ($init_bulk['weather']['created_at'] ?? null);
-$aqi_epoch = $aqi_ts ? strtotime($aqi_ts) : 0;
-$weather_epoch = $weather_ts ? strtotime($weather_ts) : 0;
-$latest_epoch = max($aqi_epoch, $weather_epoch);
-$init_ts = $latest_epoch > 0 ? date('Y-m-d\TH:i:sP', $latest_epoch) : null;
 $is_overview_offline = false;
 $overview_offline_time_str = '--';
-if ($latest_epoch > 0) {
-    $diff_mins = max(0, (int)floor((time() - $latest_epoch) / 60));
-    $time_ago = $diff_mins >= 1440 ? floor($diff_mins/1440) . 'd ago' : ($diff_mins >= 60 ? floor($diff_mins/60) . 'h ago' : $diff_mins . 'm ago');
-    $overview_offline_time_str = date('h:i a', $latest_epoch) . ' • ' . $time_ago;
-}
 ?>
 <div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow: hidden; padding: clamp(14px, 2.5vw, 20px); margin-bottom: 6px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
   
@@ -915,18 +781,14 @@ if ($latest_epoch > 0) {
 var tempUnit = (function() { try { return localStorage.getItem('aqi_temp_unit') || 'C'; } catch(e) { return 'C'; } })();
 var windUnit = (function() { try { return localStorage.getItem('aqi_wind_unit') || 'kmh'; } catch(e) { return 'kmh'; } })();
 var rainUnit = (function() { try { return localStorage.getItem('aqi_rain_unit') || 'mm'; } catch(e) { return 'mm'; } })();
-var rawTemp = <?= isset($init_bulk['weather']['temperature']) && $init_bulk['weather']['temperature'] !== null ? json_encode((float)$init_bulk['weather']['temperature']) : 'null' ?>;
-var rawWind = <?= isset($init_bulk['weather']['wind_speed']) && $init_bulk['weather']['wind_speed'] !== null ? json_encode((float)$init_bulk['weather']['wind_speed']) : 'null' ?>;
-var rawLiveRain = <?= isset($init_bulk['weather']['rain_gauge']) && $init_bulk['weather']['rain_gauge'] !== null ? json_encode((float)$init_bulk['weather']['rain_gauge']) : '0' ?>;
-var rawTodayRain = <?= isset($init_bulk['today_rain_total']) && $init_bulk['today_rain_total'] !== null ? json_encode((float)$init_bulk['today_rain_total']) : '0' ?>;
+var rawTemp = null;
+var rawWind = null;
+var rawLiveRain = 0;
+var rawTodayRain = 0;
 var cachedWeatherHistory = null;
-var isRainingGlobal = <?= $init_is_raining ? 'true' : 'false' ?>;
+var isRainingGlobal = false;
 var animationFrameId = null;
 var canvasResizeHandler = null;
-
-if (!window.INITIAL_DATA && <?= $init_bulk ? 'true' : 'false' ?>) {
-    window.INITIAL_DATA = <?= json_encode($init_bulk) ?>;
-}
 
 var getAqiCategory = function(val) {
     const v = Number(val);
@@ -1193,8 +1055,56 @@ async function refreshData(isSilent = false, forceNetwork = false) {
         if (typeof window.fetchOverviewBulk === 'function') {
             bulkData = await window.fetchOverviewBulk(forceNetwork);
         } else {
-            const response = await fetch(`api/telemetry.php?action=overview_bulk`);
+            const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+            const response = await fetch(`api/telemetry.php?action=overview_bulk&node=${activeNode}`);
             bulkData = await response.json();
+        }
+
+        const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+        if (activeNode === '2' || (bulkData && bulkData.node === '2') || (bulkData && bulkData.status === 'STANDBY')) {
+            const aqiVal = document.getElementById('aqi-val');
+            if (aqiVal) aqiVal.innerText = '--';
+            const aqiBadgeText = document.getElementById('aqi-badge-text');
+            if (aqiBadgeText) aqiBadgeText.innerText = 'Standby';
+            const aqiBadge = document.getElementById('aqi-badge');
+            if (aqiBadge) {
+                aqiBadge.style.backgroundColor = '#f1f5f9';
+                aqiBadge.style.color = '#64748b';
+                aqiBadge.style.borderColor = 'rgba(148, 163, 184, 0.45)';
+            }
+            const aqiBadgeDot = document.getElementById('aqi-badge-dot');
+            if (aqiBadgeDot) aqiBadgeDot.style.backgroundColor = '#94a3b8';
+            const aqiDom = document.getElementById('aqi-dom');
+            if (aqiDom) aqiDom.innerText = '--';
+            const aqiBar = document.getElementById('aqi-bar');
+            if (aqiBar) aqiBar.style.width = '0%';
+
+            ['temp-val', 'hum-val', 'wind-val', 'rain-val', 'total-rain-val', 'bar-temp-val', 'bar-hum-val', 'bar-wind-val', 'bar-rain-val', 'mobile-hero-temp', 'mobile-hero-aqi'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = '--';
+            });
+            ['temp-bar', 'hum-bar', 'wind-bar'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.width = '0%';
+            });
+            const ovBanner = document.getElementById('overview-offline-banner');
+            if (ovBanner) ovBanner.style.display = 'none';
+            const ovTimeEl = document.getElementById('overview-latest-time');
+            if (ovTimeEl) ovTimeEl.innerText = '--';
+            const ovBadge = document.getElementById('overview-live-badge');
+            if (ovBadge) {
+                ovBadge.style.backgroundColor = '#f1f5f9';
+                ovBadge.style.borderColor = '#cbd5e1';
+                ovBadge.style.color = '#64748b';
+                const dot = ovBadge.querySelector('span');
+                if (dot) dot.style.backgroundColor = '#94a3b8';
+                const txt = ovBadge.querySelectorAll('span')[1];
+                if (txt) txt.innerText = 'STANDBY';
+            }
+            if (window.updateGlobalLiveBadge) {
+                window.updateGlobalLiveBadge(false, 'Currently in standby mode.', 'Standby');
+            }
+            return;
         }
 
         if (!bulkData || (!bulkData.aqi && !bulkData.weather)) {

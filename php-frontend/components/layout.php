@@ -1,10 +1,27 @@
 <?php
 require_once __DIR__ . '/brand-assets.php';
-$allowed_pages = ['overview', 'live', 'historical', 'weather', 'predictive'];
+require_once __DIR__ . '/../config/nodes.php';
+
+$selected_node = smartairnet_get_active_node_id();
+$active_node_id = $selected_node;
+$node_config = smartairnet_get_node_config($selected_node);
+$active_node_cfg = $node_config;
+$is_node_2 = ($selected_node === '2');
+
+$allowed_pages = ['overview', 'live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather'];
 $current_page = (isset($_GET['page']) && in_array($_GET['page'], $allowed_pages)) ? $_GET['page'] : 'overview';
-if ($current_page === 'weather') {
+
+// Alias split pages or weather to single live feed
+if ($current_page === 'live-aqi') {
+    $_GET['tab'] = 'aqi';
+    $current_page = 'live';
+} elseif ($current_page === 'weather' || $current_page === 'live-weather') {
+    $_GET['tab'] = 'weather';
     $current_page = 'live';
 }
+
+$is_live_page_active = in_array($current_page, ['live', 'live-aqi', 'live-weather']);
+
 $is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']);
 $user_display_name = !empty($_SESSION['user_name']) ? $_SESSION['user_name'] : (!empty($_SESSION['user_email']) ? explode('@', $_SESSION['user_email'])[0] : 'User');
 $user_email = $_SESSION['user_email'] ?? '';
@@ -13,28 +30,43 @@ $user_initial = strtoupper(substr($user_display_name, 0, 1));
 // Check server-side telemetry cache to determine if cloud data is currently live (received <= 6 mins)
 $is_telemetry_live = true;
 $telemetry_last_updated_time = '';
-$telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
-if (file_exists($telemetry_cache_file)) {
-    $raw_cache = @file_get_contents($telemetry_cache_file);
-    if ($raw_cache && strlen($raw_cache) > 50) {
-        $cached_data = json_decode($raw_cache, true);
-        $aqi_ts = $cached_data['aqi']['timestamp'] ?? ($cached_data['aqi']['created_at'] ?? null);
-        $weather_ts = $cached_data['weather']['timestamp'] ?? ($cached_data['weather']['created_at'] ?? null);
-        $aqi_epoch = $aqi_ts ? strtotime($aqi_ts) : 0;
-        $weather_epoch = $weather_ts ? strtotime($weather_ts) : 0;
-        $latest_epoch = max($aqi_epoch, $weather_epoch);
-        if ($latest_epoch > 0) {
-            $telemetry_last_updated_time = date('h:i A', $latest_epoch);
+if ($is_node_2) {
+    $is_telemetry_live = false;
+    $node_status_label = 'STANDBY';
+    $node_status_bg = '#f1f5f9';
+    $node_status_color = '#64748b';
+    $node_status_border = '#e2e8f0';
+    $node_status_dot = '#94a3b8';
+} else {
+    $telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5('overview_bulk') . '.json';
+    if (file_exists($telemetry_cache_file)) {
+        $raw_cache = @file_get_contents($telemetry_cache_file);
+        if ($raw_cache && strlen($raw_cache) > 50) {
+            $cached_data = json_decode($raw_cache, true);
+            $aqi_ts = $cached_data['aqi']['timestamp'] ?? ($cached_data['aqi']['created_at'] ?? null);
+            $weather_ts = $cached_data['weather']['timestamp'] ?? ($cached_data['weather']['created_at'] ?? null);
+            $aqi_epoch = $aqi_ts ? strtotime($aqi_ts) : 0;
+            $weather_epoch = $weather_ts ? strtotime($weather_ts) : 0;
+            $latest_epoch = max($aqi_epoch, $weather_epoch);
+            if ($latest_epoch > 0) {
+                $telemetry_last_updated_time = date('h:i A', $latest_epoch);
+            }
         }
     }
+    $node_status_label = $is_telemetry_live ? 'LIVE' : 'OFFLINE';
+    $node_status_bg = $is_telemetry_live ? '#dcfce7' : '#fff7ed';
+    $node_status_color = $is_telemetry_live ? '#15803d' : '#c2410c';
+    $node_status_border = $is_telemetry_live ? '#bbf7d0' : '#fed7aa';
+    $node_status_dot = $is_telemetry_live ? '#16a34a' : '#f97316';
 }
 
 $page_titles = [
-    'overview'   => 'Atmosphere Snapshot',
-    'live'       => 'Live Data Stream',
-    'historical' => 'Analytics Archive',
-    'predictive' => 'Weather Forecast',
-    'weather'    => 'Weather Conditions'
+    'overview'     => 'Atmosphere Snapshot',
+    'live'         => 'Live Data Stream',
+    'live-aqi'     => 'Live AQI Telemetry',
+    'live-weather' => 'Live Weather Telemetry',
+    'historical'   => 'Analytics Archive',
+    'predictive'   => 'Weather Forecast'
 ];
 $current_title = $page_titles[$current_page] ?? 'Smart WeatherNet';
 
@@ -108,6 +140,57 @@ window.FIREBASE_ENV_CONFIG = {
     measurementId: "G-09JTD9RQQJ"
 };
 window.__currentPage = <?= json_encode($current_page) ?>;
+window.__selectedNode = <?= json_encode($active_node_id) ?>;
+window.__nodeConfig = <?= json_encode($active_node_cfg) ?>;
+
+window.getActiveNode = function() {
+    try {
+        var params = new URLSearchParams(window.location.search);
+        var urlNode = params.get('node');
+        if (urlNode && (urlNode === '1' || urlNode === '2')) return urlNode;
+        var ls = localStorage.getItem('smartairnet_selected_node');
+        if (ls && (ls === '1' || ls === '2')) return ls;
+    } catch(e) {}
+    return window.__selectedNode || '1';
+};
+
+window.switchActiveNode = function(nodeId) {
+    if (nodeId !== '1' && nodeId !== '2') nodeId = '1';
+    try {
+        localStorage.setItem('smartairnet_selected_node', nodeId);
+        document.cookie = "smartairnet_selected_node=" + nodeId + "; path=/; max-age=" + (365 * 86400) + "; SameSite=Lax";
+    } catch(e) {}
+    
+    var url = new URL(window.location.href);
+    url.searchParams.set('node', nodeId);
+    window.location.href = url.toString();
+};
+
+window.toggleNodeDropdown = function(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    var menu = document.getElementById('node-dropdown-menu');
+    var chevron = document.getElementById('node-dropdown-chevron');
+    if (!menu) return;
+    var isOpen = menu.style.display === 'block';
+    menu.style.display = isOpen ? 'none' : 'block';
+    if (chevron) {
+        chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+};
+
+document.addEventListener('click', function(e) {
+    var container = document.getElementById('desktop-node-dropdown-container');
+    var menu = document.getElementById('node-dropdown-menu');
+    var chevron = document.getElementById('node-dropdown-chevron');
+    if (menu && container && !container.contains(e.target)) {
+        menu.style.display = 'none';
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+});
+
 window.__currentUser = <?= json_encode([
     'is_logged_in' => $is_logged_in,
     'name' => $is_logged_in ? ($_SESSION['user_name'] ?? '') : '',
@@ -425,13 +508,27 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
     const desktopBadge = document.getElementById('header-live-badge-desktop');
     const mobileBadge = document.getElementById('header-live-badge-mobile');
     
+    const isStandby = ((window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1')) === '2') || (timeStr === 'Standby');
+    
     [desktopBadge, mobileBadge].forEach(badge => {
         if (!badge) return;
         const isMobile = badge.id === 'header-live-badge-mobile';
         const dot = badge.querySelector('.status-dot');
         const text = badge.querySelector('.status-text');
         
-        if (isLive) {
+        if (isStandby) {
+            badge.style.backgroundColor = '#f1f5f9';
+            badge.style.color = '#64748b';
+            badge.style.borderColor = '#cbd5e1';
+            badge.title = tooltip || 'Node 2 is currently in standby mode';
+            if (dot) {
+                dot.className = 'status-dot';
+                dot.style.backgroundColor = '#94a3b8';
+                dot.style.width = isMobile ? '6px' : '7px';
+                dot.style.height = isMobile ? '6px' : '7px';
+            }
+            if (text) text.innerText = 'STANDBY';
+        } else if (isLive) {
             badge.style.backgroundColor = '#dcfce7';
             badge.style.color = '#15803d';
             badge.style.borderColor = '#bbf7d0';
@@ -459,7 +556,10 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
     });
 
     document.querySelectorAll('.campus-status-dot').forEach(el => {
-        if (isLive) {
+        if (isStandby) {
+            el.className = 'campus-status-dot';
+            el.style.backgroundColor = '#94a3b8';
+        } else if (isLive) {
             el.className = 'campus-status-dot live-dot-pulse';
             el.style.backgroundColor = '#10b981';
         } else {
@@ -476,9 +576,12 @@ $cool_bg_styles = [
     'live' => 'background-color: #f0f7ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
     'historical' => 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
     'predictive' => 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',
-    'overview' => 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);'
+    'overview' => 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);',
+    'live-weather' => 'background: transparent; background-image: none;'
 ];
-$active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
+$active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($_GET['tab']) && $_GET['tab'] === 'weather')))
+    ? 'background: transparent; background-image: none;'
+    : ($cool_bg_styles[$current_page] ?? $cool_bg_styles['live']);
 ?>
 <div id="app-layout-root" style="min-height: 100vh; <?= $active_layout_bg ?> position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.4s ease;">
 
@@ -486,51 +589,101 @@ $active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
   <header style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; padding-left: 16px; padding-right: 16px;">
     
     <!-- Left: Desktop Brand & Mobile Header Selector -->
-    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
       
       <!-- Desktop Brand (Always visible on md+ screens) -->
-      <div class="hidden md:flex items-center gap-2.5">
-        <a href="?page=overview" style="display: flex; align-items: center; gap: 11px; cursor: pointer; text-decoration: none;">
-          <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 3px;">
+      <div class="hidden md:flex items-center gap-2">
+        <a href="?page=overview&node=<?= $selected_node ?>" style="display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 3px;">
             <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
-          <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden; padding-top: 2px;">
-            <div style="font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; line-height: 1.1;">
+          <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden; padding-top: 1px;">
+            <div style="font-size: 17px; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; line-height: 1.1;">
               Smart <span style="font-weight: 600; color: #00bfa5;">WeatherNet</span>
             </div>
             <div style="display: flex; align-items: center; gap: 5px; margin-top: 2px;">
-              <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; display: inline-block; flex-shrink: 0;"></span>
-              <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">SMVITM Campus</span>
-              <span style="font-size: 10px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 6px; margin-left: 2px; white-space: nowrap;">13°15'40" N, 74°47'13" E</span>
+              <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap;"><?= htmlspecialchars($node_config['station_tag'] ?? 'SMVITM Campus') ?></span>
+              <span id="navbar-station-coords" style="font-size: 9.5px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 5px; margin-left: 1px; white-space: nowrap;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : ($is_node_2 ? '--' : '') ?></span>
             </div>
           </div>
         </a>
+
+        <!-- Desktop Node Selector Dropdown -->
+        <div class="relative ml-2" id="desktop-node-dropdown-container" style="position: relative;">
+          <button type="button" id="node-dropdown-trigger" onclick="window.toggleNodeDropdown(event)" style="display: flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05); transition: all 0.18s ease; outline: none;" onmouseover="this.style.borderColor='#00bfa5';" onmouseout="this.style.borderColor='#e2e8f0';">
+            <span style="width: 7.5px; height: 7.5px; border-radius: 50%; background-color: <?= $selected_node === '1' ? '#10b981' : '#94a3b8' ?>; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '1' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
+            <span style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Node 1 (SMVITM)' : 'Node 2 (Standby)' ?></span>
+            <i data-lucide="chevron-down" id="node-dropdown-chevron" style="width: 13px; height: 13px; color: #64748b; transition: transform 0.2s;"></i>
+          </button>
+
+          <!-- Dropdown Popup Menu -->
+          <div id="node-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; min-width: 250px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.15); z-index: 1000; padding: 6px; animation: modal-pop 0.15s ease-out;">
+            <div style="padding: 6px 10px 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">
+              Select Station
+            </div>
+            
+            <!-- Option: Node 1 -->
+            <button type="button" onclick="switchActiveNode('1')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '1' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s;" onmouseover="if('<?= $selected_node ?>' !== '1') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '1') this.style.background='transparent';">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 1 - SMVITM Campus</span>
+                  <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
+                </div>
+              </div>
+              <?php if ($selected_node === '1'): ?>
+                <i data-lucide="check" style="width: 14px; height: 14px; color: #10b981; stroke-width: 2.5;"></i>
+              <?php endif; ?>
+            </button>
+
+            <!-- Option: Node 2 -->
+            <button type="button" onclick="switchActiveNode('2')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '2' ? '#f1f5f9' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s; margin-top: 2px;" onmouseover="if('<?= $selected_node ?>' !== '2') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '2') this.style.background='transparent';">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #94a3b8; display: inline-block; flex-shrink: 0;"></span>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 2 - Station 2</span>
+                  <span style="font-size: 10px; color: #64748b; font-weight: 600;">Standby • Reserved Station</span>
+                </div>
+              </div>
+              <?php if ($selected_node === '2'): ?>
+                <i data-lucide="check" style="width: 14px; height: 14px; color: #0f172a; stroke-width: 2.5;"></i>
+              <?php endif; ?>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Mobile Top App Bar (Brand always visible across all pages) -->
-      <div class="flex md:hidden items-center gap-2 min-w-0" id="mobile-top-bar">
-        <!-- Mobile Brand (Always visible on all pages) -->
-        <a href="?page=overview" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0;">
-          <div style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
+      <div class="flex md:hidden items-center gap-1.5 min-w-0" id="mobile-top-bar">
+        <a href="?page=overview&node=<?= $selected_node ?>" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0;">
+          <div style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
             <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
           <div style="display: flex; flex-direction: column; overflow: hidden;">
-            <span style="font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
+            <span style="font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
               Smart <span style="color: #00bfa5;">WeatherNet</span>
             </span>
-            <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px; flex-wrap: wrap;">
-              <div style="display: inline-flex; align-items: center; gap: 4px;">
-                <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; display: inline-block; flex-shrink: 0;"></span>
-                <span style="font-size: 10px; font-weight: 700; color: #64748b; white-space: nowrap;">SMVITM Campus</span>
-              </div>
-              <span style="font-size: 9px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 4px; margin-left: 1px; white-space: nowrap; font-family: var(--font-mono, monospace);">13°15'40" N, 74°47'13" E</span>
+            <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
+              <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
+              <span style="font-size: 9.5px; font-weight: 700; color: #64748b; white-space: nowrap;"><?= htmlspecialchars($node_config['short_name'] ?? 'Node 1') ?></span>
+              <span id="navbar-station-coords-mobile" style="font-size: 9px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 4px; margin-left: 1px; white-space: nowrap;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : ($is_node_2 ? '--' : '') ?></span>
             </div>
           </div>
         </a>
 
+        <!-- Mobile Node Switcher Dropdown -->
+        <div class="relative ml-1 shrink-0" id="mobile-node-dropdown-container" style="position: relative; display: inline-flex; align-items: center;">
+          <select id="mobile-node-select" onchange="switchActiveNode(this.value)" style="appearance: none; -webkit-appearance: none; background: #ffffff; padding: 4px 22px 4px 8px; border-radius: 999px; border: 1.5px solid <?= $selected_node === '1' ? '#00bfa5' : '#cbd5e1' ?>; font-size: 10.5px; font-weight: 800; color: <?= $selected_node === '1' ? '#00bfa5' : '#475569' ?>; cursor: pointer; outline: none; box-shadow: 0 1px 3px rgba(15,23,42,0.06);">
+            <option value="1" <?= $selected_node === '1' ? 'selected' : '' ?>>● Node 1</option>
+            <option value="2" <?= $selected_node === '2' ? 'selected' : '' ?>>○ Node 2</option>
+          </select>
+          <i data-lucide="chevron-down" style="position: absolute; right: 6px; width: 11px; height: 11px; pointer-events: none; color: #64748b;"></i>
+        </div>
+
         <!-- Secondary Page Mobile App Bar: hidden so brand is always shown -->
         <div id="mobile-secondary-header" style="display: none; align-items: center; gap: 8px; min-width: 0;">
-          <a href="?page=overview" id="header-back-btn" title="Back to Overview" style="display: none; align-items: center; gap: 3px; padding: 6px 10px 6px 6px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #ffffff; color: #475569; text-decoration: none; font-size: 12px; font-weight: 700; -webkit-tap-highlight-color: transparent; flex-shrink: 0;">
+          <a href="?page=overview&node=<?= $selected_node ?>" id="header-back-btn" title="Back to Overview" style="display: none; align-items: center; gap: 3px; padding: 6px 10px 6px 6px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #ffffff; color: #475569; text-decoration: none; font-size: 12px; font-weight: 700; -webkit-tap-highlight-color: transparent; flex-shrink: 0;">
             <i data-lucide="chevron-left" style="width: 18px; height: 18px; color: #00bfa5;"></i>
             <span>Back</span>
           </a>
@@ -545,19 +698,19 @@ $active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
 
     </div>
 
-    <!-- Center: Desktop Nav -->
+    <!-- Center: Desktop Nav (4 Clean Pages) -->
     <nav id="desktop-nav" style="align-items: center; background-color: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(15,23,42,0.04); gap: 2px;" class="hidden md:inline-flex">
-      <a href="?page=overview" data-nav-link="overview" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'overview' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'overview' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
-        <i data-lucide="layout-dashboard" style="width: 15px; height: 15px; opacity: <?= $current_page === 'overview' ? '1' : '0.75' ?>;"></i> Overview
+      <a href="?page=overview&node=<?= $selected_node ?>" data-nav-link="overview" style="display: flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 999px; font-size: 12.5px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'overview' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'overview' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'overview' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
+        <i data-lucide="layout-dashboard" style="width: 14px; height: 14px; opacity: <?= $current_page === 'overview' ? '1' : '0.75' ?>;"></i> Overview
       </a>
-      <a href="?page=live" data-nav-link="live" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'live' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'live' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'live' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
-        <i data-lucide="radio" style="width: 15px; height: 15px; opacity: <?= $current_page === 'live' ? '1' : '0.75' ?>;"></i> Live Data Stream
+      <a href="?page=live&node=<?= $selected_node ?>" data-nav-link="live" style="display: flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 999px; font-size: 12.5px; font-weight: 600; text-decoration: none; color: <?= $is_live_page_active ? '#ffffff' : '#64748b' ?>; background-color: <?= $is_live_page_active ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $is_live_page_active ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
+        <i data-lucide="activity" style="width: 14px; height: 14px; opacity: <?= $is_live_page_active ? '1' : '0.75' ?>;"></i> Live Feed
       </a>
-      <a href="?page=historical" data-nav-link="historical" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'historical' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
-        <i data-lucide="database" style="width: 15px; height: 15px; opacity: <?= $current_page === 'historical' ? '1' : '0.75' ?>;"></i> Analytics Archive
+      <a href="?page=historical&node=<?= $selected_node ?>" data-nav-link="historical" style="display: flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 999px; font-size: 12.5px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'historical' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'historical' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'historical' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
+        <i data-lucide="database" style="width: 14px; height: 14px; opacity: <?= $current_page === 'historical' ? '1' : '0.75' ?>;"></i> Analytics
       </a>
-      <a href="?page=predictive" data-nav-link="predictive" style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
-        <i data-lucide="cloud-rain" style="width: 15px; height: 15px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Forecast
+      <a href="?page=predictive&node=<?= $selected_node ?>" data-nav-link="predictive" style="display: flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 999px; font-size: 12.5px; font-weight: 600; text-decoration: none; color: <?= $current_page === 'predictive' ? '#ffffff' : '#64748b' ?>; background-color: <?= $current_page === 'predictive' ? '#00bfa5' : 'transparent' ?>; box-shadow: <?= $current_page === 'predictive' ? '0 4px 14px rgba(0, 191, 165, 0.35)' : 'none' ?>; transition: all 0.2s ease;">
+        <i data-lucide="cloud-rain" style="width: 14px; height: 14px; opacity: <?= $current_page === 'predictive' ? '1' : '0.75' ?>;"></i> Forecast
       </a>
     </nav>
 
@@ -587,19 +740,19 @@ $active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
           <span>Sign In</span>
         </button>
         
-        <!-- Live / Offline Badge (Desktop) -->
-        <div id="header-live-badge-desktop" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >90 mins' ?>" style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer;">
-          <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#16a34a' : '#f97316' ?>;"></span>
-          <span class="status-text"><?= $is_telemetry_live ? 'LIVE' : 'OFFLINE' ?></span>
+        <!-- Live / Standby / Offline Badge (Desktop) -->
+        <div id="header-live-badge-desktop" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_node_2 ? 'Node 2 is currently in standby mode' : ($is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >90 mins') ?>" style="display: flex; padding: 6px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 700; align-items: center; gap: 6px; background-color: <?= $node_status_bg ?>; color: <?= $node_status_color ?>; border: 1.5px solid <?= $node_status_border ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer;">
+          <span class="status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $node_status_dot ?>;"></span>
+          <span class="status-text"><?= $node_status_label ?></span>
         </div>
       </div>
 
       <!-- Mobile Right Items (Visible on mobile screens) -->
       <div class="flex md:hidden items-center gap-2 flex-shrink-0">
-        <!-- Live / Offline Badge (Mobile) -->
-        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline: No live telemetry received in cloud for >90 mins' ?>" style="display: flex; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 4px; background-color: <?= $is_telemetry_live ? '#dcfce7' : '#fff7ed' ?>; color: <?= $is_telemetry_live ? '#15803d' : '#c2410c' ?>; border: 1.5px solid <?= $is_telemetry_live ? '#bbf7d0' : '#fed7aa' ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
-          <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#16a34a' : '#f97316' ?>;"></span>
-          <span class="status-text"><?= $is_telemetry_live ? 'LIVE' : 'OFFLINE' ?></span>
+        <!-- Live / Standby / Offline Badge (Mobile) -->
+        <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_node_2 ? 'Node 2 is currently in standby mode' : ($is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline') ?>" style="display: flex; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 4px; background-color: <?= $node_status_bg ?>; color: <?= $node_status_color ?>; border: 1.5px solid <?= $node_status_border ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
+          <span class="status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>;"></span>
+          <span class="status-text"><?= $node_status_label ?></span>
         </div>
 
         <!-- Mobile User Account Pill (Always displays which account is signed in) -->
@@ -628,7 +781,8 @@ $active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
   <main style="display: flex; flex-direction: column; position: relative;">
     <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 0; min-height: auto; padding-top: 10px;">
       <?php
-        $page_file = __DIR__ . '/../pages/' . $current_page . '.php';
+        $node_folder = ($active_node_id === '2') ? 'node 2' : 'node 1';
+        $page_file = __DIR__ . '/../' . $node_folder . '/' . $current_page . '.php';
         if (file_exists($page_file)) {
             include $page_file;
         } else {
@@ -661,36 +815,64 @@ $active_layout_bg = $cool_bg_styles[$current_page] ?? $cool_bg_styles['live'];
   </main>
 
   <!-- Fixed Native Mobile Bottom Navigation Bar —— Safe area compliant & haptic response -->
-  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+  <style>
+    /* Strict laptop & desktop hiding: completely suppress bottom nav on screens >= 768px */
+    @media (min-width: 768px) {
+      #mobile-bottom-nav,
+      .mobile-bottom-nav,
+      nav#mobile-bottom-nav {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+        position: absolute !important;
+        z-index: -9999 !important;
+        transform: translateY(200%) !important;
+      }
+    }
+    @media (max-width: 767px) {
+      #mobile-bottom-nav,
+      .mobile-bottom-nav {
+        display: flex !important;
+      }
+    }
+  </style>
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden md:!hidden" style="flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 3px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
 
-    <?php $is_nav_locked = !$is_logged_in; ?>
+    <?php 
+    $is_nav_locked = !$is_logged_in; 
+    $node_suffix = ($active_node_id === '2') ? '&node=2' : '';
+    ?>
     <!-- Overview -->
-    <a href="?page=overview" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: 1; cursor: pointer;">
-      <i data-lucide="home" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'overview' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'overview' ? '#00bfa5' : '#475569' ?>;"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
+    <a href="?page=overview<?= $node_suffix ?>" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: 1; cursor: pointer;">
+      <i data-lucide="home" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'overview' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'overview' ? '#00bfa5' : '#475569' ?>;"></i>
+      <span style="font-size: 9.5px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
     </a>
 
     <!-- Live Feed -->
-    <a href="?page=live" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'live') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'live' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'live' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'live' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
+    <a href="?page=live<?= $node_suffix ?>" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && !$is_live_page_active) ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 48px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $is_live_page_active ? '#00bfa5' : '#475569' ?>; background-color: <?= $is_live_page_active ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $is_live_page_active ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
       <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
-        <i data-lucide="radio" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'live' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'live' ? '#00bfa5' : '#475569' ?>;"></i>
-        <span class="campus-status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#f97316' ?>; border: 1px solid #ffffff; <?= $is_nav_locked ? 'display: none;' : '' ?>"></span>
+        <i data-lucide="activity" style="width: 19px; height: 19px; stroke-width: <?= $is_live_page_active ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $is_live_page_active ? '#00bfa5' : '#475569' ?>;"></i>
+        <span class="campus-status-dot <?= ($is_telemetry_live && !$is_node_2) ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_node_2 ? '#94a3b8' : ($is_telemetry_live ? '#10b981' : '#f97316') ?>; border: 1px solid #ffffff; <?= $is_nav_locked ? 'display: none;' : '' ?>"></span>
       </div>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'live' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
+      <span style="font-size: 10px; font-weight: <?= $is_live_page_active ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
     </a>
 
     <!-- Analytics -->
-    <a href="?page=historical" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
-      <i data-lucide="database" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'historical' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : '#475569' ?>;"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
+    <a href="?page=historical<?= $node_suffix ?>" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
+      <i data-lucide="database" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'historical' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : '#475569' ?>;"></i>
+      <span style="font-size: 9.5px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
     </a>
 
     <!-- Forecast -->
-    <a href="?page=predictive" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; min-width: 48px; padding: 5px 3px; border-radius: 14px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
-      <i data-lucide="cloud-rain" style="width: 20px; height: 20px; stroke-width: <?= $current_page === 'predictive' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#475569' ?>;"></i>
-      <span style="font-size: 10px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
+    <a href="?page=predictive<?= $node_suffix ?>" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
+      <i data-lucide="cloud-rain" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'predictive' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#475569' ?>;"></i>
+      <span style="font-size: 9.5px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
     </a>
-
 
   </nav>
 

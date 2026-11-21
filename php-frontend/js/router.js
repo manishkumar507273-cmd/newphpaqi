@@ -60,20 +60,23 @@
         try {
             const urlObj = new URL(url, window.location.origin);
             const targetPage = urlObj.searchParams.get('page') || 'overview';
+            const activeNode = urlObj.searchParams.get('node') || (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+            const cacheKey = `${targetPage}_n${activeNode}`;
             const isUserLoggedIn = isUserAuthenticated();
 
             // Skip prefetching protected pages for unauthenticated visitors
             if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) return;
-            if (targetPage === currentPage || pageCache.has(targetPage)) return;
+            if (targetPage === currentPage || pageCache.has(cacheKey)) return;
 
+            const nodeQuery = (activeNode === '2') ? '&node=2' : '';
             // No cache-buster — allow HTTP cache to work for page HTML
-            fetch(`?page=${encodeURIComponent(targetPage)}`, {
+            fetch(`?page=${encodeURIComponent(targetPage)}${nodeQuery}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.success) {
-                        pageCache.set(targetPage, { data, time: Date.now() });
+                        pageCache.set(cacheKey, { data, time: Date.now() });
                     }
                 })
                 .catch(() => { });
@@ -81,7 +84,7 @@
     }
 
     // Eagerly pre-cache all main pages in background so page switching is 0ms instant
-    const CORE_PAGES = ['overview', 'live', 'historical', 'predictive'];
+    const CORE_PAGES = ['overview', 'live', 'weather', 'historical', 'predictive'];
     if (document.readyState === 'complete') {
         setTimeout(initPrecache, 100);
     } else {
@@ -89,11 +92,14 @@
     }
     function initPrecache() {
         const isUserLoggedIn = isUserAuthenticated();
+        const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+        const nodeSuffix = (activeNode === '2') ? '&node=2' : '';
         CORE_PAGES.forEach((pg, idx) => {
             if (PROTECTED_PAGES.includes(pg) && !isUserLoggedIn) return;
-            if (pg !== currentPage && !pageCache.has(pg)) {
+            const cacheKey = `${pg}_n${activeNode}`;
+            if (pg !== currentPage && !pageCache.has(cacheKey)) {
                 // Reduced stagger to 30ms (was 80ms) for faster pre-population
-                setTimeout(() => prefetchPage(`?page=${pg}`), idx * 30);
+                setTimeout(() => prefetchPage(`?page=${pg}${nodeSuffix}`), idx * 30);
             }
         });
     }
@@ -122,6 +128,7 @@
         // Update Cool & Light Page Background
         const pageBgStyles = {
             'live': 'background-color: #f0f7ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
+            'weather': 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
             'historical': 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
             'predictive': 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',
             'overview': 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);'
@@ -237,13 +244,20 @@
     // Main Navigation Function
     async function navigateToPage(url, pushState = true) {
         let targetPage = 'overview';
+        let targetNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
         try {
             const urlObj = new URL(url, window.location.origin);
             targetPage = urlObj.searchParams.get('page') || 'overview';
             if (targetPage === 'weather') targetPage = 'live';
+            if (urlObj.searchParams.has('node')) {
+                targetNode = urlObj.searchParams.get('node');
+            }
         } catch (e) {
             targetPage = 'overview';
         }
+
+        const cacheKey = `${targetPage}_n${targetNode}`;
+        const nodeSuffix = (targetNode === '2') ? '&node=2' : '';
 
         if (targetPage === currentPage && !pushState) {
             return;
@@ -286,16 +300,16 @@
 
         try {
             // Check prefetch cache or fetch from server (120s TTL — instant SPA switching for 2 min)
-            let cached = pageCache.get(targetPage);
+            let cached = pageCache.get(cacheKey);
             let data = (cached && (Date.now() - cached.time < 120000)) ? cached.data : null;
             if (!data) {
                 setProgressBar(65, 1);
                 // No cache-buster — allow HTTP cache to accelerate repeated loads
-                const res = await fetch(`?page=${encodeURIComponent(targetPage)}`, {
+                const res = await fetch(`?page=${encodeURIComponent(targetPage)}${nodeSuffix}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 data = await res.json();
-                pageCache.set(targetPage, { data, time: Date.now() });
+                pageCache.set(cacheKey, { data, time: Date.now() });
             }
 
             // Handle auth requirement from server response
@@ -331,7 +345,7 @@
             // Instant content swap (no artificial delays)
             // Push to history
             if (pushState) {
-                history.pushState({ page: targetPage }, '', `?page=${targetPage}`);
+                history.pushState({ page: targetPage, node: targetNode }, '', `?page=${targetPage}${nodeSuffix}`);
             }
             currentPage = targetPage;
             if (data.title) {
@@ -359,23 +373,28 @@
                 // This eliminates the double-fetch (page HTML fetch + telemetry fetch) on SPA navigation
                 try {
                     let preData = null;
-                    if (targetPage === 'overview' && window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
-                        preData = window.__apiCache.overviewBulk.data;
-                    } else if (window.__apiCache && window.__apiCache.liveBulk && window.__apiCache.liveBulk.data) {
-                        preData = window.__apiCache.liveBulk.data;
-                    } else if (window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
-                        preData = window.__apiCache.overviewBulk.data;
-                    } else if (window.__apiCache && window.__apiCache.aqiLive && window.__apiCache.aqiLive.data) {
-                        preData = window.__apiCache.aqiLive.data;
-                    }
-                    if (!preData && typeof window.getLocalCache === 'function') {
-                        preData = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry');
-                    }
-                    if (preData) {
-                        // Ensure both history and aqi_history keys exist
-                        if (!preData.history && preData.aqi_history) preData.history = preData.aqi_history;
-                        if (!preData.aqi_history && preData.history) preData.aqi_history = preData.history;
-                        window.INITIAL_DATA = preData;
+                    if (targetNode === '2') {
+                        preData = null;
+                        window.INITIAL_DATA = null;
+                    } else {
+                        if (targetPage === 'overview' && window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
+                            preData = window.__apiCache.overviewBulk.data;
+                        } else if (window.__apiCache && window.__apiCache.liveBulk && window.__apiCache.liveBulk.data) {
+                            preData = window.__apiCache.liveBulk.data;
+                        } else if (window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
+                            preData = window.__apiCache.overviewBulk.data;
+                        } else if (window.__apiCache && window.__apiCache.aqiLive && window.__apiCache.aqiLive.data) {
+                            preData = window.__apiCache.aqiLive.data;
+                        }
+                        if (!preData && typeof window.getLocalCache === 'function') {
+                            preData = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry');
+                        }
+                        if (preData) {
+                            // Ensure both history and aqi_history keys exist
+                            if (!preData.history && preData.aqi_history) preData.history = preData.aqi_history;
+                            if (!preData.aqi_history && preData.history) preData.aqi_history = preData.history;
+                            window.INITIAL_DATA = preData;
+                        }
                     }
                 } catch (e) { }
 
@@ -466,8 +485,11 @@
 
     // Handle browser Back / Forward buttons
     window.addEventListener('popstate', (e) => {
-        const page = (e.state && e.state.page) || new URLSearchParams(window.location.search).get('page') || 'overview';
-        navigateToPage(window.location.search || `?page=${page}`, false);
+        const params = new URLSearchParams(window.location.search);
+        const page = (e.state && e.state.page) || params.get('page') || 'overview';
+        const node = (e.state && e.state.node) || params.get('node') || (window.getActiveNode ? window.getActiveNode() : '1');
+        const nodeSuffix = (node === '2') ? '&node=2' : '';
+        navigateToPage(window.location.search || `?page=${page}${nodeSuffix}`, false);
     });
 
     // Initial setup on page load

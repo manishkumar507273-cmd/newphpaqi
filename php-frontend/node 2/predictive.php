@@ -9,112 +9,38 @@ if (!isset($page) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     exit;
 }
 
-// 0ms instant pre-hydration from disk cache if it contains upcoming forecast hours
-$forecastJsonFile = __DIR__ . '/../api/forecast_data.json';
+if (!function_exists('smartairnet_get_active_node_id')) {
+    require_once __DIR__ . '/../config/nodes.php';
+}
+$active_node_id = '2';
+$is_node_2 = true;
+
 $preloadedForecastJson = 'null';
-if (file_exists($forecastJsonFile)) {
-    $rawPreload = @file_get_contents($forecastJsonFile);
-    if ($rawPreload && strlen($rawPreload) > 20) {
-        $decodedPreload = @json_decode($rawPreload, true);
-        if (is_array($decodedPreload) && !empty($decodedPreload['hourly'])) {
-            $nowIst = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
-            $currentHourStartTs = (clone $nowIst)->setTime((int)$nowIst->format('H'), 0, 0)->getTimestamp();
-            $hasFutureHour = false;
-            foreach ($decodedPreload['hourly'] as $hItem) {
-                if (!empty($hItem['iso'])) {
-                    try {
-                        $dtH = new DateTime($hItem['iso']);
-                        if ($dtH->getTimestamp() >= $currentHourStartTs) {
-                            $hasFutureHour = true;
-                            break;
-                        }
-                    } catch (Exception $e) {}
-                }
-            }
-            if ($hasFutureHour) {
-                $preloadedForecastJson = $rawPreload;
-            }
-        }
-    }
-}
 
-// Initial AQI category theming in light (matching Live / Overview AQI tier standards)
-$init_f_bg = '#fefce8';
-$init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fefce8 25%, #fef08a 52%, #fde047 78%, #eab308 92%, #ca8a04 100%)';
-$init_f_border = 'rgba(202, 138, 4, 0.38)';
-$init_f_text = '#854d0e';
-$init_f_color = '#ca8a04';
-$init_f_shadow = 'rgba(234, 179, 8, 0.18)';
-$init_f_label = 'MODERATE';
-$init_f_aqi = 90;
-$init_f_advice = 'Acceptable air quality.';
+// Initial AQI category theming for Node 2 (Station 2 Standby)
+$init_f_bg = '#f1f5f9';
+$init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)';
+$init_f_border = 'rgba(148, 163, 184, 0.38)';
+$init_f_text = '#64748b';
+$init_f_color = '#94a3b8';
+$init_f_shadow = 'rgba(148, 163, 184, 0.15)';
+$init_f_label = 'STANDBY';
+$init_f_aqi = '--';
+$init_f_advice = 'Predictive model is in standby.';
 
-if (isset($decodedPreload['hourly'][0]['aqi'])) {
-    $vA = (int)$decodedPreload['hourly'][0]['aqi'];
-    $init_f_aqi = $vA;
-    if ($vA <= 50) {
-        $init_f_bg = '#f0fdf4';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 25%, #dcfce7 55%, #bbf7d0 78%, #4ade80 92%, #22c55e 100%)';
-        $init_f_border = 'rgba(22, 163, 74, 0.35)';
-        $init_f_text = '#15803d';
-        $init_f_color = '#16a34a';
-        $init_f_shadow = 'rgba(22, 163, 74, 0.16)';
-        $init_f_label = 'GOOD';
-        $init_f_advice = 'Air quality is satisfactory.';
-    } elseif ($vA <= 100) {
-        // Moderate default above
-        $init_f_advice = 'Acceptable air quality.';
-    } elseif ($vA <= 200) {
-        $init_f_bg = '#fff7ed';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fff7ed 22%, #ffedd5 48%, #fed7aa 72%, #fb923c 90%, #f97316 100%)';
-        $init_f_border = 'rgba(234, 88, 12, 0.38)';
-        $init_f_text = '#c2410c';
-        $init_f_color = '#ea580c';
-        $init_f_shadow = 'rgba(249, 115, 22, 0.18)';
-        $init_f_label = 'POOR';
-        $init_f_advice = 'Sensitive people affected.';
-    } elseif ($vA <= 300) {
-        $init_f_bg = '#fff1f2';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fff1f2 22%, #ffe4e6 48%, #fecdd3 72%, #fb7185 90%, #e11d48 100%)';
-        $init_f_border = 'rgba(225, 29, 72, 0.38)';
-        $init_f_text = '#9f1239';
-        $init_f_color = '#e11d48';
-        $init_f_shadow = 'rgba(225, 29, 72, 0.18)';
-        $init_f_label = 'UNHEALTHY';
-        $init_f_advice = 'Health effects for everyone.';
-    } elseif ($vA <= 400) {
-        $init_f_bg = '#faf5ff';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #faf5ff 22%, #f3e8ff 48%, #e9d5ff 72%, #c084fc 90%, #9333ea 100%)';
-        $init_f_border = 'rgba(147, 51, 234, 0.38)';
-        $init_f_text = '#6b21a8';
-        $init_f_color = '#9333ea';
-        $init_f_shadow = 'rgba(147, 51, 234, 0.18)';
-        $init_f_label = 'SEVERE';
-        $init_f_advice = 'Emergency health warning.';
-    } else {
-        $init_f_bg = '#fef2f2';
-        $init_f_card_bg = 'linear-gradient(135deg, #ffffff 0%, #fef2f2 22%, #fee2e2 48%, #fca5a5 72%, #f87171 90%, #b91c1c 100%)';
-        $init_f_border = 'rgba(185, 28, 28, 0.40)';
-        $init_f_text = '#881337';
-        $init_f_color = '#b91c1c';
-        $init_f_shadow = 'rgba(185, 28, 28, 0.20)';
-        $init_f_label = 'HAZARDOUS';
-        $init_f_advice = 'Serious health crisis.';
-    }
-}
-
-if ($init_f_aqi <= 50) {
-    $init_f_t = ($init_f_aqi / 50) * 0.22;
-} elseif ($init_f_aqi <= 100) {
-    $init_f_t = 0.22 + (($init_f_aqi - 50) / 50) * 0.20;
-} elseif ($init_f_aqi <= 200) {
-    $init_f_t = 0.42 + (($init_f_aqi - 100) / 100) * 0.23;
-} elseif ($init_f_aqi <= 300) {
-    $init_f_t = 0.65 + (($init_f_aqi - 200) / 100) * 0.15;
-} elseif ($init_f_aqi <= 400) {
-    $init_f_t = 0.80 + (($init_f_aqi - 300) / 100) * 0.12;
+$numeric_f_aqi = is_numeric($init_f_aqi) ? (float)$init_f_aqi : 0;
+if ($numeric_f_aqi <= 50) {
+    $init_f_t = ($numeric_f_aqi / 50) * 0.22;
+} elseif ($numeric_f_aqi <= 100) {
+    $init_f_t = 0.22 + (($numeric_f_aqi - 50) / 50) * 0.20;
+} elseif ($numeric_f_aqi <= 200) {
+    $init_f_t = 0.42 + (($numeric_f_aqi - 100) / 100) * 0.23;
+} elseif ($numeric_f_aqi <= 300) {
+    $init_f_t = 0.65 + (($numeric_f_aqi - 200) / 100) * 0.15;
+} elseif ($numeric_f_aqi <= 400) {
+    $init_f_t = 0.80 + (($numeric_f_aqi - 300) / 100) * 0.12;
 } else {
-    $init_f_t = min(1.0, 0.92 + min(($init_f_aqi - 400) / 100, 1) * 0.08);
+    $init_f_t = min(1.0, 0.92 + min(($numeric_f_aqi - 400) / 100, 1) * 0.08);
 }
 $init_f_theta = (-157.38 + $init_f_t * 134.76) * (M_PI / 180);
 $init_f_pin_x = round(75 + 65 * cos($init_f_theta), 2);
@@ -125,7 +51,7 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
 
   <div class="mb-0.5 sm:mb-2">
     <h1 class="text-lg sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Weather Forecast</h1>
-    <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Atmospheric weather and air quality predictive forecasting for SMVITM Campus.</p>
+    <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Atmospheric weather and air quality predictive forecasting for Station 2 (Standby).</p>
   </div>
 
 
@@ -1476,6 +1402,25 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
     // Fetch and load forecast data from backend (Stale-While-Revalidate)
     async function loadForecastData(force = false) {
         try {
+            const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+            if (activeNode === '2') {
+                const heroAqi = document.getElementById('forecast-hero-aqi');
+                if (heroAqi) heroAqi.innerText = '--';
+                const heroBadge = document.getElementById('forecast-hero-category');
+                if (heroBadge) {
+                    heroBadge.innerText = 'STANDBY';
+                    heroBadge.style.backgroundColor = '#f1f5f9';
+                    heroBadge.style.color = '#64748b';
+                }
+                const heroAdvice = document.getElementById('forecast-hero-health-advice');
+                if (heroAdvice) heroAdvice.innerText = 'Predictive model is in standby.';
+                const reel = document.getElementById('hourly-forecast-reel');
+                if (reel) reel.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b; font-size: 13px; width: 100%;">Currently in standby mode. Hourly forecasts will appear once data collection starts.</div>';
+                const syncStatusEl = document.getElementById('forecast-auto-sync-status');
+                if (syncStatusEl) syncStatusEl.innerText = 'STANDBY';
+                return;
+            }
+
             // Immediate paint: render any cached forecast right away so UI is instant
             if (!force) {
                 if (window.__forecastCache && window.__forecastCache.hourly) {

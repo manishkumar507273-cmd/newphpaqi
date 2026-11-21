@@ -39,7 +39,22 @@ window.setLocalCache = setLocalCache;
 // Synchronously hydrate memory cache and window.INITIAL_DATA on script load (0ms instant!)
 (function initClientStorageCache() {
     try {
-        const cachedBulk = getLocalCache(STORAGE_KEYS.BULK);
+        const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+        if (activeNode === '2') {
+            window.INITIAL_DATA = {
+                aqi: null,
+                weather: null,
+                aqi_history: [],
+                weather_history: [],
+                history: [],
+                today_rain_total: 0.0,
+                node: '2',
+                status: 'STANDBY'
+            };
+            return;
+        }
+
+        const cachedBulk = getLocalCache(STORAGE_KEYS.BULK + '_n' + activeNode) || getLocalCache(STORAGE_KEYS.BULK);
         if (cachedBulk && (cachedBulk.aqi || cachedBulk.weather)) {
             if (!window.INITIAL_DATA || (!window.INITIAL_DATA.aqi && !window.INITIAL_DATA.weather)) {
                 window.INITIAL_DATA = cachedBulk;
@@ -148,6 +163,12 @@ let lastKnownLiveReading = null;
 
 function evaluateAndSyncLiveBadge(reading) {
     if (!window.updateGlobalLiveBadge) return;
+    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+    if (activeNode === '2') {
+        window.updateGlobalLiveBadge(false, 'Node 2 is currently in standby mode. Telemetry hardware pending setup.', 'Standby');
+        return;
+    }
+
     if (reading && (reading.timestamp || reading.created_at)) {
         lastKnownLiveReading = reading;
     }
@@ -177,14 +198,16 @@ window.evaluateAndSyncLiveBadge = evaluateAndSyncLiveBadge;
 // ── Supabase Direct Client Configuration ──
 function getSbConfig() {
     const injected = window.SUPABASE_CONFIG || {};
+    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+    const isNode2 = (activeNode === '2');
     return {
         url: injected.url || 'https://sgkdpliqlhgiqsabxzxe.supabase.co',
         key: injected.key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30',
-        tableAqiLive: injected.tableAqiLive || 'AQI_LIVE_NODE1',
-        tableWeatherLive: injected.tableWeatherLive || 'WEATHER_LIVE_NODE1',
-        tableAqiHist: injected.tableAqiHist || 'AQI_NODE1',
-        tableWeatherHist: injected.tableWeatherHist || 'WEATHER_NODE1',
-        tableForecast: injected.tableForecast || 'aqi_forecasts_24h'
+        tableAqiLive: injected.tableAqiLive || (isNode2 ? 'AQI_LIVE_NODE2' : 'AQI_LIVE_NODE1'),
+        tableWeatherLive: injected.tableWeatherLive || (isNode2 ? 'WEATHER_LIVE_NODE2' : 'WEATHER_LIVE_NODE1'),
+        tableAqiHist: injected.tableAqiHist || (isNode2 ? 'AQI_NODE2' : 'AQI_NODE1'),
+        tableWeatherHist: injected.tableWeatherHist || (isNode2 ? 'WEATHER_NODE2' : 'WEATHER_NODE1'),
+        tableForecast: injected.tableForecast || (isNode2 ? 'aqi_forecasts_node2' : 'aqi_forecasts_24h')
     };
 }
 
@@ -280,6 +303,32 @@ window.formatWeatherReadingClient = formatWeatherReadingClient;
  * Directly connects to Cloudflare/Supabase in Mumbai (~80ms), completely bypassing Vercel Lambda cold start!
  */
 async function fetchLiveBulk(forceNetwork = false) {
+    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+    if (activeNode === '2') {
+        const standbyBulk = {
+            node: '2',
+            node_name: 'Node 2 (Station 2)',
+            status: 'STANDBY',
+            is_live: false,
+            aqi: null,
+            weather: null,
+            aqi_history: [],
+            weather_history: [],
+            history: [],
+            today_rain_total: 0.0,
+            today_temp_min: null,
+            today_temp_max: null,
+            time: Date.now(),
+            fetchedAt: Date.now()
+        };
+        apiCache.liveBulk = { data: standbyBulk, time: Date.now() };
+        apiCache.overviewBulk = { data: standbyBulk, time: Date.now() };
+        if (typeof window.updateGlobalLiveBadge === 'function') {
+            window.updateGlobalLiveBadge(false, 'Node 2 is currently in standby mode.', 'Standby');
+        }
+        return standbyBulk;
+    }
+
     // 1. Fast Memory Cache Return only if freshly fetched within the last 4 seconds
     if (!forceNetwork && apiCache.liveBulk && apiCache.liveBulk.time && (Date.now() - apiCache.liveBulk.time < 4000)) {
         return apiCache.liveBulk.data;
@@ -429,8 +478,20 @@ function normalizeDateToYmd(dateStr) {
 window.normalizeDateToYmd = normalizeDateToYmd;
 
 async function fetchHistoryBulk(queryDate, days = 1, force = false) {
+    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+    if (activeNode === '2') {
+        return {
+            node: '2',
+            status: 'STANDBY',
+            is_standby: true,
+            aqi: [],
+            weather: [],
+            fetchedAt: Date.now()
+        };
+    }
+
     const normDate = normalizeDateToYmd(queryDate || new Date());
-    const cacheKey = `${normDate}_${days}`;
+    const cacheKey = `${normDate}_${days}_n${activeNode}`;
     const storageKey = STORAGE_KEYS.HIST_PREFIX + cacheKey;
     const todayYmd = normalizeDateToYmd(new Date());
     const isToday = (normDate === todayYmd);
@@ -514,9 +575,22 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false) {
 window.fetchHistoryBulk = fetchHistoryBulk;
 
 async function fetchForecastData(force = false) {
+    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+    if (activeNode === '2') {
+        return {
+            node: '2',
+            status: 'STANDBY',
+            is_standby: true,
+            hourly: [],
+            daily: [],
+            model_version: 'v2.4-standby',
+            source: 'Node 2 Standby'
+        };
+    }
+
     // 1. Primary dynamic path: query dynamic backend with cache-busting to ensure server & Supabase parity
     try {
-        const resp = await fetch(`api/telemetry.php?action=forecast&v=${Date.now()}${force ? '&force=1' : ''}`, {
+        const resp = await fetch(`api/telemetry.php?action=forecast&node=${activeNode}&v=${Date.now()}${force ? '&force=1' : ''}`, {
             cache: 'no-store'
         });
         if (resp.ok) {

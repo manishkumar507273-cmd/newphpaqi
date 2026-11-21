@@ -17,6 +17,18 @@ $TABLE_AQI_HISTORICAL = 'AQI_NODE1';
 $TABLE_WEATHER_LIVE = 'WEATHER_LIVE_NODE1';
 $TABLE_WEATHER_HIST = 'WEATHER_NODE1';
 
+// Node Configuration Architecture
+require_once __DIR__ . '/config/nodes.php';
+$active_node = smartairnet_get_active_node_id();
+$active_node_id = $active_node;
+$active_node_config = smartairnet_get_active_node_config();
+$is_node_2 = ($active_node === '2');
+
+if (!empty($active_node_config['tables']['aqi_live'])) $TABLE_AQI_LIVE = $active_node_config['tables']['aqi_live'];
+if (!empty($active_node_config['tables']['aqi_historical'])) $TABLE_AQI_HISTORICAL = $active_node_config['tables']['aqi_historical'];
+if (!empty($active_node_config['tables']['weather_live'])) $TABLE_WEATHER_LIVE = $active_node_config['tables']['weather_live'];
+if (!empty($active_node_config['tables']['weather_historical'])) $TABLE_WEATHER_HIST = $active_node_config['tables']['weather_historical'];
+
 foreach ($env_paths as $ep) {
     if (file_exists($ep)) {
         $lines = file($ep, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -196,12 +208,18 @@ if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
 $page = isset($_GET['page']) ? $_GET['page'] : 'overview';
 
 // Allowed pages to prevent directory traversal
-$allowed_pages = ['overview', 'live', 'historical', 'weather', 'predictive'];
+$allowed_pages = ['overview', 'live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather'];
 
 if (!in_array($page, $allowed_pages)) {
     $page = 'overview';
 }
-if ($page === 'weather') {
+
+// Alias split pages or weather to single live feed
+if ($page === 'live-aqi') {
+    $_GET['tab'] = 'aqi';
+    $page = 'live';
+} elseif ($page === 'weather' || $page === 'live-weather') {
+    $_GET['tab'] = 'weather';
     $page = 'live';
 }
 
@@ -209,7 +227,7 @@ $is_logged_in = !empty($_SESSION['user_id']) || !empty($_SESSION['user_email']);
 $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
 
 // Pages requiring user login; overview is freely accessible to all guests
-$protected_pages = ['live', 'historical', 'predictive', 'weather'];
+$protected_pages = ['live', 'historical', 'predictive', 'weather', 'live-aqi', 'live-weather'];
 
 if (in_array($page, $protected_pages) && !$is_logged_in) {
     if ($is_ajax) {
@@ -227,7 +245,8 @@ if (in_array($page, $protected_pages) && !$is_logged_in) {
 
 if ($is_ajax) {
     ob_start();
-    $page_file = __DIR__ . '/pages/' . $page . '.php';
+    $node_folder = ($active_node_id === '2') ? 'node 2' : 'node 1';
+    $page_file = __DIR__ . '/' . $node_folder . '/' . $page . '.php';
     if (file_exists($page_file)) {
         include $page_file;
     } else {
@@ -318,30 +337,43 @@ if ($is_ajax) {
 
     <?php
     $initial_overview_json = 'null';
-    $cache_dir = sys_get_temp_dir() . '/smartairnet_cache';
-    $candidates = [
-        $cache_dir . '/' . md5('overview_bulk') . '.json',
-        $cache_dir . '/' . md5('live_bulk_60') . '.json',
-        $cache_dir . '/' . md5('live_bulk_50') . '.json',
-        $cache_dir . '/last_known_hero.json',
-    ];
-    $best_epoch = 0;
-    foreach ($candidates as $cf) {
-        if (file_exists($cf)) {
-            $raw_c = @file_get_contents($cf);
-            if ($raw_c && strlen($raw_c) > 20) {
-                $parsed = @json_decode($raw_c, true);
-                if ($parsed) {
-                    if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
-                        $parsed = ['aqi' => $parsed, 'history' => [$parsed], 'aqi_history' => [$parsed]];
-                        $raw_c = json_encode($parsed);
-                    }
-                    $aqi_item = !empty($parsed['aqi']) ? (isset($parsed['aqi'][0]) ? $parsed['aqi'][0] : $parsed['aqi']) : null;
-                    $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
-                    $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
-                    if ($e > $best_epoch) {
-                        $best_epoch = $e;
-                        $initial_overview_json = $raw_c;
+    if ($is_node_2) {
+        $initial_overview_json = json_encode([
+            'aqi'              => null,
+            'weather'          => null,
+            'history'          => [],
+            'aqi_history'      => [],
+            'weather_history'  => [],
+            'today_rain_total' => 0.0,
+            'node'             => '2',
+            'status'           => 'STANDBY'
+        ]);
+    } else {
+        $cache_dir = sys_get_temp_dir() . '/smartairnet_cache';
+        $candidates = [
+            $cache_dir . '/' . md5('overview_bulk') . '.json',
+            $cache_dir . '/' . md5('live_bulk_60') . '.json',
+            $cache_dir . '/' . md5('live_bulk_50') . '.json',
+            $cache_dir . '/last_known_hero.json',
+        ];
+        $best_epoch = 0;
+        foreach ($candidates as $cf) {
+            if (file_exists($cf)) {
+                $raw_c = @file_get_contents($cf);
+                if ($raw_c && strlen($raw_c) > 20) {
+                    $parsed = @json_decode($raw_c, true);
+                    if ($parsed) {
+                        if (isset($parsed['cpcb_aqi']) && !isset($parsed['aqi'])) {
+                            $parsed = ['aqi' => $parsed, 'history' => [$parsed], 'aqi_history' => [$parsed]];
+                            $raw_c = json_encode($parsed);
+                        }
+                        $aqi_item = !empty($parsed['aqi']) ? (isset($parsed['aqi'][0]) ? $parsed['aqi'][0] : $parsed['aqi']) : null;
+                        $ts_val = $aqi_item['timestamp'] ?? $aqi_item['created_at'] ?? null;
+                        $e = $ts_val ? strtotime($ts_val) : (isset($parsed['time']) ? (int)$parsed['time'] : filemtime($cf));
+                        if ($e > $best_epoch) {
+                            $best_epoch = $e;
+                            $initial_overview_json = $raw_c;
+                        }
                     }
                 }
             }
@@ -349,6 +381,8 @@ if ($is_ajax) {
     }
     ?>
     <script>
+        window.__selectedNode = <?= json_encode($active_node) ?>;
+        window.__nodeConfig = <?= json_encode($active_node_config) ?>;
         // Supabase configuration for instant direct browser telemetry streaming
         window.SUPABASE_CONFIG = {
             url: <?= json_encode($supabaseUrl) ?>,

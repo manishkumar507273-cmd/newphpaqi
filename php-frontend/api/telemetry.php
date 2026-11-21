@@ -45,6 +45,17 @@ $TABLE_AQI_HISTORICAL  = 'AQI_NODE1';
 $TABLE_WEATHER_LIVE    = 'WEATHER_LIVE_NODE1';
 $TABLE_WEATHER_HIST    = 'WEATHER_NODE1';
 
+// Load Node Config Registry
+require_once __DIR__ . '/../config/nodes.php';
+$reqNode = smartairnet_get_active_node_id();
+$nodeConfig = smartairnet_get_node_config($reqNode);
+$isNode2 = ($reqNode === '2');
+
+if (!empty($nodeConfig['tables']['aqi_live'])) $TABLE_AQI_LIVE = $nodeConfig['tables']['aqi_live'];
+if (!empty($nodeConfig['tables']['aqi_historical'])) $TABLE_AQI_HISTORICAL = $nodeConfig['tables']['aqi_historical'];
+if (!empty($nodeConfig['tables']['weather_live'])) $TABLE_WEATHER_LIVE = $nodeConfig['tables']['weather_live'];
+if (!empty($nodeConfig['tables']['weather_historical'])) $TABLE_WEATHER_HIST = $nodeConfig['tables']['weather_historical'];
+
 foreach ($env_paths as $env_path) {
     if (file_exists($env_path)) {
         $lines = file($env_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -273,6 +284,16 @@ function formatWeatherReading($row) {
     if (isset($row['wind_speed']) && $row['wind_speed'] !== null) $row['wind_speed'] = round((float)$row['wind_speed'], 2);
     if (isset($row['wind_gust']) && $row['wind_gust'] !== null) $row['wind_gust'] = round((float)$row['wind_gust'], 2);
     if (isset($row['rain_gauge']) && $row['rain_gauge'] !== null) $row['rain_gauge'] = round((float)$row['rain_gauge'], 2);
+    if (isset($row['soil_temperature']) && $row['soil_temperature'] !== null) $row['soil_temperature'] = round((float)$row['soil_temperature'], 1);
+    if (isset($row['soil_humidity']) && $row['soil_humidity'] !== null) $row['soil_humidity'] = round((float)$row['soil_humidity'], 1);
+    if (isset($row['soil_ph']) && $row['soil_ph'] !== null) $row['soil_ph'] = round((float)$row['soil_ph'], 2);
+    if (isset($row['latitude']) && $row['latitude'] !== null && $row['latitude'] !== '') $row['latitude'] = round((float)$row['latitude'], 4);
+    if (isset($row['longitude']) && $row['longitude'] !== null && $row['longitude'] !== '') $row['longitude'] = round((float)$row['longitude'], 4);
+    if (isset($row['coords_display']) && $row['coords_display'] !== null) {
+        $row['coords_display'] = (string)$row['coords_display'];
+    } elseif (!empty($row['latitude']) && !empty($row['longitude'])) {
+        $row['coords_display'] = round((float)$row['latitude'], 4) . '° N, ' . round((float)$row['longitude'], 4) . '° E';
+    }
     return $row;
 }
 
@@ -759,6 +780,66 @@ function buildForecastPayloadFromDbRows(array $rows, ?array $weatherRows = null)
 }
 
 // ── Route ─────────────────────────────────────────────────────────────────────
+// If Node 2 is requested, return safe empty/standby responses immediately
+if ($isNode2) {
+    switch ($action) {
+        case 'aqi_live':
+        case 'weather_live':
+            echo json_encode(null);
+            exit;
+        case 'aqi_live_history':
+        case 'weather_live_history':
+            echo json_encode([]);
+            exit;
+        case 'aqi_history':
+        case 'weather_history':
+            echo json_encode(['history' => []]);
+            exit;
+        case 'live_bulk':
+        case 'overview_bulk':
+            echo json_encode([
+                'aqi'              => null,
+                'weather'          => null,
+                'aqi_history'      => [],
+                'weather_history'  => [],
+                'history'          => [],
+                'today_rain_total' => 0.0,
+                'today_temp_min'   => null,
+                'today_temp_max'   => null,
+                'node'             => '2',
+                'status'           => 'STANDBY'
+            ]);
+            exit;
+        case 'history_bulk':
+            $days = isset($_GET['days']) ? max(1, min(60, intval($_GET['days']))) : 1;
+            echo json_encode([
+                'status' => 'success',
+                'node'   => '2',
+                'days'   => $days,
+                'count'  => 0,
+                'data'   => []
+            ]);
+            exit;
+        case 'forecast':
+            echo json_encode([
+                'status'  => 'standby',
+                'node'    => '2',
+                'message' => 'Node 2 is currently in standby mode; no telemetry or forecast available.',
+                'hourly'  => [],
+                'phases'  => [],
+                'hero'    => null
+            ]);
+            exit;
+        default:
+            echo json_encode([
+                'node'   => '2',
+                'status' => 'STANDBY',
+                'data'   => null
+            ]);
+            exit;
+    }
+}
+
 switch ($action) {
 
     // ── Single-endpoint reads (still use parallel internally but only 1 URL) ──
@@ -876,7 +957,7 @@ switch ($action) {
         // Fire parallel requests; omit expensive midnight rain query if cached within 60s
         $fetchUrls = [
             'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
-            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit={$lim}",
+            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order=created_at.desc.nullslast&limit={$lim}",
         ];
         if ($cachedRainSum === null) {
             $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0&limit=100";
@@ -948,7 +1029,7 @@ switch ($action) {
 
         $fetchUrls = [
             'aqi_hist'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_LIVE}?order=created_at.desc.nullslast&limit={$lim}",
-            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit={$lim}",
+            'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order=created_at.desc.nullslast&limit={$lim}",
         ];
         if ($cachedRainSum === null) {
             $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0&limit=100";

@@ -1,7 +1,10 @@
 
+# Smart WeatherNet
+
 A modern intelligence platform for real-time air quality index (AQI) telemetry and meteorological monitoring, powered by **PHP**, **JavaScript**, and **Supabase Cloud**.
 
-🌐 **Live Deployment:** [http://localhost:8001](http://localhost:8001)
+- 🚀 **Vercel Deployment:** [https://smart-airnet-admin.vercel.app](https://smart-airnet-admin.vercel.app)
+- 💻 **Local Development Server:** [http://localhost:8001](http://localhost:8001)
 
 ---
 
@@ -37,32 +40,69 @@ A modern intelligence platform for real-time air quality index (AQI) telemetry a
 ## 📁 Project Structure
 
 ```text
-├── php-frontend/
-│   ├── api/                       # API Handlers for telemetry and requests
-│   │   ├── submit_request.php     # Dataset request processing & webhook forwarder
-│   │   └── telemetry.php          # High-performance parallel telemetry engine
-│   ├── components/                # Reusable PHP UI components
-│   │   ├── auth-modal.php         # Authentication dialog
-│   │   ├── brand-assets.php       # Official SVG/PNG brand assets
-│   │   └── layout.php             # Main site shell, navigation, and mobile menu
-│   ├── css/                       # Custom stylesheets
-│   │   └── index.css              # Custom styling, fonts, and responsive rules
-│   ├── js/                        # Client-side JavaScript
-│   │   ├── api.js                 # API client fetching telemetry from Supabase REST API
-│   │   └── router.js              # SPA client router with prefetching & instant page swaps
-│   ├── pages/                     # Application Views
-│   │   ├── historical.php         # Historical analytics, charts, dataset request modal
-│   │   ├── live.php               # Live AQI telemetry dashboard
-│   │   ├── overview.php           # Hardware specifications and system overview
-│   │   ├── predictive.php         # 24-48h AI forecast engine & rainfall probability
-│   │   └── weather.php            # Live weather telemetry dashboard
-│   └── index.php                  # Application entry point and router
-├── php-backend/                   # AI Forecasting and Python models
-│   ├── cpcb_calculator.py         # Indian CPCB AQI sub-index calculator
-│   ├── generate_forecast.py       # Hourly neural forecast inference script
-│   └── rainfall_model_runner.py   # SAPE 24h Wavelet-LSTM rainfall prediction model
-├── forcast/                       # Trained neural network weights (.pt, .keras, .joblib)
-└── README.md                      # Project documentation
+newphpaqi/
+├── php-frontend/                  # Web Interface & Telemetry Application
+│   │
+│   ├── node 1/                    # 🟢 NODE 1: All Primary Station Pages & Config
+│   │   ├── config.php             # Station 1 table bindings & metadata
+│   │   ├── overview.php           # Real-time campus overview
+│   │   ├── live.php               # Single unified live feed (AQI + Weather)
+│   │   ├── historical.php         # 24-hour historical telemetry archive
+│   │   ├── predictive.php         # 24-48h AI forecast engine
+│   │   ├── weather.php            # Dedicated weather view
+│   │   └── README.md              # Node 1 documentation
+│   │
+│   ├── node 2/                    # 🟠 NODE 2: All Secondary Station Pages & Config
+│   │   ├── config.php             # Station 2 table bindings & metadata
+│   │   ├── overview.php           # Station 2 atmosphere snapshot (Standby)
+│   │   ├── live.php               # Unified live feed with AQI & Weather sub-tab toggles
+│   │   ├── weather.php            # Direct weather view alias
+│   │   ├── historical.php         # Standby historical archive
+│   │   ├── predictive.php         # Standby AI forecast view
+│   │   └── README.md              # Node 2 documentation
+│   │
+│   ├── components/                # 🌐 Shared UI Components (Layout, Header, Modals)
+│   ├── api/                       # 🌐 Shared Backend Proxies & Telemetry API
+│   ├── config/                    # 🌐 Central Node Registry (nodes.php)
+│   ├── assets/                    # 🌐 Logos, Icons, Static Brand Assets
+│   ├── css/                       # 🌐 Global Stylesheets
+│   ├── js/                        # 🌐 Global Client Scripts (api.js, router.js)
+│   ├── data/                      # 🌐 Research Dataset Request Proofs
+│   ├── index.php                  # Main Application Entry Point & Page Router
+│   ├── router.php                 # PHP Built-in Server Router
+│   └── manifest.json              # Progressive Web App (PWA) Manifest
+│
+├── php-backend/                   # AI Forecasting & Ingestion Engines
+│   │
+│   ├── node 1/                    # 🟢 NODE 1: Ingestion & ML Model Runners
+│   │   ├── config.php             # Node 1 backend credentials & table mappings
+│   │   ├── cpcb_calculator.py     # CPCB sub-index calculator for Station 1
+│   │   ├── generate_forecast.py   # Station 1 hourly neural forecast inference
+│   │   ├── rainfall_model_runner.py # Wavelet-LSTM rainfall model runner
+│   │   ├── index.php              # Node 1 API dispatcher
+│   │   └── README.md              # Node 1 backend docs
+│   │
+│   ├── node 2/                    # 🟠 NODE 2: Ingestion & ML Model Runners
+│   │   ├── config.php             # Node 2 backend credentials & table mappings
+│   │   ├── cpcb_calculator.py     # CPCB sub-index calculator for Station 2
+│   │   ├── generate_forecast.py   # Station 2 neural forecast inference
+│   │   ├── rainfall_model_runner.py # Station 2 rainfall model runner
+│   │   ├── index.php              # Node 2 API dispatcher
+│   │   └── README.md              # Node 2 backend docs
+│   │
+│   ├── index.php                  # Master Node Dispatcher (?node=1 or ?node=2)
+│   ├── .env                       # Backend Environment Variables
+│   └── .htaccess                  # Apache Directory & Security Settings
+│
+├── forcast/                       # 🧠 Pre-trained Neural Models (.pt, .keras, .joblib)
+│   ├── newAQIPrediction/          # SWT Res-CNN BiLSTM AQI models
+│   └── rainfall_model/            # Multi-weather 24h Keras & Joblib scalers
+│
+├── index.php                      # Root Entry Point (Redirects to php-frontend/)
+├── requirements.txt               # Python Dependencies for AI Models
+├── run.bat                        # One-click Server Starter
+├── vercel.json                    # Vercel Serverless Deployment Configuration
+└── README.md                      # Project Documentation
 ```
 
 ---

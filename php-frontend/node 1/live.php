@@ -877,29 +877,13 @@ $init_border_colors = [
   <div id="live-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</div>
 </div>
 
-<?php if ($is_node_2): ?>
-  <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather -->
-  <div class="flex items-center justify-center mb-1" id="node2-live-subnav">
-    <div class="w-full sm:w-auto grid grid-cols-2 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
-      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[42px]">
-        <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
-        <span>AQI Live</span>
-      </button>
-      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[42px]">
-        <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
-        <span>Weather Live</span>
-      </button>
-    </div>
-  </div>
-<?php endif; ?>
-
-<div id="node2-view-aqi" style="<?= ($is_node_2 && $active_live_subtab === 'weather') ? 'display: none;' : 'display: flex;' ?> width: 100%; flex-direction: column; gap: 14px;">
+<div id="node1-view-aqi" style="display: flex; width: 100%; flex-direction: column; gap: 14px;">
 
   <!-- Page Header Titles -->
   <div style="display: flex; justify-content: center; align-items: center; text-align: center; width: 100%; margin-top: 10px; margin-bottom: 6px;">
     <div style="width: 100%; text-align: center;">
       <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: center;">
-        <?= $is_node_2 ? 'Real-time Air Quality Telemetry' : 'Real-time Air Quality &amp; Weather Telemetry' ?>
+        Real-time Air Quality &amp; Weather Telemetry
       </h1>
       <span id="latest-time" style="display: none;"><?= htmlspecialchars($init_time_str) ?></span>
       <span id="live-beacon-badge" style="display: none;"></span>
@@ -1614,165 +1598,7 @@ $init_border_colors = [
     </div>
   </div>
 
-  </div> <!-- End #node2-view-aqi -->
-
-  <?php if ($is_node_2): ?>
-  <!-- ═══════════════════════════════════════════════════════════════
-       NODE 2: DEDICATED LIVE WEATHER VIEW (STANDBY MODE)
-       ═══════════════════════════════════════════════════════════════ -->
-  <div id="node2-view-weather" style="<?= ($active_live_subtab === 'weather') ? 'display: flex;' : 'display: none;' ?> width: 100%; flex-direction: column; gap: 14px;">
-    
-    <!-- Page Header Title for Weather -->
-    <div style="display: flex; justify-content: center; align-items: center; text-align: center; width: 100%; margin-top: 10px; margin-bottom: 6px;">
-      <div style="width: 100%; text-align: center;">
-        <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: center;">
-          Real-time Live Weather Conditions
-        </h1>
-        <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b; font-weight: 500;">
-          Real-time meteorological telemetry stream: Temperature, Humidity, Wind &amp; Rainfall.
-        </p>
-      </div>
-    </div>
-
-
-
-    <!-- Weather Hero Card -->
-    <div class="bg-white rounded-[20px] p-5 sm:p-8 border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.05)] flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);">
-      <div class="flex-1 min-w-[280px]">
-        <div class="text-[13px] text-slate-500 mb-2 font-semibold flex items-center gap-2">
-          <i data-lucide="calendar" class="w-4 h-4 text-[#00bfa5]"></i>
-          <span><?= date('l, d F Y') ?> (IST)</span>
-        </div>
-        <div class="flex items-baseline gap-2 mb-3">
-          <span class="font-mono text-[56px] sm:text-[72px] font-extrabold leading-none tracking-tight text-slate-900">--</span>
-          <span class="font-mono text-2xl sm:text-3xl font-bold text-slate-400">°C</span>
-        </div>
-      </div>
-      <hr class="border-slate-200 lg:hidden">
-      <div class="flex-1 min-w-[260px] flex flex-col items-center justify-center lg:border-l lg:border-slate-200 lg:pl-8">
-        <div class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-          <i data-lucide="thermometer" class="w-3.5 h-3.5 text-orange-500"></i>
-          <span>Today's Temperature Profile</span>
-        </div>
-        <div class="flex items-center justify-between w-full max-w-[280px] text-center bg-slate-50 p-4 rounded-2xl border border-slate-200">
-          <div>
-            <div class="font-mono text-2xl sm:text-3xl font-extrabold text-sky-500">--°</div>
-            <div class="text-[10px] sm:text-[11px] font-extrabold text-slate-400 mt-1">LOW</div>
-          </div>
-          <div style="border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; padding: 0 16px;">
-            <div class="font-mono text-2xl sm:text-3xl font-extrabold text-slate-400">--°</div>
-            <div class="text-[10px] sm:text-[11px] font-extrabold text-slate-400 mt-1">AVG</div>
-          </div>
-          <div>
-            <div class="font-mono text-2xl sm:text-3xl font-extrabold text-orange-500">--°</div>
-            <div class="text-[10px] sm:text-[11px] font-extrabold text-slate-400 mt-1">HIGH</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Weather Sensor Grid (6 Parameter Cards) -->
-    <div>
-      <h2 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="activity" style="width: 17px; height: 17px; color: #00bfa5;"></i>
-        <span>Atmospheric Weather Sensors</span>
-      </h2>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4">
-        <!-- 1. Temp -->
-        <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px]">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl shrink-0">🌡️</div>
-            <div>
-              <div class="text-sm font-bold text-slate-900 leading-tight">Temperature</div>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-1 mt-3">
-            <span class="font-mono text-2xl sm:text-3xl font-extrabold text-orange-600">--</span>
-            <span class="font-mono text-sm font-bold text-slate-400">°C</span>
-          </div>
-        </div>
-        <!-- 2. Humidity -->
-        <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px]">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shrink-0">💧</div>
-            <div>
-              <div class="text-sm font-bold text-slate-900 leading-tight">Relative Humidity</div>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-1 mt-3">
-            <span class="font-mono text-2xl sm:text-3xl font-extrabold text-sky-600">--</span>
-            <span class="font-mono text-sm font-bold text-slate-400">%</span>
-          </div>
-        </div>
-        <!-- 3. Wind Speed -->
-        <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px]">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl shrink-0">💨</div>
-            <div>
-              <div class="text-sm font-bold text-slate-900 leading-tight">Wind Speed</div>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-1 mt-3">
-            <span class="font-mono text-2xl sm:text-3xl font-extrabold text-teal-600">--</span>
-            <span class="font-mono text-sm font-bold text-slate-400">km/h</span>
-          </div>
-        </div>
-        <!-- 4. Wind Gust -->
-        <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px]">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shrink-0">🌪️</div>
-            <div>
-              <div class="text-sm font-bold text-slate-900 leading-tight">Peak Wind Gust</div>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-1 mt-3">
-            <span class="font-mono text-2xl sm:text-3xl font-extrabold text-indigo-600">--</span>
-            <span class="font-mono text-sm font-bold text-slate-400">km/h</span>
-          </div>
-        </div>
-        <!-- 5. Wind Direction -->
-        <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px]">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl shrink-0">🧭</div>
-            <div>
-              <div class="text-sm font-bold text-slate-900 leading-tight">Wind Direction</div>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-1 mt-3">
-            <span class="font-mono text-2xl sm:text-3xl font-extrabold text-purple-600">--</span>
-          </div>
-        </div>
-        <!-- 6. Rain Gauge -->
-        <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px]">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0">🌧️</div>
-            <div>
-              <div class="text-sm font-bold text-slate-900 leading-tight">Rainfall Rate</div>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-1 mt-3">
-            <span class="font-mono text-2xl sm:text-3xl font-extrabold text-blue-600">--</span>
-            <span class="font-mono text-sm font-bold text-slate-400">mm</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Weather Telemetry Table -->
-    <div class="bg-white rounded-[24px] border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.04)] overflow-hidden">
-      <div style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="cloud-sun" style="width: 18px; height: 18px; color: #00bfa5;"></i>
-          <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Live Weather Telemetry Records</span>
-        </div>
-      </div>
-      <div style="padding: 40px; text-align: center; color: #64748b; font-size: 13px;">
-        Currently in standby mode. No live weather telemetry recorded yet.
-      </div>
-    </div>
-
-  </div> <!-- End #node2-view-weather -->
-  <?php endif; ?>
+  </div> <!-- End #node1-view-aqi -->
 
 <?php if (!empty($init_bulk)): ?>
 <script>
@@ -1781,40 +1607,6 @@ window.INITIAL_DATA = <?= json_encode($init_bulk, JSON_HEX_TAG | JSON_HEX_AMP) ?
 <?php endif; ?>
 
 <script>
-// Switch between AQI Live and Weather Live on Node 2
-window.switchNode2LiveTab = function(tab) {
-    if (window.triggerHaptic) window.triggerHaptic('light');
-    const aqiView = document.getElementById('node2-view-aqi');
-    const weatherView = document.getElementById('node2-view-weather');
-    const btnAqi = document.getElementById('node2-tab-aqi');
-    const btnWeather = document.getElementById('node2-tab-weather');
-
-    const activeCls = 'flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[42px]';
-    const inactiveCls = 'flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[42px]';
-
-    if (tab === 'weather') {
-        if (aqiView) aqiView.style.display = 'none';
-        if (weatherView) weatherView.style.display = 'flex';
-        if (btnWeather) btnWeather.className = activeCls;
-        if (btnAqi) btnAqi.className = inactiveCls;
-    } else {
-        if (weatherView) weatherView.style.display = 'none';
-        if (aqiView) aqiView.style.display = 'flex';
-        if (btnAqi) btnAqi.className = activeCls;
-        if (btnWeather) btnWeather.className = inactiveCls;
-    }
-
-    try {
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-        window.history.replaceState({ page: 'live', node: '2', tab: tab }, '', url.toString());
-    } catch (e) {}
-
-    if (window.lucide && lucide.createIcons) {
-        lucide.createIcons();
-    }
-};
-
 // Switch between Air Quality and Weather stream tables (Segmented Toggle)
 function switchLiveTableStream(type) {
     if (window.triggerHaptic) window.triggerHaptic('light');

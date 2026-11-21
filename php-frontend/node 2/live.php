@@ -114,6 +114,26 @@ $init_weather_rain = isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge'])
 $init_weather_wind = isset($w_d['wind_speed']) && is_numeric($w_d['wind_speed']) ? number_format((float)$w_d['wind_speed'], 1) . ' km/h' : '--';
 $init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) . ' m/s' : '--';
 
+// Telemetry-driven Latitude & Longitude coordinate resolution
+$init_lat = null;
+$init_lon = null;
+$init_dms = null;
+if (!empty($w_d['latitude']) && !empty($w_d['longitude']) && is_numeric($w_d['latitude']) && is_numeric($w_d['longitude'])) {
+    $init_lat = number_format((float)$w_d['latitude'], 4);
+    $init_lon = number_format((float)$w_d['longitude'], 4);
+    $init_dms = $w_d['coords_display'] ?? null;
+} elseif (!empty($init_bulk['latitude']) && !empty($init_bulk['longitude']) && is_numeric($init_bulk['latitude']) && is_numeric($init_bulk['longitude'])) {
+    $init_lat = number_format((float)$init_bulk['latitude'], 4);
+    $init_lon = number_format((float)$init_bulk['longitude'], 4);
+    $init_dms = $init_bulk['coords_display'] ?? null;
+}
+if ($init_lat === null && !empty($node_config['location']['latitude']) && !empty($node_config['location']['longitude'])) {
+    $init_lat = number_format((float)$node_config['location']['latitude'], 4);
+    $init_lon = number_format((float)$node_config['location']['longitude'], 4);
+    $init_dms = $node_config['location']['coords_display'] ?? null;
+}
+$has_coords = ($init_lat !== null && $init_lon !== null);
+
 if (!function_exists('smartairnet_parse_wind_direction')) {
     function smartairnet_parse_wind_direction($raw) {
         if ($raw === null || $raw === '' || $raw === '--') {
@@ -2379,11 +2399,25 @@ body.weather-backdrop-active #app-layout-root,
   <div id="node2-view-weather" style="<?= ($active_live_subtab === 'weather') ? 'display: flex;' : 'display: none;' ?> width: 100%; max-width: 100%; min-width: 0; flex-direction: column; gap: 14px; box-sizing: border-box;">
     
     <!-- Page Header Row (matching Node 1 weather header layout) -->
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 6px; margin-bottom: 12px; width: 100%;">
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #ffffff; text-shadow: 0 2px 10px rgba(15, 23, 42, 0.6); font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
-          Live Weather Conditions
-        </h1>
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 6px; margin-bottom: 12px; width: 100%;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #ffffff; text-shadow: 0 2px 10px rgba(15, 23, 42, 0.6); font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
+            Live Weather Conditions
+          </h1>
+        </div>
+        <div id="weather-coords-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(255, 255, 255, 0.85); font-size: 11px; font-weight: 700; color: #0f172a; font-family: var(--font-mono); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px);">
+            <i data-lucide="map-pin" style="width: 12px; height: 12px; color: #00bfa5;"></i>
+            <span>Lat: <strong id="weather-header-lat"><?= $has_coords ? htmlspecialchars($init_lat) . '° N' : '--' ?></strong></span>
+            <span>•</span>
+            <span>Lon: <strong id="weather-header-lon"><?= $has_coords ? htmlspecialchars($init_lon) . '° E' : '--' ?></strong></span>
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: rgba(0, 191, 165, 0.22); border: 1px solid rgba(0, 191, 165, 0.4); font-size: 10.5px; font-weight: 700; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); font-family: var(--font-mono); backdrop-filter: blur(10px);">
+            <i data-lucide="compass" style="width: 12px; height: 12px; color: #5eead4;"></i>
+            <span id="weather-header-dms"><?= htmlspecialchars($init_dms ?? 'Awaiting GPS Sync') ?></span>
+          </div>
+        </div>
       </div>
 
       <div style="font-size: 12px; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
@@ -3970,17 +4004,22 @@ async function refreshDashboard(forceNetwork = false) {
             const lonEl = document.getElementById('weather-header-lon');
             const dmsEl = document.getElementById('weather-header-dms');
             const navCoordsEl = document.getElementById('navbar-station-coords');
+            const navCoordsMobileEl = document.getElementById('navbar-station-coords-mobile');
 
             if (latVal != null && lonVal != null && !isNaN(Number(latVal)) && !isNaN(Number(lonVal))) {
                 const latFormatted = `${Number(latVal).toFixed(4)}° N`;
                 const lonFormatted = `${Number(lonVal).toFixed(4)}° E`;
                 if (latEl) latEl.innerText = latFormatted;
                 if (lonEl) lonEl.innerText = lonFormatted;
-                const dmsStr = coordsDisplay || `${latFormatted}, ${lonFormatted}`;
+                const dmsStr = coordsDisplay || (typeof formatCoordsDms === 'function' ? formatCoordsDms(latVal, lonVal) : `${latFormatted}, ${lonFormatted}`);
                 if (dmsEl) dmsEl.innerText = dmsStr;
                 if (navCoordsEl) {
                     navCoordsEl.innerText = dmsStr;
                     navCoordsEl.style.display = 'inline-block';
+                }
+                if (navCoordsMobileEl) {
+                    navCoordsMobileEl.innerText = dmsStr;
+                    navCoordsMobileEl.style.display = 'inline';
                 }
             } else if (coordsDisplay && coordsDisplay !== '--') {
                 if (dmsEl) dmsEl.innerText = coordsDisplay;
@@ -3988,17 +4027,52 @@ async function refreshDashboard(forceNetwork = false) {
                     navCoordsEl.innerText = coordsDisplay;
                     navCoordsEl.style.display = 'inline-block';
                 }
+                if (navCoordsMobileEl) {
+                    navCoordsMobileEl.innerText = coordsDisplay;
+                    navCoordsMobileEl.style.display = 'inline';
+                }
             }
         } else {
-            // Standby or no weather telemetry - coordinates come from cloud when active
+            // Standby or no weather telemetry - check if bulkData has coordinates
+            const latVal = (bulkData && bulkData.latitude != null) ? bulkData.latitude : null;
+            const lonVal = (bulkData && bulkData.longitude != null) ? bulkData.longitude : null;
+            const coordsDisplay = (bulkData && bulkData.coords_display) ? bulkData.coords_display : null;
             const latEl = document.getElementById('weather-header-lat');
             const lonEl = document.getElementById('weather-header-lon');
             const dmsEl = document.getElementById('weather-header-dms');
             const navCoordsEl = document.getElementById('navbar-station-coords');
-            if (latEl) latEl.innerText = '--';
-            if (lonEl) lonEl.innerText = '--';
-            if (dmsEl) dmsEl.innerText = 'Awaiting GPS Sync';
-            if (navCoordsEl) navCoordsEl.style.display = 'none';
+            const navCoordsMobileEl = document.getElementById('navbar-station-coords-mobile');
+
+            if (latVal != null && lonVal != null && !isNaN(Number(latVal)) && !isNaN(Number(lonVal))) {
+                const latFormatted = `${Number(latVal).toFixed(4)}° N`;
+                const lonFormatted = `${Number(lonVal).toFixed(4)}° E`;
+                if (latEl) latEl.innerText = latFormatted;
+                if (lonEl) lonEl.innerText = lonFormatted;
+                const dmsStr = coordsDisplay || (typeof formatCoordsDms === 'function' ? formatCoordsDms(latVal, lonVal) : `${latFormatted}, ${lonFormatted}`);
+                if (dmsEl) dmsEl.innerText = dmsStr;
+                if (navCoordsEl) {
+                    navCoordsEl.innerText = dmsStr;
+                    navCoordsEl.style.display = 'inline-block';
+                }
+                if (navCoordsMobileEl) {
+                    navCoordsMobileEl.innerText = dmsStr;
+                    navCoordsMobileEl.style.display = 'inline';
+                }
+            } else if (coordsDisplay && coordsDisplay !== '--') {
+                if (dmsEl) dmsEl.innerText = coordsDisplay;
+                if (navCoordsEl) {
+                    navCoordsEl.innerText = coordsDisplay;
+                    navCoordsEl.style.display = 'inline-block';
+                }
+                if (navCoordsMobileEl) {
+                    navCoordsMobileEl.innerText = coordsDisplay;
+                    navCoordsMobileEl.style.display = 'inline';
+                }
+            } else {
+                if (latEl) latEl.innerText = '--';
+                if (lonEl) lonEl.innerText = '--';
+                if (dmsEl) dmsEl.innerText = 'Awaiting GPS Sync';
+            }
 
             const cardWindVal = document.getElementById('card-wind-val');
             if (cardWindVal) cardWindVal.innerText = '--';

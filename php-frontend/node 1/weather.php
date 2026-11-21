@@ -135,13 +135,13 @@ if (!$is_node_2) {
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 5px;">
         <div style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: #ffffff; border: 1px solid #e2e8f0; font-size: 11px; font-weight: 700; color: #475569; font-family: var(--font-mono);">
           <i data-lucide="map-pin" style="width: 12px; height: 12px; color: #00bfa5;"></i>
-          <span>Lat: <strong><?= htmlspecialchars($node_config['location']['latitude'] ?? '13.2611') ?>° N</strong></span>
+          <span>Lat: <strong id="weather-header-lat"><?= htmlspecialchars($node_config['location']['latitude'] ?? '13.2611') ?>° N</strong></span>
           <span>•</span>
-          <span>Lon: <strong><?= htmlspecialchars($node_config['location']['longitude'] ?? '74.7869') ?>° E</strong></span>
+          <span>Lon: <strong id="weather-header-lon"><?= htmlspecialchars($node_config['location']['longitude'] ?? '74.7869') ?>° E</strong></span>
         </div>
         <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; background: rgba(0, 191, 165, 0.08); border: 1px solid rgba(0, 191, 165, 0.2); font-size: 10.5px; font-weight: 700; color: #0f766e; font-family: var(--font-mono);">
           <i data-lucide="compass" style="width: 11px; height: 11px; color: #00bfa5;"></i>
-          <span><?= htmlspecialchars($node_config['location']['coords_display'] ?? "13°15'40\" N, 74°47'13\" E") ?></span>
+          <span id="weather-header-dms"><?= htmlspecialchars($node_config['location']['coords_display'] ?? "13°15'40\" N, 74°47'13\" E") ?></span>
         </div>
       </div>
       <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b; font-weight: 500;">
@@ -467,6 +467,43 @@ if (!$is_node_2) {
                     const timeFormatted = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
                     const tEl = document.getElementById('weather-latest-time');
                     if (tEl) tEl.innerText = timeFormatted;
+                }
+            }
+
+            // Dynamically hydrate coordinates from telemetry
+            const latVal = (w.latitude != null) ? w.latitude : (bulk.latitude != null ? bulk.latitude : null);
+            const lonVal = (w.longitude != null) ? w.longitude : (bulk.longitude != null ? bulk.longitude : null);
+            const coordsDisplay = w.coords_display || bulk.coords_display || null;
+            const latEl = document.getElementById('weather-header-lat');
+            const lonEl = document.getElementById('weather-header-lon');
+            const dmsEl = document.getElementById('weather-header-dms');
+            const navCoordsEl = document.getElementById('navbar-station-coords');
+            const navCoordsMobileEl = document.getElementById('navbar-station-coords-mobile');
+
+            if (latVal != null && lonVal != null && !isNaN(Number(latVal)) && !isNaN(Number(lonVal))) {
+                const latFormatted = `${Number(latVal).toFixed(4)}° N`;
+                const lonFormatted = `${Number(lonVal).toFixed(4)}° E`;
+                if (latEl) latEl.innerText = latFormatted;
+                if (lonEl) lonEl.innerText = lonFormatted;
+                const dmsStr = coordsDisplay || (typeof formatCoordsDms === 'function' ? formatCoordsDms(latVal, lonVal) : `${latFormatted}, ${lonFormatted}`);
+                if (dmsEl) dmsEl.innerText = dmsStr;
+                if (navCoordsEl) {
+                    navCoordsEl.innerText = dmsStr;
+                    navCoordsEl.style.display = 'inline-block';
+                }
+                if (navCoordsMobileEl) {
+                    navCoordsMobileEl.innerText = dmsStr;
+                    navCoordsMobileEl.style.display = 'inline';
+                }
+            } else if (coordsDisplay && coordsDisplay !== '--') {
+                if (dmsEl) dmsEl.innerText = coordsDisplay;
+                if (navCoordsEl) {
+                    navCoordsEl.innerText = coordsDisplay;
+                    navCoordsEl.style.display = 'inline-block';
+                }
+                if (navCoordsMobileEl) {
+                    navCoordsMobileEl.innerText = coordsDisplay;
+                    navCoordsMobileEl.style.display = 'inline';
                 }
             }
 

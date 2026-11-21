@@ -185,6 +185,21 @@ function getSbConfig(overrideNode = null) {
     };
 }
 
+function formatCoordsDms(lat, lon) {
+    if (lat == null || lon == null || isNaN(lat) || isNaN(lon)) return null;
+    function convert(val, posChar, negChar) {
+        const dir = Number(val) >= 0 ? posChar : negChar;
+        const abs = Math.abs(Number(val));
+        const deg = Math.floor(abs);
+        const minFloat = (abs - deg) * 60;
+        const min = Math.floor(minFloat);
+        const sec = Math.round((minFloat - min) * 60);
+        return `${deg}°${String(min).padStart(2, '0')}'${String(sec).padStart(2, '0')}" ${dir}`;
+    }
+    return `${convert(lat, 'N', 'S')}, ${convert(lon, 'E', 'W')}`;
+}
+window.formatCoordsDms = formatCoordsDms;
+
 function formatRawReadingClient(raw) {
     if (!raw) return null;
     const tsRaw = raw.timestamp_hour || raw.created_at || raw.timestamp || null;
@@ -232,6 +247,10 @@ function formatRawReadingClient(raw) {
     else if (cpcb_aqi > 300 && cpcb_aqi <= 400) { label = 'Severe'; color = '#b33fba'; }
     else if (cpcb_aqi > 400) { label = 'Hazardous'; color = '#c92033'; }
 
+    const rawLat = (raw.latitude != null && raw.latitude !== '') ? Number(raw.latitude) : ((raw.lat != null && raw.lat !== '') ? Number(raw.lat) : null);
+    const rawLon = (raw.longitude != null && raw.longitude !== '') ? Number(raw.longitude) : ((raw.lon != null && raw.lon !== '') ? Number(raw.lon) : ((raw.lng != null && raw.lng !== '') ? Number(raw.lng) : null));
+    const rawCoords = raw.coords_display || (rawLat != null && rawLon != null ? formatCoordsDms(rawLat, rawLon) : null);
+
     return {
         id: raw.id || null,
         created_at: raw.created_at || raw.timestamp || null,
@@ -251,6 +270,9 @@ function formatRawReadingClient(raw) {
         wind_gust: (raw.wind_gust != null) ? Number(Number(raw.wind_gust).toFixed(2)) : ((raw.gust != null) ? Number(Number(raw.gust).toFixed(2)) : null),
         wind_direction: raw.wind_direction || null,
         rain_gauge: (raw.rain_gauge != null) ? Number(Number(raw.rain_gauge).toFixed(2)) : ((raw.rain != null) ? Number(Number(raw.rain).toFixed(2)) : null),
+        latitude: rawLat,
+        longitude: rawLon,
+        coords_display: rawCoords
     };
 }
 window.formatRawReadingClient = formatRawReadingClient;
@@ -260,6 +282,10 @@ function formatWeatherReadingClient(raw) {
     const tsRaw = raw.timestamp_hour || raw.created_at || raw.timestamp || null;
     const sHum = (raw.soil_humidity != null) ? Number(raw.soil_humidity) : ((raw.soil_moisture != null) ? Number(raw.soil_moisture) : null);
     const sTemp = (raw.soil_temperature != null) ? Number(raw.soil_temperature) : null;
+    const wLat = (raw.latitude != null && raw.latitude !== '') ? Number(raw.latitude) : ((raw.lat != null && raw.lat !== '') ? Number(raw.lat) : null);
+    const wLon = (raw.longitude != null && raw.longitude !== '') ? Number(raw.longitude) : ((raw.lon != null && raw.lon !== '') ? Number(raw.lon) : ((raw.lng != null && raw.lng !== '') ? Number(raw.lng) : null));
+    const wCoords = raw.coords_display || (wLat != null && wLon != null ? formatCoordsDms(wLat, wLon) : null);
+
     return {
         id: raw.id || null,
         created_at: raw.created_at || raw.timestamp || null,
@@ -275,8 +301,9 @@ function formatWeatherReadingClient(raw) {
         soil_moisture: sHum,
         soil_ph: (raw.soil_ph != null) ? Number(raw.soil_ph) : null,
         soil_conductivity: (raw.soil_conductivity != null) ? Number(raw.soil_conductivity) : null,
-        latitude: raw.latitude || null,
-        longitude: raw.longitude || null
+        latitude: wLat,
+        longitude: wLon,
+        coords_display: wCoords
     };
 }
 window.formatWeatherReadingClient = formatWeatherReadingClient;
@@ -304,9 +331,7 @@ async function fetchLiveBulk(forceNetwork = false) {
     try {
         const orderCol = isNode2 ? 'id.desc' : 'created_at.desc.nullslast';
         const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiLive}?order=${orderCol}&limit=60`;
-        const urlWeather = isNode2
-            ? `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=*&order=${orderCol}&limit=60`
-            : `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=${orderCol}&limit=60`;
+        const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=*&order=${orderCol}&limit=60`;
 
         const [resAqi, resWeather] = await Promise.all([
             fetch(urlAqi, { headers, cache: 'no-cache' }),
@@ -327,6 +352,41 @@ async function fetchLiveBulk(forceNetwork = false) {
 
         const latestAqi = aqiHist[0] || null;
         const latestWeather = weatherHist[0] || null;
+
+        // Resolve latest coordinates from Supabase records
+        let lat = null;
+        let lon = null;
+        let coordsDisplay = null;
+
+        for (const w of weatherHist) {
+            if (w && w.latitude != null && w.longitude != null && !isNaN(Number(w.latitude)) && !isNaN(Number(w.longitude))) {
+                lat = Number(Number(w.latitude).toFixed(4));
+                lon = Number(Number(w.longitude).toFixed(4));
+                coordsDisplay = w.coords_display || (typeof formatCoordsDms === 'function' ? formatCoordsDms(lat, lon) : `${lat}° N, ${lon}° E`);
+                break;
+            }
+        }
+        if (lat == null) {
+            for (const a of aqiHist) {
+                if (a && a.latitude != null && a.longitude != null && !isNaN(Number(a.latitude)) && !isNaN(Number(a.longitude))) {
+                    lat = Number(Number(a.latitude).toFixed(4));
+                    lon = Number(Number(a.longitude).toFixed(4));
+                    coordsDisplay = a.coords_display || (typeof formatCoordsDms === 'function' ? formatCoordsDms(lat, lon) : `${lat}° N, ${lon}° E`);
+                    break;
+                }
+            }
+        }
+
+        if (latestWeather) {
+            if (latestWeather.latitude == null && lat != null) latestWeather.latitude = lat;
+            if (latestWeather.longitude == null && lon != null) latestWeather.longitude = lon;
+            if (!latestWeather.coords_display && coordsDisplay) latestWeather.coords_display = coordsDisplay;
+        }
+        if (latestAqi) {
+            if (latestAqi.latitude == null && lat != null) latestAqi.latitude = lat;
+            if (latestAqi.longitude == null && lon != null) latestAqi.longitude = lon;
+            if (!latestAqi.coords_display && coordsDisplay) latestAqi.coords_display = coordsDisplay;
+        }
 
         // Calculate today's rain sum & temperature range from readings
         const now = new Date();
@@ -365,9 +425,20 @@ async function fetchLiveBulk(forceNetwork = false) {
             today_rain_total: Number(todayRainSum.toFixed(2)),
             today_temp_min: todayTemps.length > 0 ? Number(Math.min(...todayTemps).toFixed(1)) : (latestWeather && latestWeather.temperature != null ? Number(latestWeather.temperature) : 28.0),
             today_temp_max: todayTemps.length > 0 ? Number(Math.max(...todayTemps).toFixed(1)) : (latestWeather && latestWeather.temperature != null ? Number(latestWeather.temperature) : 34.0),
+            latitude: lat,
+            longitude: lon,
+            coords_display: coordsDisplay,
             time: Date.now(),
             fetchedAt: Date.now()
         };
+
+        // Sync coordinates dynamically to navbar
+        if (coordsDisplay) {
+            const navCoords = document.getElementById('navbar-station-coords');
+            const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
+            if (navCoords) { navCoords.innerText = coordsDisplay; navCoords.style.display = 'inline-block'; }
+            if (navCoordsMob) { navCoordsMob.innerText = coordsDisplay; navCoordsMob.style.display = 'inline-block'; }
+        }
 
         // Cache results locally
         apiCache.liveBulk = { data: bulkData, time: Date.now(), node: activeNode };
@@ -387,6 +458,12 @@ async function fetchLiveBulk(forceNetwork = false) {
             if (!fallbackRes.ok) throw new Error('Fallback failed');
             const data = await fallbackRes.json();
             if (data && (data.aqi || data.weather)) {
+                if (data.coords_display) {
+                    const navCoords = document.getElementById('navbar-station-coords');
+                    const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
+                    if (navCoords) { navCoords.innerText = data.coords_display; navCoords.style.display = 'inline-block'; }
+                    if (navCoordsMob) { navCoordsMob.innerText = data.coords_display; navCoordsMob.style.display = 'inline-block'; }
+                }
                 apiCache.liveBulk = { data, time: Date.now(), node: activeNode };
                 apiCache.overviewBulk = { data, time: Date.now(), node: activeNode };
                 setLocalCache(cacheKey, data);

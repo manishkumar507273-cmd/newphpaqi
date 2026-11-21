@@ -260,6 +260,20 @@ function adjustTemperature($temp, $tsRaw) {
     return round((float)$temp, 1);
 }
 
+function formatCoordsDmsPhp($lat, $lon) {
+    if ($lat === null || $lon === null || !is_numeric($lat) || !is_numeric($lon)) return null;
+    $convert = function($val, $posChar, $negChar) {
+        $dir = $val >= 0 ? $posChar : $negChar;
+        $abs = abs((float)$val);
+        $deg = floor($abs);
+        $minFloat = ($abs - $deg) * 60;
+        $min = floor($minFloat);
+        $sec = round(($minFloat - $min) * 60);
+        return sprintf("%d°%02d'%02d\" %s", $deg, $min, $sec, $dir);
+    };
+    return $convert($lat, 'N', 'S') . ', ' . $convert($lon, 'E', 'W');
+}
+
 function formatWeatherReading($row) {
     if (!$row) return null;
     $tsRaw = $row['timestamp_hour'] ?? $row['created_at'] ?? $row['timestamp'] ?? null;
@@ -279,10 +293,10 @@ function formatWeatherReading($row) {
     if (isset($row['soil_conductivity']) && $row['soil_conductivity'] !== null) $row['soil_conductivity'] = round((float)$row['soil_conductivity'], 1);
     if (isset($row['latitude']) && $row['latitude'] !== null && $row['latitude'] !== '') $row['latitude'] = round((float)$row['latitude'], 4);
     if (isset($row['longitude']) && $row['longitude'] !== null && $row['longitude'] !== '') $row['longitude'] = round((float)$row['longitude'], 4);
-    if (isset($row['coords_display']) && $row['coords_display'] !== null) {
+    if (isset($row['coords_display']) && $row['coords_display'] !== null && $row['coords_display'] !== '') {
         $row['coords_display'] = (string)$row['coords_display'];
     } elseif (!empty($row['latitude']) && !empty($row['longitude'])) {
-        $row['coords_display'] = round((float)$row['latitude'], 4) . '° N, ' . round((float)$row['longitude'], 4) . '° E';
+        $row['coords_display'] = formatCoordsDmsPhp($row['latitude'], $row['longitude']) ?: (round((float)$row['latitude'], 4) . '° N, ' . round((float)$row['longitude'], 4) . '° E');
     }
     return $row;
 }
@@ -334,6 +348,10 @@ function formatRawReading($raw) {
 
     $ts = $raw['timestamp_hour'] ?? $raw['created_at'] ?? $raw['timestamp'] ?? null;
 
+    $rawLat = (isset($raw['latitude']) && $raw['latitude'] !== null && $raw['latitude'] !== '') ? round((float)$raw['latitude'], 4) : ((isset($raw['lat']) && $raw['lat'] !== null && $raw['lat'] !== '') ? round((float)$raw['lat'], 4) : null);
+    $rawLon = (isset($raw['longitude']) && $raw['longitude'] !== null && $raw['longitude'] !== '') ? round((float)$raw['longitude'], 4) : ((isset($raw['lon']) && $raw['lon'] !== null && $raw['lon'] !== '') ? round((float)$raw['lon'], 4) : ((isset($raw['lng']) && $raw['lng'] !== null && $raw['lng'] !== '') ? round((float)$raw['lng'], 4) : null));
+    $rawCoordsDisp = (isset($raw['coords_display']) && $raw['coords_display'] !== null && $raw['coords_display'] !== '') ? (string)$raw['coords_display'] : (($rawLat !== null && $rawLon !== null) ? (formatCoordsDmsPhp($rawLat, $rawLon) ?: "{$rawLat}° N, {$rawLon}° E") : null);
+
     return [
         'id'                => $raw['id'] ?? null,
         'created_at'        => $raw['created_at'] ?? ($raw['timestamp'] ?? null),
@@ -354,6 +372,9 @@ function formatRawReading($raw) {
         'wind_gust'         => isset($raw['wind_gust']) && $raw['wind_gust'] !== null ? round((float)$raw['wind_gust'], 2) : (isset($raw['gust']) ? round((float)$raw['gust'], 2) : null),
         'wind_direction'    => $raw['wind_direction'] ?? null,
         'rain_gauge'        => isset($raw['rain_gauge']) && $raw['rain_gauge'] !== null ? round((float)$raw['rain_gauge'], 2) : (isset($raw['rain']) ? round((float)$raw['rain'], 2) : null),
+        'latitude'          => $rawLat,
+        'longitude'         => $rawLon,
+        'coords_display'    => $rawCoordsDisp,
     ];
 }
 
@@ -926,6 +947,47 @@ switch ($action) {
         if ($raw['weather_hist']) { foreach ($raw['weather_hist'] as $row) { $w = formatWeatherReading($row); if ($w) $wh[] = $w; } }
         $res['weather_history'] = $wh;
 
+        // Resolve latest coordinates from Supabase records
+        $foundLat = null;
+        $foundLon = null;
+        $foundCoordsDisp = null;
+        if (!empty($wh)) {
+            foreach ($wh as $wItem) {
+                if (!empty($wItem['latitude']) && !empty($wItem['longitude'])) {
+                    $foundLat = $wItem['latitude'];
+                    $foundLon = $wItem['longitude'];
+                    $foundCoordsDisp = $wItem['coords_display'] ?? (formatCoordsDmsPhp($foundLat, $foundLon) ?: "{$foundLat}° N, {$foundLon}° E");
+                    break;
+                }
+            }
+        }
+        $aqiList = !empty($ah) ? $ah : (!empty($hist) ? $hist : []);
+        if ($foundLat === null && !empty($aqiList)) {
+            foreach ($aqiList as $aItem) {
+                if (!empty($aItem['latitude']) && !empty($aItem['longitude'])) {
+                    $foundLat = $aItem['latitude'];
+                    $foundLon = $aItem['longitude'];
+                    $foundCoordsDisp = $aItem['coords_display'] ?? (formatCoordsDmsPhp($foundLat, $foundLon) ?: "{$foundLat}° N, {$foundLon}° E");
+                    break;
+                }
+            }
+        }
+        if ($foundLat !== null && $foundLon !== null) {
+            $res['latitude'] = $foundLat;
+            $res['longitude'] = $foundLon;
+            $res['coords_display'] = $foundCoordsDisp;
+            if ($res['weather']) {
+                if (empty($res['weather']['latitude'])) $res['weather']['latitude'] = $foundLat;
+                if (empty($res['weather']['longitude'])) $res['weather']['longitude'] = $foundLon;
+                if (empty($res['weather']['coords_display'])) $res['weather']['coords_display'] = $foundCoordsDisp;
+            }
+            if ($res['aqi']) {
+                if (empty($res['aqi']['latitude'])) $res['aqi']['latitude'] = $foundLat;
+                if (empty($res['aqi']['longitude'])) $res['aqi']['longitude'] = $foundLon;
+                if (empty($res['aqi']['coords_display'])) $res['aqi']['coords_display'] = $foundCoordsDisp;
+            }
+        }
+
         $today_rain_sum = 0.0;
         if (isset($raw['today_rain_rows'])) {
             if (!empty($raw['today_rain_rows']) && is_array($raw['today_rain_rows'])) {
@@ -1011,6 +1073,47 @@ switch ($action) {
         $wh = [];
         if ($raw['weather_hist']) { foreach ($raw['weather_hist'] as $row) { $w = formatWeatherReading($row); if ($w) $wh[] = $w; } }
         $res['weather_history'] = $wh;
+
+        // Resolve latest coordinates from Supabase records
+        $foundLat = null;
+        $foundLon = null;
+        $foundCoordsDisp = null;
+        if (!empty($wh)) {
+            foreach ($wh as $wItem) {
+                if (!empty($wItem['latitude']) && !empty($wItem['longitude'])) {
+                    $foundLat = $wItem['latitude'];
+                    $foundLon = $wItem['longitude'];
+                    $foundCoordsDisp = $wItem['coords_display'] ?? (formatCoordsDmsPhp($foundLat, $foundLon) ?: "{$foundLat}° N, {$foundLon}° E");
+                    break;
+                }
+            }
+        }
+        $aqiList = !empty($ah) ? $ah : (!empty($hist) ? $hist : []);
+        if ($foundLat === null && !empty($aqiList)) {
+            foreach ($aqiList as $aItem) {
+                if (!empty($aItem['latitude']) && !empty($aItem['longitude'])) {
+                    $foundLat = $aItem['latitude'];
+                    $foundLon = $aItem['longitude'];
+                    $foundCoordsDisp = $aItem['coords_display'] ?? (formatCoordsDmsPhp($foundLat, $foundLon) ?: "{$foundLat}° N, {$foundLon}° E");
+                    break;
+                }
+            }
+        }
+        if ($foundLat !== null && $foundLon !== null) {
+            $res['latitude'] = $foundLat;
+            $res['longitude'] = $foundLon;
+            $res['coords_display'] = $foundCoordsDisp;
+            if ($res['weather']) {
+                if (empty($res['weather']['latitude'])) $res['weather']['latitude'] = $foundLat;
+                if (empty($res['weather']['longitude'])) $res['weather']['longitude'] = $foundLon;
+                if (empty($res['weather']['coords_display'])) $res['weather']['coords_display'] = $foundCoordsDisp;
+            }
+            if ($res['aqi']) {
+                if (empty($res['aqi']['latitude'])) $res['aqi']['latitude'] = $foundLat;
+                if (empty($res['aqi']['longitude'])) $res['aqi']['longitude'] = $foundLon;
+                if (empty($res['aqi']['coords_display'])) $res['aqi']['coords_display'] = $foundCoordsDisp;
+            }
+        }
 
         $today_rain_sum = 0.0;
         if (isset($raw['today_rain_rows'])) {

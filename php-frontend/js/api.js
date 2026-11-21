@@ -547,6 +547,18 @@ window.fetchHistoryBulk = fetchHistoryBulk;
 async function fetchForecastData(force = false) {
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
 
+    // Node 2 has no predictive model active; strictly keep blank and never leak Node 1 forecast
+    if (String(activeNode) === '2') {
+        return {
+            status: 'standby',
+            node: '2',
+            message: 'Forecast model in standby for Node 2. No forecasted values are generated or passed.',
+            hourly: [],
+            phases: [],
+            hero: null
+        };
+    }
+
     // 1. Primary dynamic path: query dynamic backend with cache-busting to ensure server & Supabase parity
     try {
         const resp = await fetch(`api/telemetry.php?action=forecast&node=${activeNode}&v=${Date.now()}${force ? '&force=1' : ''}`, {

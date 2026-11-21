@@ -26,25 +26,10 @@ $init_f_color = '#94a3b8';
 $init_f_shadow = 'rgba(148, 163, 184, 0.15)';
 $init_f_label = 'STANDBY';
 $init_f_aqi = '--';
-$init_f_advice = 'Predictive model is in standby.';
+$init_f_advice = 'Predictive model is in standby for Station 2.';
 
-$numeric_f_aqi = is_numeric($init_f_aqi) ? (float)$init_f_aqi : 0;
-if ($numeric_f_aqi <= 50) {
-    $init_f_t = ($numeric_f_aqi / 50) * 0.22;
-} elseif ($numeric_f_aqi <= 100) {
-    $init_f_t = 0.22 + (($numeric_f_aqi - 50) / 50) * 0.20;
-} elseif ($numeric_f_aqi <= 200) {
-    $init_f_t = 0.42 + (($numeric_f_aqi - 100) / 100) * 0.23;
-} elseif ($numeric_f_aqi <= 300) {
-    $init_f_t = 0.65 + (($numeric_f_aqi - 200) / 100) * 0.15;
-} elseif ($numeric_f_aqi <= 400) {
-    $init_f_t = 0.80 + (($numeric_f_aqi - 300) / 100) * 0.12;
-} else {
-    $init_f_t = min(1.0, 0.92 + min(($numeric_f_aqi - 400) / 100, 1) * 0.08);
-}
-$init_f_theta = (-157.38 + $init_f_t * 134.76) * (M_PI / 180);
-$init_f_pin_x = round(75 + 65 * cos($init_f_theta), 2);
-$init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
+$init_f_pin_x = 15;
+$init_f_pin_y = 58;
 ?>
 
 <div class="forecast-page-container p-2.5 sm:p-6 flex flex-col gap-3 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
@@ -187,11 +172,142 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
         </div>
         <h2 class="text-[17px] sm:text-lg font-bold text-slate-900 m-0 font-sans tracking-tight">Predicted Air Quality Parameters</h2>
       </div>
+      <span class="text-[11px] font-bold font-mono px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">STANDBY</span>
     </div>
 
     <!-- Grid of the 5 criteria air pollutants -->
     <div id="predicted-parameters-grid" class="pollutants-grid-responsive grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
-      <div class="text-xs text-slate-400 py-6 text-center col-span-full">Loading predicted parameters...</div>
+      
+      <!-- PM2.5 -->
+      <div id="card-box-pm25" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden h-full min-h-[110px]" style="border-left: 5px solid #cbd5e1;">
+        <div class="pollutant-card-top flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🌫️</div>
+            <div class="pollutant-title-box">
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₂.₅</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤60</div>
+            </div>
+          </div>
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
+          </div>
+        </div>
+        <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
+          <div class="pollutant-val-wrap flex flex-col">
+            <div id="card-pm25" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-400 leading-none">--</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
+          </div>
+          <div id="tag-pm25" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shrink-0" style="background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b;">
+            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: #94a3b8;"></span>
+            <span>Standby</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PM10 -->
+      <div id="card-box-pm10" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden h-full min-h-[110px]" style="border-left: 5px solid #cbd5e1;">
+        <div class="pollutant-card-top flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☁️</div>
+            <div class="pollutant-title-box">
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">PM₁₀</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤100</div>
+            </div>
+          </div>
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
+          </div>
+        </div>
+        <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
+          <div class="pollutant-val-wrap flex flex-col">
+            <div id="card-pm10" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-400 leading-none">--</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
+          </div>
+          <div id="tag-pm10" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shrink-0" style="background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b;">
+            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: #94a3b8;"></span>
+            <span>Standby</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CO -->
+      <div id="card-box-co" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden h-full min-h-[110px]" style="border-left: 5px solid #cbd5e1;">
+        <div class="pollutant-card-top flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center text-sm sm:text-lg shrink-0">💨</div>
+            <div class="pollutant-title-box">
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">CO</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤2</div>
+            </div>
+          </div>
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
+          </div>
+        </div>
+        <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
+          <div class="pollutant-val-wrap flex flex-col">
+            <div id="card-co" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-400 leading-none">--</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">mg/m³</div>
+          </div>
+          <div id="tag-co" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shrink-0" style="background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b;">
+            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: #94a3b8;"></span>
+            <span>Standby</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NO2 -->
+      <div id="card-box-no2" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden h-full min-h-[110px]" style="border-left: 5px solid #cbd5e1;">
+        <div class="pollutant-card-top flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm sm:text-lg shrink-0">🏭</div>
+            <div class="pollutant-title-box">
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">NO₂</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤80</div>
+            </div>
+          </div>
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
+          </div>
+        </div>
+        <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
+          <div class="pollutant-val-wrap flex flex-col">
+            <div id="card-no2" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-400 leading-none">--</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
+          </div>
+          <div id="tag-no2" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shrink-0" style="background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b;">
+            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: #94a3b8;"></span>
+            <span>Standby</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- O3 -->
+      <div id="card-box-o3" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden h-full min-h-[110px]" style="border-left: 5px solid #cbd5e1;">
+        <div class="pollutant-card-top flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☀️</div>
+            <div class="pollutant-title-box">
+              <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">O₃</div>
+              <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤100</div>
+            </div>
+          </div>
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+            <i data-lucide="info" class="w-3 h-3"></i>
+          </div>
+        </div>
+        <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
+          <div class="pollutant-val-wrap flex flex-col">
+            <div id="card-o3" class="font-mono text-lg sm:text-2xl font-extrabold text-slate-400 leading-none">--</div>
+            <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">µg/m³</div>
+          </div>
+          <div id="tag-o3" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shrink-0" style="background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b;">
+            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: #94a3b8;"></span>
+            <span>Standby</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -204,24 +320,21 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
           <i data-lucide="clock" class="w-4 h-4"></i>
         </div>
         <div class="min-w-0">
-          <h2 id="hourly-forecast-heading" class="text-sm sm:text-base font-extrabold text-slate-900 m-0 tracking-tight truncate">Hourly Forecast (Next 24 Hours)</h2>
-          <p class="text-[11px] sm:text-xs text-slate-400 m-0 truncate">Swipe horizontally to track predicted temperature, humidity, and AQI</p>
+          <h2 id="hourly-forecast-heading" class="text-sm sm:text-base font-extrabold text-slate-900 m-0 tracking-tight truncate">Hourly Forecast (Standby)</h2>
+          <p class="text-[11px] sm:text-xs text-slate-400 m-0 truncate">Atmospheric forecast inference is in standby mode for Station 2</p>
         </div>
-      </div>
-      <div class="flex items-center gap-1.5 shrink-0">
-        <button type="button" onclick="scrollHourlyReel(-1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-600 flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer" title="Scroll left">
-          <i data-lucide="chevron-left" class="w-4 h-4"></i>
-        </button>
-        <button type="button" onclick="scrollHourlyReel(1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-600 flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer" title="Scroll right">
-          <i data-lucide="chevron-right" class="w-4 h-4"></i>
-        </button>
       </div>
     </div>
 
     <!-- Edge-to-Edge Horizontal Reel with High-Performance Smooth Scrolling -->
     <div id="hourly-forecast-reel" class="hourly-forecast-reel flex gap-3 overflow-x-auto py-2 px-1">
-      <!-- Populated dynamically by JS with smooth cards -->
-      <div class="text-xs text-slate-400 py-6 text-center w-full">Loading hourly predictions...</div>
+      <div class="w-full py-8 px-4 text-center rounded-xl bg-slate-50 border border-dashed border-slate-200 flex flex-col items-center justify-center gap-1.5">
+        <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+          <i data-lucide="clock" class="w-5 h-5"></i>
+        </div>
+        <div class="text-xs sm:text-sm font-bold text-slate-600 font-sans">Predictive Forecast Standby</div>
+        <div class="text-[11px] sm:text-xs text-slate-400 max-w-[420px]">Machine learning forecast inference is active for Station 1. Station 2 predictive values remain blank in standby mode.</div>
+      </div>
     </div>
 
   </div>
@@ -690,661 +803,16 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
         if (window.lucide) lucide.createIcons();
     };
 
-    // Render the 24 hourly predictions exactly as generated by the scheduled cron job.
-    // Static forecast output remains stable across project runs/page views without synthetic hour shifting.
+    // Standby Hourly & Phase Generators for Station 2
     function generateHourlyData() {
-        if (trainedModelData && trainedModelData.hourly && Array.isArray(trainedModelData.hourly) && trainedModelData.hourly.length > 0) {
-            const now = new Date();
-            // Start strictly from the upcoming next hour (e.g. if now is 7:20 PM, predict 8 PM, 9 PM, 10 PM...)
-            const currentHourFloor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0).getTime();
-
-            // Filter out any hours that are in the past or currently in-progress
-            let validList = trainedModelData.hourly.filter(item => {
-                if (item.iso) {
-                    const itemTime = new Date(item.iso).getTime();
-                    return itemTime > currentHourFloor;
-                }
-                return true;
-            });
-
-            if (!validList || validList.length === 0) {
-                validList = trainedModelData.hourly;
-            }
-
-            return validList.map((item, idx) => {
-                let timeLabel = item.label;
-
-                if (!timeLabel && item.iso) {
-                    const dt = new Date(item.iso);
-                    timeLabel = dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: true });
-                } else if (!timeLabel && typeof item.hour === 'number') {
-                    const h = item.hour % 24;
-                    const ampm = h >= 12 ? 'PM' : 'AM';
-                    const h12 = h % 12 || 12;
-                    timeLabel = `${h12} ${ampm}`;
-                }
-
-                return {
-                    ...item,
-                    index: idx,
-                    isNext: (idx === 0),
-                    isNow: false,
-                    label: timeLabel || `+${idx+1}h`
-                };
-            });
-        }
-
-        const now = new Date();
-        const currentHour = now.getHours();
-        const hours = [];
-
-        // Fallback: strictly predict upcoming 24 hours starting from next hour (i = 1..24)
-        for (let i = 1; i <= 24; i++) {
-            const h = (currentHour + i) % 24;
-            const hourDate = new Date(now.getTime() + (i * 3600000));
-            const timeLabel = hourDate.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
-
-            hours.push({
-                index: i - 1,
-                hour: h,
-                label: timeLabel,
-                temp: '--',
-                aqi: '--',
-                humidity: '--',
-                rain_prob: 0,
-                pm25: '--',
-                pm10: '--',
-                co: '--',
-                no2: '--',
-                o3: '--',
-                icon: '⏳',
-                isNow: false,
-                isNext: (i === 1)
-            });
-        }
-        return hours;
+        return [];
     }
 
-    // Generate upcoming 24-hour day phases structure
     function generateTimelinePhases() {
-        if (trainedModelData && trainedModelData.phases) {
-            return trainedModelData.phases;
-        }
-
-        const defaultPhases = [
-            { name: 'Late Afternoon / Evening', hours: '4 PM – 9 PM', icon: '🌅' },
-            { name: 'Night to Midnight', hours: '10 PM – 3 AM', icon: '🌙' },
-            { name: 'Early Morning Transition', hours: '4 AM – 9 AM', icon: '🌤️' },
-            { name: 'Daytime Afternoon Peak', hours: '10 AM – 3 PM', icon: '☀️' }
-        ];
-
-        return defaultPhases.map((p, idx) => ({
-            index: idx,
-            phaseName: p.name,
-            hoursSpan: p.hours,
-            minTemp: '--',
-            maxTemp: '--',
-            leftPct: '0',
-            widthPct: '0',
-            condition: 'Awaiting Model',
-            icon: p.icon,
-            aqi: '--',
-            dominant: '--',
-            humidity: '--',
-            pm25: '--',
-            pm10: '--',
-            co: '--',
-            no2: '--',
-            o3: '--',
-            advice: 'Predicted chemical and atmospheric parameters will generate once the forecast model finishes inference.'
-        }));
+        return [];
     }
 
-    // Render Function
-    function renderForecastUI() {
-        if (!document.getElementById('hourly-forecast-heading') && !document.getElementById('forecast-hero-aqi')) return;
-        const hourly = generateHourlyData();
-        const phases = generateTimelinePhases();
-
-        // Update heading with active remaining hour count
-        // Update heading
-        const headingEl = document.getElementById('hourly-forecast-heading');
-        if (headingEl && hourly && hourly.length > 0) {
-            headingEl.innerText = `Hourly Forecast (24-Hour Cron Model Prediction)`;
-        }
-
-        // 1. Date and Sync time
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-        const dateEl = document.getElementById('forecast-date-str');
-        if (dateEl) dateEl.innerText = dateStr;
-        const syncEl = document.getElementById('forecast-sync-time');
-        if (syncEl) syncEl.innerText = (trainedModelData && trainedModelData.generated_at) ? 'Cron Synced: ' + trainedModelData.generated_at : (trainedModelData ? 'Cron Model Active' : 'Model Standby');
-
-        // Store hourly data globally for interactive reel clicks
-        window.__currentHourly = hourly;
-        if (typeof window.__selectedHourIdx !== 'number' || window.__selectedHourIdx >= hourly.length) {
-            window.__selectedHourIdx = 0;
-        }
-
-        // 2. Helper to synchronize Hero Card & 7 Predicted Parameters with any selected timestamp
-        function updateHeroAndParams(curHour, isNext) {
-            if (!curHour) return;
-            const b = getAqiBadge(curHour.aqi);
-
-            // Keep outer hero container background white per user request
-            const heroCard = document.getElementById('forecast-hero-container');
-            if (heroCard) {
-                heroCard.style.setProperty('background', '#ffffff', 'important');
-                heroCard.style.setProperty('border-color', b.border, 'important');
-                heroCard.style.boxShadow = `0 4px 24px rgba(15, 23, 42, 0.05)`;
-            }
-
-            const heroTitle = document.getElementById('forecast-hero-title');
-            if (heroTitle) {
-                heroTitle.style.color = b.color;
-            }
-
-            const heroLabel = document.getElementById('forecast-hero-label');
-            if (heroLabel) {
-                heroLabel.style.color = b.color;
-            }
-
-            // Hero AQI Value
-            const heroAqi = document.getElementById('forecast-hero-aqi');
-            if (heroAqi) {
-                heroAqi.innerText = curHour.aqi !== undefined ? curHour.aqi : '--';
-            }
-
-            // Category text right under the arc curve apex
-            const catText = document.getElementById('forecast-hero-category-text');
-            if (catText) {
-                catText.innerText = b.label.toUpperCase();
-                catText.style.color = b.color;
-            }
-
-            // Health Impact Advisory Statement
-            const healthAdvice = document.getElementById('forecast-hero-health-advice');
-            if (healthAdvice) {
-                healthAdvice.innerText = b.advice;
-            }
-
-            // Target Hour Badge (shows only the hour, e.g. "8 PM")
-            const targetWinEl = document.getElementById('forecast-hero-target-window');
-            if (targetWinEl) {
-                if (curHour.label) targetWinEl.innerText = curHour.label;
-                targetWinEl.style.backgroundColor = b.bg;
-                targetWinEl.style.borderColor = b.border;
-                targetWinEl.style.color = b.text;
-            }
-
-            // Smooth Arc Pin Calculation (Matching user reference card gauge)
-            const getAqiProgress = (aqi) => {
-                const v = Number(aqi);
-                if (isNaN(v) || v <= 0) return 0;
-                if (v <= 50)  return (v / 50) * 0.22;
-                if (v <= 100) return 0.22 + ((v - 50) / 50) * 0.20;
-                if (v <= 200) return 0.42 + ((v - 100) / 100) * 0.23;
-                if (v <= 300) return 0.65 + ((v - 200) / 100) * 0.15;
-                if (v <= 400) return 0.80 + ((v - 300) / 100) * 0.12;
-                return Math.min(1.0, 0.92 + Math.min((v - 400) / 100, 1) * 0.08);
-            };
-
-            const t = getAqiProgress(curHour.aqi);
-            const thetaStart = -157.38 * (Math.PI / 180);
-            const thetaEnd = -22.62 * (Math.PI / 180);
-            const currentTheta = thetaStart + t * (thetaEnd - thetaStart);
-            const pinX = (75 + 65 * Math.cos(currentTheta)).toFixed(2);
-            const pinY = (83 + 65 * Math.sin(currentTheta)).toFixed(2);
-
-            const rainbowPin = document.getElementById('forecast-rainbow-pin');
-            if (rainbowPin) {
-                rainbowPin.setAttribute('cx', pinX);
-                rainbowPin.setAttribute('cy', pinY);
-                rainbowPin.setAttribute('stroke', b.color);
-            }
-
-            // AQI Hero Card: dynamically theme background to match the AQI bar in light, along with border & glowing shadow
-            const aqiCard = document.getElementById('aqi-hero-card');
-            if (aqiCard) {
-                aqiCard.style.setProperty('background', b.cardBg, 'important');
-                aqiCard.style.setProperty('border-color', b.border, 'important');
-                aqiCard.style.boxShadow = `0 4px 20px ${b.shadow}`;
-            }
-
-            // Weather Box Updates (Fresh Cool Sky Weather Gradient)
-            const weatherBox = document.getElementById('weather-hero-box');
-            if (weatherBox) {
-                weatherBox.style.setProperty('background', 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 25%, #e0f2fe 65%, #bae6fd 100%)', 'important');
-                weatherBox.style.setProperty('border-color', 'rgba(14, 165, 233, 0.38)', 'important');
-                weatherBox.style.boxShadow = '0 4px 20px rgba(14, 165, 233, 0.12)';
-            }
-
-            const weatherDivider = document.getElementById('weather-metrics-divider');
-            if (weatherDivider) {
-                weatherDivider.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-            }
-
-            const weatherIcon = document.getElementById('weather-hero-icon');
-            if (weatherIcon) {
-                weatherIcon.style.color = '#0284c7';
-            }
-
-            const weatherUnit = document.querySelector('.weather-temp-unit');
-            if (weatherUnit) {
-                weatherUnit.style.color = '#0284c7';
-            }
-
-            const microHum = document.getElementById('weather-micro-humidity');
-            if (microHum) {
-                microHum.style.backgroundColor = 'rgba(255, 255, 255, 0.88)';
-                microHum.style.borderColor = 'rgba(14, 165, 233, 0.3)';
-            }
-
-            const microRain = document.getElementById('weather-micro-rain');
-            if (microRain) {
-                microRain.style.backgroundColor = 'rgba(255, 255, 255, 0.88)';
-                microRain.style.borderColor = 'rgba(14, 165, 233, 0.3)';
-            }
-
-            const weatherTemp = document.getElementById('forecast-weather-temp');
-            if (weatherTemp) {
-                const t = curHour.temp;
-                weatherTemp.innerText = (t !== undefined && t !== null && !isNaN(t)) ? (Number(t) % 1 === 0 ? Number(t) : Number(t).toFixed(1)) : '--';
-            }
-
-            const weatherHum = document.getElementById('forecast-weather-humidity');
-            if (weatherHum) {
-                const h = curHour.humidity;
-                weatherHum.innerText = (h !== undefined && h !== null && !isNaN(h)) ? (Number(h) % 1 === 0 ? Number(h) : Number(h).toFixed(1)) + '%' : '--%';
-            }
-
-            const weatherRain = document.getElementById('forecast-weather-rain');
-            const rp = curHour.rain_prob !== undefined && curHour.rain_prob !== null
-                ? curHour.rain_prob
-                : (curHour.rain_prob_pct !== undefined ? curHour.rain_prob_pct : 0);
-            if (weatherRain) {
-                weatherRain.innerText = Math.round(Number(rp)) + '%';
-            }
-
-            // Highlight corresponding active tier in Section 5: Rainfall Prediction Scale
-            const rStatus = getRainStatus(rp);
-            document.querySelectorAll('.rain-scale-item').forEach(el => {
-                el.classList.remove('ring-2', 'ring-teal-500', 'shadow-md');
-            });
-            const activeRainTier = document.getElementById(`rain-tier-${rStatus.tier}`);
-            if (activeRainTier) {
-                activeRainTier.classList.add('ring-2', 'ring-teal-500', 'shadow-md');
-            }
-
-            // 3. Render 5 Predicted Model Criteria Pollutants Grid for this timestamp
-            const paramsGrid = document.getElementById('predicted-parameters-grid');
-            if (paramsGrid && trainedModelData && trainedModelData.parameters) {
-                const p = trainedModelData.parameters;
-                const curSub = curHour.sub_indices || {};
-
-                // CPCB NAQI National Standard Safe Limits matching the Live page exactly
-                const cpcbSafeLimits = {
-                    pm25: '≤60 µg/m³',
-                    pm10: '≤100 µg/m³',
-                    co:   '≤2 mg/m³',
-                    no2:  '≤80 µg/m³',
-                    o3:   '≤100 µg/m³'
-                };
-
-                // Normal / High status tag based on parameter limit matching Live page
-                const getParamTag = (key, val) => {
-                    if (val === null || val === undefined || isNaN(val)) return null;
-                    const v = Number(val);
-                    const limits = { pm25: 60, pm10: 100, co: 2, no2: 80, o3: 100 };
-                    const lim = limits[key];
-                    if (lim === undefined) return null;
-                    const isSafe = v <= lim;
-                    return {
-                        text: isSafe ? 'Normal' : 'High',
-                        dot: isSafe ? '#16a34a' : '#dc2626',
-                        bg: isSafe ? '#dcfce7' : '#fee2e2',
-                        border: isSafe ? '#bbf7d0' : '#fecaca',
-                        color: isSafe ? '#15803d' : '#b91c1c'
-                    };
-                };
-
-                // Standard CPCB 6-tier status border color matching the Live page scale
-                const getParamStatusColor = (key, val) => {
-                    if (val === null || val === undefined || isNaN(val)) return '#cbd5e1';
-                    const v = Number(val);
-                    const colors = ['#59b61f', '#eec732', '#ea8c34', '#e95478', '#b33fba', '#c92033'];
-                    const scales = {
-                        pm25: [30, 60, 90, 120, 250],
-                        pm10: [50, 100, 250, 350, 430],
-                        co: [1.0, 2.0, 10.0, 17.0, 34.0],
-                        no2: [40, 80, 180, 280, 400],
-                        o3: [50, 100, 168, 208, 748]
-                    };
-                    const sc = scales[key];
-                    if (!sc) {
-                        return '#00bfa5';
-                    }
-                    for (let i = 0; i < sc.length; i++) {
-                        if (v <= sc[i]) return colors[i];
-                    }
-                    return colors[colors.length - 1];
-                };
-
-                const getValColorClass = (key) => {
-                    switch (key) {
-                        case 'pm25': return 'text-sky-500';
-                        case 'pm10': return 'text-indigo-500';
-                        case 'co': return 'text-slate-600';
-                        case 'no2': return 'text-purple-500';
-                        case 'o3': return 'text-amber-500';
-                        default: return 'text-slate-900';
-                    }
-                };
-
-                const formatCurVal = (val, key) => {
-                    if (val === null || val === undefined || isNaN(val)) return '--';
-                    const num = Number(val);
-                    if (key === 'co') return num.toFixed(2);
-                    return num.toFixed(2);
-                };
-
-                const items = [
-                    {
-                        key: 'pm25', name: 'PM₂.₅', icon: '🌫️',
-                        iconBgClass: 'bg-sky-50 text-sky-500',
-                        current: formatCurVal(curHour.pm25, 'pm25'),
-                        unit: 'µg/m³',
-                        tag: getParamTag('pm25', curHour.pm25),
-                        borderColor: getParamStatusColor('pm25', curHour.pm25),
-                        valColor: 'text-sky-500',
-                        footerVal: cpcbSafeLimits.pm25
-                    },
-                    {
-                        key: 'pm10', name: 'PM₁₀', icon: '☁️',
-                        iconBgClass: 'bg-indigo-50 text-indigo-500',
-                        current: formatCurVal(curHour.pm10, 'pm10'),
-                        unit: 'µg/m³',
-                        tag: getParamTag('pm10', curHour.pm10),
-                        borderColor: getParamStatusColor('pm10', curHour.pm10),
-                        valColor: 'text-indigo-500',
-                        footerVal: cpcbSafeLimits.pm10
-                    },
-                    {
-                        key: 'co', name: 'CO', icon: '💨',
-                        iconBgClass: 'bg-slate-50 text-slate-600',
-                        current: formatCurVal(curHour.co, 'co'),
-                        unit: 'mg/m³',
-                        tag: getParamTag('co', curHour.co),
-                        borderColor: getParamStatusColor('co', curHour.co),
-                        valColor: 'text-slate-600',
-                        footerVal: cpcbSafeLimits.co
-                    },
-                    {
-                        key: 'no2', name: 'NO₂', icon: '🏭',
-                        iconBgClass: 'bg-purple-50 text-purple-500',
-                        current: formatCurVal(curHour.no2, 'no2'),
-                        unit: 'µg/m³',
-                        tag: getParamTag('no2', curHour.no2),
-                        borderColor: getParamStatusColor('no2', curHour.no2),
-                        valColor: 'text-purple-500',
-                        footerVal: cpcbSafeLimits.no2
-                    },
-                    {
-                        key: 'o3', name: 'O₃', icon: '☀️',
-                        iconBgClass: 'bg-amber-50 text-amber-500',
-                        current: formatCurVal(curHour.o3, 'o3'),
-                        unit: 'µg/m³',
-                        tag: getParamTag('o3', curHour.o3),
-                        borderColor: getParamStatusColor('o3', curHour.o3),
-                        valColor: 'text-amber-500',
-                        footerVal: cpcbSafeLimits.o3
-                    }
-                ];
-
-                paramsGrid.innerHTML = items.map((it) => `
-                    <div id="card-box-${it.key}" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] relative overflow-hidden h-full min-h-[110px]" style="border-left: 5px solid ${it.borderColor};">
-                      <div class="pollutant-card-top flex items-center justify-between w-full">
-                        <div class="flex items-center gap-2">
-                          <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${it.iconBgClass} flex items-center justify-center text-sm sm:text-lg shrink-0">${it.icon}</div>
-                          <div class="pollutant-title-box">
-                            <div class="pollutant-name text-[13px] sm:text-[15px] font-bold font-sans text-slate-900 leading-tight">${it.name}</div>
-                            <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ${it.footerVal}</div>
-                          </div>
-                        </div>
-                        <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                        </div>
-                      </div>
-
-                      <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
-                        <div class="pollutant-val-wrap flex flex-col">
-                          <div id="card-${it.key}" class="font-mono text-lg sm:text-2xl font-extrabold ${it.valColor} leading-none">${it.current}</div>
-                          <div class="pollutant-unit text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 font-mono">${it.unit}</div>
-                        </div>
-                        ${it.tag ? `
-                        <div id="tag-${it.key}" class="pollutant-tag px-2 py-1 rounded-full text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shrink-0" style="background-color: ${it.tag.bg}; border: 1px solid ${it.tag.border}; color: ${it.tag.color};">
-                          <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${it.tag.dot};"></span>
-                          <span>${it.tag.text}</span>
-                        </div>
-                        ` : ''}
-                      </div>
-
-                      <div class="pollutant-chevron text-slate-400 shrink-0">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                      </div>
-                    </div>
-                `).join('');
-            }
-        }
-
-        // Interactive function to view any timestamp from the reel in the Hero & Parameter cards
-        window.selectForecastHour = function(idx) {
-            if (!window.__currentHourly || !window.__currentHourly[idx]) return;
-            window.__selectedHourIdx = idx;
-            updateHeroAndParams(window.__currentHourly[idx], idx === 0);
-
-            // Update active styling on the horizontal reel cards
-            document.querySelectorAll('#hourly-forecast-reel .hourly-card').forEach((card, cIdx) => {
-                if (cIdx === idx) {
-                    card.classList.add('active-hour');
-                } else {
-                    card.classList.remove('active-hour');
-                }
-            });
-        };
-
-        // Initialize hero with selected timestamp (default: index 0 = NEXT upcoming timestamp)
-        if (!trainedModelData) {
-            const heroAqi = document.getElementById('forecast-hero-aqi');
-            if (heroAqi) heroAqi.innerText = '--';
-            const aqiLow = document.getElementById('forecast-aqi-low');
-            if (aqiLow) aqiLow.innerText = '--';
-            const aqiHigh = document.getElementById('forecast-aqi-high');
-            if (aqiHigh) aqiHigh.innerText = '--';
-        } else if (trainedModelData.hero) {
-            const selectedItem = (hourly && hourly.length > 0) ? hourly[window.__selectedHourIdx] : trainedModelData.hero;
-            updateHeroAndParams(selectedItem, window.__selectedHourIdx === 0);
-
-            // Top Status Chip
-            const topChip = document.getElementById('forecast-model-status-chip');
-            const isStandby = (trainedModelData.status === 'standby') || (!trainedModelData.hero || trainedModelData.hero.aqi === null);
-
-            if (topChip) {
-                if (isStandby) {
-                    topChip.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono";
-                    topChip.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> AWAITING NEW MODEL · STANDBY`;
-                } else {
-                    topChip.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono";
-                    topChip.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> MODEL ACTIVE · INFERENCE LIVE`;
-                }
-            }
-            const topSubtext = document.getElementById('forecast-model-subtext');
-            if (topSubtext) {
-                topSubtext.innerText = isStandby ? 'Ready for new model deployment in forcast/' : 'Dual-Engine SAPE: AQI (48h Window) + Multi-Weather Wavelet LSTM (72h Window from WEATHER_NODE1)';
-            }
-
-
-
-            const syncEl = document.getElementById('forecast-sync-time');
-            if (syncEl) syncEl.innerText = `Active`;
-            const syncDot = document.getElementById('forecast-sync-dot');
-            if (syncDot) syncDot.className = "inline-block w-2 h-2 rounded-full bg-emerald-500";
-        }
-
-        // 4. Render Hourly Horizontal Reel (Clickable Cards to Inspect Any Timestamp)
-        const reel = document.getElementById('hourly-forecast-reel');
-        if (reel) {
-            reel.innerHTML = hourly.map((item, idx) => {
-                const b = getAqiBadge(item.aqi);
-                const isSelected = (idx === window.__selectedHourIdx);
-                const isFirst = (idx === 0);
-                const rainProbRaw = (item.rain_prob !== undefined && item.rain_prob !== null) 
-                    ? item.rain_prob 
-                    : (item.rain_prob_pct !== undefined ? item.rain_prob_pct : 0);
-                const rainChance = (rainProbRaw !== '--' && rainProbRaw !== undefined && rainProbRaw !== null && !isNaN(Number(rainProbRaw)))
-                    ? Math.round(Number(rainProbRaw))
-                    : 0;
-                const rStatus = getRainStatus(rainChance);
-
-                return `
-                    <div class="hourly-card ${isSelected ? 'active-hour' : ''}" onclick="selectForecastHour(${idx})" style="cursor: pointer;" title="Rain Probability: ${rainChance}% (${rStatus.label})">
-                      <div class="hour-label text-xs sm:text-[13px] font-extrabold ${isFirst ? 'text-teal-600' : 'text-slate-600'} mb-1 whitespace-nowrap flex items-center gap-1.5">
-                        <span>${item.label}</span>
-                        ${isFirst ? '<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">NEXT</span>' : ''}
-                      </div>
-
-                      <div class="font-mono text-lg sm:text-[21px] font-black text-slate-800 leading-tight my-1 tracking-tight">${item.temp}°C</div>
-
-                      <div class="w-full bg-white/90 rounded-xl py-1.5 px-2 my-1 flex flex-col gap-1 border border-slate-200/70 shadow-2xs">
-                        <div class="flex items-center justify-between text-[11px] font-medium text-slate-600">
-                          <span class="flex items-center gap-1">💧 <span class="text-[10px] text-slate-400 font-semibold">Hum</span></span>
-                          <span class="font-mono font-bold text-sky-700">${item.humidity}%</span>
-                        </div>
-                        <div class="flex items-center justify-between text-[11px] font-medium text-slate-600 pt-0.5 border-t border-slate-100" title="Precipitation: ${rainChance}%">
-                          <span class="flex items-center gap-1">🌧️ <span class="text-[10px] text-slate-400 font-semibold">Rain</span></span>
-                          <span class="font-mono font-extrabold" style="color:${rStatus.color};">${rainChance}%</span>
-                        </div>
-                      </div>
-
-                      <div class="mt-1 w-full text-center py-1 rounded-xl text-[10.5px] font-extrabold font-mono shadow-2xs" style="background:${b.bg}; color:${b.text}; border:1px solid ${b.border}; white-space:nowrap;">
-                        AQI ${item.aqi}
-                      </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 5. Render 24-Hour Timeline Phases (Strictly Predicted Parameters)
-        const acc = document.getElementById('seven-day-accordion');
-        if (acc) {
-            acc.innerHTML = phases.map((d, idx) => {
-                const b = getAqiBadge(d.aqi);
-                const isOpenDefault = idx === 0;
-                return `
-                    <div class="day-row-container ${isOpenDefault ? 'open' : ''}" id="day-row-${idx}">
-                      <!-- Clickable Header Row -->
-                      <div class="day-row-header" onclick="toggleDayAccordion(${idx})">
-                        <!-- Left: Phase Name & Icon -->
-                        <div class="flex items-center gap-3 min-w-[130px] sm:min-w-[160px]">
-                          <span class="text-xl sm:text-2xl shrink-0 text-slate-400 font-sans">${d.icon}</span>
-                          <div>
-                            <div class="text-xs sm:text-[13px] font-bold text-slate-900 leading-tight">${d.phaseName}</div>
-                            <div class="text-[10.5px] text-teal-600 font-semibold font-mono mt-0.5">${d.hoursSpan}</div>
-                          </div>
-                        </div>
-
-                        <!-- Center: Min/Max Visual Range Slider -->
-                        <div class="flex items-center gap-2 sm:gap-3 flex-1 justify-center max-w-[220px]">
-                          <span class="font-mono text-xs font-bold text-slate-400">${d.minTemp}°</span>
-                          <div class="temp-slider-track">
-                            <div class="temp-slider-fill" style="left: ${d.leftPct}%; width: ${d.widthPct}%;"></div>
-                          </div>
-                          <span class="font-mono text-xs font-bold text-slate-400">${d.maxTemp}°</span>
-                        </div>
-
-                        <!-- Right: AQI Chip & Chevron -->
-                        <div class="flex items-center gap-2">
-                          <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono" style="background:${b.bg}; color:${b.text}; border:1px solid ${b.border};">
-                            AQI ${d.aqi}
-                          </span>
-                          <i data-lucide="chevron-down" class="day-chevron w-4 h-4 text-slate-400 transition-transform" id="day-chevron-${idx}" style="transform: ${isOpenDefault ? 'rotate(180deg)' : 'rotate(0deg)'};"></i>
-                        </div>
-                      </div>
-
-                      <!-- Expandable Accordion Drawer displaying ONLY predicted parameters -->
-                      <div class="day-row-drawer">
-                        <!-- Hourly Day Breakdown (Morning, Afternoon, Evening, Night) -->
-                        <div class="mb-3">
-                          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                            <i data-lucide="clock" class="w-3 h-3 text-[#00bfa5]"></i>
-                            <span>Hourly Progression</span>
-                          </div>
-                          <div class="grid grid-cols-4 gap-1.5 text-center">
-                            <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
-                              <div class="text-[10px] text-slate-400 font-bold">Morning</div>
-                              <div class="text-base my-0.5">🌅</div>
-                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.minTemp !== '--' ? Math.round(Number(d.minTemp) + 1) + '°' : '--'}</div>
-                            </div>
-                            <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
-                              <div class="text-[10px] text-slate-400 font-bold">Afternoon</div>
-                              <div class="text-base my-0.5">☀️</div>
-                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.maxTemp !== '--' ? Math.round(Number(d.maxTemp)) + '°' : '--'}</div>
-                            </div>
-                            <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
-                              <div class="text-[10px] text-slate-400 font-bold">Evening</div>
-                              <div class="text-base my-0.5">🌆</div>
-                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.maxTemp !== '--' ? Math.round(Number(d.maxTemp) - 1) + '°' : '--'}</div>
-                            </div>
-                            <div class="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
-                              <div class="text-[10px] text-slate-400 font-bold">Night</div>
-                              <div class="text-base my-0.5">🌙</div>
-                              <div class="text-xs font-mono font-extrabold text-slate-600">${d.minTemp !== '--' ? Math.round(Number(d.minTemp)) + '°' : '--'}</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- 4 Metric Cards: STRICTLY PREDICTED PARAMETERS -->
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs">
-                          <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">PM2.5 (Predicted)</div>
-                            <div class="font-extrabold text-slate-800 mt-0.5 font-mono">${d.pm25 !== undefined ? d.pm25 + ' µg/m³' : '--'}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">Safe Threshold: 60</div>
-                          </div>
-                          <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">PM10 (Predicted)</div>
-                            <div class="font-extrabold text-slate-800 mt-0.5 font-mono">${d.pm10 !== undefined ? d.pm10 + ' µg/m³' : '--'}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">Safe Threshold: 100</div>
-                          </div>
-                          <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">CO &amp; NO₂ (Predicted)</div>
-                            <div class="font-extrabold text-slate-800 mt-0.5 font-mono">CO: ${d.co || '--'} · NO₂: ${d.no2 || '--'}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">Concentrations</div>
-                          </div>
-                          <div class="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">O₃ &amp; Humidity (Predicted)</div>
-                            <div class="font-extrabold text-slate-800 mt-0.5 font-mono">O₃: ${d.o3 || '--'} · ${d.humidity || '--'}%</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">Atmosphere</div>
-                          </div>
-                        </div>
-
-                        <!-- Activity Guidance based on predicted air quality -->
-                        <div class="p-2.5 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-2 text-xs text-slate-600 font-medium">
-                          <i data-lucide="info" class="w-4 h-4 text-slate-500 shrink-0"></i>
-                          <span><strong>Health Guidance:</strong> ${d.advice}</span>
-                        </div>
-                      </div>
-
-                    </div>
-                `;
-            }).join('');
-        }
-
-        if (window.lucide) lucide.createIcons();
-        initReelDrag();
-    }
-
-    // Smooth Left/Right Reel Navigation
+    // Scroll helper for horizontal reel
     window.scrollHourlyReel = function(direction) {
         const reel = document.getElementById('hourly-forecast-reel');
         if (reel) {
@@ -1352,159 +820,120 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
         }
     };
 
-    // Butter-smooth momentum mouse drag-to-scroll
-    function initReelDrag() {
-        const slider = document.getElementById('hourly-forecast-reel');
-        if (!slider || slider.__dragInitialized) return;
-        slider.__dragInitialized = true;
+    // Render Function: ensures Node 2 remains strictly blank / in standby with no values passed
+    function renderForecastUI() {
+        // 1. Date and Sync time
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+        const dateEl = document.getElementById('forecast-date-str');
+        if (dateEl) dateEl.innerText = dateStr;
 
-        let isDown = false;
-        let startX = 0;
-        let scrollLeft = 0;
-        let isDragging = false;
+        const headingEl = document.getElementById('hourly-forecast-heading');
+        if (headingEl) {
+            headingEl.innerText = 'Hourly Forecast (Standby)';
+        }
 
-        slider.addEventListener('mousedown', (e) => {
-            isDown = true;
-            isDragging = false;
-            startX = e.pageX - slider.offsetLeft;
-            scrollLeft = slider.scrollLeft;
+        // 2. Hero Card: Predicted Weather & AQI kept strictly blank / standby
+        const heroAqi = document.getElementById('forecast-hero-aqi');
+        if (heroAqi) heroAqi.innerText = '--';
+
+        const catText = document.getElementById('forecast-hero-category-text');
+        if (catText) {
+            catText.innerText = 'STANDBY';
+            catText.style.color = '#94a3b8';
+        }
+
+        const healthAdvice = document.getElementById('forecast-hero-health-advice');
+        if (healthAdvice) {
+            healthAdvice.innerText = 'Predictive model is in standby for Station 2.';
+        }
+
+        const targetWinEl = document.getElementById('forecast-hero-target-window');
+        if (targetWinEl) {
+            targetWinEl.innerText = 'Standby';
+            targetWinEl.style.backgroundColor = '#f1f5f9';
+            targetWinEl.style.borderColor = 'rgba(148, 163, 184, 0.38)';
+            targetWinEl.style.color = '#64748b';
+        }
+
+        const rainbowPin = document.getElementById('forecast-rainbow-pin');
+        if (rainbowPin) {
+            rainbowPin.setAttribute('cx', '15');
+            rainbowPin.setAttribute('cy', '58');
+            rainbowPin.setAttribute('stroke', '#94a3b8');
+        }
+
+        const aqiCard = document.getElementById('aqi-hero-card');
+        if (aqiCard) {
+            aqiCard.style.setProperty('background', 'linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)', 'important');
+            aqiCard.style.setProperty('border-color', 'rgba(148, 163, 184, 0.38)', 'important');
+            aqiCard.style.boxShadow = '0 4px 20px rgba(148, 163, 184, 0.15)';
+        }
+
+        // Weather Box
+        const weatherTemp = document.getElementById('forecast-weather-temp');
+        if (weatherTemp) weatherTemp.innerText = '--';
+
+        const weatherHum = document.getElementById('forecast-weather-humidity');
+        if (weatherHum) weatherHum.innerText = '--%';
+
+        const weatherRain = document.getElementById('forecast-weather-rain');
+        if (weatherRain) weatherRain.innerText = '--%';
+
+        // Clear active tier on Rainfall Prediction Scale
+        document.querySelectorAll('.rain-scale-item').forEach(el => {
+            el.classList.remove('ring-2', 'ring-teal-500', 'shadow-md');
         });
 
-        window.addEventListener('mouseup', () => {
-            if (isDown) {
-                isDown = false;
-                setTimeout(() => { isDragging = false; }, 50);
+        // 3. Ensure 5 Predicted Pollutants Grid values remain blank / standby
+        ['pm25', 'pm10', 'co', 'no2', 'o3'].forEach(k => {
+            const valEl = document.getElementById('card-' + k);
+            if (valEl) valEl.innerText = '--';
+            const tagEl = document.getElementById('tag-' + k);
+            if (tagEl) {
+                tagEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: #94a3b8;"></span><span>Standby</span>';
+                tagEl.style.backgroundColor = '#f1f5f9';
+                tagEl.style.borderColor = '#e2e8f0';
+                tagEl.style.color = '#64748b';
             }
         });
 
-        slider.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - slider.offsetLeft;
-            const walk = (x - startX) * 1.35;
-            if (Math.abs(walk) > 4) {
-                isDragging = true;
-            }
-            slider.scrollLeft = scrollLeft - walk;
-        });
+        // 4. Hourly Reel: Standby Message
+        const reel = document.getElementById('hourly-forecast-reel');
+        if (reel) {
+            reel.innerHTML = `
+                <div class="w-full py-8 px-4 text-center rounded-xl bg-slate-50 border border-dashed border-slate-200 flex flex-col items-center justify-center gap-1.5">
+                    <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+                        <i data-lucide="clock" class="w-5 h-5"></i>
+                    </div>
+                    <div class="text-xs sm:text-sm font-bold text-slate-600 font-sans">Predictive Forecast Standby</div>
+                    <div class="text-[11px] sm:text-xs text-slate-400 max-w-[420px]">Machine learning forecast inference is active for Station 1. Station 2 predictive values remain blank in standby mode.</div>
+                </div>
+            `;
+        }
 
-        // Intercept card clicks if user was actively dragging
-        slider.addEventListener('click', (e) => {
-            if (isDragging) {
-                e.stopPropagation();
-                e.preventDefault();
-            }
-        }, true);
+        if (window.lucide) lucide.createIcons();
     }
 
-    let autoRefreshForecastTimer = null;
-
-    // Fetch and load forecast data from backend (Stale-While-Revalidate)
+    // Node 2 predictive loader: does not fetch or load Node 1 forecast
     async function loadForecastData(force = false) {
-        try {
-            const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-
-            // Immediate paint: render any cached forecast right away so UI is instant
-            if (!force) {
-                if (window.__forecastCache && window.__forecastCache.hourly) {
-                    window.loadTrainedForecastModel(window.__forecastCache);
-                } else if (typeof window.getLocalCache === 'function') {
-                    const localF = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.FORECAST : 'smartairnet_forecast_payload');
-                    if (localF && localF.hourly && localF.hourly.length > 0) {
-                        window.__forecastCache = localF;
-                        window.loadTrainedForecastModel(localF);
-                    }
-                }
-            }
-
-            // Always revalidate from network in the background to ensure parity with server
-            let data;
-            const bust = 'v=' + Date.now();
-            if (typeof window.fetchForecastData === 'function') {
-                data = await window.fetchForecastData(force);
-            } else {
-                const resp = await fetch(`api/telemetry.php?action=forecast&${bust}${force ? '&force=1' : ''}`, {
-                    cache: 'no-store'
-                });
-                if (!resp.ok) throw new Error('Network error loading forecast');
-                data = await resp.json();
-            }
-            if (data && data.hourly && data.hourly.length > 0) {
-                window.__forecastCache = data;
-                if (typeof window.setLocalCache === 'function') {
-                    window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.FORECAST : 'smartairnet_forecast_payload', data);
-                }
-                window.loadTrainedForecastModel(data);
-                const syncStatusEl = document.getElementById('forecast-auto-sync-status');
-                if (syncStatusEl) {
-                    const now = new Date();
-                    syncStatusEl.innerText = 'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-                }
-            }
-        } catch (err) {
-            console.warn('Could not load dynamic model forecast:', err);
-        }
+        trainedModelData = null;
+        renderForecastUI();
     }
 
-    // Auto-refresh: checks clock every 15 seconds, and ONLY updates when the clock hour rolls over (e.g. 6:00 -> 7:00 -> 8:00)
-    function startAutoRefreshForecast() {
-        if (autoRefreshForecastTimer) clearInterval(autoRefreshForecastTimer);
-        let lastRenderHour = new Date().getHours();
-
-        autoRefreshForecastTimer = setInterval(() => {
-            const currentHour = new Date().getHours();
-            // Strictly trigger only when the clock transitions to a new hour
-            if (currentHour !== lastRenderHour) {
-                lastRenderHour = currentHour;
-                renderForecastUI();
-                loadForecastData(true);
-            }
-        }, 15000);
-
-        window.__onForecastVisibility = () => {
-            if (!document.hidden) {
-                const currentHour = new Date().getHours();
-                // Only refresh if the clock hour rolled over while user was away
-                if (currentHour !== lastRenderHour) {
-                    lastRenderHour = currentHour;
-                    renderForecastUI();
-                    loadForecastData(true);
-                }
-            }
-        };
-        document.addEventListener('visibilitychange', window.__onForecastVisibility);
-    }
-
-    // Clean up timer on SPA navigation
-    window.__cleanupCurrentPage = function() {
-        if (autoRefreshForecastTimer) {
-            clearInterval(autoRefreshForecastTimer);
-            autoRefreshForecastTimer = null;
-        }
-        if (window.__onForecastVisibility) {
-            document.removeEventListener('visibilitychange', window.__onForecastVisibility);
-            window.__onForecastVisibility = null;
-        }
-    };
-
-    /**
-     * Public Hook to inject your trained machine learning model predictions:
-     * window.loadTrainedForecastModel(payload);
-     */
+    // Prevent external injection of Node 1 forecast into Node 2
     window.loadTrainedForecastModel = function(data) {
-        trainedModelData = data;
-        if (data && data.hourly && typeof window.setLocalCache === 'function') {
-            window.setLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.FORECAST : 'smartairnet_forecast_payload', data);
-        }
+        trainedModelData = null;
         renderForecastUI();
     };
 
-    // Initial render and data fetch
+    // Clean up on SPA navigation
+    window.__cleanupCurrentPage = function() {
+        // Standby mode - no active timers
+    };
+
     function initForecastPage() {
         renderForecastUI();
-        // Always sync latest forecast telemetry in background so local and hosted remain 100% synchronized
-        loadForecastData(false);
-        startAutoRefreshForecast();
     }
 
     if (document.readyState === 'loading') {

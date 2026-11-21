@@ -799,9 +799,9 @@ function buildForecastPayloadFromDbRows(array $rows, ?array $weatherRows = null)
 // ── Route ─────────────────────────────────────────────────────────────────────
 if ($isNode2 && $action === 'forecast') {
     echo json_encode([
-        'status'  => 'success',
+        'status'  => 'standby',
         'node'    => '2',
-        'message' => 'Node 2 telemetry connected. Forecast model scheduled for next cycle.',
+        'message' => 'Forecast model in standby for Node 2. No forecasted values are generated or passed.',
         'hourly'  => [],
         'phases'  => [],
         'hero'    => null

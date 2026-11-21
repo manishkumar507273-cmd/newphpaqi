@@ -121,20 +121,20 @@ $init_history_json = 'null';
     </div>
   </div>
 
-  <!-- Sub-Navigation Selector: AQI Historical vs Weather Historical vs Soil Historical -->
+  <!-- Sub-Navigation Selector: AQI vs Weather vs Soil (Compact Pill Switcher) -->
   <div class="flex items-center justify-center mb-1 w-full px-1">
-    <div class="w-full sm:w-auto max-w-[480px] grid grid-cols-3 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
-      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'aqi' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
-        <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
-        <span>AQI <span class="hidden min-[400px]:inline">Historical</span></span>
+    <div class="inline-flex items-center bg-white p-0.5 sm:p-1 rounded-full border border-slate-300 shadow-sm gap-1">
+      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= $req_subtab === 'aqi' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+        <i data-lucide="activity" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>AQI</span>
       </button>
-      <button id="tab-weather" onclick="switchHistTab('weather')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'weather' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
-        <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
-        <span>Weather <span class="hidden min-[400px]:inline">Historical</span></span>
+      <button id="tab-weather" onclick="switchHistTab('weather')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= $req_subtab === 'weather' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+        <i data-lucide="cloud-sun" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>Weather</span>
       </button>
-      <button id="tab-soil" onclick="switchHistTab('soil')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'soil' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
-        <i data-lucide="sprout" class="w-4 h-4 shrink-0"></i>
-        <span>Soil <span class="hidden min-[400px]:inline">Historical</span></span>
+      <button id="tab-soil" onclick="switchHistTab('soil')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= $req_subtab === 'soil' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+        <i data-lucide="sprout" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>Soil</span>
       </button>
     </div>
   </div>
@@ -1242,8 +1242,8 @@ function switchHistTab(tab, skipRender = false) {
     const tabSoil = document.getElementById('tab-soil');
     const days = currentRangeDays || 1;
 
-    const activeCls = 'flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[38px] sm:min-h-[42px]';
-    const inactiveCls = 'flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[38px] sm:min-h-[42px]';
+    const activeCls = 'flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
+    const inactiveCls = 'flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
 
     if (tabAqi) tabAqi.className = (tab === 'aqi') ? activeCls : inactiveCls;
     if (tabWeather) tabWeather.className = (tab === 'weather') ? activeCls : inactiveCls;

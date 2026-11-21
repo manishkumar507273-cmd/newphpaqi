@@ -1362,10 +1362,10 @@ $init_border_colors = [
     margin: 0 auto !important;
     box-sizing: border-box !important;
   }
-  #node2-tab-aqi, #node2-tab-weather {
-    padding: 7px 8px !important;
-    font-size: 11.5px !important;
-    min-height: 36px !important;
+  #node2-tab-aqi, #node2-tab-weather, #node2-tab-soil {
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    min-height: 28px !important;
     gap: 4px !important;
   }
 
@@ -1793,8 +1793,8 @@ body.weather-backdrop-active #app-layout-root,
       const btnSoil = document.getElementById('node2-tab-soil');
       const backdrop = document.getElementById('node2-weather-backdrop');
 
-      const activeCls = 'flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[38px] sm:min-h-[42px]';
-      const inactiveCls = 'flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[38px] sm:min-h-[42px]';
+      const activeCls = 'flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
+      const inactiveCls = 'flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
 
       const layoutRoot = document.getElementById('app-layout-root');
 
@@ -1896,19 +1896,19 @@ body.weather-backdrop-active #app-layout-root,
   })();
   </script>
 
-  <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather vs Live Soil -->
+  <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather vs Live Soil (Compact Pill Switcher) -->
   <div class="flex items-center justify-center mb-1 w-full px-1" id="node2-live-subnav">
-    <div class="w-full sm:w-auto max-w-[480px] grid grid-cols-3 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
-      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
-        <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
+    <div class="inline-flex items-center bg-white p-0.5 sm:p-1 rounded-full border border-slate-300 shadow-sm gap-1">
+      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+        <i data-lucide="activity" class="w-3.5 h-3.5 shrink-0"></i>
         <span>AQI Live</span>
       </button>
-      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
-        <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
+      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+        <i data-lucide="cloud-sun" class="w-3.5 h-3.5 shrink-0"></i>
         <span>Weather Live</span>
       </button>
-      <button id="node2-tab-soil" type="button" onclick="switchNode2LiveTab('soil')" class="flex items-center justify-center gap-1.5 py-2 sm:py-2 px-2.5 sm:px-5 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= ($active_live_subtab === 'soil') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px]">
-        <i data-lucide="sprout" class="w-4 h-4 shrink-0"></i>
+      <button id="node2-tab-soil" type="button" onclick="switchNode2LiveTab('soil')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'soil') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+        <i data-lucide="sprout" class="w-3.5 h-3.5 shrink-0"></i>
         <span>Soil Live</span>
       </button>
     </div>

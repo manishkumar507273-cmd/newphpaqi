@@ -375,7 +375,7 @@ if ($is_ajax) {
     ];
     $best_epoch = 0;
     foreach ($candidates as $cf) {
-        if (file_exists($cf)) {
+        if (file_exists($cf) && (time() - filemtime($cf)) < 25) {
             $raw_c = @file_get_contents($cf);
             if ($raw_c && strlen($raw_c) > 20) {
                 $parsed = @json_decode($raw_c, true);

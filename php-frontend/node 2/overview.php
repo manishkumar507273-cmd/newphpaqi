@@ -16,7 +16,7 @@ $cache_candidates = [
 ];
 $init_bulk = null;
 foreach ($cache_candidates as $cf) {
-    if (file_exists($cf)) {
+    if (file_exists($cf) && (time() - filemtime($cf)) < 25) {
         $raw_cache = @file_get_contents($cf);
         if ($raw_cache && strlen($raw_cache) > 20) {
             $parsed = @json_decode($raw_cache, true);

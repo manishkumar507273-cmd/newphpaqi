@@ -17,7 +17,7 @@ if (!isset($node_config) || empty($node_config) || !is_array($node_config)) {
     }
 }
 
-// Load Node 2 cached live telemetry if available
+// Load Node 2 cached live telemetry if fresh (< 25s)
 $CACHE_DIR = sys_get_temp_dir() . '/smartairnet_cache';
 $cache_candidates = [
     $CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json',
@@ -29,13 +29,76 @@ $cache_candidates = [
 ];
 $init_bulk = null;
 foreach ($cache_candidates as $cf) {
-    if (file_exists($cf)) {
+    if (file_exists($cf) && (time() - filemtime($cf)) < 25) {
         $raw_cache = @file_get_contents($cf);
         if ($raw_cache && strlen($raw_cache) > 20) {
             $parsed = @json_decode($raw_cache, true);
             if ($parsed && (!empty($parsed['aqi']) || !empty($parsed['weather']))) {
                 $init_bulk = $parsed;
                 break;
+            }
+        }
+    }
+}
+
+// If no fresh cache exists (< 25s), query Supabase directly for Node 2 so server-render is never stale
+if ($init_bulk === null) {
+    $sb_url = !empty($node_config['supabase']['url']) ? rtrim($node_config['supabase']['url'], '/') : 'https://nahabhzcaeppbteuxogg.supabase.co';
+    $sb_key = !empty($node_config['supabase']['secret_key']) ? $node_config['supabase']['secret_key'] : (!empty($node_config['supabase']['anon_key']) ? $node_config['supabase']['anon_key'] : 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ');
+    $tbl_aqi = $node_config['tables']['aqi_live'] ?? 'AQI_LIVE_NODE2';
+    
+    $ch = @curl_init("{$sb_url}/rest/v1/{$tbl_aqi}?order=id.desc&limit=1");
+    if ($ch) {
+        @curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                "apikey: {$sb_key}",
+                "Authorization: Bearer {$sb_key}"
+            ],
+            CURLOPT_TIMEOUT_MS     => 2000,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        $raw_resp = @curl_exec($ch);
+        $http_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        @curl_close($ch);
+        if ($http_code === 200 && $raw_resp) {
+            $rows = @json_decode($raw_resp, true);
+            if (!empty($rows[0])) {
+                $row = $rows[0];
+                $rawPm25 = (isset($row['pm25']) && $row['pm25'] !== '') ? (float)$row['pm25'] : ((isset($row['pm2.5']) && $row['pm2.5'] !== '') ? (float)$row['pm2.5'] : ((isset($row['pm2_5']) && $row['pm2_5'] !== '') ? (float)$row['pm2_5'] : null));
+                $rawPm10 = (isset($row['pm10']) && $row['pm10'] !== '') ? (float)$row['pm10'] : null;
+                $rawCo   = (isset($row['co']) && $row['co'] !== '') ? (float)$row['co'] : null;
+                $rawNo2  = (isset($row['no2']) && $row['no2'] !== '') ? (float)$row['no2'] : null;
+                $rawO3   = (isset($row['o3']) && $row['o3'] !== '') ? (float)$row['o3'] : null;
+                
+                $cpcb_val = isset($row['cpcb_aqi']) ? (int)$row['cpcb_aqi'] : null;
+                if ($cpcb_val === null && $rawPm25 !== null) {
+                    if ($rawPm25 <= 30) $cpcb_val = round($rawPm25 * 50 / 30);
+                    elseif ($rawPm25 <= 60) $cpcb_val = round(50 + ($rawPm25 - 30) * 50 / 30);
+                    elseif ($rawPm25 <= 90) $cpcb_val = round(100 + ($rawPm25 - 60) * 100 / 30);
+                    elseif ($rawPm25 <= 120) $cpcb_val = round(200 + ($rawPm25 - 90) * 100 / 30);
+                    elseif ($rawPm25 <= 250) $cpcb_val = round(300 + ($rawPm25 - 120) * 100 / 130);
+                    else $cpcb_val = round(400 + ($rawPm25 - 250) * 100 / 130);
+                }
+                
+                $init_bulk = [
+                    'node' => '2',
+                    'status' => 'ONLINE',
+                    'aqi' => [
+                        'id' => $row['id'] ?? null,
+                        'timestamp' => $row['timestamp'] ?? ($row['created_at'] ?? date('c')),
+                        'cpcb_aqi' => $cpcb_val ?? '--',
+                        'pm25' => $rawPm25,
+                        'pm2.5' => $rawPm25,
+                        'pm2_5' => $rawPm25,
+                        'pm10' => $rawPm10,
+                        'co' => $rawCo,
+                        'no2' => $rawNo2,
+                        'o3' => $rawO3,
+                    ]
+                ];
+                if (!is_dir($CACHE_DIR)) @mkdir($CACHE_DIR, 0755, true);
+                @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json', json_encode($init_bulk));
             }
         }
     }
@@ -300,7 +363,10 @@ $init_aqi_ts = $init_bulk['aqi']['timestamp'] ?? ($init_bulk['aqi']['created_at'
 $init_weather_ts = $init_bulk['weather']['timestamp'] ?? ($init_bulk['weather']['created_at'] ?? null);
 $init_aqi_epoch = $init_aqi_ts ? strtotime($init_aqi_ts) : 0;
 $init_weather_epoch = $init_weather_ts ? strtotime($init_weather_ts) : 0;
-$init_latest_epoch = max($init_aqi_epoch, $init_weather_epoch);
+$init_latest_epoch = $init_aqi_epoch > 0 ? $init_aqi_epoch : $init_weather_epoch;
+if ($init_latest_epoch > 0 && (time() - $init_latest_epoch) > 300) {
+    $init_is_aqi_offline = true;
+}
 $init_time_str = $init_latest_epoch > 0 ? date('h:i A', $init_latest_epoch) : 'Live Stream';
 
 $aqi_d_sub = !empty($init_bulk['aqi']) ? $init_bulk['aqi'] : [];
@@ -1949,10 +2015,10 @@ body.weather-backdrop-active #app-layout-root,
     </div>
 
     <div style="position: relative; z-index: 1; width: 100%;">
-      <div class="hero-flex-row flex flex-col md:flex-row items-stretch justify-between gap-5 md:gap-8 w-full" style="width: 100%;">
+      <div class="hero-flex-row flex flex-col items-stretch w-full" style="width: 100%;">
         
-        <!-- LEFT COLUMN: AQI Index, Category Badge, PM Quick Row & Scale Bar -->
-        <div class="flex-1 flex flex-col justify-between w-full hero-aqi-col" style="max-width: 480px;">
+        <!-- AQI Hero Card: Index, Category Badge, PM Quick Row & Scale Bar (Full Width) -->
+        <div class="w-full flex flex-col justify-between hero-aqi-col" style="width: 100%;">
           
           <!-- Top Row: Live AQI & Big Value + Air Quality is & Badge -->
           <div class="hero-header-row" style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 14px; flex-wrap: wrap;">
@@ -2031,52 +2097,7 @@ body.weather-backdrop-active #app-layout-root,
 
         </div>
 
-        <!-- RIGHT COLUMN: Weather Box (Pinned to Far-Right Corner, Ultra-Sleek & Compact) -->
-        <div class="hero-weather-col flex flex-col justify-between w-full md:w-auto shrink-0" style="width: 100%; max-width: 250px; margin-left: auto; margin-right: 0;">
-          <div id="weather-hero-box" style="background: rgba(255, 255, 255, 0.76); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 12px 14px; box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04); height: 100%; display: flex; flex-direction: column; justify-content: space-between; width: 100%;">
-            
-            <!-- Box Header -->
-            <div class="weather-box-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-              <div style="display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-sans);">
-                <i data-lucide="cloud-sun" style="width: 14px; height: 14px; color: #ea580c;"></i>
-                <span>Weather</span>
-              </div>
-            </div>
 
-            <!-- Main Temperature & Min/Max Arrows (Single Compact Row, positioned near main temp) -->
-            <div class="weather-box-main" style="display: flex; align-items: baseline; justify-content: flex-start; margin-bottom: 8px; gap: 12px;">
-              <div class="weather-temp-row" style="display: flex; align-items: baseline; gap: 3px;">
-                <span id="weather-hero-temp" style="font-family: var(--font-mono); font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; color: #0f172a;"><?= $init_weather_temp ?></span>
-                <span class="weather-temp-unit" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: #64748b;">°C</span>
-              </div>
-
-              <!-- Min/Max Arrows (↑ Max °C   ↓ Min °C positioned right next to main temp) -->
-              <div class="weather-arrows-wrap" style="display: inline-flex; align-items: baseline; gap: 8px; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;">
-                <span style="display: inline-flex; align-items: baseline; gap: 2px; color: #ea580c;" title="Maximum Temperature today">
-                  <span style="font-size: 12px; font-weight: 900;">↑</span>
-                  <span id="weather-hero-temp-max"><?= $init_weather_max ?>°C</span>
-                </span>
-                <span style="display: inline-flex; align-items: baseline; gap: 2px; color: #0284c7;" title="Minimum Temperature today">
-                  <span style="font-size: 12px; font-weight: 900;">↓</span>
-                  <span id="weather-hero-temp-min"><?= $init_weather_min ?>°C</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Micro Metrics Row (Humidity Only) -->
-            <div class="weather-metrics-grid" style="display: flex; padding-top: 8px; border-top: 1px solid rgba(203, 213, 225, 0.55); width: 100%;">
-              <!-- Humidity -->
-              <div class="weather-micro-card" style="width: fit-content; max-width: 100%; background: rgba(255, 255, 255, 0.85); border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 8px;">
-                <div class="weather-micro-label" style="font-size: 11px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 5px;">
-                  <i data-lucide="droplets" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                  <span>Humidity</span>
-                </div>
-                <div id="weather-box-humidity" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: #0f172a;"><?= $init_weather_hum ?></div>
-              </div>
-            </div>
-
-          </div>
-        </div>
 
       </div>
     </div>

@@ -40,7 +40,7 @@ $telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5($is_nod
 if (!file_exists($telemetry_cache_file)) {
     $telemetry_cache_file = sys_get_temp_dir() . '/smartairnet_cache/' . md5($is_node_2 ? 'live_bulk_node_2_60' : 'live_bulk_60') . '.json';
 }
-if (file_exists($telemetry_cache_file)) {
+if (file_exists($telemetry_cache_file) && (time() - filemtime($telemetry_cache_file)) < 25) {
     $raw_cache = @file_get_contents($telemetry_cache_file);
     if ($raw_cache && strlen($raw_cache) > 50) {
         $cached_data = json_decode($raw_cache, true);

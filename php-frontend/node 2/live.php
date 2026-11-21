@@ -1514,10 +1514,6 @@ $init_border_colors = [
   background: linear-gradient(180deg, #1e3a8a 0%, #0284c7 35%, #f59e0b 80%, #ea580c 100%);
 }
 
-body.weather-backdrop-active {
-  background-color: #3882c2 !important;
-}
-
 body.weather-backdrop-active #app-layout-root,
 .weather-backdrop-active #app-layout-root {
   background: transparent !important;
@@ -1799,6 +1795,8 @@ body.weather-backdrop-active #app-layout-root,
           if (layoutRoot) {
               layoutRoot.style.removeProperty('background');
               layoutRoot.style.removeProperty('background-image');
+              layoutRoot.style.backgroundColor = '#f0f7ff';
+              layoutRoot.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%)';
           }
           if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
       }
@@ -1820,6 +1818,15 @@ body.weather-backdrop-active #app-layout-root,
       if (lr) {
           lr.style.setProperty('background', 'transparent', 'important');
           lr.style.setProperty('background-image', 'none', 'important');
+      }
+  } else {
+      document.body.classList.remove('weather-backdrop-active');
+      const lr = document.getElementById('app-layout-root');
+      if (lr) {
+          lr.style.removeProperty('background');
+          lr.style.removeProperty('background-image');
+          lr.style.backgroundColor = '#f0f7ff';
+          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%)';
       }
   }
 
@@ -4341,6 +4348,14 @@ window.__cleanupCurrentPage = function() {
     const bodyModals = document.querySelectorAll('body > #pollutant-modal');
     bodyModals.forEach(m => m.remove());
     document.body.style.overflow = '';
+    document.body.classList.remove('weather-backdrop-active');
+    const lr = document.getElementById('app-layout-root');
+    if (lr) {
+        lr.style.removeProperty('background');
+        lr.style.removeProperty('background-image');
+        lr.style.backgroundColor = '#f0f7ff';
+        lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dbeafe 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%)';
+    }
 };
 
 var liveCanvasAnimId = null;

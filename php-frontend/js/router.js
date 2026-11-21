@@ -341,6 +341,7 @@
                 }
                 window.__cleanupCurrentPage = null;
             }
+            document.body.classList.remove('weather-backdrop-active');
 
             // Instant content swap (no artificial delays)
             // Push to history

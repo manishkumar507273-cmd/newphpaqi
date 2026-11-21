@@ -1121,7 +1121,7 @@ switch ($action) {
 
         $res = ['status' => 'success', 'node' => $reqNode, 'aqi' => [], 'weather' => []];
         if (!empty($raw['aqi']))     { foreach ($raw['aqi']     as $row) { $f = formatRawReading($row);    if ($f) $res['aqi'][]     = $f; } }
-        if (!empty($raw['weather'])) { foreach ($raw['weather'] as $row) { $w = formatWeatherReading($row); if ($w) $res['weather'][] = $f; } }
+        if (!empty($raw['weather'])) { foreach ($raw['weather'] as $row) { $w = formatWeatherReading($row); if ($w) $res['weather'][] = $w; } }
 
         cacheSet($ckey, $res);
         echo json_encode($res);

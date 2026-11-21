@@ -8,8 +8,8 @@ $is_node_2 = true;
 $today_ist = (new DateTime('now', new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
 $req_subtab = (isset($_GET['tab']) && in_array($_GET['tab'], ['aqi', 'weather'])) ? $_GET['tab'] : 'aqi';
 $req_range_days = (isset($_GET['days']) && in_array((int)$_GET['days'], [1, 3, 7, 30])) ? (int)$_GET['days'] : 1;
-$valid_params = ['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge', 'pressure', 'uv_index', 'soil_temperature', 'soil_humidity', 'soil_ph'];
-$req_param = (isset($_GET['param']) && in_array($_GET['param'], $valid_params)) ? $_GET['param'] : ($req_subtab === 'weather' ? 'wind_speed' : 'cpcb_aqi');
+$valid_params = ['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3', 'soil_temperature', 'soil_humidity', 'soil_ph', 'soil_conductivity'];
+$req_param = (isset($_GET['param']) && in_array($_GET['param'], $valid_params)) ? $_GET['param'] : ($req_subtab === 'weather' ? 'soil_temperature' : 'cpcb_aqi');
 $req_type = (isset($_GET['type']) && in_array($_GET['type'], ['bar', 'line'])) ? $_GET['type'] : 'bar';
 $req_date = (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) ? $_GET['date'] : $today_ist;
 
@@ -211,12 +211,6 @@ $init_history_json = 'null';
 
         <!-- Pollutants & Meteorological Mini-Chips -->
         <div id="mini-chips-container" style="display: none; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #9a3412; font-weight: 600;">Temp: </span><strong id="avg-temp" style="color: #ea580c; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #065f46; font-weight: 600;">Hum: </span><strong id="avg-hum" style="color: #00bfa5; font-family: var(--font-mono);">--</strong>
-          </div>
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
             <span style="color: #64748b; font-weight: 600;">PM2.5: </span><strong id="avg-pm25" style="color: #0284c7; font-family: var(--font-mono);">--</strong>
           </div>
@@ -237,28 +231,20 @@ $init_history_json = 'null';
 
       <div id="summary-weather-block" style="display: <?= $req_subtab === 'weather' ? 'flex' : 'none' ?>; align-items: center; gap: 8px; flex-wrap: wrap;">
         <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #9a3412; font-weight: 600;">Avg Temp: </span>
-          <strong id="w-avg-temp" style="color: #ea580c; font-family: var(--font-mono);">--</strong>
+          <span style="color: #9a3412; font-weight: 600;">Avg Soil Temp: </span>
+          <strong id="w-avg-soil-temp" style="color: #ea580c; font-family: var(--font-mono);">--</strong>
+        </div>
+        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
+          <span style="color: #0369a1; font-weight: 600;">Avg Soil Moisture: </span>
+          <strong id="w-avg-soil-hum" style="color: #0284c7; font-family: var(--font-mono);">--</strong>
         </div>
         <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #065f46; font-weight: 600;">Avg Hum: </span>
-          <strong id="w-avg-hum" style="color: #00bfa5; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #e0e7ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #3730a3; font-weight: 600;">Avg Wind: </span>
-          <strong id="w-avg-wind" style="color: #4f46e5; font-family: var(--font-mono);">--</strong>
+          <span style="color: #065f46; font-weight: 600;">Avg Soil pH: </span>
+          <strong id="w-avg-soil-ph" style="color: #059669; font-family: var(--font-mono);">--</strong>
         </div>
         <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #6b21a8; font-weight: 600;">Max Wind Gust: </span>
-          <strong id="w-max-gust" style="color: #8b5cf6; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #115e59; font-weight: 600;">Avg Wind Dir: </span>
-          <strong id="w-mode-dir" style="color: #0d9488; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #1e40af; font-weight: 600;">Total Rain: </span>
-          <strong id="w-total-rain" style="color: #2563eb; font-family: var(--font-mono);">--</strong>
+          <span style="color: #6b21a8; font-weight: 600;">Avg Soil EC: </span>
+          <strong id="w-avg-soil-ec" style="color: #7c3aed; font-family: var(--font-mono);">--</strong>
         </div>
       </div>
       
@@ -272,10 +258,10 @@ $init_history_json = 'null';
       <div>
         <h2 id="trend-graph-title" class="text-base sm:text-lg font-bold text-white m-0 tracking-tight flex items-center gap-2">
           <i data-lucide="trending-up" class="w-4 h-4 text-[#00bfa5]" id="trend-title-icon"></i>
-          <span id="trend-graph-title-text"><?= $req_subtab === 'weather' ? 'Weather Trend Graph' : 'Air Quality Trend Graph' ?></span>
+          <span id="trend-graph-title-text"><?= $req_subtab === 'weather' ? 'Soil Telemetry Trend Graph' : 'Air Quality Trend Graph' ?></span>
         </h2>
         <p id="trend-graph-subtitle" class="m-0 text-slate-400 text-xs font-medium mt-1">
-          <?= $req_subtab === 'weather' ? 'Hourly meteorological telemetry and historical temperature envelopes' : 'Hourly pollutant concentration telemetry and historical baselines' ?>
+          <?= $req_subtab === 'weather' ? 'Hourly soil subsurface telemetry (Temperature, Moisture, pH, EC)' : 'Hourly pollutant concentration telemetry and measured trends' ?>
         </p>
       </div>
 
@@ -283,50 +269,15 @@ $init_history_json = 'null';
         <!-- Parameter Selector Dropdown Pill Button -->
         <div class="relative inline-flex items-center" id="trend-param-container">
           <button type="button" id="trend-param-btn" class="trend-pill-btn" onclick="toggleTrendParamMenu()">
-            <span id="trend-param-icon"><?= $req_subtab === 'weather' ? ($req_param === 'wind_gust' ? '🌪️' : ($req_param === 'rain_gauge' ? '🌧️' : ($req_param === 'pressure' ? '⏱️' : ($req_param === 'uv_index' ? '☀️' : ($req_param === 'soil_temperature' ? '🌱' : ($req_param === 'soil_humidity' ? '💧' : ($req_param === 'soil_ph' ? '🧪' : '🎏'))))))) : '🌿' ?></span>
-            <span id="trend-param-label"><?= $req_subtab === 'weather' ? ($req_param === 'wind_gust' ? 'Gust Speed' : ($req_param === 'rain_gauge' ? 'Precipitation' : ($req_param === 'pressure' ? 'Pressure' : ($req_param === 'uv_index' ? 'UV Index' : ($req_param === 'soil_temperature' ? 'Soil Temperature' : ($req_param === 'soil_humidity' ? 'Soil Humidity' : ($req_param === 'soil_ph' ? 'Soil pH' : 'Wind Speed'))))))) : 'CPCB AQI' ?></span>
+            <span id="trend-param-icon"><?= $req_subtab === 'weather' ? ($req_param === 'soil_humidity' ? '💧' : ($req_param === 'soil_ph' ? '🧪' : ($req_param === 'soil_conductivity' ? '⚡' : '🌱'))) : ($req_param === 'pm25' ? '🌁' : ($req_param === 'pm10' ? '💨' : ($req_param === 'co' ? '🧪' : ($req_param === 'no2' ? '🚗' : ($req_param === 'o3' ? '☀️' : '🌿'))))) ?></span>
+            <span id="trend-param-label"><?= $req_subtab === 'weather' ? ($req_param === 'soil_humidity' ? 'Soil Humidity' : ($req_param === 'soil_ph' ? 'Soil pH' : ($req_param === 'soil_conductivity' ? 'Soil Conductivity' : 'Soil Temperature'))) : ($req_param === 'pm25' ? 'PM2.5' : ($req_param === 'pm10' ? 'PM10' : ($req_param === 'co' ? 'CO' : ($req_param === 'no2' ? 'NO₂' : ($req_param === 'o3' ? 'O₃' : 'CPCB AQI'))))) ?></span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
           </button>
 
           <!-- Floating Parameter Checklist Menu -->
           <div id="trend-param-menu" class="trend-dropdown-menu">
-            <!-- Weather Items (Matching Weather Live Page Parameters) -->
+            <!-- Soil Items for Node 2 -->
             <div id="trend-menu-weather" style="display: <?= $req_subtab === 'weather' ? 'block' : 'none' ?>;">
-              <div class="trend-dropdown-item <?= $req_param === 'wind_speed' ? 'active' : '' ?>" data-param="wind_speed" onclick="selectTrendParam('wind_speed', '🎏', 'Wind Speed', 'km/h')">
-                <div class="flex items-center gap-2.5">
-                  <span class="text-base">🎏</span>
-                  <span>Wind Speed</span>
-                </div>
-                <div class="trend-check-box"><?= $req_param === 'wind_speed' ? '✓' : '' ?></div>
-              </div>
-              <div class="trend-dropdown-item <?= $req_param === 'wind_gust' ? 'active' : '' ?>" data-param="wind_gust" onclick="selectTrendParam('wind_gust', '🌪️', 'Gust Speed', 'm/s')">
-                <div class="flex items-center gap-2.5">
-                  <span class="text-base">🌪️</span>
-                  <span>Gust Speed</span>
-                </div>
-                <div class="trend-check-box"><?= $req_param === 'wind_gust' ? '✓' : '' ?></div>
-              </div>
-              <div class="trend-dropdown-item <?= $req_param === 'rain_gauge' ? 'active' : '' ?>" data-param="rain_gauge" onclick="selectTrendParam('rain_gauge', '🌧️', 'Precipitation', 'mm')">
-                <div class="flex items-center gap-2.5">
-                  <span class="text-base">🌧️</span>
-                  <span>Precipitation</span>
-                </div>
-                <div class="trend-check-box"><?= $req_param === 'rain_gauge' ? '✓' : '' ?></div>
-              </div>
-              <div class="trend-dropdown-item <?= $req_param === 'pressure' ? 'active' : '' ?>" data-param="pressure" onclick="selectTrendParam('pressure', '⏱️', 'Pressure', 'mb')">
-                <div class="flex items-center gap-2.5">
-                  <span class="text-base">⏱️</span>
-                  <span>Pressure</span>
-                </div>
-                <div class="trend-check-box"><?= $req_param === 'pressure' ? '✓' : '' ?></div>
-              </div>
-              <div class="trend-dropdown-item <?= $req_param === 'uv_index' ? 'active' : '' ?>" data-param="uv_index" onclick="selectTrendParam('uv_index', '☀️', 'UV Index', '')">
-                <div class="flex items-center gap-2.5">
-                  <span class="text-base">☀️</span>
-                  <span>UV Index</span>
-                </div>
-                <div class="trend-check-box"><?= $req_param === 'uv_index' ? '✓' : '' ?></div>
-              </div>
               <div class="trend-dropdown-item <?= $req_param === 'soil_temperature' ? 'active' : '' ?>" data-param="soil_temperature" onclick="selectTrendParam('soil_temperature', '🌱', 'Soil Temperature', '°C')">
                 <div class="flex items-center gap-2.5">
                   <span class="text-base">🌱</span>
@@ -348,9 +299,16 @@ $init_history_json = 'null';
                 </div>
                 <div class="trend-check-box"><?= $req_param === 'soil_ph' ? '✓' : '' ?></div>
               </div>
+              <div class="trend-dropdown-item <?= $req_param === 'soil_conductivity' ? 'active' : '' ?>" data-param="soil_conductivity" onclick="selectTrendParam('soil_conductivity', '⚡', 'Soil Conductivity', 'µS/cm')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">⚡</span>
+                  <span>Soil Conductivity</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'soil_conductivity' ? '✓' : '' ?></div>
+              </div>
             </div>
 
-            <!-- AQI Items (Including Temperature & Humidity) -->
+            <!-- AQI Items for Node 2 -->
             <div id="trend-menu-aqi" style="display: <?= $req_subtab === 'weather' ? 'none' : 'block' ?>;">
               <div class="trend-dropdown-item <?= $req_param === 'cpcb_aqi' ? 'active' : '' ?>" data-param="cpcb_aqi" onclick="selectTrendParam('cpcb_aqi', '🌿', 'CPCB AQI', 'AQI')">
                 <div class="flex items-center gap-2.5">
@@ -358,20 +316,6 @@ $init_history_json = 'null';
                   <span>CPCB AQI</span>
                 </div>
                 <div class="trend-check-box"><?= $req_param === 'cpcb_aqi' ? '✓' : '' ?></div>
-              </div>
-              <div class="trend-dropdown-item <?= $req_param === 'temperature' ? 'active' : '' ?>" data-param="temperature" onclick="selectTrendParam('temperature', '🌡️', 'Temperature', '°C')">
-                <div class="flex items-center gap-2.5">
-                  <span class="text-base">🌡️</span>
-                  <span>Temperature</span>
-                </div>
-                <div class="trend-check-box"><?= $req_param === 'temperature' ? '✓' : '' ?></div>
-              </div>
-              <div class="trend-dropdown-item <?= $req_param === 'humidity' ? 'active' : '' ?>" data-param="humidity" onclick="selectTrendParam('humidity', '💧', 'Humidity', '%')">
-                <div class="flex items-center gap-2.5">
-                  <span class="text-base">💧</span>
-                  <span>Humidity</span>
-                </div>
-                <div class="trend-check-box"><?= $req_param === 'humidity' ? '✓' : '' ?></div>
               </div>
               <div class="trend-dropdown-item <?= $req_param === 'pm25' ? 'active' : '' ?>" data-param="pm25" onclick="selectTrendParam('pm25', '🌁', 'PM2.5', 'µg/m³')">
                 <div class="flex items-center gap-2.5">
@@ -428,23 +372,17 @@ $init_history_json = 'null';
       </div>
     </div>
 
-    <!-- Bottom Dynamic Legend Bar (Matching user specification) -->
+    <!-- Bottom Dynamic Legend Bar (Single recorded series matching table below) -->
     <div class="flex items-center justify-center gap-5 sm:gap-7 flex-wrap mt-3 pt-3 border-t border-slate-700/50 text-xs font-semibold text-slate-300">
       <div class="flex items-center gap-2">
-        <span id="leg-max-swatch" style="width: 18px; height: 3.5px; border-radius: 2px; background: #ef4444; display: inline-block;"></span>
-        <span id="leg-max-text"><?= $req_subtab === 'weather' ? 'Max Temp.' : 'Peak AQI' ?></span>
+        <span id="leg-swatch" style="width: 18px; height: 3.5px; border-radius: 2px; background: #00bfa5; display: inline-block;"></span>
+        <span id="leg-text"><?= $req_subtab === 'weather' ? 'Soil Telemetry (Recorded)' : 'AQI Telemetry (Recorded)' ?></span>
       </div>
-      <div class="flex items-center gap-2">
-        <span id="leg-hmax-swatch" style="width: 20px; height: 0; border-top: 2px dashed rgba(255, 255, 255, 0.75); display: inline-block;"></span>
-        <span id="leg-hmax-text" class="text-slate-400"><?= $req_subtab === 'weather' ? 'Historic Max Temp.' : 'Historic Max AQI' ?></span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span id="leg-min-swatch" style="width: 18px; height: 3.5px; border-radius: 2px; background: #38bdf8; display: inline-block;"></span>
-        <span id="leg-min-text"><?= $req_subtab === 'weather' ? 'Min Temp.' : 'Base AQI' ?></span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span id="leg-hmin-swatch" style="width: 20px; height: 0; border-top: 2px dashed rgba(56, 189, 248, 0.7); display: inline-block;"></span>
-        <span id="leg-hmin-text" class="text-slate-400"><?= $req_subtab === 'weather' ? 'Historic Min Temp.' : 'Historic Min AQI' ?></span>
+      <div id="leg-stats" class="flex items-center gap-4 text-slate-400 font-mono text-[11px] flex-wrap">
+        <span>Recorded: <strong id="leg-latest-val" class="text-white">--</strong></span>
+        <span>Peak: <strong id="leg-peak-val" class="text-white">--</strong></span>
+        <span>Min: <strong id="leg-min-val" class="text-white">--</strong></span>
+        <span>Avg: <strong id="leg-avg-val" class="text-white">--</strong></span>
       </div>
     </div>
   </div>
@@ -666,7 +604,7 @@ $init_history_json = 'null';
 <script>
 function getHistoricalInitialState() {
     let tab = '<?= $req_subtab ?>';
-    let param = tab === 'aqi' ? 'cpcb_aqi' : 'temperature';
+    let param = tab === 'aqi' ? 'cpcb_aqi' : 'soil_temperature';
     let days = <?= $req_range_days ?>;
     let type = 'bar';
     let date = '';
@@ -1127,98 +1065,23 @@ function toggleTrendParamMenu() {
 }
 
 function updateTrendLegend(paramKey, label) {
-    const legMax = document.getElementById('leg-max-text');
-    const legHMax = document.getElementById('leg-hmax-text');
-    const legMin = document.getElementById('leg-min-text');
-    const legHMin = document.getElementById('leg-hmin-text');
-    const swatchMax = document.getElementById('leg-max-swatch');
-    const swatchMin = document.getElementById('leg-min-swatch');
-
-    if (paramKey === 'temperature') {
-        if (legMax) legMax.innerText = 'Max Temp.';
-        if (legHMax) legHMax.innerText = 'Historic Max Temp.';
-        if (legMin) legMin.innerText = 'Min Temp.';
-        if (legHMin) legHMin.innerText = 'Historic Min Temp.';
-        if (swatchMax) swatchMax.style.background = '#ef4444';
-        if (swatchMin) swatchMin.style.background = '#38bdf8';
-    } else if (paramKey === 'rain_gauge') {
-        if (legMax) legMax.innerText = 'Max Rainfall';
-        if (legHMax) legHMax.innerText = 'Historic Max Rain';
-        if (legMin) legMin.innerText = 'Sustained Rain';
-        if (legHMin) legHMin.innerText = 'Historic Avg Rain';
-        if (swatchMax) swatchMax.style.background = '#38bdf8';
-        if (swatchMin) swatchMin.style.background = '#0284c7';
-    } else if (paramKey === 'humidity') {
-        if (legMax) legMax.innerText = 'Max Humidity';
-        if (legHMax) legHMax.innerText = 'Historic Max Humidity';
-        if (legMin) legMin.innerText = 'Min Humidity';
-        if (legHMin) legHMin.innerText = 'Historic Min Humidity';
-        if (swatchMax) swatchMax.style.background = '#0ea5e9';
-        if (swatchMin) swatchMin.style.background = '#38bdf8';
-    } else if (paramKey === 'wind_speed') {
-        if (legMax) legMax.innerText = 'Peak Wind Speed';
-        if (legHMax) legHMax.innerText = 'Historic Peak Wind';
-        if (legMin) legMin.innerText = 'Avg Wind Speed';
-        if (legHMin) legHMin.innerText = 'Historic Avg Wind';
-        if (swatchMax) swatchMax.style.background = '#818cf8';
-        if (swatchMin) swatchMin.style.background = '#6366f1';
-    } else if (paramKey === 'uv_index') {
-        if (legMax) legMax.innerText = 'Peak UV Index';
-        if (legHMax) legHMax.innerText = 'Historic Max UV';
-        if (legMin) legMin.innerText = 'Midday UV';
-        if (legHMin) legHMin.innerText = 'Historic Baseline';
-        if (swatchMax) swatchMax.style.background = '#f59e0b';
-        if (swatchMin) swatchMin.style.background = '#fbbf24';
-    } else if (paramKey === 'wind_gust') {
-        if (legMax) legMax.innerText = 'Peak Gust Speed';
-        if (legHMax) legHMax.innerText = 'Historic Peak Gust';
-        if (legMin) legMin.innerText = 'Avg Gust Speed';
-        if (legHMin) legHMin.innerText = 'Historic Avg Gust';
-        if (swatchMax) swatchMax.style.background = '#a855f7';
-        if (swatchMin) swatchMin.style.background = '#818cf8';
-    } else if (paramKey === 'pressure') {
-        if (legMax) legMax.innerText = 'Peak Pressure';
-        if (legHMax) legHMax.innerText = 'Historic Peak Pressure';
-        if (legMin) legMin.innerText = 'Base Pressure';
-        if (legHMin) legHMin.innerText = 'Historic Baseline';
-        if (swatchMax) swatchMax.style.background = '#06b6d4';
-        if (swatchMin) swatchMin.style.background = '#0284c7';
-    } else if (paramKey === 'soil_temperature') {
-        if (legMax) legMax.innerText = 'Max Soil Temp';
-        if (legHMax) legHMax.innerText = 'Historic Max Soil';
-        if (legMin) legMin.innerText = 'Min Soil Temp';
-        if (legHMin) legHMin.innerText = 'Historic Min Soil';
-        if (swatchMax) swatchMax.style.background = '#f59e0b';
-        if (swatchMin) swatchMin.style.background = '#d97706';
-    } else if (paramKey === 'soil_humidity') {
-        if (legMax) legMax.innerText = 'Max Soil Moisture';
-        if (legHMax) legHMax.innerText = 'Historic Max Moisture';
-        if (legMin) legMin.innerText = 'Min Soil Moisture';
-        if (legHMin) legHMin.innerText = 'Field Capacity Base';
-        if (swatchMax) swatchMax.style.background = '#0ea5e9';
-        if (swatchMin) swatchMin.style.background = '#0284c7';
-    } else if (paramKey === 'soil_ph') {
-        if (legMax) legMax.innerText = 'Peak Soil pH';
-        if (legHMax) legHMax.innerText = 'Historic High pH';
-        if (legMin) legMin.innerText = 'Base Soil pH';
-        if (legHMin) legHMin.innerText = 'Optimal Neutral 7.0';
-        if (swatchMax) swatchMax.style.background = '#10b981';
-        if (swatchMin) swatchMin.style.background = '#059669';
-    } else if (paramKey === 'cpcb_aqi') {
-        if (legMax) legMax.innerText = 'Peak AQI';
-        if (legHMax) legHMax.innerText = 'Historic Max AQI';
-        if (legMin) legMin.innerText = 'Base AQI';
-        if (legHMin) legHMin.innerText = 'Historic Min AQI';
-        if (swatchMax) swatchMax.style.background = '#00bfa5';
-        if (swatchMin) swatchMin.style.background = '#38bdf8';
-    } else {
-        if (legMax) legMax.innerText = `Peak ${label}`;
-        if (legHMax) legHMax.innerText = `Historic Max ${label}`;
-        if (legMin) legMin.innerText = `Base ${label}`;
-        if (legHMin) legHMin.innerText = `Historic Min ${label}`;
-        if (swatchMax) swatchMax.style.background = '#00bfa5';
-        if (swatchMin) swatchMin.style.background = '#38bdf8';
-    }
+    const legText = document.getElementById('leg-text');
+    const legSwatch = document.getElementById('leg-swatch');
+    const colorMap = {
+        'soil_temperature': '#f59e0b',
+        'soil_humidity': '#0284c7',
+        'soil_ph': '#10b981',
+        'soil_conductivity': '#8b5cf6',
+        'cpcb_aqi': '#00bfa5',
+        'pm25': '#00bfa5',
+        'pm10': '#6366f1',
+        'co': '#10b981',
+        'no2': '#a855f7',
+        'o3': '#f59e0b'
+    };
+    const c = colorMap[paramKey] || '#00bfa5';
+    if (legText) legText.innerText = `${label} (Recorded Telemetry)`;
+    if (legSwatch) legSwatch.style.background = c;
 }
 
 function selectTrendParam(paramKey, icon, label, unitLabel) {
@@ -1255,148 +1118,15 @@ document.addEventListener('click', function(e) {
     }
 });
 
-function generateTrendEnvelope(param, dateStr, isWeather) {
-    const hours = ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'];
-    
-    let seed = 0;
-    if (dateStr) {
-        for (let i = 0; i < dateStr.length; i++) seed = (seed * 31 + dateStr.charCodeAt(i)) % 1000;
-    }
-    const seedOffset = (seed % 20) / 10 - 1.0;
-
-    const maxData = [];
-    const minData = [];
-    const hMaxData = [];
-    const hMinData = [];
-
-    for (let h = 0; h < 24; h++) {
-        const solarPhase = Math.sin(((h - 8) / 24) * 2 * Math.PI);
-        const noise = Math.sin(h * 1.7 + seed) * 0.4;
-
-        if (param === 'temperature') {
-            const baseMax = 28 + solarPhase * 5.5 + noise * 0.8 + seedOffset * 1.5;
-            const baseMin = 21 + solarPhase * 3.0 + noise * 0.6 + seedOffset * 1.2;
-            maxData.push(Number(Math.max(22, baseMax).toFixed(1)));
-            minData.push(Number(Math.max(18, baseMin).toFixed(1)));
-            hMaxData.push(Number((baseMax + 1.8 + Math.cos(h) * 0.5).toFixed(1)));
-            hMinData.push(Number((baseMin - 1.5 - Math.sin(h) * 0.4).toFixed(1)));
-        } else if (param === 'rain_gauge') {
-            const isAfternoon = (h >= 13 && h <= 18);
-            const rainPeak = isAfternoon ? Math.max(0, (Math.sin((h - 13) / 5 * Math.PI) * 3.5 + noise)) : 0;
-            maxData.push(Number(rainPeak.toFixed(1)));
-            minData.push(Number(Math.max(0, rainPeak * 0.35).toFixed(1)));
-            hMaxData.push(Number((rainPeak > 0 ? rainPeak + 1.2 : 0.2).toFixed(1)));
-            hMinData.push(0);
-        } else if (param === 'humidity') {
-            const baseHum = 76 - solarPhase * 22 + noise * 2;
-            maxData.push(Number(Math.min(98, Math.max(40, baseHum + 6)).toFixed(1)));
-            minData.push(Number(Math.min(90, Math.max(35, baseHum - 8)).toFixed(1)));
-            hMaxData.push(Number(Math.min(99, baseHum + 12).toFixed(1)));
-            hMinData.push(Number(Math.max(30, baseHum - 14).toFixed(1)));
-        } else if (param === 'wind_speed') {
-            const wind = 3.5 + Math.max(0, solarPhase) * 4.2 + Math.abs(noise);
-            maxData.push(Number(wind.toFixed(1)));
-            minData.push(Number(Math.max(1.0, wind * 0.55).toFixed(1)));
-            hMaxData.push(Number((wind + 2.4).toFixed(1)));
-            hMinData.push(Number(Math.max(0.8, wind * 0.35).toFixed(1)));
-        } else if (param === 'uv_index') {
-            const isDay = (h >= 6 && h <= 18);
-            const uv = isDay ? Math.sin((h - 6) / 12 * Math.PI) * 8.6 + noise * 0.3 : 0;
-            const uvVal = Number(Math.max(0, uv).toFixed(1));
-            maxData.push(uvVal);
-            minData.push(Number(Math.max(0, uvVal * 0.6).toFixed(1)));
-            hMaxData.push(Number(Math.max(0, uvVal > 0 ? uvVal + 1.2 : 0).toFixed(1)));
-            hMinData.push(0);
-        } else if (param === 'wind_gust') {
-            const g = 3.8 + Math.max(0, solarPhase) * 3.5 + Math.abs(noise) * 1.5;
-            maxData.push(Number((g + 1.2).toFixed(1)));
-            minData.push(Number((g * 0.5).toFixed(1)));
-            hMaxData.push(Number((g + 3.0).toFixed(1)));
-            hMinData.push(Number(Math.max(0.5, g * 0.3).toFixed(1)));
-        } else if (param === 'pressure') {
-            const baseP = 1010 + Math.sin(h / 12 * Math.PI) * 2.5 + noise * 0.4;
-            maxData.push(Number((baseP + 1.2).toFixed(1)));
-            minData.push(Number((baseP - 1.2).toFixed(1)));
-            hMaxData.push(Number((baseP + 2.5).toFixed(1)));
-            hMinData.push(Number((baseP - 2.5).toFixed(1)));
-        } else if (param === 'soil_temperature') {
-            const soilPhase = Math.sin(((h - 11) / 24) * 2 * Math.PI);
-            const baseST = 24.2 + soilPhase * 1.8 + noise * 0.2;
-            maxData.push(Number((baseST + 0.6).toFixed(1)));
-            minData.push(Number((baseST - 0.6).toFixed(1)));
-            hMaxData.push(Number((baseST + 1.8).toFixed(1)));
-            hMinData.push(Number((baseST - 1.5).toFixed(1)));
-        } else if (param === 'soil_humidity') {
-            const baseSH = 48.5 - Math.sin(((h - 12) / 24) * 2 * Math.PI) * 2.2 + noise * 0.4;
-            maxData.push(Number((baseSH + 1.5).toFixed(1)));
-            minData.push(Number((baseSH - 1.5).toFixed(1)));
-            hMaxData.push(Number((baseSH + 4.0).toFixed(1)));
-            hMinData.push(Number((baseSH - 4.0).toFixed(1)));
-        } else if (param === 'soil_ph') {
-            const basePh = 6.80 + Math.sin(h * 0.5) * 0.08 + noise * 0.03;
-            maxData.push(Number((basePh + 0.08).toFixed(2)));
-            minData.push(Number((basePh - 0.08).toFixed(2)));
-            hMaxData.push(Number((basePh + 0.25).toFixed(2)));
-            hMinData.push(Number((basePh - 0.25).toFixed(2)));
-        } else if (param === 'cpcb_aqi') {
-            const rushHour = Math.exp(-Math.pow(h - 9, 2) / 8) * 18 + Math.exp(-Math.pow(h - 19, 2) / 8) * 22;
-            const aqi = 68 + rushHour + noise * 4 + seedOffset * 8;
-            maxData.push(Math.round(aqi + 12));
-            minData.push(Math.round(Math.max(30, aqi - 14)));
-            hMaxData.push(Math.round(aqi + 24));
-            hMinData.push(Math.round(Math.max(25, aqi - 22)));
-        } else if (param === 'pm25') {
-            const rush = Math.exp(-Math.pow(h - 9, 2) / 7) * 15 + Math.exp(-Math.pow(h - 19, 2) / 7) * 16;
-            const v = 38 + rush + noise * 3 + seedOffset * 6;
-            maxData.push(Math.round(v + 10));
-            minData.push(Math.round(Math.max(15, v - 10)));
-            hMaxData.push(Math.round(v + 18));
-            hMinData.push(Math.round(Math.max(12, v - 16)));
-        } else if (param === 'pm10') {
-            const v = 58 + Math.sin(h * 0.3) * 14 + noise * 5 + seedOffset * 8;
-            maxData.push(Math.round(v + 15));
-            minData.push(Math.round(Math.max(20, v - 14)));
-            hMaxData.push(Math.round(v + 28));
-            hMinData.push(Math.round(Math.max(18, v - 20)));
-        } else if (param === 'co') {
-            const v = 0.55 + Math.exp(-Math.pow(h - 9, 2) / 6) * 0.35 + Math.exp(-Math.pow(h - 19, 2) / 6) * 0.30;
-            maxData.push(Number((v + 0.15).toFixed(2)));
-            minData.push(Number(Math.max(0.1, v - 0.12).toFixed(2)));
-            hMaxData.push(Number((v + 0.30).toFixed(2)));
-            hMinData.push(Number(Math.max(0.08, v - 0.20).toFixed(2)));
-        } else if (param === 'no2') {
-            const v = 26 + Math.exp(-Math.pow(h - 9, 2) / 6) * 12 + Math.exp(-Math.pow(h - 19, 2) / 6) * 14;
-            maxData.push(Math.round(v + 8));
-            minData.push(Math.round(Math.max(8, v - 8)));
-            hMaxData.push(Math.round(v + 15));
-            hMinData.push(Math.round(Math.max(6, v - 12)));
-        } else if (param === 'o3') {
-            const isDay = (h >= 8 && h <= 18);
-            const v = isDay ? 20 + Math.sin((h - 8) / 10 * Math.PI) * 32 + noise * 3 : 12;
-            maxData.push(Math.round(v + 8));
-            minData.push(Math.round(Math.max(5, v - 6)));
-            hMaxData.push(Math.round(v + 15));
-            hMinData.push(Math.round(Math.max(4, v - 9)));
-        } else {
-            maxData.push(50);
-            minData.push(30);
-            hMaxData.push(65);
-            hMinData.push(20);
-        }
-    }
-
-    return { labels: hours, maxData, minData, hMaxData, hMinData };
-}
-
 function switchHistTab(tab, skipRender = false) {
     currentSubTab = tab;
     if (tab === 'aqi') {
-        if (!['cpcb_aqi', 'temperature', 'humidity', 'pm25', 'pm10', 'co', 'no2', 'o3'].includes(currentParam)) {
+        if (!['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3'].includes(currentParam)) {
             currentParam = 'cpcb_aqi';
         }
     } else {
-        if (!['wind_speed', 'wind_gust', 'rain_gauge', 'pressure', 'uv_index', 'soil_temperature', 'soil_humidity', 'soil_ph'].includes(currentParam)) {
-            currentParam = 'wind_speed';
+        if (!['soil_temperature', 'soil_humidity', 'soil_ph', 'soil_conductivity'].includes(currentParam)) {
+            currentParam = 'soil_temperature';
         }
     }
     
@@ -1416,7 +1146,7 @@ function switchHistTab(tab, skipRender = false) {
         const tTitle = document.getElementById('trend-graph-title-text');
         if (tTitle) tTitle.innerText = 'Air Quality Trend Graph';
         const tSub = document.getElementById('trend-graph-subtitle');
-        if (tSub) tSub.innerText = 'Hourly pollutant concentration telemetry and historical baselines';
+        if (tSub) tSub.innerText = 'Hourly pollutant concentration telemetry and measured trends';
 
         const mWeather = document.getElementById('trend-menu-weather');
         const mAqi = document.getElementById('trend-menu-aqi');
@@ -1435,9 +1165,9 @@ function switchHistTab(tab, skipRender = false) {
         if (weatherBlock) weatherBlock.style.display = 'flex';
 
         const tTitle = document.getElementById('trend-graph-title-text');
-        if (tTitle) tTitle.innerText = 'Weather Trend Graph';
+        if (tTitle) tTitle.innerText = 'Soil Telemetry Trend Graph';
         const tSub = document.getElementById('trend-graph-subtitle');
-        if (tSub) tSub.innerText = 'Hourly meteorological telemetry and historical temperature envelopes';
+        if (tSub) tSub.innerText = 'Hourly soil subsurface telemetry (Temperature, Moisture, pH, EC)';
 
         const mWeather = document.getElementById('trend-menu-weather');
         const mAqi = document.getElementById('trend-menu-aqi');
@@ -1445,7 +1175,7 @@ function switchHistTab(tab, skipRender = false) {
         if (mAqi) mAqi.style.display = 'none';
 
         const tableTitle = document.getElementById('table-title');
-        if (tableTitle) tableTitle.innerText = days === 1 ? 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)' : `Weather Historical Telemetry Table (${days} Days)`;
+        if (tableTitle) tableTitle.innerText = days === 1 ? 'Soil Historical Telemetry Table (12:00 AM – 12:00 AM)' : `Soil Historical Telemetry Table (${days} Days)`;
     }
     
     setParam(currentParam, skipRender);
@@ -1462,16 +1192,10 @@ function setParam(param, skipRender = false) {
     currentParam = param;
     const isWeather = (currentSubTab === 'weather');
     const paramMeta = {
-        'wind_speed': { icon: '🎏', label: 'Wind Speed', unit: 'km/h' },
-        'wind_gust': { icon: '🌪️', label: 'Gust Speed', unit: 'm/s' },
-        'rain_gauge': { icon: '🌧️', label: 'Precipitation', unit: 'mm' },
-        'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb' },
-        'uv_index': { icon: '☀️', label: 'UV Index', unit: '' },
         'soil_temperature': { icon: '🌱', label: 'Soil Temperature', unit: '°C' },
         'soil_humidity': { icon: '💧', label: 'Soil Humidity', unit: '%' },
         'soil_ph': { icon: '🧪', label: 'Soil pH', unit: 'pH' },
-        'temperature': { icon: '🌡️', label: 'Temperature', unit: '°C' },
-        'humidity': { icon: '💧', label: 'Humidity', unit: '%' },
+        'soil_conductivity': { icon: '⚡', label: 'Soil Conductivity', unit: 'µS/cm' },
         'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: 'AQI' },
         'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³' },
         'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³' },
@@ -1480,7 +1204,7 @@ function setParam(param, skipRender = false) {
         'o3': { icon: '☀️', label: 'O₃', unit: 'µg/m³' }
     };
     const meta = paramMeta[param] || (isWeather 
-        ? { icon: '🎏', label: 'Wind Speed', unit: 'km/h' } 
+        ? { icon: '🌱', label: 'Soil Temperature', unit: '°C' } 
         : { icon: '🌿', label: 'CPCB AQI', unit: 'AQI' });
 
     const iconEl = document.getElementById('trend-param-icon');
@@ -1660,18 +1384,14 @@ function renderUI(skipDayFilter = false) {
             if (minMaxAqi) minMaxAqi.style.display = 'none';
             const miniChips = document.getElementById('mini-chips-container');
             if (miniChips) miniChips.style.display = 'none';
-            const elTemp = document.getElementById('w-avg-temp');
-            if (elTemp) elTemp.innerText = '--';
-            const elHum = document.getElementById('w-avg-hum');
-            if (elHum) elHum.innerText = '--';
-            const elWind = document.getElementById('w-avg-wind');
-            if (elWind) elWind.innerText = '--';
-            const elGust = document.getElementById('w-max-gust');
-            if (elGust) elGust.innerText = '--';
-            const elDir = document.getElementById('w-mode-dir');
-            if (elDir) elDir.innerText = '--';
-            const elRain = document.getElementById('w-total-rain');
-            if (elRain) elRain.innerText = '--';
+            const elSoilTemp = document.getElementById('w-avg-soil-temp');
+            if (elSoilTemp) elSoilTemp.innerText = '--';
+            const elSoilHum = document.getElementById('w-avg-soil-hum');
+            if (elSoilHum) elSoilHum.innerText = '--';
+            const elSoilPh = document.getElementById('w-avg-soil-ph');
+            if (elSoilPh) elSoilPh.innerText = '--';
+            const elSoilEc = document.getElementById('w-avg-soil-ec');
+            if (elSoilEc) elSoilEc.innerText = '--';
         }
         document.getElementById('chart-empty').style.display = 'flex';
         document.getElementById('chart-empty-text').innerText = `No records found for ${rangeLabel}.`;
@@ -1684,7 +1404,7 @@ function renderUI(skipDayFilter = false) {
     }
 
     const isAqiCurrent = currentSubTab === 'aqi';
-    const loggedCount = filteredDayData.filter(d => !d.isMissing && (isAqiCurrent ? d.cpcb_aqi != null : d.temperature != null)).length;
+    const loggedCount = filteredDayData.filter(d => !d.isMissing && (isAqiCurrent ? d.cpcb_aqi != null : (d.soil_temperature != null || d.soil_humidity != null || d.soil_moisture != null))).length;
 
     if (loggedCount === 0) {
         if (days === 1) {
@@ -1698,18 +1418,14 @@ function renderUI(skipDayFilter = false) {
             if (minMaxAqi) minMaxAqi.style.display = 'none';
             const miniChips = document.getElementById('mini-chips-container');
             if (miniChips) miniChips.style.display = 'none';
-            const elTemp = document.getElementById('w-avg-temp');
-            if (elTemp) elTemp.innerText = '--';
-            const elHum = document.getElementById('w-avg-hum');
-            if (elHum) elHum.innerText = '--';
-            const elWind = document.getElementById('w-avg-wind');
-            if (elWind) elWind.innerText = '--';
-            const elGust = document.getElementById('w-max-gust');
-            if (elGust) elGust.innerText = '--';
-            const elDir = document.getElementById('w-mode-dir');
-            if (elDir) elDir.innerText = '--';
-            const elRain = document.getElementById('w-total-rain');
-            if (elRain) elRain.innerText = '--';
+            const elSoilTemp = document.getElementById('w-avg-soil-temp');
+            if (elSoilTemp) elSoilTemp.innerText = '--';
+            const elSoilHum = document.getElementById('w-avg-soil-hum');
+            if (elSoilHum) elSoilHum.innerText = '--';
+            const elSoilPh = document.getElementById('w-avg-soil-ph');
+            if (elSoilPh) elSoilPh.innerText = '--';
+            const elSoilEc = document.getElementById('w-avg-soil-ec');
+            if (elSoilEc) elSoilEc.innerText = '--';
         }
         document.getElementById('chart-empty').style.display = 'flex';
         document.getElementById('chart-empty-text').innerText = `No telemetry recorded for ${rangeLabel}.`;
@@ -1730,11 +1446,10 @@ function renderUI(skipDayFilter = false) {
         let sumNo2 = 0, countNo2 = 0;
         let sumO3 = 0, countO3 = 0;
         let minAqi = 9999, maxAqi = -1;
-        let sumTemp = 0, countTemp = 0;
-        let sumHum = 0, countHum = 0;
-        let sumWind = 0, countWind = 0;
-        let maxGust = -1, sumRain = 0;
-        let windDirs = [];
+        let sumSoilTemp = 0, countSoilTemp = 0;
+        let sumSoilHum = 0, countSoilHum = 0;
+        let sumSoilPh = 0, countSoilPh = 0;
+        let sumSoilEc = 0, countSoilEc = 0;
 
         filteredDayData.forEach(d => {
             if (currentSubTab === 'aqi') {
@@ -1744,26 +1459,24 @@ function renderUI(skipDayFilter = false) {
                 if (d.co != null)      { sumCo   += d.co;   countCo++;   }
                 if (d.no2 != null)     { sumNo2  += d.no2;  countNo2++;  }
                 if (d.o3 != null)      { sumO3   += d.o3;   countO3++;   }
-
-                let tVal = d.temperature;
-                let hVal = d.humidity;
-                if ((tVal == null || hVal == null) && Array.isArray(historicalDataWeather) && d.timestamp) {
-                    const matchPrefix = d.timestamp.slice(0, 13);
-                    const matchW = historicalDataWeather.find(w => w.timestamp && w.timestamp.slice(0, 13) === matchPrefix);
-                    if (matchW) {
-                        if (tVal == null && matchW.temperature != null) tVal = matchW.temperature;
-                        if (hVal == null && matchW.humidity != null) hVal = matchW.humidity;
-                    }
-                }
-                if (tVal != null && tVal !== '') { sumTemp += Number(tVal); countTemp++; }
-                if (hVal != null && hVal !== '') { sumHum  += Number(hVal); countHum++;  }
             } else {
-                if (d.temperature != null) { sumTemp += d.temperature; countTemp++; }
-                if (d.humidity != null)    { sumHum  += d.humidity;    countHum++;  }
-                if (d.wind_speed != null)  { sumWind += d.wind_speed;  countWind++; }
-                if (d.wind_gust != null && d.wind_gust > maxGust) maxGust = d.wind_gust;
-                if (d.rain_gauge != null)  sumRain += d.rain_gauge;
-                if (d.wind_direction != null) windDirs.push(d.wind_direction);
+                if (d.soil_temperature != null && d.soil_temperature !== '') {
+                    sumSoilTemp += Number(d.soil_temperature);
+                    countSoilTemp++;
+                }
+                const hum = d.soil_humidity != null ? d.soil_humidity : d.soil_moisture;
+                if (hum != null && hum !== '') {
+                    sumSoilHum += Number(hum);
+                    countSoilHum++;
+                }
+                if (d.soil_ph != null && d.soil_ph !== '') {
+                    sumSoilPh += Number(d.soil_ph);
+                    countSoilPh++;
+                }
+                if (d.soil_conductivity != null && d.soil_conductivity !== '') {
+                    sumSoilEc += Number(d.soil_conductivity);
+                    countSoilEc++;
+                }
             }
         });
 
@@ -1823,16 +1536,6 @@ function renderUI(skipDayFilter = false) {
 
             const miniChips = document.getElementById('mini-chips-container');
             if (miniChips) miniChips.style.display = countAqi > 0 ? 'flex' : 'none';
-            const elTemp = document.getElementById('avg-temp');
-            const elHum = document.getElementById('avg-hum');
-            if (elTemp) {
-                const avgVal = countTemp > 0 ? (sumTemp / countTemp) : 0;
-                elTemp.innerText = countTemp > 0 ? `${avgVal.toFixed(1)}°C` : '--';
-            }
-            if (elHum) {
-                const avgVal = countHum > 0 ? (sumHum / countHum) : 0;
-                elHum.innerText = countHum > 0 ? `${Math.round(avgVal)}%` : '--';
-            }
             const elPm25 = document.getElementById('avg-pm25');
             const elPm10 = document.getElementById('avg-pm10');
             const elCo = document.getElementById('avg-co');
@@ -1864,35 +1567,14 @@ function renderUI(skipDayFilter = false) {
                 elO3.style.color = countO3 > 0 ? getParamColor('o3', avgVal) : '#d97706';
             }
         } else {
-            const elTemp = document.getElementById('w-avg-temp');
-            const elHum = document.getElementById('w-avg-hum');
-            const elWind = document.getElementById('w-avg-wind');
-            const elGust = document.getElementById('w-max-gust');
-            const elRain = document.getElementById('w-total-rain');
-            if (elTemp) elTemp.innerText = countTemp > 0 ? (sumTemp/countTemp).toFixed(1) + '°C' : '--';
-            if (elHum)  elHum.innerText = countHum > 0 ? (sumHum/countHum).toFixed(1) + '%' : '--';
-            if (elWind) elWind.innerText = countWind > 0 ? (sumWind/countWind).toFixed(1) + ' km/h' : '--';
-            if (elGust) elGust.innerText = maxGust > -1 ? maxGust.toFixed(1) + ' km/h' : '--';
-            if (elRain) elRain.innerText = sumRain.toFixed(1) + ' mm';
-            
-            let modeDir = '--';
-            if (windDirs.length > 0) {
-                const counts = {};
-                windDirs.forEach(w => {
-                    const d = getCompassDir(w);
-                    if (d && d !== '--') counts[d] = (counts[d] || 0) + 1;
-                });
-                let bestDir = '--', maxC = 0;
-                for (const [dir, c] of Object.entries(counts)) {
-                    if (c > maxC) {
-                        maxC = c;
-                        bestDir = dir;
-                    }
-                }
-                modeDir = bestDir;
-            }
-            const elDir = document.getElementById('w-mode-dir');
-            if (elDir) elDir.innerText = modeDir;
+            const elSoilTemp = document.getElementById('w-avg-soil-temp');
+            const elSoilHum = document.getElementById('w-avg-soil-hum');
+            const elSoilPh = document.getElementById('w-avg-soil-ph');
+            const elSoilEc = document.getElementById('w-avg-soil-ec');
+            if (elSoilTemp) elSoilTemp.innerText = countSoilTemp > 0 ? (sumSoilTemp / countSoilTemp).toFixed(1) + '°C' : '--';
+            if (elSoilHum)  elSoilHum.innerText = countSoilHum > 0 ? (sumSoilHum / countSoilHum).toFixed(1) + '%' : '--';
+            if (elSoilPh)   elSoilPh.innerText = countSoilPh > 0 ? (sumSoilPh / countSoilPh).toFixed(2) : '--';
+            if (elSoilEc)   elSoilEc.innerText = countSoilEc > 0 ? (sumSoilEc / countSoilEc).toFixed(1) + ' µS/cm' : '--';
         }
 
         if (window.lucide) {
@@ -1900,34 +1582,28 @@ function renderUI(skipDayFilter = false) {
         }
     }
 
-    // Chart Render - Sleek Dark Trend Graph (Max, Historic Max, Min, Historic Min)
+    // Chart Render - Sleek Dark Trend Graph (Single Real Series matching table below)
     const chartCanvas = document.getElementById('historical-chart');
     if (chartCanvas) {
         const ctx = chartCanvas.getContext('2d');
         const isWeather = (currentSubTab === 'weather');
         
-        // Meta definition for current parameter
+        // Meta definition for Node 2 parameters
         const paramMeta = {
-            'wind_speed': { icon: '🎏', label: 'Wind Speed', unit: 'km/h', color: '#818cf8', minColor: '#6366f1' },
-            'wind_gust': { icon: '🌪️', label: 'Gust Speed', unit: 'm/s', color: '#a855f7', minColor: '#818cf8' },
-            'rain_gauge': { icon: '🌧️', label: 'Precipitation', unit: 'mm', color: '#38bdf8', minColor: '#0284c7' },
-            'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#06b6d4', minColor: '#0284c7' },
-            'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b', minColor: '#fbbf24' },
-            'soil_temperature': { icon: '🌱', label: 'Soil Temperature', unit: '°C', color: '#f59e0b', minColor: '#d97706' },
-            'soil_humidity': { icon: '💧', label: 'Soil Humidity', unit: '%', color: '#0284c7', minColor: '#0369a1' },
-            'soil_ph': { icon: '🧪', label: 'Soil pH', unit: 'pH', color: '#10b981', minColor: '#059669' },
-            'temperature': { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#ef4444', minColor: '#38bdf8' },
-            'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0ea5e9', minColor: '#38bdf8' },
-            'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: 'AQI', color: '#00bfa5', minColor: '#38bdf8' },
-            'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5', minColor: '#38bdf8' },
-            'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#00bfa5', minColor: '#38bdf8' },
-            'co': { icon: '🧪', label: 'CO', unit: 'mg/m³', color: '#10b981', minColor: '#38bdf8' },
-            'no2': { icon: '🚗', label: 'NO₂', unit: 'µg/m³', color: '#a855f7', minColor: '#38bdf8' },
-            'o3': { icon: '☀️', label: 'O₃', unit: 'µg/m³', color: '#f59e0b', minColor: '#38bdf8' }
+            'soil_temperature': { icon: '🌱', label: 'Soil Temperature', unit: '°C', color: '#f59e0b' },
+            'soil_humidity': { icon: '💧', label: 'Soil Humidity', unit: '%', color: '#0284c7' },
+            'soil_ph': { icon: '🧪', label: 'Soil pH', unit: 'pH', color: '#10b981' },
+            'soil_conductivity': { icon: '⚡', label: 'Soil Conductivity', unit: 'µS/cm', color: '#8b5cf6' },
+            'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: 'AQI', color: '#00bfa5' },
+            'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
+            'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
+            'co': { icon: '🧪', label: 'CO', unit: 'mg/m³', color: '#10b981' },
+            'no2': { icon: '🚗', label: 'NO₂', unit: 'µg/m³', color: '#a855f7' },
+            'o3': { icon: '☀️', label: 'O₃', unit: 'µg/m³', color: '#f59e0b' }
         };
         const meta = paramMeta[currentParam] || (isWeather 
-            ? { icon: '🎏', label: 'Wind Speed', unit: 'km/h', color: '#818cf8', minColor: '#6366f1' } 
-            : { icon: '🌿', label: 'CPCB AQI', unit: 'AQI', color: '#00bfa5', minColor: '#38bdf8' });
+            ? { icon: '🌱', label: 'Soil Temperature', unit: '°C', color: '#f59e0b' } 
+            : { icon: '🌿', label: 'CPCB AQI', unit: 'AQI', color: '#00bfa5' });
 
         // Update top param button & legend
         const pIcon = document.getElementById('trend-param-icon');
@@ -1936,16 +1612,14 @@ function renderUI(skipDayFilter = false) {
         if (pLabel) pLabel.innerText = meta.label;
         updateTrendLegend(currentParam, meta.label);
 
-        // Build 24-hour diurnal or multi-day labels & series
-        const envelope = generateTrendEnvelope(currentParam, dateInput, isWeather);
-        let labels = envelope.labels;
-        let maxData = [...envelope.maxData];
-        let minData = [...envelope.minData];
-        let hMaxData = [...envelope.hMaxData];
-        let hMinData = [...envelope.hMinData];
+        // Build 24-hour diurnal or multi-day labels & series from REAL recorded data
+        let labels = [];
+        let actualData = [];
 
         if (days === 1) {
-            // For 24 hours: overlay actual recorded telemetry into the envelope points
+            labels = ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'];
+            actualData = new Array(24).fill(null);
+
             const hourMap = {};
             filteredDayData.forEach(d => {
                 if (!d.timestamp) return;
@@ -1954,12 +1628,8 @@ function renderUI(skipDayFilter = false) {
                     const hr = parseInt(parts[1].split(':')[0], 10);
                     if (!isNaN(hr) && hr >= 0 && hr < 24) {
                         let val = d[currentParam];
-                        if ((val === null || val === undefined || val === '') && (currentParam === 'temperature' || currentParam === 'humidity') && Array.isArray(historicalDataWeather) && d.timestamp) {
-                            const matchPrefix = d.timestamp.slice(0, 13);
-                            const matchW = historicalDataWeather.find(w => w.timestamp && w.timestamp.slice(0, 13) === matchPrefix);
-                            if (matchW && matchW[currentParam] != null) {
-                                val = matchW[currentParam];
-                            }
+                        if ((val === null || val === undefined || val === '') && currentParam === 'soil_humidity' && d.soil_moisture != null) {
+                            val = d.soil_moisture;
                         }
                         if (val !== null && val !== undefined && val !== '') {
                             const num = parseFloat(val);
@@ -1971,25 +1641,7 @@ function renderUI(skipDayFilter = false) {
 
             for (let h = 0; h < 24; h++) {
                 if (hourMap[h] !== undefined) {
-                    const v = hourMap[h];
-                    maxData[h] = Number(v.toFixed(1));
-                    if (currentParam === 'temperature') {
-                        minData[h] = Number(Math.max(14, v - 3.8).toFixed(1));
-                        hMaxData[h] = Number((v + 1.8).toFixed(1));
-                        hMinData[h] = Number(Math.max(12, v - 5.2).toFixed(1));
-                    } else if (currentParam === 'humidity') {
-                        minData[h] = Number(Math.max(20, v - 12).toFixed(1));
-                        hMaxData[h] = Number(Math.min(100, v + 8).toFixed(1));
-                        hMinData[h] = Number(Math.max(15, v - 16).toFixed(1));
-                    } else if (currentParam === 'cpcb_aqi') {
-                        minData[h] = Number(Math.max(10, v - 15).toFixed(0));
-                        hMaxData[h] = Number((v + 20).toFixed(0));
-                        hMinData[h] = Number(Math.max(5, v - 24).toFixed(0));
-                    } else {
-                        minData[h] = Number(Math.max(0, v * 0.75).toFixed(1));
-                        hMaxData[h] = Number((v * 1.15).toFixed(1));
-                        hMinData[h] = Number(Math.max(0, v * 0.60).toFixed(1));
-                    }
+                    actualData[h] = Number(hourMap[h].toFixed(2));
                 }
             }
         } else {
@@ -2000,12 +1652,8 @@ function renderUI(skipDayFilter = false) {
                 const dayKey = d.timestamp.split('T')[0];
                 if (!dayMap[dayKey]) dayMap[dayKey] = [];
                 let val = d[currentParam];
-                if ((val === null || val === undefined || val === '') && (currentParam === 'temperature' || currentParam === 'humidity') && Array.isArray(historicalDataWeather) && d.timestamp) {
-                    const matchPrefix = d.timestamp.slice(0, 13);
-                    const matchW = historicalDataWeather.find(w => w.timestamp && w.timestamp.slice(0, 13) === matchPrefix);
-                    if (matchW && matchW[currentParam] != null) {
-                        val = matchW[currentParam];
-                    }
+                if ((val === null || val === undefined || val === '') && currentParam === 'soil_humidity' && d.soil_moisture != null) {
+                    val = d.soil_moisture;
                 }
                 if (val !== null && val !== undefined && val !== '') {
                     const num = parseFloat(val);
@@ -2020,86 +1668,57 @@ function renderUI(skipDayFilter = false) {
                     const dt = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
                     return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 });
-                maxData = [];
-                minData = [];
-                hMaxData = [];
-                hMinData = [];
-                dayKeys.forEach(k => {
+                actualData = dayKeys.map(k => {
                     const vals = dayMap[k];
-                    const dayMax = vals.length > 0 ? Math.max(...vals) : 25;
-                    const dayMin = vals.length > 0 ? Math.min(...vals) : 18;
-                    maxData.push(Number(dayMax.toFixed(1)));
-                    minData.push(Number(dayMin.toFixed(1)));
-                    hMaxData.push(Number((dayMax * 1.08).toFixed(1)));
-                    hMinData.push(Number((dayMin * 0.92).toFixed(1)));
+                    if (!vals.length) return null;
+                    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                    return Number(avg.toFixed(2));
                 });
             }
         }
 
-        const primaryColor = meta.color || '#ef4444';
-        const primaryFillTop = primaryColor === '#ef4444' 
-            ? 'rgba(239, 68, 68, 0.38)' 
-            : (primaryColor === '#00bfa5' ? 'rgba(0, 191, 165, 0.38)' : 'rgba(56, 189, 248, 0.38)');
-        const primaryFillMid = primaryColor === '#ef4444' 
-            ? 'rgba(239, 68, 68, 0.12)' 
-            : (primaryColor === '#00bfa5' ? 'rgba(0, 191, 165, 0.12)' : 'rgba(56, 189, 248, 0.12)');
+        // Compute legend statistics for the real recorded series matching the table
+        const validValues = actualData.filter(v => v !== null && !isNaN(v));
+        const latestVal = validValues.length > 0 ? validValues[validValues.length - 1] : null;
+        const peakVal = validValues.length > 0 ? Math.max(...validValues) : null;
+        const minVal = validValues.length > 0 ? Math.min(...validValues) : null;
+        const avgVal = validValues.length > 0 ? (validValues.reduce((a, b) => a + b, 0) / validValues.length) : null;
 
+        const u = meta.unit ? ` ${meta.unit}` : '';
+        const elLatest = document.getElementById('leg-latest-val');
+        const elPeak = document.getElementById('leg-peak-val');
+        const elMin = document.getElementById('leg-min-val');
+        const elAvg = document.getElementById('leg-avg-val');
+        if (elLatest) elLatest.innerText = latestVal !== null ? `${latestVal}${u}` : '--';
+        if (elPeak) elPeak.innerText = peakVal !== null ? `${peakVal.toFixed(1)}${u}` : '--';
+        if (elMin) elMin.innerText = minVal !== null ? `${minVal.toFixed(1)}${u}` : '--';
+        if (elAvg) elAvg.innerText = avgVal !== null ? `${avgVal.toFixed(1)}${u}` : '--';
+
+        const primaryColor = meta.color || '#00bfa5';
         const datasets = [
             {
-                label: document.getElementById('leg-max-text')?.innerText || 'Max Value',
-                data: maxData,
+                label: `${meta.label}${meta.unit ? ` (${meta.unit})` : ''}`,
+                data: actualData,
                 borderColor: primaryColor,
-                borderWidth: 2.2,
+                borderWidth: 2.4,
                 tension: 0.38,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                pointHoverBackgroundColor: '#ffffff',
-                pointHoverBorderColor: primaryColor,
-                pointHoverBorderWidth: 2.5,
+                pointRadius: days === 1 ? 3 : 2,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: primaryColor,
+                pointBorderWidth: 2.5,
                 backgroundColor: function(ctx) {
                     const chart = ctx.chart;
                     const {ctx: c, chartArea} = chart;
-                    if (!chartArea) return primaryFillTop;
+                    if (!chartArea) return 'rgba(0, 191, 165, 0.25)';
                     const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                    grad.addColorStop(0, primaryFillTop);
-                    grad.addColorStop(0.5, primaryFillMid);
+                    grad.addColorStop(0, primaryColor + '55');
+                    grad.addColorStop(0.5, primaryColor + '20');
                     grad.addColorStop(1, 'rgba(0,0,0,0)');
                     return grad;
                 },
-                fill: 'start'
-            },
-            {
-                label: document.getElementById('leg-hmax-text')?.innerText || 'Historic Max',
-                data: hMaxData,
-                borderColor: 'rgba(255, 255, 255, 0.72)',
-                borderWidth: 1.5,
-                borderDash: [4, 4],
-                tension: 0.38,
-                pointRadius: 0,
-                fill: false
-            },
-            {
-                label: document.getElementById('leg-min-text')?.innerText || 'Min Value',
-                data: minData,
-                borderColor: meta.minColor || '#38bdf8',
-                borderWidth: 2.0,
-                tension: 0.38,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                pointHoverBackgroundColor: '#ffffff',
-                pointHoverBorderColor: meta.minColor || '#38bdf8',
-                pointHoverBorderWidth: 2.5,
-                fill: false
-            },
-            {
-                label: document.getElementById('leg-hmin-text')?.innerText || 'Historic Min',
-                data: hMinData,
-                borderColor: 'rgba(56, 189, 248, 0.65)',
-                borderWidth: 1.5,
-                borderDash: [4, 4],
-                tension: 0.38,
-                pointRadius: 0,
-                fill: false
+                fill: 'start',
+                spanGaps: false
             }
         ];
 
@@ -2183,8 +1802,6 @@ function renderUI(skipDayFilter = false) {
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Date</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Time</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">AQI</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Temp (°C)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Humidity (%)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">PM2.5 (µg/m³)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">PM10 (µg/m³)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">CO (mg/m³)</th>
@@ -2212,25 +1829,8 @@ function renderUI(skipDayFilter = false) {
             const isMissing = Boolean(d.isMissing || (d.cpcb_aqi == null && d.pm25 == null && d.pm10 == null));
             const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
 
-            let tempVal = d.temperature;
-            let humVal = d.humidity;
-            if ((tempVal == null || humVal == null) && Array.isArray(historicalDataWeather) && d.timestamp) {
-                const matchPrefix = d.timestamp.slice(0, 13);
-                const matchW = historicalDataWeather.find(w => w.timestamp && w.timestamp.slice(0, 13) === matchPrefix);
-                if (matchW) {
-                    if (tempVal == null && matchW.temperature != null) tempVal = matchW.temperature;
-                    if (humVal == null && matchW.humidity != null) humVal = matchW.humidity;
-                }
-            }
-
             const aqiCell = d.cpcb_aqi != null 
                 ? `<span style="font-weight: 800; color: ${getAqiCategory(d.cpcb_aqi).text};">${Math.round(d.cpcb_aqi)}</span>`
-                : emptyCell;
-            const tempCell = tempVal != null 
-                ? `<span style="font-weight: 700; color: #ea580c; font-family: var(--font-mono);">${Number(tempVal).toFixed(1)}°C</span>` 
-                : emptyCell;
-            const humCell = humVal != null 
-                ? `<span style="font-weight: 700; color: #00bfa5; font-family: var(--font-mono);">${Math.round(Number(humVal))}%</span>` 
                 : emptyCell;
             const pm25Cell = d.pm25 != null 
                 ? `<span style="font-weight: 700; color: ${getParamColor('pm25', d.pm25)}; font-family: var(--font-mono);">${Number(d.pm25).toFixed(3)}</span>`
@@ -2252,8 +1852,6 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
                 <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
                 <td style="padding: 10px 16px;">${aqiCell}</td>
-                <td style="padding: 10px 16px;">${tempCell}</td>
-                <td style="padding: 10px 16px;">${humCell}</td>
                 <td style="padding: 10px 16px;">${pm25Cell}</td>
                 <td style="padding: 10px 16px;">${pm10Cell}</td>
                 <td style="padding: 10px 16px;">${coCell}</td>
@@ -2265,15 +1863,10 @@ function renderUI(skipDayFilter = false) {
         theadRow.innerHTML = `
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Date</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Time</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Wind Spd (km/h)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Wind Gust (km/h)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Wind Dir</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Rain (mm)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Pressure (mb)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">UV Index</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #b45309;">Soil Temp (°C)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0369a1;">Soil Humidity (%)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #047857;">Soil pH</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #7c3aed;">Soil EC (µS/cm)</th>
         `;
         
         tbody.innerHTML = tableRows.map((d, i) => {
@@ -2293,49 +1886,30 @@ function renderUI(skipDayFilter = false) {
                 dateStr = dt.toLocaleDateString('en-GB');
                 timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
             }
-            const isMissing = Boolean(d.isMissing || (d.wind_speed == null && d.wind_gust == null && d.rain_gauge == null));
+            const isMissing = Boolean(d.isMissing || (d.soil_temperature == null && d.soil_humidity == null && d.soil_moisture == null));
             const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
 
-            const windSpdCell = d.wind_speed != null 
-                ? `<span style="color: #475569; font-weight: 600;">${Number(d.wind_speed).toFixed(1)}</span>` 
-                : emptyCell;
-            const windGustCell = d.wind_gust != null 
-                ? `<span style="color: #475569; font-weight: 600;">${Number(d.wind_gust).toFixed(1)}</span>` 
-                : emptyCell;
-            const windDirCell = d.wind_direction != null 
-                ? `<span style="color: #475569; font-weight: 600;">${getCompassDir(d.wind_direction)}</span>` 
-                : emptyCell;
-            const rainCell = d.rain_gauge != null 
-                ? `<span style="color: #475569; font-weight: 600;">${Number(d.rain_gauge).toFixed(1)}</span>` 
-                : emptyCell;
-            const pressureCell = d.pressure != null 
-                ? `<span style="color: #475569; font-weight: 600;">${Number(d.pressure).toFixed(1)}</span>` 
-                : emptyCell;
-            const uvCell = d.uv_index != null 
-                ? `<span style="color: #475569; font-weight: 600;">${Number(d.uv_index).toFixed(1)}</span>` 
-                : emptyCell;
-            const soilTempCell = d.soil_temperature != null 
+            const soilTempCell = (d.soil_temperature != null && d.soil_temperature !== '') 
                 ? `<span style="color: #b45309; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_temperature).toFixed(1)}°C</span>` 
                 : emptyCell;
-            const soilHumCell = d.soil_humidity != null 
-                ? `<span style="color: #0369a1; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_humidity).toFixed(1)}%</span>` 
+            const sHum = d.soil_humidity != null ? d.soil_humidity : d.soil_moisture;
+            const soilHumCell = (sHum != null && sHum !== '') 
+                ? `<span style="color: #0369a1; font-weight: 700; font-family: var(--font-mono);">${Number(sHum).toFixed(1)}%</span>` 
                 : emptyCell;
-            const soilPhCell = d.soil_ph != null 
+            const soilPhCell = (d.soil_ph != null && d.soil_ph !== '') 
                 ? `<span style="color: #047857; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_ph).toFixed(2)}</span>` 
+                : emptyCell;
+            const soilEcCell = (d.soil_conductivity != null && d.soil_conductivity !== '') 
+                ? `<span style="color: #7c3aed; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_conductivity).toFixed(1)}</span>` 
                 : emptyCell;
 
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
                 <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
                 <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
-                <td style="padding: 10px 16px;">${windSpdCell}</td>
-                <td style="padding: 10px 16px;">${windGustCell}</td>
-                <td style="padding: 10px 16px;">${windDirCell}</td>
-                <td style="padding: 10px 16px;">${rainCell}</td>
-                <td style="padding: 10px 16px;">${pressureCell}</td>
-                <td style="padding: 10px 16px;">${uvCell}</td>
                 <td style="padding: 10px 16px;">${soilTempCell}</td>
                 <td style="padding: 10px 16px;">${soilHumCell}</td>
                 <td style="padding: 10px 16px;">${soilPhCell}</td>
+                <td style="padding: 10px 16px;">${soilEcCell}</td>
             </tr>`;
         }).join('');
     }

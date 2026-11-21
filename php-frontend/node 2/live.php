@@ -2886,25 +2886,20 @@ body.weather-backdrop-active #app-layout-root,
         </div>
 
         <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 1100px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 650px;">
             <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <tr>
                 <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Speed (km/h)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Gust (km/h)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Direction</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Rain Gauge (mm)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Pressure (mb)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">UV Index</th>
                 <th style="padding: 12px 16px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Soil Temp (°C)</th>
                 <th style="padding: 12px 16px; font-weight: 700; color: #0369a1; font-size: 12px; white-space: nowrap;">Soil Humidity (%)</th>
                 <th style="padding: 12px 16px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Soil pH</th>
+                <th style="padding: 12px 16px; font-weight: 700; color: #7c3aed; font-size: 12px; white-space: nowrap;">Soil EC (µS/cm)</th>
               </tr>
             </thead>
             <tbody id="weather-tbody">
               <tr>
-                <td colspan="10" style="padding: 40px; text-align: center; color: #64748b;">
-                  <?= $is_node_2 ? 'Currently in standby mode. No live weather telemetry recorded yet.' : 'Loading weather telemetry...' ?>
+                <td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">
+                  Loading soil telemetry...
                 </td>
               </tr>
             </tbody>
@@ -4078,16 +4073,6 @@ async function refreshDashboard(forceNetwork = false) {
             if (tbodyWeather) {
                 tbodyWeather.innerHTML = weatherHistory.map((row, i) => {
                     const timeStr = formatStreamTimestamp(row);
-                    const wind = formatWeatherOneDecimal(row.wind_speed);
-                    const gust = formatWeatherOneDecimal(row.wind_gust);
-                    const dir = (row.wind_direction != null && row.wind_direction !== '') ? getCompassDir(row.wind_direction) : '--';
-                    const rain = formatWeatherOneDecimal(row.rain_gauge);
-                    const press = (row.pressure != null && !isNaN(Number(row.pressure))) 
-                        ? `${Math.round(Number(row.pressure))} mb` 
-                        : (row.pressure_mb != null && !isNaN(Number(row.pressure_mb)) ? `${Math.round(Number(row.pressure_mb))} mb` : '--');
-                    const uv = (row.uv_index != null && !isNaN(Number(row.uv_index))) 
-                        ? Number(row.uv_index).toFixed(1) 
-                        : (row.uv != null && !isNaN(Number(row.uv)) ? Number(row.uv).toFixed(1) : '--');
                     const soilTemp = (row.soil_temperature != null && !isNaN(Number(row.soil_temperature))) 
                         ? `${Number(row.soil_temperature).toFixed(1)} °C` 
                         : (row.soil_temp != null && !isNaN(Number(row.soil_temp)) ? `${Number(row.soil_temp).toFixed(1)} °C` : '--');
@@ -4097,22 +4082,20 @@ async function refreshDashboard(forceNetwork = false) {
                     const soilPh = (row.soil_ph != null && !isNaN(Number(row.soil_ph))) 
                         ? Number(row.soil_ph).toFixed(2) 
                         : (row.ph != null && !isNaN(Number(row.ph)) ? Number(row.ph).toFixed(2) : '--');
+                    const soilEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity)))
+                        ? `${Number(row.soil_conductivity).toFixed(1)}`
+                        : '--';
 
-                    if (row.temperature != null && !isNaN(Number(row.temperature))) {
-                        temps.push(Number(row.temperature));
+                    if (row.soil_temperature != null && !isNaN(Number(row.soil_temperature))) {
+                        temps.push(Number(row.soil_temperature));
                     }
                     
                     return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${wind}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${gust}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;">${dir}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0284c7;">${rain}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #db2777;">${press}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #ea580c;">${uv}</td>
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${soilTemp}</td>
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${soilHum}</td>
                       <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${soilPh}</td>
+                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #7c3aed;">${soilEc}</td>
                     </tr>`;
                 }).join('');
             }
@@ -4128,7 +4111,7 @@ async function refreshDashboard(forceNetwork = false) {
                 if (wMaxEl) wMaxEl.innerText = `${max}°C`;
             }
         } else if (tbodyWeather) {
-            tbodyWeather.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
+            tbodyWeather.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">No live soil telemetry found.</td></tr>';
         }
 
         // Cache unified hero state for 0ms instant reload

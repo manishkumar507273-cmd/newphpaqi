@@ -145,7 +145,7 @@ if (!$is_node_2) {
         </div>
       </div>
       <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b; font-weight: 500;">
-        Real-time ambient weather metrics, thermal comfort, soil parameters, and wind vector telemetry.
+        Real-time ambient weather metrics, thermal comfort, precipitation, and wind vector telemetry.
       </p>
     </div>
 
@@ -307,50 +307,6 @@ if (!$is_node_2) {
         </div>
       </div>
 
-      <!-- 7. Soil Temperature -->
-      <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px] transition-all hover:border-[#00bfa5]">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-xl shrink-0">🌱</div>
-          <div>
-            <div class="text-sm font-bold text-slate-900 leading-tight">Soil Temperature</div>
-            <div class="text-[11px] text-slate-400 font-medium">Subsurface Root Zone</div>
-          </div>
-        </div>
-        <div class="flex items-baseline gap-1 mt-3">
-          <span id="card-soil-temp" class="font-mono text-2xl sm:text-3xl font-extrabold text-amber-600">24.2</span>
-          <span class="font-mono text-sm font-bold text-slate-400">°C</span>
-        </div>
-      </div>
-
-      <!-- 8. Soil Humidity -->
-      <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px] transition-all hover:border-[#00bfa5]">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl shrink-0">💧</div>
-          <div>
-            <div class="text-sm font-bold text-slate-900 leading-tight">Soil Humidity</div>
-            <div class="text-[11px] text-slate-400 font-medium">Capacitive Hydration</div>
-          </div>
-        </div>
-        <div class="flex items-baseline gap-1 mt-3">
-          <span id="card-soil-hum" class="font-mono text-2xl sm:text-3xl font-extrabold text-teal-600">48.5%</span>
-        </div>
-      </div>
-
-      <!-- 9. Soil pH -->
-      <div class="bg-white border border-slate-200 rounded-[18px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(15,23,42,0.03)] flex flex-col justify-between min-h-[120px] transition-all hover:border-[#00bfa5]">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">🧪</div>
-          <div>
-            <div class="text-sm font-bold text-slate-900 leading-tight">Soil pH</div>
-            <div class="text-[11px] text-slate-400 font-medium">Acidity / Neutral Level</div>
-          </div>
-        </div>
-        <div class="flex items-baseline gap-1 mt-3">
-          <span id="card-soil-ph" class="font-mono text-2xl sm:text-3xl font-extrabold text-emerald-600">6.80</span>
-          <span class="font-mono text-sm font-bold text-slate-400">pH</span>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -383,15 +339,12 @@ if (!$is_node_2) {
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Gust (km/h)</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Direction</th>
               <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Rain Gauge (mm)</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Soil Temp (°C)</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #0f766e; font-size: 12px; white-space: nowrap;">Soil Humidity (%)</th>
-              <th style="padding: 12px 16px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Soil pH</th>
             </tr>
           </thead>
           <tbody id="weather-tbody">
             <?php if ($is_node_2): ?>
               <tr>
-                <td colspan="10" style="padding: 48px 20px; text-align: center; color: #64748b; font-size: 13px;">
+                <td colspan="7" style="padding: 48px 20px; text-align: center; color: #64748b; font-size: 13px;">
                   <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
                     <i data-lucide="radio" style="width: 32px; height: 32px; color: #94a3b8;"></i>
                     <strong style="color: #334155;">Currently in Standby Mode</strong>
@@ -414,9 +367,6 @@ if (!$is_node_2) {
                   $wgVal = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? number_format((float)$row['wind_gust'], 1) : '--';
                   $wdVal = !empty($row['wind_direction']) ? htmlspecialchars($row['wind_direction']) : '--';
                   $rgVal = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? number_format((float)$row['rain_gauge'], 1) : '0.0';
-                  $sTVal = isset($row['soil_temperature']) && is_numeric($row['soil_temperature']) ? number_format((float)$row['soil_temperature'], 1) : '24.2';
-                  $sHVal = isset($row['soil_humidity']) && is_numeric($row['soil_humidity']) ? number_format((float)$row['soil_humidity'], 1) : '48.5';
-                  $sPhVal = isset($row['soil_ph']) && is_numeric($row['soil_ph']) ? number_format((float)$row['soil_ph'], 2) : '6.80';
                 ?>
                 <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
                   <td style="padding: 10px 16px; font-family: var(--font-mono); font-size: 12px; color: #334155; white-space: nowrap;"><?= htmlspecialchars($formatted_ts) ?></td>
@@ -426,13 +376,10 @@ if (!$is_node_2) {
                   <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #9333ea; white-space: nowrap;"><?= $wgVal ?> km/h</td>
                   <td style="padding: 10px 16px; font-weight: 600; color: #475569; white-space: nowrap;"><?= $wdVal ?></td>
                   <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #0891b2; white-space: nowrap;"><?= $rgVal ?> mm</td>
-                  <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #b45309; white-space: nowrap;"><?= $sTVal ?>°C</td>
-                  <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #0f766e; white-space: nowrap;"><?= $sHVal ?>%</td>
-                  <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #047857; white-space: nowrap;"><?= $sPhVal ?></td>
                 </tr>
               <?php endforeach; ?>
             <?php else: ?>
-              <tr><td colspan="10" style="padding: 40px; text-align: center; color: #64748b;">Loading telemetry...</td></tr>
+              <tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">Loading telemetry...</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -511,18 +458,6 @@ if (!$is_node_2) {
                 const cDir = document.getElementById('card-dir');
                 if (cDir) cDir.innerText = String(w.wind_direction);
             }
-            if (w.soil_temperature != null) {
-                const cST = document.getElementById('card-soil-temp');
-                if (cST) cST.innerText = Number(w.soil_temperature).toFixed(1);
-            }
-            if (w.soil_humidity != null) {
-                const cSH = document.getElementById('card-soil-hum');
-                if (cSH) cSH.innerText = Number(w.soil_humidity).toFixed(1) + '%';
-            }
-            if (w.soil_ph != null) {
-                const cSPh = document.getElementById('card-soil-ph');
-                if (cSPh) cSPh.innerText = Number(w.soil_ph).toFixed(2);
-            }
 
             // Update Time
             const ts = w.timestamp || w.created_at;
@@ -571,9 +506,6 @@ if (!$is_node_2) {
                         const wgVal = (row.wind_gust != null) ? Number(row.wind_gust).toFixed(1) + ' km/h' : '--';
                         const wdVal = row.wind_direction ? String(row.wind_direction) : '--';
                         const rgVal = (row.rain_gauge != null) ? Number(row.rain_gauge).toFixed(1) + ' mm' : '0.0 mm';
-                        const sTVal = (row.soil_temperature != null) ? Number(row.soil_temperature).toFixed(1) + '°C' : '24.2°C';
-                        const sHVal = (row.soil_humidity != null) ? Number(row.soil_humidity).toFixed(1) + '%' : '48.5%';
-                        const sPhVal = (row.soil_ph != null) ? Number(row.soil_ph).toFixed(2) : '6.80';
 
                         return `<tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
                           <td style="padding: 10px 16px; font-family: var(--font-mono); font-size: 12px; color: #334155; white-space: nowrap;">${fTs}</td>
@@ -583,9 +515,6 @@ if (!$is_node_2) {
                           <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #9333ea; white-space: nowrap;">${wgVal}</td>
                           <td style="padding: 10px 16px; font-weight: 600; color: #475569; white-space: nowrap;">${wdVal}</td>
                           <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #0891b2; white-space: nowrap;">${rgVal}</td>
-                          <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #b45309; white-space: nowrap;">${sTVal}</td>
-                          <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #0f766e; white-space: nowrap;">${sHVal}</td>
-                          <td style="padding: 10px 16px; font-family: var(--font-mono); font-weight: 700; color: #047857; white-space: nowrap;">${sPhVal}</td>
                         </tr>`;
                     }).join('');
                     tbody.innerHTML = rowsHtml;

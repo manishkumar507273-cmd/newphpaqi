@@ -1657,9 +1657,6 @@ function renderUI(skipDayFilter = false) {
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Wind Gust (km/h)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Wind Dir</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Rain (mm)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #b45309;">Soil Temp (°C)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0369a1;">Soil Humidity (%)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #047857;">Soil pH</th>
         `;
         
         tbody.innerHTML = tableRows.map((d, i) => {
@@ -1700,15 +1697,6 @@ function renderUI(skipDayFilter = false) {
             const rainCell = d.rain_gauge != null 
                 ? `<span style="color: #475569;">${Number(d.rain_gauge).toFixed(1)}</span>` 
                 : emptyCell;
-            const soilTempCell = d.soil_temperature != null 
-                ? `<span style="color: #b45309; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_temperature).toFixed(1)}°C</span>` 
-                : emptyCell;
-            const soilHumCell = d.soil_humidity != null 
-                ? `<span style="color: #0369a1; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_humidity).toFixed(1)}%</span>` 
-                : emptyCell;
-            const soilPhCell = d.soil_ph != null 
-                ? `<span style="color: #047857; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_ph).toFixed(2)}</span>` 
-                : emptyCell;
 
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
                 <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
@@ -1719,9 +1707,6 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px;">${windGustCell}</td>
                 <td style="padding: 10px 16px;">${windDirCell}</td>
                 <td style="padding: 10px 16px;">${rainCell}</td>
-                <td style="padding: 10px 16px;">${soilTempCell}</td>
-                <td style="padding: 10px 16px;">${soilHumCell}</td>
-                <td style="padding: 10px 16px;">${soilPhCell}</td>
             </tr>`;
         }).join('');
     }

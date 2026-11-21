@@ -1207,7 +1207,7 @@ async function refreshData(isSilent = false, forceNetwork = false) {
         }
 
         const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-        if (activeNode === '2' || (bulkData && bulkData.node === '2') || (bulkData && bulkData.status === 'STANDBY')) {
+        if (!bulkData || (!bulkData.aqi && !bulkData.weather) || (bulkData && bulkData.status === 'STANDBY')) {
             const aqiVal = document.getElementById('aqi-val');
             if (aqiVal) aqiVal.innerText = '--';
             const aqiBadgeText = document.getElementById('aqi-badge-text');

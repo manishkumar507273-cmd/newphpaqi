@@ -2352,7 +2352,7 @@ async function refreshDashboard(forceNetwork = false) {
             bulkData = await res.json();
         }
 
-        if (activeNode === '2' || (bulkData && bulkData.node === '2') || (bulkData && bulkData.status === 'STANDBY')) {
+        if (!bulkData || (!bulkData.aqi && !bulkData.weather) || (bulkData && bulkData.status === 'STANDBY')) {
             const valEl = document.getElementById('hero-aqi-val') || document.getElementById('hero-aqi-value');
             if (valEl) {
                 valEl.innerText = '--';

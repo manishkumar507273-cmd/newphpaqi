@@ -40,20 +40,6 @@ window.setLocalCache = setLocalCache;
 (function initClientStorageCache() {
     try {
         const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-        if (activeNode === '2') {
-            window.INITIAL_DATA = {
-                aqi: null,
-                weather: null,
-                aqi_history: [],
-                weather_history: [],
-                history: [],
-                today_rain_total: 0.0,
-                node: '2',
-                status: 'STANDBY'
-            };
-            return;
-        }
-
         const cachedBulk = getLocalCache(STORAGE_KEYS.BULK + '_n' + activeNode) || getLocalCache(STORAGE_KEYS.BULK);
         if (cachedBulk && (cachedBulk.aqi || cachedBulk.weather)) {
             if (!window.INITIAL_DATA || (!window.INITIAL_DATA.aqi && !window.INITIAL_DATA.weather)) {
@@ -164,10 +150,6 @@ let lastKnownLiveReading = null;
 function evaluateAndSyncLiveBadge(reading) {
     if (!window.updateGlobalLiveBadge) return;
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-    if (activeNode === '2') {
-        window.updateGlobalLiveBadge(false, 'Node 2 is currently in standby mode. Telemetry hardware pending setup.', 'Standby');
-        return;
-    }
 
     if (reading && (reading.timestamp || reading.created_at)) {
         lastKnownLiveReading = reading;
@@ -201,12 +183,12 @@ function getSbConfig() {
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
     const isNode2 = (activeNode === '2');
     return {
-        url: injected.url || 'https://sgkdpliqlhgiqsabxzxe.supabase.co',
-        key: injected.key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30',
+        url: injected.url || (isNode2 ? 'https://nahabhzcaeppbteuxogg.supabase.co' : 'https://sgkdpliqlhgiqsabxzxe.supabase.co'),
+        key: injected.key || (isNode2 ? 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30'),
         tableAqiLive: injected.tableAqiLive || (isNode2 ? 'AQI_LIVE_NODE2' : 'AQI_LIVE_NODE1'),
-        tableWeatherLive: injected.tableWeatherLive || (isNode2 ? 'WEATHER_LIVE_NODE2' : 'WEATHER_LIVE_NODE1'),
+        tableWeatherLive: injected.tableWeatherLive || (isNode2 ? 'SOIL_LIVE_NODE2' : 'WEATHER_LIVE_NODE1'),
         tableAqiHist: injected.tableAqiHist || (isNode2 ? 'AQI_NODE2' : 'AQI_NODE1'),
-        tableWeatherHist: injected.tableWeatherHist || (isNode2 ? 'WEATHER_NODE2' : 'WEATHER_NODE1'),
+        tableWeatherHist: injected.tableWeatherHist || (isNode2 ? 'SOIL_NODE2' : 'WEATHER_NODE1'),
         tableForecast: injected.tableForecast || (isNode2 ? 'aqi_forecasts_node2' : 'aqi_forecasts_24h')
     };
 }
@@ -214,7 +196,7 @@ function getSbConfig() {
 function formatRawReadingClient(raw) {
     if (!raw) return null;
     const tsRaw = raw.timestamp_hour || raw.created_at || raw.timestamp || null;
-    const rawPm25 = (raw.pm25 != null && raw.pm25 !== '') ? Number(raw.pm25) : ((raw['pm2.5'] != null && raw['pm2.5'] !== '') ? Number(raw['pm2.5']) : null);
+    const rawPm25 = (raw.pm25 != null && raw.pm25 !== '') ? Number(raw.pm25) : ((raw['pm2.5'] != null && raw['pm2.5'] !== '') ? Number(raw['pm2.5']) : ((raw.pm2_5 != null && raw.pm2_5 !== '') ? Number(raw.pm2_5) : null));
     const rawPm10 = (raw.pm10 != null && raw.pm10 !== '') ? Number(raw.pm10) : null;
     const rawCo   = (raw.co != null && raw.co !== '') ? Number(raw.co) : null;
     const rawO3   = (raw.o3 != null && raw.o3 !== '') ? Number(raw.o3) : null;
@@ -284,16 +266,25 @@ window.formatRawReadingClient = formatRawReadingClient;
 function formatWeatherReadingClient(raw) {
     if (!raw) return null;
     const tsRaw = raw.timestamp_hour || raw.created_at || raw.timestamp || null;
+    const sHum = (raw.soil_humidity != null) ? Number(raw.soil_humidity) : ((raw.soil_moisture != null) ? Number(raw.soil_moisture) : null);
+    const sTemp = (raw.soil_temperature != null) ? Number(raw.soil_temperature) : null;
     return {
         id: raw.id || null,
         created_at: raw.created_at || raw.timestamp || null,
         timestamp: parseToIstIso(tsRaw),
-        temperature: (raw.temperature != null) ? adjustTempByHour(raw.temperature, tsRaw) : null,
-        humidity: (raw.humidity != null) ? Number(Number(raw.humidity).toFixed(2)) : null,
+        temperature: (raw.temperature != null) ? adjustTempByHour(raw.temperature, tsRaw) : sTemp,
+        humidity: (raw.humidity != null) ? Number(Number(raw.humidity).toFixed(2)) : sHum,
         wind_speed: (raw.wind_speed != null) ? Number(Number(raw.wind_speed).toFixed(2)) : null,
         wind_gust: (raw.wind_gust != null) ? Number(Number(raw.wind_gust).toFixed(2)) : null,
         rain_gauge: (raw.rain_gauge != null) ? Number(Number(raw.rain_gauge).toFixed(2)) : null,
-        wind_direction: raw.wind_direction || null
+        wind_direction: raw.wind_direction || null,
+        soil_temperature: sTemp,
+        soil_humidity: sHum,
+        soil_moisture: sHum,
+        soil_ph: (raw.soil_ph != null) ? Number(raw.soil_ph) : null,
+        soil_conductivity: (raw.soil_conductivity != null) ? Number(raw.soil_conductivity) : null,
+        latitude: raw.latitude || null,
+        longitude: raw.longitude || null
     };
 }
 window.formatWeatherReadingClient = formatWeatherReadingClient;
@@ -304,33 +295,11 @@ window.formatWeatherReadingClient = formatWeatherReadingClient;
  */
 async function fetchLiveBulk(forceNetwork = false) {
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-    if (activeNode === '2') {
-        const standbyBulk = {
-            node: '2',
-            node_name: 'Node 2 (Station 2)',
-            status: 'STANDBY',
-            is_live: false,
-            aqi: null,
-            weather: null,
-            aqi_history: [],
-            weather_history: [],
-            history: [],
-            today_rain_total: 0.0,
-            today_temp_min: null,
-            today_temp_max: null,
-            time: Date.now(),
-            fetchedAt: Date.now()
-        };
-        apiCache.liveBulk = { data: standbyBulk, time: Date.now() };
-        apiCache.overviewBulk = { data: standbyBulk, time: Date.now() };
-        if (typeof window.updateGlobalLiveBadge === 'function') {
-            window.updateGlobalLiveBadge(false, 'Node 2 is currently in standby mode.', 'Standby');
-        }
-        return standbyBulk;
-    }
+    const isNode2 = (activeNode === '2');
+    const cacheKey = STORAGE_KEYS.BULK + '_n' + activeNode;
 
     // 1. Fast Memory Cache Return only if freshly fetched within the last 4 seconds
-    if (!forceNetwork && apiCache.liveBulk && apiCache.liveBulk.time && (Date.now() - apiCache.liveBulk.time < 4000)) {
+    if (!forceNetwork && apiCache.liveBulk && apiCache.liveBulk.time && (Date.now() - apiCache.liveBulk.time < 4000) && apiCache.liveBulk.node === activeNode) {
         return apiCache.liveBulk.data;
     }
 
@@ -341,8 +310,11 @@ async function fetchLiveBulk(forceNetwork = false) {
     };
 
     try {
-        const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiLive}?order=created_at.desc.nullslast&limit=60`;
-        const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=created_at.desc.nullslast&limit=60`;
+        const orderCol = isNode2 ? 'id.desc' : 'created_at.desc.nullslast';
+        const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiLive}?order=${orderCol}&limit=60`;
+        const urlWeather = isNode2
+            ? `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=*&order=${orderCol}&limit=60`
+            : `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=id,temperature,humidity,wind_speed,rain_gauge,created_at,wind_direction,wind_gust&order=${orderCol}&limit=60`;
 
         const [resAqi, resWeather] = await Promise.all([
             fetch(urlAqi, { headers, cache: 'no-cache' }),
@@ -391,6 +363,8 @@ async function fetchLiveBulk(forceNetwork = false) {
         }
 
         const bulkData = {
+            node: activeNode,
+            status: 'ONLINE',
             aqi: latestAqi,
             weather: latestWeather,
             aqi_history: aqiHist,
@@ -404,16 +378,16 @@ async function fetchLiveBulk(forceNetwork = false) {
         };
 
         // Cache results locally
-        apiCache.liveBulk = { data: bulkData, time: Date.now() };
-        apiCache.overviewBulk = { data: bulkData, time: Date.now() };
-        setLocalCache(STORAGE_KEYS.BULK, bulkData);
+        apiCache.liveBulk = { data: bulkData, time: Date.now(), node: activeNode };
+        apiCache.overviewBulk = { data: bulkData, time: Date.now(), node: activeNode };
+        setLocalCache(cacheKey, bulkData);
         evaluateAndSyncLiveBadge(latestAqi || latestWeather);
 
         return bulkData;
     } catch (err) {
         console.warn('Direct Supabase fetch encountered error; falling back to telemetry endpoint:', err);
         try {
-            const baseEndpoint = 'telemetry.php?action=live_bulk&limit=60&_t=' + Date.now();
+            const baseEndpoint = `telemetry.php?action=live_bulk&node=${activeNode}&limit=60&_t=${Date.now()}`;
             const fallbackUrl = (typeof window.getApiUrl === 'function') 
                 ? window.getApiUrl(baseEndpoint) 
                 : 'api/' + baseEndpoint;
@@ -421,16 +395,16 @@ async function fetchLiveBulk(forceNetwork = false) {
             if (!fallbackRes.ok) throw new Error('Fallback failed');
             const data = await fallbackRes.json();
             if (data && (data.aqi || data.weather)) {
-                apiCache.liveBulk = { data, time: Date.now() };
-                apiCache.overviewBulk = { data, time: Date.now() };
-                setLocalCache(STORAGE_KEYS.BULK, data);
+                apiCache.liveBulk = { data, time: Date.now(), node: activeNode };
+                apiCache.overviewBulk = { data, time: Date.now(), node: activeNode };
+                setLocalCache(cacheKey, data);
                 evaluateAndSyncLiveBadge(data.aqi || data.weather);
                 return data;
             }
         } catch (fbErr) {
             console.error('All live fetch paths failed:', fbErr);
         }
-        return getLocalCache(STORAGE_KEYS.BULK) || null;
+        return getLocalCache(cacheKey) || null;
     }
 }
 window.fetchLiveBulk = fetchLiveBulk;
@@ -479,16 +453,7 @@ window.normalizeDateToYmd = normalizeDateToYmd;
 
 async function fetchHistoryBulk(queryDate, days = 1, force = false) {
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-    if (activeNode === '2') {
-        return {
-            node: '2',
-            status: 'STANDBY',
-            is_standby: true,
-            aqi: [],
-            weather: [],
-            fetchedAt: Date.now()
-        };
-    }
+    const isNode2 = (activeNode === '2');
 
     const normDate = normalizeDateToYmd(queryDate || new Date());
     const cacheKey = `${normDate}_${days}_n${activeNode}`;
@@ -513,6 +478,7 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false) {
     try {
         let filter = '';
         const lim = days > 1 ? Math.min(1500, Math.max(150, days * 35)) : 150;
+        const timeCol = isNode2 ? 'timestamp' : 'timestamp_hour';
         if (normDate) {
             const [y, m, d] = parseDateParts(normDate);
             const targetUtc = Date.UTC(y, m - 1, d, 0, 0, 0) - (5.5 * 3600000);
@@ -520,11 +486,11 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false) {
             const endDate = new Date(targetUtc + (2 * 86400000));
             const sIso = startDate.toISOString().split('T')[0];
             const eIso = endDate.toISOString().split('T')[0];
-            filter = `&timestamp_hour=gte.${sIso}T00:00:00&timestamp_hour=lt.${eIso}T00:00:00`;
+            filter = `&${timeCol}=gte.${sIso}T00:00:00&${timeCol}=lt.${eIso}T00:00:00`;
         }
 
-        const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiHist}?order=timestamp_hour.desc&limit=${lim}${filter}`;
-        const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherHist}?order=timestamp_hour.desc&limit=${lim}${filter}`;
+        const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiHist}?order=${timeCol}.desc&limit=${lim}${filter}`;
+        const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherHist}?order=${timeCol}.desc&limit=${lim}${filter}`;
 
         const [resAqi, resWeather] = await Promise.all([
             fetch(urlAqi, { headers }),
@@ -542,6 +508,7 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false) {
         const weatherList = Array.isArray(weatherRaw) ? weatherRaw.map(formatWeatherReadingClient).filter(Boolean) : [];
 
         const payload = {
+            node: activeNode,
             aqi: aqiList,
             weather: weatherList,
             fetchedAt: Date.now()
@@ -554,10 +521,13 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false) {
     } catch (err) {
         console.warn('Direct Supabase history fetch failed; falling back to api/telemetry.php:', err);
         try {
-            const fbRes = await fetch(`api/telemetry.php?action=history_bulk&date=${normDate}&days=${days}&_t=${Date.now()}`);
+            const baseEndpoint = `telemetry.php?action=history_bulk&node=${activeNode}&date=${normDate}&days=${days}&_t=${Date.now()}`;
+            const fbUrl = (typeof window.getApiUrl === 'function') ? window.getApiUrl(baseEndpoint) : ('api/' + baseEndpoint);
+            const fbRes = await fetch(fbUrl);
             if (fbRes.ok) {
                 const fbData = await fbRes.json();
                 const payload = {
+                    node: activeNode,
                     aqi: fbData.aqi || [],
                     weather: fbData.weather || [],
                     fetchedAt: Date.now()
@@ -569,24 +539,13 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false) {
             }
         } catch (e) {}
         const fallbackCached = getLocalCache(storageKey);
-        return fallbackCached || { aqi: [], weather: [], fetchedAt: Date.now() };
+        return fallbackCached || { node: activeNode, aqi: [], weather: [], fetchedAt: Date.now() };
     }
 }
 window.fetchHistoryBulk = fetchHistoryBulk;
 
 async function fetchForecastData(force = false) {
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-    if (activeNode === '2') {
-        return {
-            node: '2',
-            status: 'STANDBY',
-            is_standby: true,
-            hourly: [],
-            daily: [],
-            model_version: 'v2.4-standby',
-            source: 'Node 2 Standby'
-        };
-    }
 
     // 1. Primary dynamic path: query dynamic backend with cache-busting to ensure server & Supabase parity
     try {

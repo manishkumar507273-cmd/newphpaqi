@@ -1403,23 +1403,6 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
     async function loadForecastData(force = false) {
         try {
             const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-            if (activeNode === '2') {
-                const heroAqi = document.getElementById('forecast-hero-aqi');
-                if (heroAqi) heroAqi.innerText = '--';
-                const heroBadge = document.getElementById('forecast-hero-category');
-                if (heroBadge) {
-                    heroBadge.innerText = 'STANDBY';
-                    heroBadge.style.backgroundColor = '#f1f5f9';
-                    heroBadge.style.color = '#64748b';
-                }
-                const heroAdvice = document.getElementById('forecast-hero-health-advice');
-                if (heroAdvice) heroAdvice.innerText = 'Predictive model is in standby.';
-                const reel = document.getElementById('hourly-forecast-reel');
-                if (reel) reel.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b; font-size: 13px; width: 100%;">Currently in standby mode. Hourly forecasts will appear once data collection starts.</div>';
-                const syncStatusEl = document.getElementById('forecast-auto-sync-status');
-                if (syncStatusEl) syncStatusEl.innerText = 'STANDBY';
-                return;
-            }
 
             // Immediate paint: render any cached forecast right away so UI is instant
             if (!force) {

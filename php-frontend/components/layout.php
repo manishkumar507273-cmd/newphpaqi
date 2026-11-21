@@ -504,7 +504,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
     const desktopBadge = document.getElementById('header-live-badge-desktop');
     const mobileBadge = document.getElementById('header-live-badge-mobile');
     
-    const isStandby = ((window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1')) === '2') || (timeStr === 'Standby');
+    const isStandby = (timeStr === 'Standby');
     
     [desktopBadge, mobileBadge].forEach(badge => {
         if (!badge) return;

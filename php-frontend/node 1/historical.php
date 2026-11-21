@@ -756,7 +756,7 @@ async function fetchRangeData(queryDate, days, force = false) {
         try {
             let payload;
             if (typeof window.fetchHistoryBulk === 'function') {
-                payload = await window.fetchHistoryBulk(normDate, days, force);
+                payload = await window.fetchHistoryBulk(normDate, days, force, '1');
             } else {
                 const response = await fetch(`api/telemetry.php?action=history_bulk&date=${normDate}&days=${days}&_t=${Date.now()}`);
                 const data = await response.json();

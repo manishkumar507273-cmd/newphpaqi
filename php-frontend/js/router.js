@@ -349,6 +349,11 @@
                 history.pushState({ page: targetPage, node: targetNode }, '', `?page=${targetPage}${nodeSuffix}`);
             }
             currentPage = targetPage;
+            window.__selectedNode = String(targetNode);
+            try {
+                localStorage.setItem('smartairnet_selected_node', String(targetNode));
+                document.cookie = "smartairnet_selected_node=" + targetNode + "; path=/; max-age=" + (365 * 86400) + "; SameSite=Lax";
+            } catch(e) {}
             if (data.title) {
                 document.title = data.title;
             }

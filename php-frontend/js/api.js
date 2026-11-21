@@ -179,18 +179,31 @@ function evaluateAndSyncLiveBadge(reading) {
 window.evaluateAndSyncLiveBadge = evaluateAndSyncLiveBadge;
 
 // ── Supabase Direct Client Configuration ──
-function getSbConfig() {
+function getSbConfig(overrideNode = null) {
+    const activeNode = overrideNode ? String(overrideNode) : (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+    const isNode2 = (String(activeNode) === '2');
     const injected = window.SUPABASE_CONFIG || {};
-    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-    const isNode2 = (activeNode === '2');
+
+    if (isNode2) {
+        return {
+            url: (injected.node === '2' && injected.url) ? injected.url : 'https://nahabhzcaeppbteuxogg.supabase.co',
+            key: (injected.node === '2' && injected.key) ? injected.key : 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ',
+            tableAqiLive: (injected.node === '2' && injected.tableAqiLive) ? injected.tableAqiLive : 'AQI_LIVE_NODE2',
+            tableWeatherLive: (injected.node === '2' && injected.tableWeatherLive) ? injected.tableWeatherLive : 'SOIL_LIVE_NODE2',
+            tableAqiHist: (injected.node === '2' && injected.tableAqiHist) ? injected.tableAqiHist : 'AQI_NODE2',
+            tableWeatherHist: (injected.node === '2' && injected.tableWeatherHist) ? injected.tableWeatherHist : 'SOIL_NODE2',
+            tableForecast: 'aqi_forecasts_node2'
+        };
+    }
+
     return {
-        url: injected.url || (isNode2 ? 'https://nahabhzcaeppbteuxogg.supabase.co' : 'https://sgkdpliqlhgiqsabxzxe.supabase.co'),
-        key: injected.key || (isNode2 ? 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30'),
-        tableAqiLive: injected.tableAqiLive || (isNode2 ? 'AQI_LIVE_NODE2' : 'AQI_LIVE_NODE1'),
-        tableWeatherLive: injected.tableWeatherLive || (isNode2 ? 'SOIL_LIVE_NODE2' : 'WEATHER_LIVE_NODE1'),
-        tableAqiHist: injected.tableAqiHist || (isNode2 ? 'AQI_NODE2' : 'AQI_NODE1'),
-        tableWeatherHist: injected.tableWeatherHist || (isNode2 ? 'SOIL_NODE2' : 'WEATHER_NODE1'),
-        tableForecast: injected.tableForecast || (isNode2 ? 'aqi_forecasts_node2' : 'aqi_forecasts_24h')
+        url: (injected.node !== '2' && injected.url) ? injected.url : 'https://sgkdpliqlhgiqsabxzxe.supabase.co',
+        key: (injected.node !== '2' && injected.key) ? injected.key : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30',
+        tableAqiLive: (injected.node !== '2' && injected.tableAqiLive) ? injected.tableAqiLive : 'AQI_LIVE_NODE1',
+        tableWeatherLive: (injected.node !== '2' && injected.tableWeatherLive) ? injected.tableWeatherLive : 'WEATHER_LIVE_NODE1',
+        tableAqiHist: (injected.node !== '2' && injected.tableAqiHist) ? injected.tableAqiHist : 'AQI_NODE1',
+        tableWeatherHist: (injected.node !== '2' && injected.tableWeatherHist) ? injected.tableWeatherHist : 'WEATHER_NODE1',
+        tableForecast: 'aqi_forecasts_24h'
     };
 }
 
@@ -304,7 +317,7 @@ async function fetchLiveBulk(forceNetwork = false) {
         return apiCache.liveBulk.data;
     }
 
-    const cfg = getSbConfig();
+    const cfg = getSbConfig(activeNode);
     const headers = {
         'apikey': cfg.key,
         'Authorization': `Bearer ${cfg.key}`
@@ -452,8 +465,8 @@ function normalizeDateToYmd(dateStr) {
 }
 window.normalizeDateToYmd = normalizeDateToYmd;
 
-async function fetchHistoryBulk(queryDate, days = 1, force = false) {
-    const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode = null) {
+    const activeNode = explicitNode ? String(explicitNode) : (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
     const isNode2 = (activeNode === '2');
 
     const normDate = normalizeDateToYmd(queryDate || new Date());
@@ -470,7 +483,7 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false) {
         }
     }
 
-    const cfg = getSbConfig();
+    const cfg = getSbConfig(activeNode);
     const headers = {
         'apikey': cfg.key,
         'Authorization': `Bearer ${cfg.key}`

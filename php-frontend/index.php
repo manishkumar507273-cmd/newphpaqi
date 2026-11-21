@@ -395,6 +395,7 @@ if ($is_ajax) {
         window.__nodeConfig = <?= json_encode($active_node_config) ?>;
         // Supabase configuration for instant direct browser telemetry streaming
         window.SUPABASE_CONFIG = {
+            node: <?= json_encode($active_node) ?>,
             url: <?= json_encode($supabaseUrl) ?>,
             key: <?= json_encode($supabaseKey) ?>,
             tableAqiLive: <?= json_encode($TABLE_AQI_LIVE) ?>,

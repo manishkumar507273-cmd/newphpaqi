@@ -932,7 +932,7 @@ async function fetchRangeData(queryDate, days, force = false) {
             let payload;
             const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '2'));
             if (typeof window.fetchHistoryBulk === 'function') {
-                payload = await window.fetchHistoryBulk(normDate, days, force);
+                payload = await window.fetchHistoryBulk(normDate, days, force, '2');
             } else {
                 const response = await fetch(`api/telemetry.php?action=history_bulk&node=${activeNode}&date=${normDate}&days=${days}&_t=${Date.now()}`);
                 const data = await response.json();

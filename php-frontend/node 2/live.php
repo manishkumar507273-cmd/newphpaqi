@@ -3053,13 +3053,13 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
         <!-- Last Updated Badge -->
         <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ffffff; border: 1.5px solid #e2e8f0; font-size: 11.5px; font-weight: 600; color: #475569;">
-          <span>Last Updated: <strong id="soil-last-updated-val" style="color: #0f172a; font-family: var(--font-mono);"><?= date('h:i A') ?></strong></span>
+          <span>Last Updated: <strong id="soil-last-updated-val" style="color: #0f172a; font-family: var(--font-mono);"><?= !empty($init_weather_row['timestamp']) ? (date('j M, h:i A', strtotime($init_weather_row['timestamp']))) : date('h:i A') ?></strong></span>
         </div>
 
         <!-- Live Pulse Pill -->
-        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ecfdf5; border: 1.5px solid #a7f3d0; color: #059669; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em;">
-          <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #10b981; animation: pulse 2s infinite;"></span>
-          <span>LIVE</span>
+        <div id="soil-live-status-pill" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #fff7ed; border: 1.5px solid #fed7aa; color: #c2410c; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em;">
+          <span id="soil-live-status-dot" style="width: 7px; height: 7px; border-radius: 50%; background-color: #f97316;"></span>
+          <span id="soil-live-status-text">OFFLINE</span>
         </div>
       </div>
     </div>
@@ -4758,11 +4758,45 @@ async function refreshDashboard(forceNetwork = false) {
             // Dedicated Soil View Cards (Soil Temperature, Moisture, pH, EC)
             const soilLastUpdated = document.getElementById('soil-last-updated-val');
             const weatherLatestTime = document.getElementById('weather-latest-time');
-            const soilTimeStr = (w && (w.timestamp || w.created_at)) 
-                ? (typeof formatStreamTimestamp === 'function' ? formatStreamTimestamp(w) : new Date(w.timestamp || w.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }))
-                : new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+            let soilTimeStr = '--';
+            let isSoilOffline = false;
+            if (w && (w.timestamp || w.created_at)) {
+                const sRawTs = w.timestamp || w.created_at;
+                const sDate = (typeof safeParseDate === 'function') ? safeParseDate(sRawTs) : new Date(sRawTs);
+                if (sDate && !isNaN(sDate.getTime())) {
+                    const diffMins = Math.floor((Date.now() - sDate.getTime()) / 60000);
+                    isSoilOffline = diffMins > 5;
+                    const timePart = sDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+                    soilTimeStr = diffMins >= 1440
+                        ? sDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + timePart
+                        : timePart;
+                }
+            } else {
+                soilTimeStr = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+            }
             if (soilLastUpdated) soilLastUpdated.innerText = soilTimeStr;
             if (weatherLatestTime) weatherLatestTime.innerText = soilTimeStr;
+
+            const soilStatusPill = document.getElementById('soil-live-status-pill');
+            const soilStatusDot = document.getElementById('soil-live-status-dot');
+            const soilStatusText = document.getElementById('soil-live-status-text');
+            if (soilStatusPill && soilStatusText && soilStatusDot) {
+                if (isSoilOffline) {
+                    soilStatusPill.style.backgroundColor = '#fff7ed';
+                    soilStatusPill.style.borderColor = '#fed7aa';
+                    soilStatusPill.style.color = '#c2410c';
+                    soilStatusDot.style.backgroundColor = '#f97316';
+                    soilStatusDot.style.animation = 'none';
+                    soilStatusText.innerText = 'OFFLINE';
+                } else {
+                    soilStatusPill.style.backgroundColor = '#ecfdf5';
+                    soilStatusPill.style.borderColor = '#a7f3d0';
+                    soilStatusPill.style.color = '#059669';
+                    soilStatusDot.style.backgroundColor = '#10b981';
+                    soilStatusDot.style.animation = 'pulse 2s infinite';
+                    soilStatusText.innerText = 'LIVE';
+                }
+            }
 
             const soilTempEl = document.getElementById('soil-live-temp-val');
             const soilTempNote = document.getElementById('soil-live-temp-note-val');

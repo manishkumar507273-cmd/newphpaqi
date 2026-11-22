@@ -283,11 +283,20 @@ function formatWeatherReading($row) {
     if (isset($row['wind_speed']) && $row['wind_speed'] !== null) $row['wind_speed'] = round((float)$row['wind_speed'], 2);
     if (isset($row['wind_gust']) && $row['wind_gust'] !== null) $row['wind_gust'] = round((float)$row['wind_gust'], 2);
     if (isset($row['rain_gauge']) && $row['rain_gauge'] !== null) $row['rain_gauge'] = round((float)$row['rain_gauge'], 2);
+    if (isset($row['pressure']) && $row['pressure'] !== null) $row['pressure'] = round((float)$row['pressure'], 1);
+    if (isset($row['uv_index']) && $row['uv_index'] !== null) $row['uv_index'] = round((float)$row['uv_index'], 1);
     if (isset($row['soil_temperature']) && $row['soil_temperature'] !== null) $row['soil_temperature'] = round((float)$row['soil_temperature'], 1);
     $soil_hum = $row['soil_moisture'] ?? ($row['soil_humidity'] ?? null);
     if ($soil_hum !== null && $soil_hum !== '') {
         $row['soil_humidity'] = round((float)$soil_hum, 1);
         $row['soil_moisture'] = round((float)$soil_hum, 1);
+    }
+    // Node 2 fallback: if ambient temperature or humidity are empty but soil sensors exist, map them gracefully
+    if ((!isset($row['temperature']) || $row['temperature'] === null) && isset($row['soil_temperature']) && $row['soil_temperature'] !== null) {
+        $row['temperature'] = $row['soil_temperature'];
+    }
+    if ((!isset($row['humidity']) || $row['humidity'] === null) && $soil_hum !== null && $soil_hum !== '') {
+        $row['humidity'] = round((float)$soil_hum, 1);
     }
     if (isset($row['soil_ph']) && $row['soil_ph'] !== null) $row['soil_ph'] = round((float)$row['soil_ph'], 2);
     if (isset($row['soil_conductivity']) && $row['soil_conductivity'] !== null) $row['soil_conductivity'] = round((float)$row['soil_conductivity'], 1);

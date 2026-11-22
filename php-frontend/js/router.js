@@ -379,28 +379,18 @@
                 // This eliminates the double-fetch (page HTML fetch + telemetry fetch) on SPA navigation
                 try {
                     let preData = null;
-                    if (targetNode === '2') {
-                        preData = null;
-                        window.INITIAL_DATA = null;
-                    } else {
-                        if (targetPage === 'overview' && window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
-                            preData = window.__apiCache.overviewBulk.data;
-                        } else if (window.__apiCache && window.__apiCache.liveBulk && window.__apiCache.liveBulk.data) {
-                            preData = window.__apiCache.liveBulk.data;
-                        } else if (window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data) {
-                            preData = window.__apiCache.overviewBulk.data;
-                        } else if (window.__apiCache && window.__apiCache.aqiLive && window.__apiCache.aqiLive.data) {
-                            preData = window.__apiCache.aqiLive.data;
-                        }
-                        if (!preData && typeof window.getLocalCache === 'function') {
-                            preData = window.getLocalCache(window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry');
-                        }
-                        if (preData) {
-                            // Ensure both history and aqi_history keys exist
-                            if (!preData.history && preData.aqi_history) preData.history = preData.aqi_history;
-                            if (!preData.aqi_history && preData.history) preData.aqi_history = preData.history;
-                            window.INITIAL_DATA = preData;
-                        }
+                    const nodeSuffix = (String(targetNode) === '2') ? '_n2' : '';
+                    if (window.__apiCache && window.__apiCache.liveBulk && window.__apiCache.liveBulk.data && String(window.__apiCache.liveBulk.node) === String(targetNode)) {
+                        preData = window.__apiCache.liveBulk.data;
+                    } else if (window.__apiCache && window.__apiCache.overviewBulk && window.__apiCache.overviewBulk.data && String(window.__apiCache.overviewBulk.node) === String(targetNode)) {
+                        preData = window.__apiCache.overviewBulk.data;
+                    } else if (typeof window.getLocalCache === 'function') {
+                        preData = window.getLocalCache((window.STORAGE_KEYS ? window.STORAGE_KEYS.BULK : 'smartairnet_bulk_telemetry') + nodeSuffix);
+                    }
+                    if (preData) {
+                        if (!preData.history && preData.aqi_history) preData.history = preData.aqi_history;
+                        if (!preData.aqi_history && preData.history) preData.aqi_history = preData.history;
+                        window.INITIAL_DATA = preData;
                     }
                 } catch (e) { }
 

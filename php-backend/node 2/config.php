@@ -28,8 +28,8 @@ return [
 
     'location' => [
         'name'      => 'Station 2 (Field Station)',
-        'latitude'  => 13.2350,
-        'longitude' => 74.7420,
+        'latitude'  => null,
+        'longitude' => null,
         'timezone'  => 'Asia/Kolkata',
     ]
 ];

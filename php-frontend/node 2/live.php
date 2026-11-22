@@ -57,7 +57,7 @@ if ($init_bulk === null || empty($init_bulk['aqi_history'])) {
                 "apikey: {$sb_key}",
                 "Authorization: Bearer {$sb_key}"
             ],
-            CURLOPT_TIMEOUT_MS     => 2500,
+            CURLOPT_TIMEOUT_MS     => 4000,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
         $raw_resp = @curl_exec($ch);
@@ -77,7 +77,7 @@ if ($init_bulk === null || empty($init_bulk['aqi_history'])) {
                 "apikey: {$sb_key}",
                 "Authorization: Bearer {$sb_key}"
             ],
-            CURLOPT_TIMEOUT_MS     => 2000,
+            CURLOPT_TIMEOUT_MS     => 4000,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
         $raw_soil = @curl_exec($ch_s);
@@ -155,6 +155,22 @@ if ($init_bulk === null || empty($init_bulk['aqi_history'])) {
         @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json', json_encode($init_bulk));
         @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_50') . '.json', json_encode($init_bulk));
         @file_put_contents($CACHE_DIR . '/live_bulk_node_2_60.json', json_encode($init_bulk));
+    }
+}
+
+// Fallback: If live Supabase query returned no data (or timed out), use any available cached records
+if ($init_bulk === null || empty($init_bulk['aqi_history'])) {
+    foreach ($cache_candidates as $cf) {
+        if (file_exists($cf)) {
+            $raw_cache = @file_get_contents($cf);
+            if ($raw_cache && strlen($raw_cache) > 20) {
+                $parsed = @json_decode($raw_cache, true);
+                if ($parsed && !empty($parsed['aqi_history'])) {
+                    $init_bulk = $parsed;
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -384,9 +400,10 @@ $is_cloudy_initial = true; // Natural atmospheric drifting sunset cloud sky (no 
 // Weather Min / Max calculation from history
 $init_weather_min = '--';
 $init_weather_max = '--';
-if (!empty($init_bulk['weather_history']) && is_array($init_bulk['weather_history'])) {
+$init_weather_history = (!empty($init_bulk['weather_history']) && is_array($init_bulk['weather_history'])) ? $init_bulk['weather_history'] : [];
+if (!empty($init_weather_history)) {
     $w_temps = [];
-    foreach ($init_bulk['weather_history'] as $wh) {
+    foreach ($init_weather_history as $wh) {
         if (isset($wh['temperature']) && is_numeric($wh['temperature'])) {
             $w_temps[] = (float)$wh['temperature'];
         }
@@ -3150,24 +3167,70 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
         </div>
 
         <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 650px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 1100px;">
             <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <tr>
-                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Temp (°C)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #0369a1; font-size: 12px; white-space: nowrap;">Humidity (%)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Wind Speed</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #0d9488; font-size: 12px; white-space: nowrap;">Wind Gust</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Dir</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #2563eb; font-size: 12px; white-space: nowrap;">Rain (mm)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Temp (°C)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #0369a1; font-size: 12px; white-space: nowrap;">Humidity (%)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #db2777; font-size: 12px; white-space: nowrap;">Pressure (mb)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #e11d48; font-size: 12px; white-space: nowrap;">UV Index</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Wind Speed</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #0d9488; font-size: 12px; white-space: nowrap;">Wind Gust</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Dir</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #2563eb; font-size: 12px; white-space: nowrap;">Rain (mm)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #0284c7; font-size: 12px; white-space: nowrap;">Soil Moisture</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #ea580c; font-size: 12px; white-space: nowrap;">Soil Temp</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #16a34a; font-size: 12px; white-space: nowrap;">Soil pH</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #9333ea; font-size: 12px; white-space: nowrap;">Soil EC</th>
               </tr>
             </thead>
             <tbody id="weather-tbody">
-              <tr>
-                <td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">
-                  Loading ambient weather telemetry...
-                </td>
-              </tr>
+              <?php if (!empty($init_weather_history) && is_array($init_weather_history)): ?>
+                <?php foreach ($init_weather_history as $i => $row): 
+                  $tsRaw = $row['timestamp'] ?? ($row['created_at'] ?? null);
+                  $timeStr = $tsRaw ? date('h:i:s A', strtotime($tsRaw)) : '--';
+                  $rTemp = isset($row['temperature']) && is_numeric($row['temperature']) 
+                      ? number_format((float)$row['temperature'], 1) . ' °C' 
+                      : (isset($row['soil_temperature']) && is_numeric($row['soil_temperature']) ? number_format((float)$row['soil_temperature'], 1) . ' °C' : '--');
+                  $rHum = isset($row['humidity']) && is_numeric($row['humidity']) 
+                      ? number_format((float)$row['humidity'], 1) . '%' 
+                      : (isset($row['soil_moisture']) && is_numeric($row['soil_moisture']) ? number_format((float)$row['soil_moisture'], 1) . '%' : (isset($row['soil_humidity']) && is_numeric($row['soil_humidity']) ? number_format((float)$row['soil_humidity'], 1) . '%' : '--'));
+                  $rPress = isset($row['pressure']) && is_numeric($row['pressure']) ? round((float)$row['pressure']) . ' mb' : '--';
+                  $rUv = isset($row['uv_index']) && is_numeric($row['uv_index']) ? number_format((float)$row['uv_index'], 1) : '--';
+                  $rWSpd = isset($row['wind_speed']) && is_numeric($row['wind_speed']) ? number_format((float)$row['wind_speed'], 1) . ' km/h' : '--';
+                  $rGust = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? number_format((float)$row['wind_gust'], 1) . ' m/s' : '--';
+                  $rDir = !empty($row['wind_direction']) ? (smartairnet_parse_wind_direction($row['wind_direction'])['cardinal'] ?? $row['wind_direction']) : '--';
+                  $rRain = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? number_format((float)$row['rain_gauge'], 1) . ' mm' : '--';
+                  $sMoist = isset($row['soil_moisture']) && is_numeric($row['soil_moisture']) ? number_format((float)$row['soil_moisture'], 1) . '%' : (isset($row['soil_humidity']) && is_numeric($row['soil_humidity']) ? number_format((float)$row['soil_humidity'], 1) . '%' : '--');
+                  $sTemp = isset($row['soil_temperature']) && is_numeric($row['soil_temperature']) ? number_format((float)$row['soil_temperature'], 1) . ' °C' : (isset($row['soil_temp']) && is_numeric($row['soil_temp']) ? number_format((float)$row['soil_temp'], 1) . ' °C' : '--');
+                  $sPh = isset($row['soil_ph']) && is_numeric($row['soil_ph']) ? number_format((float)$row['soil_ph'], 2) : (isset($row['ph']) && is_numeric($row['ph']) ? number_format((float)$row['ph'], 2) : '--');
+                  $sEc = isset($row['soil_conductivity']) && is_numeric($row['soil_conductivity']) ? number_format((float)$row['soil_conductivity'], 1) . ' µS/cm' : '--';
+                  $rowBg = ($i % 2 === 0) ? '#ffffff' : '#f8fafc';
+                ?>
+                  <tr style="border-bottom: 1px solid #f1f5f9; background-color: <?= $rowBg ?>;">
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;"><?= htmlspecialchars($timeStr) ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #b45309; white-space: nowrap;"><?= $rTemp ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0369a1; white-space: nowrap;"><?= $rHum ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #db2777; white-space: nowrap;"><?= $rPress ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #e11d48; white-space: nowrap;"><?= $rUv ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #047857; white-space: nowrap;"><?= $rWSpd ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0d9488; white-space: nowrap;"><?= $rGust ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #475569; white-space: nowrap;"><?= htmlspecialchars($rDir) ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2563eb; white-space: nowrap;"><?= $rRain ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; white-space: nowrap;"><?= $sMoist ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #ea580c; white-space: nowrap;"><?= $sTemp ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #16a34a; white-space: nowrap;"><?= $sPh ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #9333ea; white-space: nowrap;"><?= $sEc ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <tr>
+                  <td colspan="13" style="padding: 40px; text-align: center; color: #64748b;">
+                    Currently in standby mode. Telemetry stream will populate when records arrive.
+                  </td>
+                </tr>
+              <?php endif; ?>
             </tbody>
           </table>
         </div>
@@ -3747,6 +3810,12 @@ function renderComparisonChart() {
         } else if (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.aqi_history) && window.INITIAL_DATA.aqi_history.length > 0) {
             liveDataStream = window.INITIAL_DATA.aqi_history;
             window.__liveDataStream = liveDataStream;
+        } else if (typeof getLocalCache === 'function') {
+            const cached = getLocalCache('smartairnet_bulk_telemetry_n2') || getLocalCache('smartairnet_bulk_telemetry');
+            if (cached && Array.isArray(cached.aqi_history) && cached.aqi_history.length > 0) {
+                liveDataStream = cached.aqi_history;
+                window.__liveDataStream = liveDataStream;
+            }
         }
     }
 
@@ -4210,6 +4279,12 @@ function renderLiveTable() {
         } else if (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.aqi_history) && window.INITIAL_DATA.aqi_history.length > 0) {
             liveDataStream = window.INITIAL_DATA.aqi_history;
             window.__liveDataStream = liveDataStream;
+        } else if (typeof getLocalCache === 'function') {
+            const cached = getLocalCache('smartairnet_bulk_telemetry_n2') || getLocalCache('smartairnet_bulk_telemetry');
+            if (cached && Array.isArray(cached.aqi_history) && cached.aqi_history.length > 0) {
+                liveDataStream = cached.aqi_history;
+                window.__liveDataStream = liveDataStream;
+            }
         }
     }
 
@@ -4256,7 +4331,14 @@ async function refreshDashboard(forceNetwork = false) {
             bulkData = await res.json();
         }
 
-        if (!bulkData || (!bulkData.aqi && !bulkData.weather) || (bulkData && bulkData.status === 'STANDBY')) {
+        if (!bulkData || (!bulkData.aqi && !bulkData.weather)) {
+            // Transient fetch failure: retain existing live rows if telemetry stream is already active
+            if (liveDataStream && liveDataStream.length > 0) {
+                return;
+            }
+        }
+
+        if (bulkData && bulkData.status === 'STANDBY') {
             const valEl = document.getElementById('hero-aqi-val') || document.getElementById('hero-aqi-value');
             if (valEl) {
                 valEl.innerText = '--';
@@ -4326,7 +4408,7 @@ async function refreshDashboard(forceNetwork = false) {
             }
             const weatherTbody = document.getElementById('weather-tbody');
             if (weatherTbody) {
-                weatherTbody.innerHTML = '<tr><td colspan="10" style="padding: 40px; text-align: center; color: #64748b; font-size: 13px;">Currently in standby mode. No weather telemetry recorded yet.</td></tr>';
+                weatherTbody.innerHTML = '<tr><td colspan="13" style="padding: 40px; text-align: center; color: #64748b; font-size: 13px;">Currently in standby mode. No weather telemetry recorded yet.</td></tr>';
             }
             const compEmpty = document.getElementById('comparison-chart-empty');
             if (compEmpty) {
@@ -5069,29 +5151,53 @@ async function refreshDashboard(forceNetwork = false) {
         if (weatherHistory && weatherHistory.length > 0) {
             let temps = [];
             
-            // 1. Ambient Weather Table
+            // 1. Ambient Weather Table (All Node 2 Meteorological & Agrimet Parameters)
             if (tbodyWeather) {
                 tbodyWeather.innerHTML = weatherHistory.map((row, i) => {
                     const timeStr = formatStreamTimestamp(row);
-                    const temp = (row.temperature != null && !isNaN(Number(row.temperature))) ? `${Number(row.temperature).toFixed(1)} °C` : '--';
-                    const hum = (row.humidity != null && !isNaN(Number(row.humidity))) ? `${Number(row.humidity).toFixed(1)}%` : '--';
+                    const rawTemp = (row.temperature != null && !isNaN(Number(row.temperature))) 
+                        ? row.temperature 
+                        : (row.soil_temperature != null && !isNaN(Number(row.soil_temperature)) ? row.soil_temperature : null);
+                    const temp = rawTemp != null ? `${Number(rawTemp).toFixed(1)} °C` : '--';
+
+                    const rawHum = (row.humidity != null && !isNaN(Number(row.humidity))) 
+                        ? row.humidity 
+                        : (row.soil_moisture != null ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null));
+                    const hum = rawHum != null ? `${Number(rawHum).toFixed(1)}%` : '--';
+
+                    const press = (row.pressure != null && !isNaN(Number(row.pressure))) ? `${Math.round(Number(row.pressure))} mb` : '--';
+                    const uv = (row.uv_index != null && !isNaN(Number(row.uv_index))) ? Number(row.uv_index).toFixed(1) : '--';
                     const wSpd = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? `${Number(row.wind_speed).toFixed(1)} km/h` : '--';
                     const gust = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? `${Number(row.wind_gust).toFixed(1)} m/s` : '--';
                     const dir = (row.wind_direction != null && row.wind_direction !== '') ? getCompassDir(row.wind_direction) : '--';
                     const rain = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? `${Number(row.rain_gauge).toFixed(1)} mm` : '--';
 
-                    if (row.temperature != null && !isNaN(Number(row.temperature))) {
-                        temps.push(Number(row.temperature));
+                    const sHumRaw = (row.soil_moisture != null) ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null);
+                    const sHum = (sHumRaw != null && !isNaN(Number(sHumRaw))) ? `${Number(sHumRaw).toFixed(1)}%` : '--';
+                    const sTempRaw = row.soil_temperature != null ? row.soil_temperature : row.soil_temp;
+                    const sTemp = (sTempRaw != null && !isNaN(Number(sTempRaw))) ? `${Number(sTempRaw).toFixed(1)} °C` : '--';
+                    const sPhRaw = row.soil_ph != null ? row.soil_ph : row.ph;
+                    const sPh = (sPhRaw != null && !isNaN(Number(sPhRaw))) ? Number(sPhRaw).toFixed(2) : '--';
+                    const sEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity))) ? `${Number(row.soil_conductivity).toFixed(1)} µS/cm` : '--';
+
+                    if (rawTemp != null) {
+                        temps.push(Number(rawTemp));
                     }
                     
                     return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${temp}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${hum}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${wSpd}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0d9488;">${gust}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #475569;">${dir}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #2563eb;">${rain}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #b45309; white-space: nowrap;">${temp}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0369a1; white-space: nowrap;">${hum}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #db2777; white-space: nowrap;">${press}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #e11d48; white-space: nowrap;">${uv}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #047857; white-space: nowrap;">${wSpd}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0d9488; white-space: nowrap;">${gust}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #475569; white-space: nowrap;">${dir}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2563eb; white-space: nowrap;">${rain}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; white-space: nowrap;">${sHum}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #ea580c; white-space: nowrap;">${sTemp}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #16a34a; white-space: nowrap;">${sPh}</td>
+                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #9333ea; white-space: nowrap;">${sEc}</td>
                     </tr>`;
                 }).join('');
             }

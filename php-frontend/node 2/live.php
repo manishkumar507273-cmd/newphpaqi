@@ -2560,18 +2560,6 @@ body.weather-backdrop-active #app-layout-root,
             Live Weather Conditions
           </h1>
         </div>
-        <div id="weather-coords-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(255, 255, 255, 0.85); font-size: 11px; font-weight: 700; color: #0f172a; font-family: var(--font-mono); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px);">
-            <i data-lucide="map-pin" style="width: 12px; height: 12px; color: #00bfa5;"></i>
-            <span>Lat: <strong id="weather-header-lat"><?= $has_coords ? htmlspecialchars($init_lat) . '° N' : '--' ?></strong></span>
-            <span>•</span>
-            <span>Lon: <strong id="weather-header-lon"><?= $has_coords ? htmlspecialchars($init_lon) . '° E' : '--' ?></strong></span>
-          </div>
-          <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: rgba(0, 191, 165, 0.22); border: 1px solid rgba(0, 191, 165, 0.4); font-size: 10.5px; font-weight: 700; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); font-family: var(--font-mono); backdrop-filter: blur(10px);">
-            <i data-lucide="compass" style="width: 12px; height: 12px; color: #5eead4;"></i>
-            <span id="weather-header-dms"><?= htmlspecialchars($init_dms ?? 'Awaiting GPS Sync') ?></span>
-          </div>
-        </div>
       </div>
 
       <div style="font-size: 12px; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">

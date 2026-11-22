@@ -620,9 +620,14 @@ $cool_bg_styles = [
     'overview' => 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);',
     'live-weather' => 'background: transparent; background-image: none;'
 ];
-$active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($_GET['tab']) && $_GET['tab'] === 'weather')))
+$is_weather_tab_active = ($is_node_2 && (
+    (isset($_GET['page']) && ($_GET['page'] === 'live-weather' || $_GET['page'] === 'weather')) ||
+    (isset($_GET['tab']) && $_GET['tab'] === 'weather') ||
+    ($current_page === 'live-weather')
+));
+$active_layout_bg = $is_weather_tab_active
     ? 'background: transparent; background-image: none;'
-    : (($is_node_2 && (isset($_GET['tab']) && $_GET['tab'] === 'soil' || $current_page === 'live-soil' || $current_page === 'soil'))
+    : (($is_node_2 && (isset($_GET['tab']) && $_GET['tab'] === 'soil' || (isset($_GET['page']) && in_array($_GET['page'], ['live-soil', 'soil'])) || $current_page === 'live-soil' || $current_page === 'soil'))
         ? 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%);'
         : ($cool_bg_styles[$current_page] ?? $cool_bg_styles['live']));
 ?>

@@ -1697,6 +1697,65 @@ $init_border_colors = [
    NODE 2 ATMOSPHERIC DYNAMIC WEATHER BACKDROP (FULL-BLEED)
    Matches Reference: Moving Sunset Clouds + Radiant Sky
    ═══════════════════════════════════════════════════════════════ */
+body.weather-backdrop-active {
+  background-color: #1e293b !important;
+  background-image: url('assets/sunset_clouds_backdrop.jpg'), url('/assets/sunset_clouds_backdrop.jpg') !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-attachment: fixed !important;
+  background-repeat: no-repeat !important;
+}
+
+body.weather-backdrop-active #app-layout-root,
+body.weather-backdrop-active #page-content-wrapper,
+body.weather-backdrop-active main {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Translucent Glassmorphic Header on Weather Live */
+body.weather-backdrop-active header {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.weather-backdrop-active header .header-campus-title,
+body.weather-backdrop-active header a,
+body.weather-backdrop-active header span:not(.campus-status-dot) {
+  color: #ffffff !important;
+}
+
+/* Translucent Glassmorphic Footer on Weather Live */
+body.weather-backdrop-active #global-footer {
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.weather-backdrop-active #node2-live-subnav > div {
+  background: rgba(15, 23, 42, 0.55) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.weather-backdrop-active #node2-tab-aqi:not(.bg-\[\#00bfa5\]),
+body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]) {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+body.weather-backdrop-active #node2-tab-aqi:not(.bg-\[\#00bfa5\]):hover,
+body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
 .node2-weather-backdrop {
   position: fixed;
   inset: 0;
@@ -1706,14 +1765,7 @@ $init_border_colors = [
   pointer-events: none;
   overflow: hidden;
   transition: opacity 0.8s ease;
-  background-color: #3882c2;
-  background: linear-gradient(180deg, #1e3a8a 0%, #0284c7 35%, #f59e0b 80%, #ea580c 100%);
-}
-
-body.weather-backdrop-active #app-layout-root,
-.weather-backdrop-active #app-layout-root {
-  background: transparent !important;
-  background-image: none !important;
+  background-color: transparent;
 }
 
 /* Infinite GPU-accelerated horizontal cloud drift */
@@ -1729,7 +1781,7 @@ body.weather-backdrop-active #app-layout-root,
   display: flex;
   width: 400vw;
   height: 100%;
-  animation: continuousCloudDrift 42s linear infinite;
+  animation: continuousCloudDrift 60s linear infinite;
   will-change: transform;
 }
 
@@ -1737,15 +1789,16 @@ body.weather-backdrop-active #app-layout-root,
   width: 100vw;
   height: 100%;
   flex-shrink: 0;
-  background-color: #3882c2;
+  background-color: transparent;
   background-image: url('assets/sunset_clouds_backdrop.jpg');
   background-size: cover;
-  background-position: center bottom;
+  background-position: center top;
   background-repeat: no-repeat;
+  opacity: 0.82;
 }
 
 .cloud-drift-panel.mirrored {
-  transform: scaleX(-1);
+  transform: none; /* Avoid unnatural reversed mirror seams across clouds */
 }
 
 .sky-ambient-vignette {

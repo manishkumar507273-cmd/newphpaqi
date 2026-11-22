@@ -413,7 +413,14 @@ if ($is_ajax) {
         window.INITIAL_DATA = <?= $initial_overview_json ?>;
     </script>
 </head>
-<body class="bg-[#fefce8] text-[#0f172a] font-sans antialiased">
+<?php
+$is_initial_weather_live = ((string)$active_node === '2' && (
+    (isset($_GET['page']) && ($_GET['page'] === 'live-weather' || $_GET['page'] === 'weather')) ||
+    (isset($_GET['tab']) && $_GET['tab'] === 'weather') ||
+    ($page === 'live-weather')
+));
+?>
+<body class="bg-[#fefce8] text-[#0f172a] font-sans antialiased <?= $is_initial_weather_live ? 'weather-backdrop-active' : '' ?>">
     
     <?php include __DIR__ . '/components/layout.php'; ?>
 

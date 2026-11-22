@@ -647,7 +647,7 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
             <div style="display: flex; align-items: center; gap: 5px; margin-top: 2px;">
               <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
               <span style="font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap;"><?= htmlspecialchars($node_config['station_tag'] ?? 'SMVITM Campus') ?></span>
-              <span id="navbar-station-coords" style="font-size: 9.5px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 5px; margin-left: 1px; white-space: nowrap;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : ($is_node_2 ? '--' : '') ?></span>
+              <span id="navbar-station-coords" style="font-size: 9.5px; font-weight: 600; color: #94a3b8; border-left: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? '1px solid #e2e8f0' : 'none' ?>; padding-left: 5px; margin-left: 1px; white-space: nowrap; display: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? 'inline-block' : 'none' ?>;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : '' ?></span>
             </div>
           </div>
         </a>
@@ -710,7 +710,7 @@ $active_layout_bg = ($is_node_2 && ($current_page === 'live-weather' || (isset($
             <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
               <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
               <span style="font-size: 9.5px; font-weight: 700; color: #64748b; white-space: nowrap;"><?= htmlspecialchars($node_config['short_name'] ?? 'Node 1') ?></span>
-              <span id="navbar-station-coords-mobile" class="hidden min-[380px]:inline" style="font-size: 9px; font-weight: 600; color: #94a3b8; border-left: 1px solid #e2e8f0; padding-left: 4px; margin-left: 1px; white-space: nowrap;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : ($is_node_2 ? '--' : '') ?></span>
+              <span id="navbar-station-coords-mobile" class="hidden min-[380px]:inline" style="font-size: 9px; font-weight: 600; color: #94a3b8; border-left: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? '1px solid #e2e8f0' : 'none' ?>; padding-left: 4px; margin-left: 1px; white-space: nowrap; display: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? 'inline' : 'none' ?>;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : '' ?></span>
             </div>
           </div>
         </a>

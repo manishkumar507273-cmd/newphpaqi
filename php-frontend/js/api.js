@@ -436,8 +436,13 @@ async function fetchLiveBulk(forceNetwork = false) {
         if (coordsDisplay) {
             const navCoords = document.getElementById('navbar-station-coords');
             const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
-            if (navCoords) { navCoords.innerText = coordsDisplay; navCoords.style.display = 'inline-block'; }
-            if (navCoordsMob) { navCoordsMob.innerText = coordsDisplay; navCoordsMob.style.display = 'inline-block'; }
+            if (navCoords) { navCoords.innerText = coordsDisplay; navCoords.style.borderLeft = '1px solid #e2e8f0'; navCoords.style.display = 'inline-block'; }
+            if (navCoordsMob) { navCoordsMob.innerText = coordsDisplay; navCoordsMob.style.borderLeft = '1px solid #e2e8f0'; navCoordsMob.style.display = 'inline-block'; }
+        } else if (activeNode === '2') {
+            const navCoords = document.getElementById('navbar-station-coords');
+            const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
+            if (navCoords) { navCoords.innerText = ''; navCoords.style.display = 'none'; }
+            if (navCoordsMob) { navCoordsMob.innerText = ''; navCoordsMob.style.display = 'none'; }
         }
 
         // Cache results locally
@@ -461,8 +466,13 @@ async function fetchLiveBulk(forceNetwork = false) {
                 if (data.coords_display) {
                     const navCoords = document.getElementById('navbar-station-coords');
                     const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
-                    if (navCoords) { navCoords.innerText = data.coords_display; navCoords.style.display = 'inline-block'; }
-                    if (navCoordsMob) { navCoordsMob.innerText = data.coords_display; navCoordsMob.style.display = 'inline-block'; }
+                    if (navCoords) { navCoords.innerText = data.coords_display; navCoords.style.borderLeft = '1px solid #e2e8f0'; navCoords.style.display = 'inline-block'; }
+                    if (navCoordsMob) { navCoordsMob.innerText = data.coords_display; navCoordsMob.style.borderLeft = '1px solid #e2e8f0'; navCoordsMob.style.display = 'inline-block'; }
+                } else if (activeNode === '2') {
+                    const navCoords = document.getElementById('navbar-station-coords');
+                    const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
+                    if (navCoords) { navCoords.innerText = ''; navCoords.style.display = 'none'; }
+                    if (navCoordsMob) { navCoordsMob.innerText = ''; navCoordsMob.style.display = 'none'; }
                 }
                 apiCache.liveBulk = { data, time: Date.now(), node: activeNode };
                 apiCache.overviewBulk = { data, time: Date.now(), node: activeNode };

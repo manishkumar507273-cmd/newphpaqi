@@ -3046,10 +3046,10 @@ body.weather-backdrop-active #app-layout-root,
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <!-- Coordinates Badge -->
-        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ffffff; border: 1.5px solid #a7f3d0; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08); font-size: 11.5px; font-weight: 700; color: #065f46;">
+        <!-- Coordinates Badge (shows only when coordinates available from Supabase) -->
+        <div id="soil-station-coords-badge" style="display: <?= $has_coords ? 'inline-flex' : 'none' ?>; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ffffff; border: 1.5px solid #a7f3d0; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08); font-size: 11.5px; font-weight: 700; color: #065f46;">
           <i data-lucide="map-pin" style="width: 13px; height: 13px; color: #10b981;"></i>
-          <span>13°14'06" N, 74°44'31" E</span>
+          <span id="soil-coords-display"><?= $has_coords ? htmlspecialchars($init_dms ?? ($init_lat . '° N, ' . $init_lon . '° E')) : '' ?></span>
         </div>
 
         <!-- Last Updated Badge -->
@@ -4707,22 +4707,43 @@ async function refreshDashboard(forceNetwork = false) {
                 if (dmsEl) dmsEl.innerText = dmsStr;
                 if (navCoordsEl) {
                     navCoordsEl.innerText = dmsStr;
+                    navCoordsEl.style.borderLeft = '1px solid #e2e8f0';
                     navCoordsEl.style.display = 'inline-block';
                 }
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = dmsStr;
+                    navCoordsMobileEl.style.borderLeft = '1px solid #e2e8f0';
                     navCoordsMobileEl.style.display = 'inline';
+                }
+                const soilBadge = document.getElementById('soil-station-coords-badge');
+                const soilDisp = document.getElementById('soil-coords-display');
+                if (soilBadge && soilDisp) {
+                    soilDisp.innerText = dmsStr;
+                    soilBadge.style.display = 'inline-flex';
                 }
             } else if (coordsDisplay && coordsDisplay !== '--') {
                 if (dmsEl) dmsEl.innerText = coordsDisplay;
                 if (navCoordsEl) {
                     navCoordsEl.innerText = coordsDisplay;
+                    navCoordsEl.style.borderLeft = '1px solid #e2e8f0';
                     navCoordsEl.style.display = 'inline-block';
                 }
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = coordsDisplay;
+                    navCoordsMobileEl.style.borderLeft = '1px solid #e2e8f0';
                     navCoordsMobileEl.style.display = 'inline';
                 }
+            } else {
+                if (navCoordsEl) {
+                    navCoordsEl.innerText = '';
+                    navCoordsEl.style.display = 'none';
+                }
+                if (navCoordsMobileEl) {
+                    navCoordsMobileEl.innerText = '';
+                    navCoordsMobileEl.style.display = 'none';
+                }
+                const soilBadge = document.getElementById('soil-station-coords-badge');
+                if (soilBadge) soilBadge.style.display = 'none';
             }
         } else {
             // Standby or no weather telemetry - check if bulkData has coordinates
@@ -4744,26 +4765,46 @@ async function refreshDashboard(forceNetwork = false) {
                 if (dmsEl) dmsEl.innerText = dmsStr;
                 if (navCoordsEl) {
                     navCoordsEl.innerText = dmsStr;
+                    navCoordsEl.style.borderLeft = '1px solid #e2e8f0';
                     navCoordsEl.style.display = 'inline-block';
                 }
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = dmsStr;
+                    navCoordsMobileEl.style.borderLeft = '1px solid #e2e8f0';
                     navCoordsMobileEl.style.display = 'inline';
+                }
+                const soilBadge = document.getElementById('soil-station-coords-badge');
+                const soilDisp = document.getElementById('soil-coords-display');
+                if (soilBadge && soilDisp) {
+                    soilDisp.innerText = dmsStr;
+                    soilBadge.style.display = 'inline-flex';
                 }
             } else if (coordsDisplay && coordsDisplay !== '--') {
                 if (dmsEl) dmsEl.innerText = coordsDisplay;
                 if (navCoordsEl) {
                     navCoordsEl.innerText = coordsDisplay;
+                    navCoordsEl.style.borderLeft = '1px solid #e2e8f0';
                     navCoordsEl.style.display = 'inline-block';
                 }
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = coordsDisplay;
+                    navCoordsMobileEl.style.borderLeft = '1px solid #e2e8f0';
                     navCoordsMobileEl.style.display = 'inline';
                 }
             } else {
                 if (latEl) latEl.innerText = '--';
                 if (lonEl) lonEl.innerText = '--';
                 if (dmsEl) dmsEl.innerText = 'Awaiting GPS Sync';
+                if (navCoordsEl) {
+                    navCoordsEl.innerText = '';
+                    navCoordsEl.style.display = 'none';
+                }
+                if (navCoordsMobileEl) {
+                    navCoordsMobileEl.innerText = '';
+                    navCoordsMobileEl.style.display = 'none';
+                }
+                const soilBadge = document.getElementById('soil-station-coords-badge');
+                if (soilBadge) soilBadge.style.display = 'none';
             }
 
             const cardWindVal = document.getElementById('card-wind-val');

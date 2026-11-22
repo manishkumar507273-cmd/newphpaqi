@@ -24,9 +24,9 @@ return [
     'location'    => [
         'campus'         => 'Station 2 (Field Station)',
         'address'        => 'Secondary Telemetry Station, Sensor Grid Expansion, Karnataka, India',
-        'latitude'       => 13.2350,
-        'longitude'      => 74.7420,
-        'coords_display' => "13°14'06\" N, 74°44'31\" E",
+        'latitude'       => null,
+        'longitude'      => null,
+        'coords_display' => '',
         'elevation'      => '28m ASL',
         'placement'      => 'Agricultural & Meteorological Field Sensor Mast'
     ],

@@ -480,19 +480,23 @@ window.updateBottomNavLockedState = function(isLoggedIn) {
 
         if (!isAuth && pageKey !== 'overview') {
             el.classList.add('bottom-nav-locked');
+            el.classList.remove('active');
             el.removeAttribute('aria-disabled');
-            el.style.opacity = '0.38';
-            el.style.color = '#94a3b8';
+            el.style.opacity = '0.12';
+            el.style.color = '#cbd5e1';
             el.style.cursor = 'pointer';
             el.style.backgroundColor = 'transparent';
             if (icon) {
-                icon.style.color = '#94a3b8';
-                icon.style.opacity = '0.75';
+                icon.style.color = '#cbd5e1';
+                icon.style.stroke = '#cbd5e1';
+                icon.style.opacity = '0.2';
                 icon.style.transform = 'scale(1)';
+                icon.style.strokeWidth = '1.5';
             }
             if (label) {
-                label.style.color = '#94a3b8';
+                label.style.color = '#cbd5e1';
                 label.style.fontWeight = '500';
+                label.style.opacity = '0.2';
             }
             if (liveDot) {
                 liveDot.style.display = 'none';
@@ -506,17 +510,24 @@ window.updateBottomNavLockedState = function(isLoggedIn) {
                 liveDot.style.display = '';
             }
             const isCurrent = curPage === pageKey;
-            el.style.color = isCurrent ? '#00bfa5' : '#475569';
-            el.style.backgroundColor = isCurrent ? 'rgba(0, 191, 165, 0.1)' : 'transparent';
+            if (isCurrent) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+            el.style.color = isCurrent ? '#00bfa5' : '#0f172a';
+            el.style.backgroundColor = isCurrent ? 'rgba(0, 191, 165, 0.12)' : 'transparent';
             if (icon) {
-                icon.style.color = isCurrent ? '#00bfa5' : '#475569';
+                icon.style.color = isCurrent ? '#00bfa5' : '#0f172a';
+                icon.style.stroke = isCurrent ? '#00bfa5' : '#0f172a';
                 icon.style.opacity = '1';
-                icon.setAttribute('stroke-width', isCurrent ? '2.2' : '2.0');
-                icon.style.strokeWidth = isCurrent ? '2.2' : '2.0';
+                icon.setAttribute('stroke-width', isCurrent ? '2.3' : '2.2');
+                icon.style.strokeWidth = isCurrent ? '2.3' : '2.2';
             }
             if (label) {
-                label.style.color = isCurrent ? '#00bfa5' : '#475569';
-                label.style.fontWeight = isCurrent ? '700' : '600';
+                label.style.color = isCurrent ? '#00bfa5' : '#0f172a';
+                label.style.fontWeight = '700';
+                label.style.opacity = '1';
             }
         }
     });
@@ -612,9 +623,24 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
 </script>
 
 <?php
-// Dynamic warm golden background for Live AQI and cool/light for other pages
+// Dynamic AQI theme background for Live page matching CPCB AQI categories
+$init_aqi_num = isset($server_init_aqi) && is_numeric($server_init_aqi) ? (int)$server_init_aqi : 38;
+if ($init_aqi_num <= 50) {
+    $live_bg_style = 'background-color: #dcfce7; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #86efac 0%, #bbf7d0 35%, #dcfce7 65%, #bbf7d0 100%);';
+} elseif ($init_aqi_num <= 100) {
+    $live_bg_style = 'background-color: #fde68a; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%);';
+} elseif ($init_aqi_num <= 200) {
+    $live_bg_style = 'background-color: #fed7aa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fdba74 0%, #fed7aa 35%, #ffedd5 65%, #fed7aa 100%);';
+} elseif ($init_aqi_num <= 300) {
+    $live_bg_style = 'background-color: #fecdd3; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fda4af 0%, #fecdd3 35%, #ffe4e6 65%, #fecdd3 100%);';
+} elseif ($init_aqi_num <= 400) {
+    $live_bg_style = 'background-color: #e9d5ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #d8b4fe 0%, #e9d5ff 35%, #f3e8ff 65%, #e9d5ff 100%);';
+} else {
+    $live_bg_style = 'background-color: #fecaca; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fca5a5 0%, #fecaca 35%, #fee2e2 65%, #fecaca 100%);';
+}
+
 $cool_bg_styles = [
-    'live' => 'background-color: #fde68a; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%);',
+    'live' => $live_bg_style,
     'historical' => 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
     'predictive' => 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',
     'overview' => 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);',
@@ -631,10 +657,16 @@ $active_layout_bg = $is_weather_tab_active
         ? 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%);'
         : ($cool_bg_styles[$current_page] ?? $cool_bg_styles['live']));
 ?>
-<div id="app-layout-root" style="min-height: 100vh; <?= $active_layout_bg ?> position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.4s ease;">
+<div id="app-layout-root" style="min-height: 100vh; <?= $active_layout_bg ?> position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);">
+
+  <!-- Atmospheric Dynamic Weather Backdrop (Fixed full-bleed viewport layer, never cut off on scroll) -->
+  <div id="node2-weather-backdrop" class="node2-weather-backdrop <?= $is_weather_tab_active ? 'active' : '' ?>" aria-hidden="true">
+    <div class="weather-sky-photo-layer"></div>
+    <div class="sky-ambient-vignette"></div>
+  </div>
 
   <!-- Sticky Header with Safe-Area Inset -->
-  <header class="px-3 sm:px-4 md:px-6" style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box;">
+  <header class="px-3 sm:px-4 md:px-6" style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; transition: background-color 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);">
     
     <!-- Left: Desktop Brand & Mobile Header Selector -->
     <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
@@ -711,8 +743,8 @@ $active_layout_bg = $is_weather_tab_active
             <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
           <div style="display: flex; flex-direction: column; flex-shrink: 0;">
-            <span style="font-size: 14px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.1;">
-              Smart <span style="color: #00bfa5;">WeatherNet</span>
+            <span class="mobile-brand-title" style="font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.15;">
+              Smart <span style="color: #00bfa5; font-size: inherit; font-weight: inherit;">WeatherNet</span>
             </span>
             <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
               <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
@@ -933,30 +965,30 @@ $active_layout_bg = $is_weather_tab_active
     $node_suffix = ($active_node_id === '2') ? '&node=2' : '';
     ?>
     <!-- Overview -->
-    <a href="?page=overview<?= $node_suffix ?>" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: 1; cursor: pointer;">
-      <i data-lucide="home" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'overview' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'overview' ? '#00bfa5' : '#475569' ?>;"></i>
-      <span style="font-size: 9.5px; font-weight: <?= $current_page === 'overview' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Overview</span>
+    <a href="?page=overview<?= $node_suffix ?>" data-bottom-nav="overview" onclick="window.triggerHaptic('light')" class="<?= $current_page === 'overview' ? 'active' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'overview' ? '#00bfa5' : '#0f172a' ?>; background-color: <?= $current_page === 'overview' ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: 1; cursor: pointer;">
+      <i data-lucide="home" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'overview' ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $current_page === 'overview' ? '#00bfa5' : '#0f172a' ?>;"></i>
+      <span style="font-size: 9.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $current_page === 'overview' ? '#00bfa5' : '#0f172a' ?>;">Overview</span>
     </a>
 
     <!-- Live Feed -->
-    <a href="?page=live<?= $node_suffix ?>" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && !$is_live_page_active) ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 48px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $is_live_page_active ? '#00bfa5' : '#475569' ?>; background-color: <?= $is_live_page_active ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $is_live_page_active ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
+    <a href="?page=live<?= $node_suffix ?>" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && !$is_live_page_active) ? 'bottom-nav-locked' : ($is_live_page_active ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 48px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $is_live_page_active ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>; background-color: <?= $is_live_page_active ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $is_live_page_active ? '1' : ($is_nav_locked ? '0.12' : '1') ?>; cursor: pointer;">
       <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
-        <i data-lucide="activity" style="width: 19px; height: 19px; stroke-width: <?= $is_live_page_active ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $is_live_page_active ? '#00bfa5' : '#475569' ?>;"></i>
+        <i data-lucide="activity" style="width: 19px; height: 19px; stroke-width: <?= $is_live_page_active ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $is_live_page_active ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;"></i>
         <span class="campus-status-dot <?= ($is_telemetry_live && !$is_node_2) ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_node_2 ? '#94a3b8' : ($is_telemetry_live ? '#10b981' : '#f97316') ?>; border: 1px solid #ffffff; <?= $is_nav_locked ? 'display: none;' : '' ?>"></span>
       </div>
-      <span style="font-size: 10px; font-weight: <?= $is_live_page_active ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Live Feed</span>
+      <span style="font-size: 10px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $is_live_page_active ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;">Live Feed</span>
     </a>
 
     <!-- Analytics -->
-    <a href="?page=historical<?= $node_suffix ?>" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
-      <i data-lucide="database" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'historical' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : '#475569' ?>;"></i>
-      <span style="font-size: 9.5px; font-weight: <?= $current_page === 'historical' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Analytics</span>
+    <a href="?page=historical<?= $node_suffix ?>" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : ($current_page === 'historical' ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : ($is_nav_locked ? '0.12' : '1') ?>; cursor: pointer;">
+      <i data-lucide="database" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'historical' ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;"></i>
+      <span style="font-size: 9.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $current_page === 'historical' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;">Analytics</span>
     </a>
 
     <!-- Forecast -->
-    <a href="?page=predictive<?= $node_suffix ?>" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : '' ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : '#475569' ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.1)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : ($is_nav_locked ? '0.38' : '1') ?>; cursor: pointer;">
-      <i data-lucide="cloud-rain" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'predictive' ? '2.2' : '2.0' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : '#475569' ?>;"></i>
-      <span style="font-size: 9.5px; font-weight: <?= $current_page === 'predictive' ? '700' : '600' ?>; letter-spacing: -0.01em; white-space: nowrap;">Forecast</span>
+    <a href="?page=predictive<?= $node_suffix ?>" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : ($current_page === 'predictive' ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : ($is_nav_locked ? '0.12' : '1') ?>; cursor: pointer;">
+      <i data-lucide="cloud-rain" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'predictive' ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;"></i>
+      <span style="font-size: 9.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $current_page === 'predictive' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;">Forecast</span>
     </a>
 
   </nav>

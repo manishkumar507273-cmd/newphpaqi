@@ -1834,3 +1834,31 @@ img, svg, video, canvas {
   display: none;
 }
 
+/* ── Live Feed Subtab Status Badges (Offline / Live) ── */
+.subtab-offline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  margin-left: 3px;
+  box-shadow: 0 1px 2px rgba(185, 28, 28, 0.08);
+}
+
+button[class*="bg-[#00bfa5]"] .subtab-offline-badge,
+button.bg-\[\#00bfa5\] .subtab-offline-badge {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #b91c1c !important;
+  border-color: rgba(254, 202, 202, 0.9) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}
+
+

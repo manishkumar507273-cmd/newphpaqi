@@ -78,6 +78,111 @@ function calcSubindex(paramKey, cp) {
 }
 window.calcSubindex = calcSubindex;
 
+// ── Central AQI Dynamic Theme Registry ──
+function getAQITheme(aqi) {
+    const v = Number(aqi);
+    if (isNaN(v) || v <= 50) {
+        return {
+            label: 'Good',
+            pageColor: '#dcfce7',
+            pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #86efac 0%, #bbf7d0 35%, #dcfce7 65%, #bbf7d0 100%)',
+            bg: 'linear-gradient(155deg, #86efac 0%, #4ade80 25%, #22c55e 55%, #16a34a 80%, #15803d 95%, #166534 100%)',
+            border: 'rgba(21, 128, 61, 0.45)',
+            shadow: 'rgba(22, 163, 74, 0.28)',
+            accent: '#14532d',
+            badgeBg: 'rgba(255, 255, 255, 0.88)',
+            badgeBorder: 'rgba(21, 128, 61, 0.45)',
+            badgeText: '#14532d'
+        };
+    }
+    if (v <= 100) {
+        return {
+            label: 'Moderate',
+            pageColor: '#fde68a',
+            pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)',
+            bg: 'linear-gradient(155deg, #fde047 0%, #facc15 22%, #eab308 50%, #ca8a04 75%, #b45309 90%, #92400e 100%)',
+            border: 'rgba(180, 83, 9, 0.45)',
+            shadow: 'rgba(202, 138, 4, 0.28)',
+            accent: '#78350f',
+            badgeBg: 'rgba(255, 255, 255, 0.88)',
+            badgeBorder: 'rgba(180, 83, 9, 0.45)',
+            badgeText: '#78350f'
+        };
+    }
+    if (v <= 200) {
+        return {
+            label: 'Poor',
+            pageColor: '#fed7aa',
+            pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fdba74 0%, #fed7aa 35%, #ffedd5 65%, #fed7aa 100%)',
+            bg: 'linear-gradient(155deg, #fdba74 0%, #fb923c 25%, #f97316 52%, #ea580c 78%, #c2410c 92%, #9a3412 100%)',
+            border: 'rgba(194, 65, 12, 0.45)',
+            shadow: 'rgba(234, 88, 12, 0.28)',
+            accent: '#7c2d12',
+            badgeBg: 'rgba(255, 255, 255, 0.88)',
+            badgeBorder: 'rgba(194, 65, 12, 0.45)',
+            badgeText: '#7c2d12'
+        };
+    }
+    if (v <= 300) {
+        return {
+            label: 'Unhealthy',
+            pageColor: '#fecdd3',
+            pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fda4af 0%, #fecdd3 35%, #ffe4e6 65%, #fecdd3 100%)',
+            bg: 'linear-gradient(155deg, #fda4af 0%, #fb7185 25%, #f43f5e 52%, #e11d48 78%, #be123c 92%, #881337 100%)',
+            border: 'rgba(190, 18, 60, 0.45)',
+            shadow: 'rgba(225, 29, 72, 0.28)',
+            accent: '#881337',
+            badgeBg: 'rgba(255, 255, 255, 0.88)',
+            badgeBorder: 'rgba(190, 18, 60, 0.45)',
+            badgeText: '#881337'
+        };
+    }
+    if (v <= 400) {
+        return {
+            label: 'Severe',
+            pageColor: '#e9d5ff',
+            pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #d8b4fe 0%, #e9d5ff 35%, #f3e8ff 65%, #e9d5ff 100%)',
+            bg: 'linear-gradient(155deg, #d8b4fe 0%, #c084fc 25%, #a855f7 52%, #9333ea 78%, #7e22ce 92%, #581c87 100%)',
+            border: 'rgba(126, 34, 206, 0.45)',
+            shadow: 'rgba(147, 51, 234, 0.28)',
+            accent: '#581c87',
+            badgeBg: 'rgba(255, 255, 255, 0.88)',
+            badgeBorder: 'rgba(126, 34, 206, 0.45)',
+            badgeText: '#581c87'
+        };
+    }
+    return {
+        label: 'Hazardous',
+        pageColor: '#fecaca',
+        pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fca5a5 0%, #fecaca 35%, #fee2e2 65%, #fecaca 100%)',
+        bg: 'linear-gradient(155deg, #fca5a5 0%, #f87171 25%, #ef4444 52%, #dc2626 78%, #b91c1c 92%, #7f1d1d 100%)',
+        border: 'rgba(185, 28, 28, 0.50)',
+        shadow: 'rgba(220, 38, 38, 0.32)',
+        accent: '#7f1d1d',
+        badgeBg: 'rgba(255, 255, 255, 0.88)',
+        badgeBorder: 'rgba(185, 28, 28, 0.50)',
+        badgeText: '#7f1d1d'
+    };
+}
+window.getAQITheme = getAQITheme;
+
+function applyAQIPageTheme(aqiVal) {
+    const theme = getAQITheme(aqiVal);
+    window.currentAQITheme = theme;
+    window.currentAqiValue = aqiVal;
+
+    const layoutRoot = document.getElementById('app-layout-root');
+    if (layoutRoot && theme.pageColor && theme.pageBg) {
+        if (!document.body.classList.contains('weather-backdrop-active')) {
+            layoutRoot.style.backgroundColor = theme.pageColor;
+            layoutRoot.style.backgroundImage = theme.pageBg;
+            document.body.style.backgroundColor = theme.pageColor;
+        }
+    }
+    return theme;
+}
+window.applyAQIPageTheme = applyAQIPageTheme;
+
 /**
  * Applies time-of-day temperature correction based on IST hour of the reading's timestamp.
  * @param {number|null} tempC - Raw temperature in °C from Supabase
@@ -246,6 +351,12 @@ function formatRawReadingClient(raw) {
     else if (cpcb_aqi > 200 && cpcb_aqi <= 300) { label = 'Unhealthy'; color = '#e95478'; }
     else if (cpcb_aqi > 300 && cpcb_aqi <= 400) { label = 'Severe'; color = '#b33fba'; }
     else if (cpcb_aqi > 400) { label = 'Hazardous'; color = '#c92033'; }
+
+    // Synchronize global theme if not yet initialized
+    if (!window.currentAQITheme && typeof window.getAQITheme === 'function') {
+        window.currentAQITheme = window.getAQITheme(cpcb_aqi);
+        window.currentAqiValue = cpcb_aqi;
+    }
 
     const rawLat = (raw.latitude != null && raw.latitude !== '') ? Number(raw.latitude) : ((raw.lat != null && raw.lat !== '') ? Number(raw.lat) : null);
     const rawLon = (raw.longitude != null && raw.longitude !== '') ? Number(raw.longitude) : ((raw.lon != null && raw.lon !== '') ? Number(raw.lon) : ((raw.lng != null && raw.lng !== '') ? Number(raw.lng) : null));

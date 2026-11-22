@@ -189,10 +189,13 @@ if (isset($_GET['auth']) && $_GET['auth'] === 'true') {
         exit;
     }
 
-    // Clean up the URL by stripping auth=true, but keeping the page parameter
-    $target_page = isset($_GET['page']) ? $_GET['page'] : 'overview';
+    // Clean up the URL by stripping auth credentials, while preserving page, node, tab parameters
+    $redirect_params = $_GET;
+    unset($redirect_params['auth'], $redirect_params['email'], $redirect_params['name'], $redirect_params['ajax']);
+    $redirect_query = http_build_query($redirect_params);
+    $location = '?' . ($redirect_query ?: 'page=overview');
     session_write_close();
-    header("Location: ?page=" . $target_page);
+    header("Location: " . $location);
     exit;
 }
 
@@ -395,6 +398,16 @@ if ($is_ajax) {
             }
         }
     }
+    $server_init_aqi = null;
+    if ($initial_overview_json && $initial_overview_json !== 'null') {
+        $p_init = @json_decode($initial_overview_json, true);
+        if (!empty($p_init['aqi'])) {
+            $a_item = isset($p_init['aqi'][0]) ? $p_init['aqi'][0] : $p_init['aqi'];
+            if (isset($a_item['cpcb_aqi']) && is_numeric($a_item['cpcb_aqi'])) {
+                $server_init_aqi = (int)round($a_item['cpcb_aqi']);
+            }
+        }
+    }
     ?>
     <script>
         window.__selectedNode = <?= json_encode($active_node) ?>;
@@ -411,6 +424,12 @@ if ($is_ajax) {
         };
         // Server pre-hydrated telemetry cache (0ms instant first-paint)
         window.INITIAL_DATA = <?= $initial_overview_json ?>;
+        <?php if ($server_init_aqi !== null): ?>
+        window.currentAqiValue = <?= (int)$server_init_aqi ?>;
+        if (typeof window.getAQITheme === 'function') {
+            window.currentAQITheme = window.getAQITheme(<?= (int)$server_init_aqi ?>);
+        }
+        <?php endif; ?>
     </script>
 </head>
 <?php
@@ -420,7 +439,7 @@ $is_initial_weather_live = ((string)$active_node === '2' && (
     ($page === 'live-weather')
 ));
 ?>
-<body class="bg-[#fefce8] text-[#0f172a] font-sans antialiased <?= $is_initial_weather_live ? 'weather-backdrop-active' : '' ?>">
+<body class="text-[#0f172a] font-sans antialiased <?= $is_initial_weather_live ? 'weather-backdrop-active' : '' ?>">
     
     <?php include __DIR__ . '/components/layout.php'; ?>
 

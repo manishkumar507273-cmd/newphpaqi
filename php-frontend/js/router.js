@@ -32,7 +32,15 @@
     const PROTECTED_PAGES = ['live', 'historical', 'predictive', 'weather'];
 
     function isUserAuthenticated() {
-        return Boolean(window.__currentUser && window.__currentUser.is_logged_in);
+        try {
+            if (sessionStorage.getItem('deliberate_logout') === 'true' || localStorage.getItem('deliberate_logout') === 'true') {
+                return false;
+            }
+            if (window.__currentUser && window.__currentUser.is_logged_in) return true;
+            return localStorage.getItem('auth_logged_in') === 'true' && Boolean(localStorage.getItem('auth_email'));
+        } catch (e) {
+            return Boolean(window.__currentUser && window.__currentUser.is_logged_in);
+        }
     }
 
 
@@ -125,9 +133,13 @@
             mobileSecondary.style.display = 'none';
         }
 
-        // Update Warm Golden Page Background for Live AQI and Cool/Light for other pages
+        // Update Page Background dynamically: Live AQI matches the current AQI bar theme
+        const curAqi = (window.currentAqiValue != null && !isNaN(window.currentAqiValue)) ? window.currentAqiValue : 38;
+        const aqiTheme = window.currentAQITheme || (typeof window.getAQITheme === 'function' ? window.getAQITheme(curAqi) : null);
+        const livePageBg = aqiTheme ? `background-color: ${aqiTheme.pageColor}; background-image: ${aqiTheme.pageBg};` : 'background-color: #dcfce7; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #86efac 0%, #bbf7d0 35%, #dcfce7 65%, #bbf7d0 100%);';
+
         const pageBgStyles = {
-            'live': 'background-color: #fefce8; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%);',
+            'live': livePageBg,
             'weather': 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
             'historical': 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
             'predictive': 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',
@@ -135,7 +147,15 @@
         };
         const appRoot = document.getElementById('app-layout-root');
         if (appRoot && pageBgStyles[targetPage]) {
-            appRoot.style.cssText = `min-height: 100vh; ${pageBgStyles[targetPage]} position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.4s ease;`;
+            if (targetPage === 'live' && document.body.classList.contains('weather-backdrop-active')) {
+                appRoot.style.setProperty('background', 'transparent', 'important');
+                appRoot.style.setProperty('background-image', 'none', 'important');
+            } else {
+                appRoot.style.cssText = `min-height: 100vh; ${pageBgStyles[targetPage]} position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.4s ease;`;
+                if (targetPage === 'live' && aqiTheme && aqiTheme.pageColor) {
+                    document.body.style.backgroundColor = aqiTheme.pageColor;
+                }
+            }
         }
 
         // Back Button
@@ -210,32 +230,56 @@
             }
 
             if (isActive) {
+                el.classList.add('active');
                 el.style.opacity = '1';
                 el.style.color = activeColor;
                 el.style.backgroundColor = activeBg;
                 if (icon) {
                     icon.style.color = activeColor;
+                    icon.style.stroke = activeColor;
                     icon.style.opacity = '1';
-                    icon.style.transform = 'scale(1.1)';
-                    icon.style.strokeWidth = '2.2';
+                    icon.style.transform = 'scale(1.08)';
+                    icon.style.strokeWidth = '2.3';
                 }
                 if (label) {
                     label.style.color = activeColor;
                     label.style.fontWeight = '700';
+                    label.style.opacity = '1';
                 }
-            } else {
-                el.style.opacity = isLocked ? '0.38' : '0.78';
-                el.style.color = '#94a3b8';
+            } else if (isLocked) {
+                el.classList.remove('active');
+                el.style.opacity = '0.12';
+                el.style.color = '#cbd5e1';
                 el.style.backgroundColor = 'transparent';
                 if (icon) {
-                    icon.style.color = '#94a3b8';
-                    icon.style.opacity = isLocked ? '0.75' : '0.85';
+                    icon.style.color = '#cbd5e1';
+                    icon.style.stroke = '#cbd5e1';
+                    icon.style.opacity = '0.2';
                     icon.style.transform = 'scale(1)';
-                    icon.style.strokeWidth = '1.8';
+                    icon.style.strokeWidth = '1.5';
                 }
                 if (label) {
-                    label.style.color = '#94a3b8';
+                    label.style.color = '#cbd5e1';
                     label.style.fontWeight = '500';
+                    label.style.opacity = '0.2';
+                }
+            } else {
+                // Unlocked inactive tab — bold crisp dark slate #0f172a
+                el.classList.remove('active');
+                el.style.opacity = '1';
+                el.style.color = '#0f172a';
+                el.style.backgroundColor = 'transparent';
+                if (icon) {
+                    icon.style.color = '#0f172a';
+                    icon.style.stroke = '#0f172a';
+                    icon.style.opacity = '1';
+                    icon.style.transform = 'scale(1)';
+                    icon.style.strokeWidth = '2.2';
+                }
+                if (label) {
+                    label.style.color = '#0f172a';
+                    label.style.fontWeight = '700';
+                    label.style.opacity = '1';
                 }
             }
         });
@@ -294,8 +338,9 @@
         // Non-destructive transition: keep existing content visible while loading to eliminate blank flash
         const wrapper = document.getElementById('page-content-wrapper');
         if (wrapper) {
-            wrapper.style.transition = 'opacity 0.12s ease';
-            wrapper.style.opacity = '0.72';
+            wrapper.style.transition = 'opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1), transform 0.16s cubic-bezier(0.4, 0, 0.2, 1)';
+            wrapper.style.opacity = '0.55';
+            wrapper.style.transform = 'translateY(4px)';
         }
 
         try {
@@ -420,6 +465,7 @@
                 }
 
                 wrapper.style.opacity = '1';
+                wrapper.style.transform = 'translateY(0)';
                 wrapper.classList.remove('page-fade-leave');
                 wrapper.classList.add('page-fade-active');
             }

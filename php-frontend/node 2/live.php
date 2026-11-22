@@ -429,16 +429,36 @@ if (is_numeric($init_weather_temp)) {
     else $init_weather_comfort = 'Very Hot';
 }
 
-$init_is_aqi_offline = false;
 $init_aqi_ts = $init_bulk['aqi']['timestamp'] ?? ($init_bulk['aqi']['created_at'] ?? null);
 $init_weather_ts = $init_bulk['weather']['timestamp'] ?? ($init_bulk['weather']['created_at'] ?? null);
 $init_aqi_epoch = $init_aqi_ts ? strtotime($init_aqi_ts) : 0;
 $init_weather_epoch = $init_weather_ts ? strtotime($init_weather_ts) : 0;
-$init_latest_epoch = $init_aqi_epoch > 0 ? $init_aqi_epoch : $init_weather_epoch;
-if ($init_latest_epoch > 0 && (time() - $init_latest_epoch) > 300) {
-    $init_is_aqi_offline = true;
-}
+
+$init_is_aqi_offline = ($init_aqi_epoch <= 0 || (time() - $init_aqi_epoch) > 300);
+$init_is_weather_offline = ($init_weather_epoch <= 0 || (time() - $init_weather_epoch) > 300);
+$init_is_soil_offline = ($init_weather_epoch <= 0 || (time() - $init_weather_epoch) > 300);
+
+$init_aqi_time_str = $init_aqi_epoch > 0 
+    ? ((time() - $init_aqi_epoch) >= 86400 ? date('j M, h:i A', $init_aqi_epoch) : date('h:i A', $init_aqi_epoch)) 
+    : '--';
+
+$init_weather_time_str = $init_weather_epoch > 0 
+    ? ((time() - $init_weather_epoch) >= 86400 ? date('j M, h:i A', $init_weather_epoch) : date('h:i A', $init_weather_epoch)) 
+    : '--';
+
+$init_soil_time_str = $init_weather_time_str;
+$init_latest_epoch = max($init_aqi_epoch, $init_weather_epoch);
 $init_time_str = $init_latest_epoch > 0 ? date('h:i A', $init_latest_epoch) : 'Live Stream';
+
+$init_active_offline = ($active_live_subtab === 'weather') 
+    ? $init_is_weather_offline 
+    : (($active_live_subtab === 'soil') ? $init_is_soil_offline : $init_is_aqi_offline);
+$init_active_offline_name = ($active_live_subtab === 'weather') 
+    ? 'Weather Station' 
+    : (($active_live_subtab === 'soil') ? 'Soil Sensors' : 'Air Quality Station');
+$init_active_offline_ts = ($active_live_subtab === 'weather') 
+    ? $init_weather_time_str 
+    : (($active_live_subtab === 'soil') ? $init_soil_time_str : $init_aqi_time_str);
 
 $aqi_d_sub = !empty($init_bulk['aqi']) ? $init_bulk['aqi'] : [];
 $init_pollutants = [
@@ -1581,11 +1601,6 @@ $init_border_colors = [
    ═══════════════════════════════════════════════════════════════ */
 body.weather-backdrop-active {
   background-color: #1e293b !important;
-  background-image: url('assets/sunset_clouds_backdrop.jpg'), url('/assets/sunset_clouds_backdrop.jpg') !important;
-  background-size: cover !important;
-  background-position: center center !important;
-  background-attachment: fixed !important;
-  background-repeat: no-repeat !important;
   min-height: 100vh !important;
 }
 
@@ -1596,52 +1611,104 @@ body.weather-backdrop-active main {
   background-image: none !important;
 }
 
-/* Translucent Glassmorphic Header on Weather Live */
-body.weather-backdrop-active header {
-  background-color: rgba(15, 23, 42, 0.45) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
-}
+/* Keep header, navigation, and footer uniform and identical across all pages */
 
-body.weather-backdrop-active header .header-campus-title,
-body.weather-backdrop-active header a,
-body.weather-backdrop-active header span:not(.campus-status-dot) {
-  color: #ffffff !important;
-}
-
-/* Translucent Glassmorphic Footer on Weather Live */
-body.weather-backdrop-active #global-footer {
-  background: rgba(15, 23, 42, 0.65) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25) !important;
-}
-
-body.weather-backdrop-active #node2-live-subnav > div {
-  background: rgba(15, 23, 42, 0.55) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.20) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
-}
-
-body.weather-backdrop-active #node2-tab-aqi:not(.bg-\[\#00bfa5\]),
-body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]) {
-  color: rgba(255, 255, 255, 0.82) !important;
-}
-
-body.weather-backdrop-active #node2-tab-aqi:not(.bg-\[\#00bfa5\]):hover,
-body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
-  color: #ffffff !important;
-  background-color: rgba(255, 255, 255, 0.12) !important;
-}
-
+/* Water-Smooth Atmospheric Backdrop */
 .node2-weather-backdrop {
-  display: none !important;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: #1e293b;
+  will-change: opacity;
 }
+
+body.weather-backdrop-active .node2-weather-backdrop,
+.node2-weather-backdrop.active {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* One Single Hardware-Accelerated Full-Page Sky Pan Animation (Zero Lag, 100% GPU) */
+.weather-sky-photo-layer {
+  position: absolute;
+  inset: -60px -80px;
+  width: calc(100% + 160px);
+  height: calc(100% + 120px);
+  background-image: url('assets/sunset_clouds_backdrop.jpg'), url('/assets/sunset_clouds_backdrop.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  will-change: transform;
+  animation: singleCompletePageSkyGlide 32s ease-in-out infinite alternate;
+  animation-play-state: running;
+}
+
+@keyframes singleCompletePageSkyGlide {
+  0% {
+    transform: translate3d(-35px, -15px, 0) scale(1.02);
+  }
+  50% {
+    transform: translate3d(25px, 12px, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(35px, -18px, 0) scale(1.03);
+  }
+}
+
+.sky-ambient-vignette {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 110% 75% at 50% 12%, rgba(20, 60, 120, 0.08) 0%, rgba(0, 0, 0, 0) 55%),
+              linear-gradient(180deg, rgba(15, 23, 42, 0.10) 0%, rgba(0, 0, 0, 0) 35%, rgba(245, 158, 11, 0.06) 85%, rgba(249, 115, 22, 0.12) 100%);
+}
+
+/* Water-Smooth Tab Content Transitions */
+.node2-live-view-panel {
+  width: 100%;
+  will-change: opacity, transform;
+}
+
+@keyframes waterGlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.996);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.panel-gliding-in {
+  animation: waterGlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* Water-Smooth Pill Buttons */
+#node2-live-subnav > div {
+  transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+#node2-live-subnav button {
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, background-color, color, box-shadow;
+}
+#node2-live-subnav button:active {
+  transform: scale(0.95);
+}
+
+
 
 /* ═══════════════════════════════════════════════════════════════
    METEOROLOGICAL & AIR QUALITY TREND GRAPH (MATCHING REFERENCE)
@@ -1801,28 +1868,80 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
 
   <!-- ═══════════════════════════════════════════════════════════════
        ATMOSPHERIC DYNAMIC WEATHER BACKDROP (NODE 2)
-       Matches Reference: Rolling Green Hills + Dynamic Animated Sky
-       (Drifting Cloud Animation if Temp Low & Hum High, else Sunny Bright)
+       Backdrop is fixed at #app-layout-root level to cover full viewport
        ═══════════════════════════════════════════════════════════════ -->
-  <div id="node2-weather-backdrop" class="node2-weather-backdrop" style="display: none;" aria-hidden="true"></div>
 
   <!-- Live Content Container -->
   <div class="live-page-root live-content-container p-2 sm:p-6" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 1200px; margin: 0 auto; min-width: 0; box-sizing: border-box; overflow-x: hidden;">
 
 <!-- Offline Banner -->
-<div id="live-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
+<div id="live-offline-banner" style="<?= $init_active_offline ? 'display: flex;' : 'display: none;' ?> background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
   <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569;">
     <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f97316; margin-top: 2px; flex-shrink: 0;"></i>
-    <span><strong style="color: #c2410c;">Sensor Node Offline:</strong> No new live telemetry received in cloud for &gt;5 mins (Last update: <strong style="color: #f97316;" id="live-offline-last-update">--</strong>). Showing last recorded cloud values below.</span>
+    <span><strong id="live-offline-banner-title" style="color: #c2410c;"><?= htmlspecialchars($init_active_offline_name) ?> Offline:</strong> <span id="live-offline-banner-desc">No new live telemetry received in cloud for &gt;5 mins (Last update: <strong style="color: #f97316;" id="live-offline-last-update"><?= htmlspecialchars($init_active_offline_ts) ?></strong>). Showing last recorded cloud values below.</span></span>
   </div>
   <div id="live-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</div>
 </div>
 
 <?php if ($is_node_2): ?>
-  <!-- Instant Switcher Script to ensure 100% reliable click response -->
+  <!-- Instant Switcher Script with Water-Smooth Glide -->
   <script>
+  window.currentActiveLiveSubtab = <?= json_encode($active_live_subtab) ?>;
+
+  window.syncActiveSubtabOfflineState = function(tab) {
+      const liveBanner = document.getElementById('live-offline-banner');
+      const bannerTitle = document.getElementById('live-offline-banner-title');
+      const bannerDesc = document.getElementById('live-offline-banner-desc');
+      const bannerTime = document.getElementById('live-offline-last-update');
+
+      const isAqiOff = (typeof window.__isAqiOffline !== 'undefined') ? window.__isAqiOffline : <?= $init_is_aqi_offline ? 'true' : 'false' ?>;
+      const isWeatherOff = (typeof window.__isWeatherOffline !== 'undefined') ? window.__isWeatherOffline : <?= $init_is_weather_offline ? 'true' : 'false' ?>;
+      const isSoilOff = (typeof window.__isSoilOffline !== 'undefined') ? window.__isSoilOffline : <?= $init_is_soil_offline ? 'true' : 'false' ?>;
+
+      const aqiTime = window.__aqiLastUpdateTimeStr || <?= json_encode($init_aqi_time_str) ?>;
+      const weatherTime = window.__weatherLastUpdateTimeStr || <?= json_encode($init_weather_time_str) ?>;
+      const soilTime = window.__soilLastUpdateTimeStr || <?= json_encode($init_soil_time_str) ?>;
+
+      let isCurrentOffline = false;
+      let targetName = 'Air Quality Station';
+      let targetTime = aqiTime;
+
+      if (tab === 'weather') {
+          isCurrentOffline = isWeatherOff;
+          targetName = 'Weather Station';
+          targetTime = weatherTime;
+      } else if (tab === 'soil') {
+          isCurrentOffline = isSoilOff;
+          targetName = 'Soil Sensors';
+          targetTime = soilTime;
+      } else {
+          isCurrentOffline = isAqiOff;
+          targetName = 'Air Quality Station';
+          targetTime = aqiTime;
+      }
+
+      if (liveBanner) {
+          if (isCurrentOffline) {
+              liveBanner.style.display = 'flex';
+              if (bannerTitle) bannerTitle.innerText = targetName + ' Offline:';
+              if (bannerDesc) bannerDesc.innerHTML = `No live telemetry received in cloud for &gt;5 mins (Last update: <strong style="color: #f97316;">${targetTime}</strong>). Showing last recorded cloud values below.`;
+          } else {
+              liveBanner.style.display = 'none';
+          }
+      }
+
+      if (window.updateGlobalLiveBadge) {
+          const tabLabel = (tab === 'weather') ? 'Weather' : ((tab === 'soil') ? 'Soil' : 'AQI');
+          const tip = !isCurrentOffline 
+              ? `${tabLabel} telemetry streaming live from cloud` 
+              : `${tabLabel} station offline: No new telemetry received in cloud for >5 mins`;
+          window.updateGlobalLiveBadge(!isCurrentOffline, tip);
+      }
+  };
+
   window.switchNode2LiveTab = function(tab) {
       if (window.triggerHaptic) window.triggerHaptic('light');
+      window.currentActiveLiveSubtab = tab;
       const aqiView = document.getElementById('node2-view-aqi');
       const weatherView = document.getElementById('node2-view-weather');
       const soilView = document.getElementById('node2-view-soil');
@@ -1830,64 +1949,90 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
       const btnWeather = document.getElementById('node2-tab-weather');
       const btnSoil = document.getElementById('node2-tab-soil');
       const backdrop = document.getElementById('node2-weather-backdrop');
+      const layoutRoot = document.getElementById('app-layout-root');
 
       const activeCls = 'flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
       const inactiveCls = 'flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
 
-      const layoutRoot = document.getElementById('app-layout-root');
+      function showPaneWithGlide(targetView, otherViews) {
+          otherViews.forEach(v => {
+              if (v) {
+                  v.style.display = 'none';
+                  v.classList.remove('panel-gliding-in');
+              }
+          });
+          if (targetView) {
+              targetView.style.display = 'flex';
+              void targetView.offsetWidth;
+              targetView.classList.add('panel-gliding-in');
+          }
+      }
 
       if (tab === 'soil') {
-          if (aqiView) aqiView.style.display = 'none';
-          if (weatherView) weatherView.style.display = 'none';
-          if (soilView) soilView.style.display = 'flex';
+          showPaneWithGlide(soilView, [aqiView, weatherView]);
           if (btnSoil) btnSoil.className = activeCls;
           if (btnAqi) btnAqi.className = inactiveCls;
           if (btnWeather) btnWeather.className = inactiveCls;
-          if (backdrop) backdrop.style.display = 'none';
           document.body.classList.remove('weather-backdrop-active');
+          if (backdrop) backdrop.classList.remove('active');
+          if (typeof liveCanvasAnimId !== 'undefined' && liveCanvasAnimId) {
+              cancelAnimationFrame(liveCanvasAnimId);
+              liveCanvasAnimId = null;
+          }
           if (layoutRoot) {
               layoutRoot.style.removeProperty('background');
               layoutRoot.style.removeProperty('background-image');
               layoutRoot.style.backgroundColor = '#f0fdf4';
               layoutRoot.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%)';
           }
-          if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 50);
-          if (typeof renderSoilLiveTable === 'function') setTimeout(renderSoilLiveTable, 50);
+          if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 40);
+          if (typeof renderSoilLiveTable === 'function') setTimeout(renderSoilLiveTable, 40);
       } else if (tab === 'weather') {
-          if (aqiView) aqiView.style.display = 'none';
-          if (soilView) soilView.style.display = 'none';
-          if (weatherView) weatherView.style.display = 'flex';
+          showPaneWithGlide(weatherView, [aqiView, soilView]);
           if (btnWeather) btnWeather.className = activeCls;
           if (btnAqi) btnAqi.className = inactiveCls;
           if (btnSoil) btnSoil.className = inactiveCls;
-          if (backdrop) backdrop.style.display = 'block';
           document.body.classList.add('weather-backdrop-active');
+          if (backdrop) {
+              backdrop.classList.add('active');
+              const sky = backdrop.querySelector('.weather-sky-photo-layer');
+              if (sky) sky.style.animationPlayState = 'running';
+          }
           if (layoutRoot) {
               layoutRoot.style.setProperty('background', 'transparent', 'important');
               layoutRoot.style.setProperty('background-image', 'none', 'important');
           }
           if (typeof initLiveAmbientCanvas === 'function') initLiveAmbientCanvas();
-          if (typeof renderWeatherLiveTable === 'function') setTimeout(renderWeatherLiveTable, 50);
+          if (typeof renderWeatherLiveTable === 'function') setTimeout(renderWeatherLiveTable, 40);
       } else {
-          if (weatherView) weatherView.style.display = 'none';
-          if (soilView) soilView.style.display = 'none';
-          if (aqiView) aqiView.style.display = 'flex';
+          showPaneWithGlide(aqiView, [weatherView, soilView]);
           if (btnAqi) btnAqi.className = activeCls;
           if (btnWeather) btnWeather.className = inactiveCls;
           if (btnSoil) btnSoil.className = inactiveCls;
-          if (backdrop) backdrop.style.display = 'none';
           document.body.classList.remove('weather-backdrop-active');
+          if (backdrop) backdrop.classList.remove('active');
+          if (typeof liveCanvasAnimId !== 'undefined' && liveCanvasAnimId) {
+              cancelAnimationFrame(liveCanvasAnimId);
+              liveCanvasAnimId = null;
+          }
           if (layoutRoot) {
               layoutRoot.style.removeProperty('background');
               layoutRoot.style.removeProperty('background-image');
-              layoutRoot.style.backgroundColor = (window.currentAQITheme && window.currentAQITheme.pageColor) ? window.currentAQITheme.pageColor : '#fde68a';
-              layoutRoot.style.backgroundImage = (window.currentAQITheme && window.currentAQITheme.pageBg) ? window.currentAQITheme.pageBg : 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)';
+              if (typeof window.applyAQIPageTheme === 'function') {
+                  window.applyAQIPageTheme(window.currentAqiValue || 38);
+              } else if (window.currentAQITheme && window.currentAQITheme.pageColor) {
+                  layoutRoot.style.backgroundColor = window.currentAQITheme.pageColor;
+                  layoutRoot.style.backgroundImage = window.currentAQITheme.pageBg;
+              }
           }
-          if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
-          if (typeof renderLiveTable === 'function') setTimeout(renderLiveTable, 50);
+          if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 40);
+          if (typeof renderLiveTable === 'function') setTimeout(renderLiveTable, 40);
       }
 
+      window.syncActiveSubtabOfflineState(tab);
+
       try {
+          sessionStorage.setItem('smartairnet_node2_live_subtab', tab);
           const url = new URL(window.location.href);
           url.searchParams.set('tab', tab);
           window.history.replaceState({ page: 'live', node: '2', tab: tab }, '', url.toString());
@@ -1898,31 +2043,22 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
       }
   };
 
-  if (<?= json_encode($active_live_subtab === 'weather') ?>) {
-      document.body.classList.add('weather-backdrop-active');
-      const lr = document.getElementById('app-layout-root');
-      if (lr) {
-          lr.style.setProperty('background', 'transparent', 'important');
-          lr.style.setProperty('background-image', 'none', 'important');
-      }
-  } else if (<?= json_encode($active_live_subtab === 'soil') ?>) {
-      document.body.classList.remove('weather-backdrop-active');
-      const lr = document.getElementById('app-layout-root');
-      if (lr) {
-          lr.style.removeProperty('background');
-          lr.style.removeProperty('background-image');
-          lr.style.backgroundColor = '#dcfce7';
-          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #86efac 0%, #bbf7d0 35%, #dcfce7 65%, #bbf7d0 100%)';
-      }
+  const initSavedSubtab = (function() {
+      try {
+          const urlP = new URLSearchParams(window.location.search).get('tab');
+          if (urlP && ['aqi', 'weather', 'soil'].includes(urlP)) return urlP;
+          const s = sessionStorage.getItem('smartairnet_node2_live_subtab');
+          if (s && ['aqi', 'weather', 'soil'].includes(s)) return s;
+      } catch(e){}
+      return <?= json_encode($active_live_subtab) ?>;
+  })();
+
+  if (initSavedSubtab === 'weather') {
+      window.switchNode2LiveTab('weather');
+  } else if (initSavedSubtab === 'soil') {
+      window.switchNode2LiveTab('soil');
   } else {
-      document.body.classList.remove('weather-backdrop-active');
-      const lr = document.getElementById('app-layout-root');
-      if (lr) {
-          lr.style.removeProperty('background');
-          lr.style.removeProperty('background-image');
-          lr.style.backgroundColor = '#fde68a';
-          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)';
-      }
+      window.switchNode2LiveTab('aqi');
   }
 
 
@@ -1934,20 +2070,23 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
       <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
         <i data-lucide="activity" class="w-3.5 h-3.5 shrink-0"></i>
         <span>AQI Live</span>
+        <span id="node2-tab-aqi-status" class="subtab-offline-badge" style="<?= $init_is_aqi_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
       </button>
       <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
         <i data-lucide="cloud-sun" class="w-3.5 h-3.5 shrink-0"></i>
         <span>Weather Live</span>
+        <span id="node2-tab-weather-status" class="subtab-offline-badge" style="<?= $init_is_weather_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
       </button>
       <button id="node2-tab-soil" type="button" onclick="switchNode2LiveTab('soil')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'soil') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
         <i data-lucide="sprout" class="w-3.5 h-3.5 shrink-0"></i>
         <span>Soil Live</span>
+        <span id="node2-tab-soil-status" class="subtab-offline-badge" style="<?= $init_is_soil_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
       </button>
     </div>
   </div>
 <?php endif; ?>
 
-<div id="node2-view-aqi" style="<?= ($is_node_2 && $active_live_subtab !== 'aqi') ? 'display: none;' : 'display: flex;' ?> width: 100%; flex-direction: column; gap: 14px;">
+<div id="node2-view-aqi" class="node2-live-view-panel" style="<?= ($is_node_2 && $active_live_subtab !== 'aqi') ? 'display: none;' : 'display: flex;' ?> width: 100%; flex-direction: column; gap: 14px;">
 
   <!-- Page Header Titles -->
   <div style="display: flex; justify-content: flex-start; align-items: center; text-align: left; width: 100%; margin-top: 10px; margin-bottom: 6px;">
@@ -2454,7 +2593,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
   <!-- ═══════════════════════════════════════════════════════════════
        NODE 2: DEDICATED LIVE WEATHER VIEW (STANDBY MODE)
        ═══════════════════════════════════════════════════════════════ -->
-  <div id="node2-view-weather" style="<?= ($active_live_subtab === 'weather') ? 'display: flex;' : 'display: none;' ?> width: 100%; max-width: 100%; min-width: 0; flex-direction: column; gap: 14px; box-sizing: border-box;">
+  <div id="node2-view-weather" class="node2-live-view-panel" style="<?= ($active_live_subtab === 'weather') ? 'display: flex;' : 'display: none;' ?> width: 100%; max-width: 100%; min-width: 0; flex-direction: column; gap: 14px; box-sizing: border-box;">
     
     <!-- Page Header Row (matching Node 1 weather header layout) -->
     <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 6px; margin-bottom: 12px; width: 100%;">
@@ -2467,10 +2606,12 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
       </div>
 
       <div style="font-size: 12px; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
-        <span>Last Updated: <strong id="weather-latest-time" style="color: #ffffff; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.6);"><?= htmlspecialchars($init_time_str) ?></strong></span>
-        <span id="weather-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background-color: rgba(255, 255, 255, 0.92); color: #15803d; border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px);">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22c55e;"></span>
-          <span>LIVE</span>
+        <span>Last Updated: <strong id="weather-latest-time" style="color: #ffffff; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.6);"><?= htmlspecialchars($init_weather_time_str) ?></strong></span>
+        <span id="weather-live-badge" style="<?= $init_is_weather_offline 
+          ? 'display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background-color: rgba(255, 247, 237, 0.95); color: #c2410c; border: 1px solid rgba(254, 215, 170, 0.9); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px);'
+          : 'display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background-color: rgba(255, 255, 255, 0.92); color: #15803d; border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px);' ?>">
+          <span id="weather-live-badge-dot" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $init_is_weather_offline ? '#f97316' : '#22c55e' ?>;"></span>
+          <span id="weather-live-badge-text"><?= $init_is_weather_offline ? 'OFFLINE' : 'LIVE' ?></span>
         </span>
       </div>
     </div>
@@ -2948,7 +3089,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
         </h2>
       </div>
 
-      <div id="live-weather-table-container" style="background: rgba(30, 41, 59, 0.72); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.16); overflow: hidden; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35); transition: opacity 0.2s ease; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
+      <div id="live-weather-table-container" style="background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.14); overflow: hidden; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35); transition: opacity 0.2s ease; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
         <!-- Mobile swipe indicator -->
         <div class="block sm:hidden px-4 py-2 bg-slate-900/60 border-b border-white/10 text-[11px] text-slate-300 font-medium flex items-center justify-between">
           <span>👈 Swipe horizontally to view all weather parameters</span>
@@ -2956,8 +3097,8 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
         </div>
 
         <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 1100px;">
-            <thead style="position: sticky; top: 0; z-index: 1; background-color: rgba(15, 23, 42, 0.92); border-bottom: 1px solid rgba(255, 255, 255, 0.14);">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 780px;">
+            <thead style="position: sticky; top: 0; z-index: 1; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, 0.14);">
               <tr>
                 <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #fbbf24; font-size: 12px; white-space: nowrap;">Temp (°C)</th>
@@ -2968,10 +3109,6 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
                 <th style="padding: 12px 14px; font-weight: 700; color: #2dd4bf; font-size: 12px; white-space: nowrap;">Wind Gust</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Wind Dir</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #60a5fa; font-size: 12px; white-space: nowrap;">Rain (mm)</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #38bdf8; font-size: 12px; white-space: nowrap;">Soil Moisture</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #fb923c; font-size: 12px; white-space: nowrap;">Soil Temp</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #4ade80; font-size: 12px; white-space: nowrap;">Soil pH</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #c084fc; font-size: 12px; white-space: nowrap;">Soil EC</th>
               </tr>
             </thead>
             <tbody id="weather-tbody">
@@ -2991,10 +3128,6 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
                   $rGust = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? number_format((float)$row['wind_gust'], 1) . ' m/s' : '--';
                   $rDir = !empty($row['wind_direction']) ? (smartairnet_parse_wind_direction($row['wind_direction'])['cardinal'] ?? $row['wind_direction']) : '--';
                   $rRain = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? number_format((float)$row['rain_gauge'], 1) . ' mm' : '--';
-                  $sMoist = isset($row['soil_moisture']) && is_numeric($row['soil_moisture']) ? number_format((float)$row['soil_moisture'], 1) . '%' : (isset($row['soil_humidity']) && is_numeric($row['soil_humidity']) ? number_format((float)$row['soil_humidity'], 1) . '%' : '--');
-                  $sTemp = isset($row['soil_temperature']) && is_numeric($row['soil_temperature']) ? number_format((float)$row['soil_temperature'], 1) . ' °C' : (isset($row['soil_temp']) && is_numeric($row['soil_temp']) ? number_format((float)$row['soil_temp'], 1) . ' °C' : '--');
-                  $sPh = isset($row['soil_ph']) && is_numeric($row['soil_ph']) ? number_format((float)$row['soil_ph'], 2) : (isset($row['ph']) && is_numeric($row['ph']) ? number_format((float)$row['ph'], 2) : '--');
-                  $sEc = isset($row['soil_conductivity']) && is_numeric($row['soil_conductivity']) ? number_format((float)$row['soil_conductivity'], 1) . ' µS/cm' : '--';
                   $rowBg = ($i % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
                 ?>
                   <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: <?= $rowBg ?>;">
@@ -3007,15 +3140,11 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;"><?= $rGust ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;"><?= htmlspecialchars($rDir) ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #60a5fa; white-space: nowrap;"><?= $rRain ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #38bdf8; white-space: nowrap;"><?= $sMoist ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb923c; white-space: nowrap;"><?= $sTemp ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #4ade80; white-space: nowrap;"><?= $sPh ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #c084fc; white-space: nowrap;"><?= $sEc ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="13" style="padding: 40px; text-align: center; color: #94a3b8;">
+                  <td colspan="9" style="padding: 40px; text-align: center; color: #94a3b8;">
                     Currently in standby mode. Telemetry stream will populate when records arrive.
                   </td>
                 </tr>
@@ -3032,7 +3161,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
        NODE 2 DEDICATED SOIL LIVE VIEW (ONLY SOIL PARAMETERS)
        Design: Frosted glass KPI cards + Dark trend graph + Live streaming table
        ════════════════════════════════════════════════════════════════════════════ -->
-  <div id="node2-view-soil" style="<?= ($active_live_subtab === 'soil') ? 'display: flex;' : 'display: none;' ?> width: 100%; flex-direction: column; gap: 14px;">
+  <div id="node2-view-soil" class="node2-live-view-panel" style="<?= ($active_live_subtab === 'soil') ? 'display: flex;' : 'display: none;' ?> width: 100%; flex-direction: column; gap: 14px;">
 
     <!-- Soil Header / Location / Live status row -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
@@ -3053,13 +3182,15 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
         <!-- Last Updated Badge -->
         <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ffffff; border: 1.5px solid #e2e8f0; font-size: 11.5px; font-weight: 600; color: #475569;">
-          <span>Last Updated: <strong id="soil-last-updated-val" style="color: #0f172a; font-family: var(--font-mono);"><?= !empty($init_weather_row['timestamp']) ? (date('j M, h:i A', strtotime($init_weather_row['timestamp']))) : date('h:i A') ?></strong></span>
+          <span>Last Updated: <strong id="soil-last-updated-val" style="color: #0f172a; font-family: var(--font-mono);"><?= htmlspecialchars($init_soil_time_str) ?></strong></span>
         </div>
 
         <!-- Live Pulse Pill -->
-        <div id="soil-live-status-pill" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #fff7ed; border: 1.5px solid #fed7aa; color: #c2410c; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em;">
-          <span id="soil-live-status-dot" style="width: 7px; height: 7px; border-radius: 50%; background-color: #f97316;"></span>
-          <span id="soil-live-status-text">OFFLINE</span>
+        <div id="soil-live-status-pill" style="<?= $init_is_soil_offline 
+          ? 'display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #fff7ed; border: 1.5px solid #fed7aa; color: #c2410c; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em;' 
+          : 'display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ecfdf5; border: 1.5px solid #a7f3d0; color: #15803d; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em;' ?>">
+          <span id="soil-live-status-dot" style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $init_is_soil_offline ? '#f97316' : '#10b981' ?>;"></span>
+          <span id="soil-live-status-text"><?= $init_is_soil_offline ? 'OFFLINE' : 'LIVE' ?></span>
         </div>
       </div>
     </div>
@@ -4141,7 +4272,7 @@ function renderWeatherLiveTable(hist) {
         if (tbodyWeather.children.length > 1 || (tbodyWeather.children.length === 1 && !tbodyWeather.innerText.includes('mode') && !tbodyWeather.innerText.includes('Loading'))) {
             return;
         }
-        tbodyWeather.innerHTML = '<tr><td colspan="13" style="padding: 40px; text-align: center; color: #94a3b8;">No live weather telemetry found.</td></tr>';
+        tbodyWeather.innerHTML = '<tr><td colspan="9" style="padding: 40px; text-align: center; color: #94a3b8;">No live weather telemetry found.</td></tr>';
         return;
     }
     let temps = [];
@@ -4164,14 +4295,6 @@ function renderWeatherLiveTable(hist) {
         const dir = (row.wind_direction != null && row.wind_direction !== '') ? (typeof getCompassDir === 'function' ? getCompassDir(row.wind_direction) : row.wind_direction) : '--';
         const rain = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? `${Number(row.rain_gauge).toFixed(1)} mm` : '--';
 
-        const sHumRaw = (row.soil_moisture != null) ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null);
-        const sHum = (sHumRaw != null && !isNaN(Number(sHumRaw))) ? `${Number(sHumRaw).toFixed(1)}%` : '--';
-        const sTempRaw = row.soil_temperature != null ? row.soil_temperature : row.soil_temp;
-        const sTemp = (sTempRaw != null && !isNaN(Number(sTempRaw))) ? `${Number(sTempRaw).toFixed(1)} °C` : '--';
-        const sPhRaw = row.soil_ph != null ? row.soil_ph : row.ph;
-        const sPh = (sPhRaw != null && !isNaN(Number(sPhRaw))) ? Number(sPhRaw).toFixed(2) : '--';
-        const sEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity))) ? `${Number(row.soil_conductivity).toFixed(1)} µS/cm` : '--';
-
         if (rawTemp != null) {
             temps.push(Number(rawTemp));
         }
@@ -4187,10 +4310,6 @@ function renderWeatherLiveTable(hist) {
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;">${gust}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;">${dir}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #60a5fa; white-space: nowrap;">${rain}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #38bdf8; white-space: nowrap;">${sHum}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb923c; white-space: nowrap;">${sTemp}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #4ade80; white-space: nowrap;">${sPh}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #c084fc; white-space: nowrap;">${sEc}</td>
         </tr>`;
     }).join('');
 
@@ -4342,7 +4461,7 @@ async function refreshDashboard(forceNetwork = false) {
             }
             const weatherTbody = document.getElementById('weather-tbody');
             if (weatherTbody) {
-                weatherTbody.innerHTML = '<tr><td colspan="13" style="padding: 40px; text-align: center; color: #64748b; font-size: 13px;">Currently in standby mode. No weather telemetry recorded yet.</td></tr>';
+                weatherTbody.innerHTML = '<tr><td colspan="9" style="padding: 40px; text-align: center; color: #64748b; font-size: 13px;">Currently in standby mode. No weather telemetry recorded yet.</td></tr>';
             }
             const compEmpty = document.getElementById('comparison-chart-empty');
             if (compEmpty) {
@@ -4484,14 +4603,20 @@ async function refreshDashboard(forceNetwork = false) {
             const aqiValue = d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : (d.aqi_info && d.aqi_info.value ? Math.round(d.aqi_info.value) : '--');
             const theme = getAQITheme(aqiValue);
             currentAQITheme = theme;
+            window.currentAQITheme = theme;
+            window.currentAqiValue = aqiValue;
 
             // Page layout root background synced with AQI theme when on AQI tab
             const layoutRoot = document.getElementById('app-layout-root');
             if (layoutRoot && theme.pageColor && theme.pageBg) {
                 const aqiView = document.getElementById('node2-view-aqi');
                 if (!aqiView || aqiView.style.display !== 'none') {
-                    layoutRoot.style.backgroundColor = theme.pageColor;
-                    layoutRoot.style.backgroundImage = theme.pageBg;
+                    if (typeof window.applyAQIPageTheme === 'function') {
+                        window.applyAQIPageTheme(aqiValue);
+                    } else {
+                        layoutRoot.style.backgroundColor = theme.pageColor;
+                        layoutRoot.style.backgroundImage = theme.pageBg;
+                    }
                 }
             }
 
@@ -5175,26 +5300,68 @@ async function refreshDashboard(forceNetwork = false) {
             }
         }
 
-        const isOverallOffline = isAqiOffline && isWeatherOffline;
-        const liveBanner = document.getElementById('live-offline-banner');
-        if (liveBanner) liveBanner.style.display = isOverallOffline ? 'flex' : 'none';
-        
-        const liveOffTime = document.getElementById('live-offline-last-update');
-        if (liveOffTime) liveOffTime.innerText = aqiLastUpdateTimeStr !== '--' ? aqiLastUpdateTimeStr : weatherLastUpdateTimeStr;
+        let isSoilOffline = isWeatherOffline;
+        let soilLastUpdateTimeStr = weatherLastUpdateTimeStr;
 
-        const liveBeaconBadge = document.getElementById('live-beacon-badge');
-        if (liveBeaconBadge) {
-            if (isOverallOffline) {
-                liveBeaconBadge.style.backgroundColor = '#fff7ed';
-                liveBeaconBadge.style.color = '#c2410c';
-                liveBeaconBadge.style.borderColor = '#fed7aa';
-                liveBeaconBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span> OFFLINE`;
+        window.__isAqiOffline = isAqiOffline;
+        window.__isWeatherOffline = isWeatherOffline;
+        window.__isSoilOffline = isSoilOffline;
+        window.__aqiLastUpdateTimeStr = aqiLastUpdateTimeStr;
+        window.__weatherLastUpdateTimeStr = weatherLastUpdateTimeStr;
+        window.__soilLastUpdateTimeStr = soilLastUpdateTimeStr;
+
+        // Update Subnav Pill offline badges
+        const tabAqiStatus = document.getElementById('node2-tab-aqi-status');
+        const tabWeatherStatus = document.getElementById('node2-tab-weather-status');
+        const tabSoilStatus = document.getElementById('node2-tab-soil-status');
+        if (tabAqiStatus) tabAqiStatus.style.display = isAqiOffline ? 'inline-flex' : 'none';
+        if (tabWeatherStatus) tabWeatherStatus.style.display = isWeatherOffline ? 'inline-flex' : 'none';
+        if (tabSoilStatus) tabSoilStatus.style.display = isSoilOffline ? 'inline-flex' : 'none';
+
+        // Update Weather Live view specific badge and timestamp
+        const weatherLatestTime = document.getElementById('weather-latest-time');
+        if (weatherLatestTime && weatherLastUpdateTimeStr !== '--') {
+            weatherLatestTime.innerText = weatherLastUpdateTimeStr;
+        }
+        const weatherBadge = document.getElementById('weather-live-badge');
+        if (weatherBadge) {
+            if (isWeatherOffline) {
+                weatherBadge.style.backgroundColor = 'rgba(255, 247, 237, 0.95)';
+                weatherBadge.style.color = '#c2410c';
+                weatherBadge.style.borderColor = 'rgba(254, 215, 170, 0.9)';
+                weatherBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #f97316;"></span><span>OFFLINE</span>`;
             } else {
-                liveBeaconBadge.style.backgroundColor = '#ecfdf5';
-                liveBeaconBadge.style.color = '#059669';
-                liveBeaconBadge.style.borderColor = '#a7f3d0';
-                liveBeaconBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span> LIVE`;
+                weatherBadge.style.backgroundColor = 'rgba(255, 255, 255, 0.92)';
+                weatherBadge.style.color = '#15803d';
+                weatherBadge.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                weatherBadge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22c55e;"></span><span>LIVE</span>`;
             }
+        }
+
+        // Update Soil Live view specific status pill and timestamp
+        const soilLastUpdatedVal = document.getElementById('soil-last-updated-val');
+        if (soilLastUpdatedVal && soilLastUpdateTimeStr !== '--') {
+            soilLastUpdatedVal.innerText = soilLastUpdateTimeStr;
+        }
+        const soilStatusPill = document.getElementById('soil-live-status-pill');
+        if (soilStatusPill) {
+            if (isSoilOffline) {
+                soilStatusPill.style.background = '#fff7ed';
+                soilStatusPill.style.border = '1.5px solid #fed7aa';
+                soilStatusPill.style.color = '#c2410c';
+                soilStatusPill.innerHTML = `<span style="width: 7px; height: 7px; border-radius: 50%; background-color: #f97316;"></span><span>OFFLINE</span>`;
+            } else {
+                soilStatusPill.style.background = '#ecfdf5';
+                soilStatusPill.style.border = '1.5px solid #a7f3d0';
+                soilStatusPill.style.color = '#15803d';
+                soilStatusPill.innerHTML = `<span style="width: 7px; height: 7px; border-radius: 50%; background-color: #10b981;"></span><span>LIVE</span>`;
+            }
+        }
+
+        // Sync active subtab offline state
+        if (typeof window.syncActiveSubtabOfflineState === 'function') {
+            const activeTab = window.currentActiveLiveSubtab || (new URLSearchParams(window.location.search).get('tab') || 'aqi');
+            window.syncActiveSubtabOfflineState(activeTab);
         }
 
         const liveAccent = (currentAQITheme && currentAQITheme.accent) ? currentAQITheme.accent : '#59b61f';
@@ -5352,10 +5519,14 @@ window.__cleanupCurrentPage = function() {
     document.body.classList.remove('weather-backdrop-active');
     const lr = document.getElementById('app-layout-root');
     if (lr) {
-        lr.style.removeProperty('background');
-        lr.style.removeProperty('background-image');
-        lr.style.backgroundColor = '#fde68a';
-        lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)';
+        if (typeof window.applyAQIPageTheme === 'function') {
+            window.applyAQIPageTheme(window.currentAqiValue || 38);
+        } else if (window.currentAQITheme && window.currentAQITheme.pageColor) {
+            lr.style.removeProperty('background');
+            lr.style.removeProperty('background-image');
+            lr.style.backgroundColor = window.currentAQITheme.pageColor;
+            lr.style.backgroundImage = window.currentAQITheme.pageBg;
+        }
     }
 };
 
@@ -5396,15 +5567,13 @@ window.evaluateNode2WeatherTheme = function(temp, hum, rain) {
 };
 
 function initNode2WeatherBackdrop() {
-    if (liveCanvasAnimId) {
+    if (typeof liveCanvasAnimId !== 'undefined' && liveCanvasAnimId) {
         cancelAnimationFrame(liveCanvasAnimId);
         liveCanvasAnimId = null;
     }
-    const canvas = document.getElementById('weather-sky-canvas') || document.getElementById('live-ambient-canvas');
-    if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.style.display = 'none';
+    if (typeof liveCanvasResizeHandler !== 'undefined' && liveCanvasResizeHandler) {
+        window.removeEventListener('resize', liveCanvasResizeHandler);
+        liveCanvasResizeHandler = null;
     }
 }
 

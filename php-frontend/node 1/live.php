@@ -890,6 +890,12 @@ $init_border_colors = [
   <div id="live-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</div>
 </div>
 
+<script>
+  if (typeof window.applyAQIPageTheme === 'function') {
+      window.applyAQIPageTheme(<?= is_numeric($init_aqi_val) ? (int)$init_aqi_val : '38' ?>);
+  }
+</script>
+
 <div id="node1-view-aqi" style="display: flex; width: 100%; flex-direction: column; gap: 14px;">
 
   <!-- Page Header Titles -->
@@ -2368,12 +2374,18 @@ async function refreshDashboard(forceNetwork = false) {
             const aqiValue = d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : (d.aqi_info && d.aqi_info.value ? Math.round(d.aqi_info.value) : '--');
             const theme = getAQITheme(aqiValue);
             currentAQITheme = theme;
+            window.currentAQITheme = theme;
+            window.currentAqiValue = aqiValue;
 
             // Page layout root background synced with AQI theme
             const layoutRoot = document.getElementById('app-layout-root');
             if (layoutRoot && theme.pageColor && theme.pageBg) {
-                layoutRoot.style.backgroundColor = theme.pageColor;
-                layoutRoot.style.backgroundImage = theme.pageBg;
+                if (typeof window.applyAQIPageTheme === 'function') {
+                    window.applyAQIPageTheme(aqiValue);
+                } else {
+                    layoutRoot.style.backgroundColor = theme.pageColor;
+                    layoutRoot.style.backgroundImage = theme.pageBg;
+                }
             }
 
             // Hero card background and colors (darker richer than whole page)

@@ -564,9 +564,17 @@ $init_border_colors = [
   }
 }
 
+#hero-card {
+  max-width: 560px !important;
+  width: 100% !important;
+  margin: 0 auto 16px auto !important;
+}
+
 @media (max-width: 768px) {
   /* Mobile compact layout for Unified Live Telemetry Hero Card */
   #hero-card {
+    max-width: 100% !important;
+    width: 100% !important;
     padding: 10px 12px 9px 12px !important;
     border-radius: 18px !important;
     margin-bottom: 8px !important;
@@ -2048,8 +2056,8 @@ body.weather-backdrop-active #app-layout-root,
     </div>
   </div>
 
-  <!-- UNIFIED HERO CARD (AQI + Weather & Comfort Box) -->
-  <div id="hero-card" class="hero-card-responsive" style="background: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 22px 24px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 10px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background 0.6s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
+  <!-- UNIFIED HERO CARD (AQI Box - Half Width Centered) -->
+  <div id="hero-card" class="hero-card-responsive" style="max-width: 560px; width: 100%; margin: 0 auto 16px auto; background: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 22px 24px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 10px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background 0.6s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
     <!-- Indian Monuments Silhouette Watermark -->
     <div class="hero-skyline-silhouette" style="position: absolute; bottom: 0; left: 0; right: 0; height: 68px; pointer-events: none; z-index: 0; opacity: 0.14; overflow: hidden; display: flex; align-items: flex-end;">
       <svg id="hero-skyline-svg" viewBox="0 0 1000 90" preserveAspectRatio="none" style="width: 100%; height: 100%; fill: <?= $init_aqi_accent ?>; transition: fill 0.5s ease;">

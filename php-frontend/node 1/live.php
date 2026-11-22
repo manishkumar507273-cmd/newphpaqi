@@ -859,6 +859,57 @@ $init_border_colors = [
   0% { transform: scale(0.94); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* ══ Active Moving Spectrum Bar & Slider Dot System ══ */
+.live-slider-track {
+  position: relative;
+  border-radius: 999px;
+  background-size: 200% 100% !important;
+  animation: trackGradientShimmer 4s ease-in-out infinite alternate !important;
+  overflow: visible !important;
+  cursor: pointer;
+}
+
+.live-slider-track::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: barTrackLightSweep 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes trackGradientShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+@keyframes barTrackLightSweep {
+  0% { background-position: -50% 0; }
+  100% { background-position: 150% 0; }
+}
+
+@keyframes heroScaleDotLiveMotion {
+  0%, 100% {
+    transform: translate(calc(-50% - 4px), -50%) scale(1);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25), 0 0 8px rgba(255, 255, 255, 0.6);
+  }
+  50% {
+    transform: translate(calc(-50% + 4px), -50%) scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 14px rgba(255, 255, 255, 0.95);
+  }
+}
+#hero-scale-indicator, #pm-modal-marker {
+  animation: heroScaleDotLiveMotion 3.5s ease-in-out infinite !important;
+  will-change: transform, left;
+  transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease !important;
+}
 </style>
 
 <div class="live-page-root p-2.5 sm:p-6" style="position: relative; display: flex; flex-direction: column; gap: 14px; max-width: 1200px; margin: 0 auto; animation: fade-in 0.4s ease-out; padding-top: 14px;">
@@ -975,7 +1026,7 @@ $init_border_colors = [
               <span class="scale-label" style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.1; text-align: center; white-space: nowrap;">Hazardous</span>
             </div>
 
-            <div class="hero-scale-bar-track" style="position: relative; height: 7px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+            <div id="hero-scale-track" class="hero-scale-bar-track live-slider-track" style="position: relative; height: 7px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
               <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #22c55e 16.666%, #eab308 16.666%, #eab308 33.333%, #f97316 33.333%, #f97316 50%, #ef4444 50%, #ef4444 66.666%, #a855f7 66.666%, #a855f7 83.333%, #b91c1c 83.333%, #b91c1c 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
               <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: <?= $init_scale_pct ?>; transform: translate(-50%, -50%); width: 17px; height: 17px; border-radius: 50%; background-color: #ffffff; border: 3.5px solid <?= $init_aqi_accent ?>; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
             </div>
@@ -3042,6 +3093,54 @@ if (!window.__pollutantModalListenersBound) {
         }
     });
 }
+
+// ══ Interactive Pointer & Touch Scrubbing for All Moving Gradient Bars ══
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.live-slider-track').forEach(function(track) {
+        let isScrubbing = false;
+        const dot = track.querySelector('[id$="-dot"], #hero-scale-indicator, #pm-modal-marker');
+        if (!dot) return;
+
+        function updatePosition(e) {
+            const rect = track.getBoundingClientRect();
+            if (rect.width <= 0) return;
+            const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+            const pct = Math.max(5, Math.min(95, Math.round(((clientX - rect.left) / rect.width) * 100)));
+            dot.classList.remove('bar-dot-standby-scan');
+            dot.style.left = `${pct}%`;
+        }
+
+        track.addEventListener('mousedown', function(e) {
+            isScrubbing = true;
+            updatePosition(e);
+        });
+
+        window.addEventListener('mousemove', function(e) {
+            if (!isScrubbing) return;
+            updatePosition(e);
+        });
+
+        window.addEventListener('mouseup', function() {
+            if (isScrubbing) {
+                isScrubbing = false;
+            }
+        });
+
+        track.addEventListener('touchstart', function(e) {
+            isScrubbing = true;
+            updatePosition(e);
+        }, { passive: true });
+
+        window.addEventListener('touchmove', function(e) {
+            if (!isScrubbing) return;
+            updatePosition(e);
+        }, { passive: true });
+
+        window.addEventListener('touchend', function() {
+            isScrubbing = false;
+        });
+    });
+});
 </script>
 
 <!-- Pollutant Detail Modal (Mounted directly to viewport) -->
@@ -3096,7 +3195,7 @@ if (!window.__pollutantModalListenersBound) {
                     <div style="color: #475569; text-align: right;">Hazardous</div>
                 </div>
                 
-                <div class="pm-scale-track" style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+                <div class="pm-scale-track live-slider-track" style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
                     <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
                     <div id="pm-modal-marker" style="position: absolute; top: 50%; left: 10%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: #ffffff; border: 3.5px solid #59b61f; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
                 </div>

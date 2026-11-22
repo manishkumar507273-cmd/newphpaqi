@@ -1303,122 +1303,164 @@ $init_border_colors = [
 .drop-2 { animation: rainDropFall 1.1s linear infinite 0.35s; }
 .drop-3 { animation: rainDropFall 1.1s linear infinite 0.7s; }
 
-@keyframes uvGlowPulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(244, 63, 94, 0.8), 0 0 12px rgba(244, 63, 94, 0.4); }
-  50% { box-shadow: 0 0 14px rgba(244, 63, 94, 1), 0 0 22px rgba(244, 63, 94, 0.7); }
+/* ══ Active Moving Spectrum Bar & Slider Dot System ══ */
+.live-slider-track {
+  position: relative;
+  border-radius: 999px;
+  background-size: 200% 100% !important;
+  animation: trackGradientShimmer 4s ease-in-out infinite alternate !important;
+  overflow: visible !important;
+  cursor: pointer;
+}
+
+.live-slider-track::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: barTrackLightSweep 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes trackGradientShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+@keyframes barTrackLightSweep {
+  0% { background-position: -50% 0; }
+  100% { background-position: 150% 0; }
+}
+
+/* Standby Mode Active Scanning (when awaiting live stream / telemetry) */
+@keyframes barDotStandbyScan {
+  0% { left: 16%; }
+  50% { left: 84%; }
+  100% { left: 16%; }
+}
+
+.bar-dot-standby-scan {
+  animation: barDotStandbyScan 4s ease-in-out infinite !important;
+  transition: none !important;
+}
+
+/* ══ Live Dynamic Moving Indicator Dots (Horizontal Sway + Breathing Glow) ══ */
+@keyframes uvDotLiveMotion {
+  0%, 100% {
+    transform: translate(calc(-50% - 4px), -50%) scale(1);
+    box-shadow: 0 0 6px rgba(244, 63, 94, 0.8), 0 0 12px rgba(244, 63, 94, 0.4);
+  }
+  50% {
+    transform: translate(calc(-50% + 4px), -50%) scale(1.12);
+    box-shadow: 0 0 14px rgba(244, 63, 94, 1), 0 0 22px rgba(244, 63, 94, 0.75);
+  }
 }
 .uv-pulse-dot {
-  animation: uvGlowPulse 2.2s ease-in-out infinite;
+  animation: uvDotLiveMotion 3s ease-in-out infinite !important;
+  will-change: transform, left;
+  transition: left 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ══ Compass Radar / Idle Scan Animation ══ */
-@keyframes compassIdleScan {
-  0% { transform: rotate(-35deg); }
-  50% { transform: rotate(35deg); }
-  100% { transform: rotate(-35deg); }
-}
-.compass-idle-scan {
-  animation: compassIdleScan 5.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite !important;
-  transform-origin: 50px 50px;
-}
-
-/* ══ Pressure Needle Gauge Breathing ══ */
-@keyframes pressureNeedleBreathe {
-  0%, 100% { transform: rotate(57deg); }
-  50% { transform: rotate(63deg); }
-}
-.pressure-needle-breathe {
-  animation: pressureNeedleBreathe 4s ease-in-out infinite;
-  transform-origin: 50px 50px;
-}
-
-/* ══ Pressure Slider Pulse Dot ══ */
-@keyframes pressureGlowPulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(236, 72, 153, 0.8), 0 0 12px rgba(236, 72, 153, 0.4); }
-  50% { box-shadow: 0 0 14px rgba(236, 72, 153, 1), 0 0 22px rgba(236, 72, 153, 0.75); }
+@keyframes pressureDotLiveMotion {
+  0%, 100% {
+    transform: translate(calc(-50% - 4px), -50%) scale(1);
+    box-shadow: 0 0 6px rgba(236, 72, 153, 0.8), 0 0 12px rgba(236, 72, 153, 0.4);
+  }
+  50% {
+    transform: translate(calc(-50% + 4px), -50%) scale(1.12);
+    box-shadow: 0 0 14px rgba(236, 72, 153, 1), 0 0 22px rgba(236, 72, 153, 0.75);
+  }
 }
 .pressure-pulse-dot {
-  animation: pressureGlowPulse 2.4s ease-in-out infinite;
+  animation: pressureDotLiveMotion 3.2s ease-in-out infinite !important;
+  will-change: transform, left;
+  transition: left 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ══ Soil Temperature Probe Thermal Glow ══ */
-@keyframes soilThermalGlow {
+@keyframes soilTempDotLiveMotion {
   0%, 100% {
-    fill: #f59e0b;
-    filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.5));
+    transform: translate(calc(-50% - 4px), -50%) scale(1);
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.8), 0 0 12px rgba(245, 158, 11, 0.4);
   }
   50% {
-    fill: #fbbf24;
-    filter: drop-shadow(0 0 9px rgba(251, 191, 36, 0.9));
+    transform: translate(calc(-50% + 4px), -50%) scale(1.12);
+    box-shadow: 0 0 14px rgba(245, 158, 11, 1), 0 0 22px rgba(245, 158, 11, 0.75);
   }
-}
-.soil-temp-bulb-anim {
-  animation: soilThermalGlow 3s ease-in-out infinite;
-}
-
-@keyframes soilTempGlowPulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(245, 158, 11, 0.8), 0 0 12px rgba(245, 158, 11, 0.4); }
-  50% { box-shadow: 0 0 14px rgba(245, 158, 11, 1), 0 0 22px rgba(245, 158, 11, 0.75); }
 }
 .soil-temp-pulse-dot {
-  animation: soilTempGlowPulse 2.3s ease-in-out infinite;
+  animation: soilTempDotLiveMotion 3.4s ease-in-out infinite !important;
+  will-change: transform, left;
+  transition: left 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ══ Soil Humidity Water Drop Glisten & Bob ══ */
-@keyframes waterDropGlisten {
+@keyframes soilHumDotLiveMotion {
   0%, 100% {
-    transform: translateY(0px) scale(1);
-    filter: drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5));
+    transform: translate(calc(-50% - 4px), -50%) scale(1);
+    box-shadow: 0 0 6px rgba(2, 132, 199, 0.8), 0 0 12px rgba(2, 132, 199, 0.4);
   }
   50% {
-    transform: translateY(-2.5px) scale(1.04);
-    filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.85));
+    transform: translate(calc(-50% + 4px), -50%) scale(1.12);
+    box-shadow: 0 0 14px rgba(2, 132, 199, 1), 0 0 22px rgba(2, 132, 199, 0.75);
   }
-}
-.water-drop-anim {
-  animation: waterDropGlisten 3.2s ease-in-out infinite;
-  transform-origin: 32px 36px;
-}
-
-@keyframes soilHumGlowPulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(0, 191, 165, 0.8), 0 0 12px rgba(0, 191, 165, 0.4); }
-  50% { box-shadow: 0 0 14px rgba(0, 191, 165, 1), 0 0 22px rgba(0, 191, 165, 0.75); }
 }
 .soil-hum-pulse-dot {
-  animation: soilHumGlowPulse 2.5s ease-in-out infinite;
+  animation: soilHumDotLiveMotion 2.9s ease-in-out infinite !important;
+  will-change: transform, left;
+  transition: left 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ══ Soil pH Chemical Ring Rotation & Core Breathing ══ */
-@keyframes phRingSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-.ph-ring-anim {
-  animation: phRingSpin 16s linear infinite;
-  transform-origin: 32px 32px;
-}
-
-@keyframes phCoreBreathe {
+@keyframes soilPhDotLiveMotion {
   0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45));
+    transform: translate(calc(-50% - 4px), -50%) scale(1);
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.8), 0 0 12px rgba(16, 185, 129, 0.4);
   }
   50% {
-    transform: scale(1.06);
-    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.85));
+    transform: translate(calc(-50% + 4px), -50%) scale(1.12);
+    box-shadow: 0 0 14px rgba(16, 185, 129, 1), 0 0 22px rgba(16, 185, 129, 0.75);
   }
 }
-.ph-core-anim {
-  animation: phCoreBreathe 2.8s ease-in-out infinite;
-  transform-origin: 32px 32px;
+.soil-ph-pulse-dot {
+  animation: soilPhDotLiveMotion 3.1s ease-in-out infinite !important;
+  will-change: transform, left;
+  transition: left 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes soilPhGlowPulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(16, 185, 129, 0.8), 0 0 12px rgba(16, 185, 129, 0.4); }
-  50% { box-shadow: 0 0 14px rgba(16, 185, 129, 1), 0 0 22px rgba(16, 185, 129, 0.75); }
+@keyframes soilEcDotLiveMotion {
+  0%, 100% {
+    transform: translate(calc(-50% - 4px), -50%) scale(1);
+    box-shadow: 0 0 6px rgba(139, 92, 246, 0.8), 0 0 12px rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    transform: translate(calc(-50% + 4px), -50%) scale(1.12);
+    box-shadow: 0 0 14px rgba(139, 92, 246, 1), 0 0 22px rgba(139, 92, 246, 0.75);
+  }
 }
-.soil-ph-pulse-dot {
-  animation: soilPhGlowPulse 2.6s ease-in-out infinite;
+.soil-ec-pulse-dot {
+  animation: soilEcDotLiveMotion 3.3s ease-in-out infinite !important;
+  will-change: transform, left;
+  transition: left 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes heroScaleDotLiveMotion {
+  0%, 100% {
+    transform: translate(calc(-50% - 4px), -50%) scale(1);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25), 0 0 8px rgba(255, 255, 255, 0.6);
+  }
+  50% {
+    transform: translate(calc(-50% + 4px), -50%) scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 14px rgba(255, 255, 255, 0.95);
+  }
+}
+#hero-scale-indicator, #pm-modal-marker {
+  animation: heroScaleDotLiveMotion 3.5s ease-in-out infinite !important;
+  will-change: transform, left;
+  transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease !important;
 }
 
 @media (max-width: 900px) {
@@ -2144,7 +2186,7 @@ body.weather-backdrop-active #app-layout-root,
               <span class="scale-label" style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.1; text-align: center; white-space: nowrap;">Hazardous</span>
             </div>
 
-            <div class="hero-scale-bar-track" style="position: relative; height: 7px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+            <div id="hero-scale-track" class="hero-scale-bar-track live-slider-track" style="position: relative; height: 7px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
               <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #22c55e 16.666%, #eab308 16.666%, #eab308 33.333%, #f97316 33.333%, #f97316 50%, #ef4444 50%, #ef4444 66.666%, #a855f7 66.666%, #a855f7 83.333%, #b91c1c 83.333%, #b91c1c 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
               <div id="hero-scale-indicator" style="position: absolute; top: 50%; left: <?= $init_scale_pct ?>; transform: translate(-50%, -50%); width: 17px; height: 17px; border-radius: 50%; background-color: #ffffff; border: 3.5px solid <?= $init_aqi_accent ?>; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
             </div>
@@ -2916,8 +2958,8 @@ body.weather-backdrop-active #app-layout-root,
 
           <!-- Middle: Gradient track + indicator dot -->
           <div style="margin-top: 10px; width: 100%;">
-            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 35%, #ef4444 70%, #ec4899 100%); position: relative;">
-              <div id="pressure-slider-dot" class="pressure-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_pressure ? $pressure_pct : 50 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ec4899; box-shadow: 0 0 8px rgba(236,72,153,0.9); transition: left 1s ease-in-out;"></div>
+            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 35%, #ef4444 70%, #ec4899 100%); position: relative;">
+              <div id="pressure-slider-dot" class="pressure-pulse-dot <?= $has_pressure ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $has_pressure ? $pressure_pct : 50 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ec4899; box-shadow: 0 0 8px rgba(236,72,153,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
@@ -2941,8 +2983,8 @@ body.weather-backdrop-active #app-layout-root,
 
           <!-- Middle: Gradient track + glowing indicator dot -->
           <div style="margin-top: 14px; width: 100%;">
-            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 25%, #f97316 50%, #ef4444 75%, #a855f7 100%); position: relative;">
-              <div id="uv-slider-dot" class="uv-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_uv ? $uv_pct : 8 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f43f5e; box-shadow: 0 0 8px rgba(244,63,94,0.95); transition: left 1s ease-in-out;"></div>
+            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 25%, #f97316 50%, #ef4444 75%, #a855f7 100%); position: relative;">
+              <div id="uv-slider-dot" class="uv-pulse-dot <?= $has_uv ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $has_uv ? $uv_pct : 8 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f43f5e; box-shadow: 0 0 8px rgba(244,63,94,0.95); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
@@ -2980,8 +3022,8 @@ body.weather-backdrop-active #app-layout-root,
 
           <!-- Middle: Thermal Spectrum Bar + Indicator Dot -->
           <div style="margin-top: 10px; width: 100%;">
-            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
-              <div id="weather-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f97316; box-shadow: 0 0 8px rgba(249,115,22,0.9); transition: left 1s ease-in-out;"></div>
+            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
+              <div id="weather-temp-slider-dot" class="soil-temp-pulse-dot <?= is_numeric($init_weather_temp) ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $ambient_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f97316; box-shadow: 0 0 8px rgba(249,115,22,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
@@ -3023,8 +3065,8 @@ body.weather-backdrop-active #app-layout-root,
 
           <!-- Middle: Moisture Gradient Bar + Indicator Dot -->
           <div style="margin-top: 10px; width: 100%;">
-            <div style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #00bfa5 45%, #0284c7 100%); position: relative;">
-              <div id="weather-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2,132,199,0.9); transition: left 1s ease-in-out;"></div>
+            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #00bfa5 45%, #0284c7 100%); position: relative;">
+              <div id="weather-hum-slider-dot" class="soil-hum-pulse-dot <?= $init_weather_hum !== '--%' ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $ambient_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2,132,199,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
 
@@ -3148,8 +3190,8 @@ body.weather-backdrop-active #app-layout-root,
         </div>
 
         <div style="margin-top: 12px; width: 100%;">
-          <div style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #10b981 45%, #0284c7 100%); position: relative;">
-            <div id="soil-live-hum-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #0284c7; box-shadow: 0 0 8px rgba(2, 132, 199, 0.9); transition: left 1s ease-in-out;"></div>
+          <div class="live-slider-track" style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #10b981 45%, #0284c7 100%); position: relative;">
+            <div id="soil-live-hum-slider-dot" class="soil-hum-pulse-dot <?= $has_soil_hum ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #0284c7; box-shadow: 0 0 8px rgba(2, 132, 199, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
@@ -3182,8 +3224,8 @@ body.weather-backdrop-active #app-layout-root,
         </div>
 
         <div style="margin-top: 12px; width: 100%;">
-          <div style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
-            <div id="soil-live-temp-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #ea580c; box-shadow: 0 0 8px rgba(234, 88, 12, 0.9); transition: left 1s ease-in-out;"></div>
+          <div class="live-slider-track" style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
+            <div id="soil-live-temp-slider-dot" class="soil-temp-pulse-dot <?= $has_soil_temp ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #ea580c; box-shadow: 0 0 8px rgba(234, 88, 12, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
@@ -3213,8 +3255,8 @@ body.weather-backdrop-active #app-layout-root,
         </div>
 
         <div style="margin-top: 12px; width: 100%;">
-          <div style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
-            <div id="soil-live-ph-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.9); transition: left 1s ease-in-out;"></div>
+          <div class="live-slider-track" style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
+            <div id="soil-live-ph-slider-dot" class="soil-ph-pulse-dot <?= $has_soil_ph ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
@@ -3242,8 +3284,8 @@ body.weather-backdrop-active #app-layout-root,
         </div>
 
         <div style="margin-top: 12px; width: 100%;">
-          <div style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #10b981 0%, #06b6d4 40%, #8b5cf6 75%, #ef4444 100%); position: relative;">
-            <div id="soil-live-ec-slider-dot" style="position: absolute; top: 50%; left: <?= $soil_ec_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.9); transition: left 1s ease-in-out;"></div>
+          <div class="live-slider-track" style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #10b981 0%, #06b6d4 40%, #8b5cf6 75%, #ef4444 100%); position: relative;">
+            <div id="soil-live-ec-slider-dot" class="soil-ec-pulse-dot <?= $has_soil_ec ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_ec_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
@@ -4561,6 +4603,7 @@ async function refreshDashboard(forceNetwork = false) {
                     pressNeedle.style.transform = `rotate(${angle.toFixed(1)}deg)`;
                 }
                 if (pressDot) {
+                    pressDot.classList.remove('bar-dot-standby-scan');
                     pressDot.style.display = '';
                     pressDot.style.left = `${Math.max(5, Math.min(95, Math.round(((pressVal - 995) / (1025 - 995)) * 100)))}%`;
                 }
@@ -4573,8 +4616,8 @@ async function refreshDashboard(forceNetwork = false) {
                     pressNeedle.style.transform = 'rotate(60deg)';
                 }
                 if (pressDot) {
+                    pressDot.classList.add('bar-dot-standby-scan');
                     pressDot.style.display = '';
-                    pressDot.style.left = '50%';
                 }
             }
 
@@ -4592,6 +4635,7 @@ async function refreshDashboard(forceNetwork = false) {
                 if (uvEl) uvEl.innerText = `${uvVal} ${uvLvl}`;
                 if (uvNote) uvNote.innerText = uvVal;
                 if (uvDot) {
+                    uvDot.classList.remove('bar-dot-standby-scan');
                     uvDot.style.display = '';
                     uvDot.style.left = `${Math.max(5, Math.min(95, Math.round((uvF / 11) * 100)))}%`;
                 }
@@ -4599,8 +4643,8 @@ async function refreshDashboard(forceNetwork = false) {
                 if (uvEl) uvEl.innerText = '--';
                 if (uvNote) uvNote.innerText = '--';
                 if (uvDot) {
+                    uvDot.classList.add('bar-dot-standby-scan');
                     uvDot.style.display = '';
-                    uvDot.style.left = '8%';
                 }
             }
 
@@ -4613,6 +4657,7 @@ async function refreshDashboard(forceNetwork = false) {
                 if (ambTempEl) ambTempEl.innerText = `${aT} °C`;
                 if (ambTempNote) ambTempNote.innerText = `${aT} °C (Ambient)`;
                 if (ambTempDot) {
+                    ambTempDot.classList.remove('bar-dot-standby-scan');
                     ambTempDot.style.display = '';
                     ambTempDot.style.left = `${Math.max(5, Math.min(95, Math.round(((Number(aT) - 15) / (45 - 15)) * 100)))}%`;
                 }
@@ -4620,8 +4665,8 @@ async function refreshDashboard(forceNetwork = false) {
                 if (ambTempEl) ambTempEl.innerText = '--';
                 if (ambTempNote) ambTempNote.innerText = '--';
                 if (ambTempDot) {
+                    ambTempDot.classList.add('bar-dot-standby-scan');
                     ambTempDot.style.display = '';
-                    ambTempDot.style.left = '50%';
                 }
             }
 
@@ -4633,6 +4678,7 @@ async function refreshDashboard(forceNetwork = false) {
                 if (ambHumEl) ambHumEl.innerText = `${aH}%`;
                 if (ambHumNote) ambHumNote.innerText = `Relative RH ${aH}%`;
                 if (ambHumDot) {
+                    ambHumDot.classList.remove('bar-dot-standby-scan');
                     ambHumDot.style.display = '';
                     ambHumDot.style.left = `${Math.max(5, Math.min(95, Math.round(Number(aH))))}%`;
                 }
@@ -4640,8 +4686,8 @@ async function refreshDashboard(forceNetwork = false) {
                 if (ambHumEl) ambHumEl.innerText = '--';
                 if (ambHumNote) ambHumNote.innerText = '--';
                 if (ambHumDot) {
+                    ambHumDot.classList.add('bar-dot-standby-scan');
                     ambHumDot.style.display = '';
-                    ambHumDot.style.left = '50%';
                 }
             }
 
@@ -4657,6 +4703,7 @@ async function refreshDashboard(forceNetwork = false) {
                 if (soilTempEl) soilTempEl.innerText = `${sT} °C`;
                 if (soilTempNote) soilTempNote.innerText = `${sT} °C (Optimal Range)`;
                 if (soilTempDot) {
+                    soilTempDot.classList.remove('bar-dot-standby-scan');
                     soilTempDot.style.display = '';
                     soilTempDot.style.left = `${Math.max(5, Math.min(95, Math.round(((Number(sT) - 10) / (40 - 10)) * 100)))}%`;
                 }
@@ -4664,8 +4711,8 @@ async function refreshDashboard(forceNetwork = false) {
                 if (soilTempEl) soilTempEl.innerText = '--';
                 if (soilTempNote) soilTempNote.innerText = '--';
                 if (soilTempDot) {
+                    soilTempDot.classList.add('bar-dot-standby-scan');
                     soilTempDot.style.display = '';
-                    soilTempDot.style.left = '48%';
                 }
             }
 
@@ -4678,6 +4725,7 @@ async function refreshDashboard(forceNetwork = false) {
                 if (soilHumEl) soilHumEl.innerText = `${sH}%`;
                 if (soilHumNote) soilHumNote.innerText = `Adequate Field Capacity (${sH}%)`;
                 if (soilHumDot) {
+                    soilHumDot.classList.remove('bar-dot-standby-scan');
                     soilHumDot.style.display = '';
                     soilHumDot.style.left = `${Math.max(5, Math.min(95, Math.round(Number(sH))))}%`;
                 }
@@ -4685,8 +4733,8 @@ async function refreshDashboard(forceNetwork = false) {
                 if (soilHumEl) soilHumEl.innerText = '--';
                 if (soilHumNote) soilHumNote.innerText = '--';
                 if (soilHumDot) {
+                    soilHumDot.classList.add('bar-dot-standby-scan');
                     soilHumDot.style.display = '';
-                    soilHumDot.style.left = '50%';
                 }
             }
 
@@ -4700,6 +4748,7 @@ async function refreshDashboard(forceNetwork = false) {
                 const phStatus = (phNum < 6.0) ? 'Slightly Acidic' : ((phNum > 7.5) ? 'Slightly Alkaline' : 'Optimal Neutral');
                 if (soilPhNote) soilPhNote.innerText = `${phStatus} (${sPh})`;
                 if (soilPhDot) {
+                    soilPhDot.classList.remove('bar-dot-standby-scan');
                     soilPhDot.style.display = '';
                     soilPhDot.style.left = `${Math.max(5, Math.min(95, Math.round(((phNum - 3.0) / (10.0 - 3.0)) * 100)))}%`;
                 }
@@ -4707,8 +4756,8 @@ async function refreshDashboard(forceNetwork = false) {
                 if (soilPhEl) soilPhEl.innerText = '--';
                 if (soilPhNote) soilPhNote.innerText = '--';
                 if (soilPhDot) {
+                    soilPhDot.classList.add('bar-dot-standby-scan');
                     soilPhDot.style.display = '';
-                    soilPhDot.style.left = '50%';
                 }
             }
 
@@ -4722,12 +4771,18 @@ async function refreshDashboard(forceNetwork = false) {
                 const ecStatus = (ecNum < 40) ? 'Low Salinity (Good)' : ((ecNum > 150) ? 'Elevated Salinity' : 'Balanced Fertility');
                 if (soilEcNote) soilEcNote.innerText = `${ecStatus} (${sEc})`;
                 if (soilEcDot) {
+                    soilEcDot.classList.remove('bar-dot-standby-scan');
                     soilEcDot.style.display = '';
                     soilEcDot.style.left = `${Math.max(5, Math.min(95, Math.round((ecNum / 200.0) * 100)))}%`;
                 }
             } else {
                 if (soilEcEl) soilEcEl.innerText = '--';
                 if (soilEcNote) soilEcNote.innerText = '--';
+                if (soilEcDot) {
+                    soilEcDot.classList.add('bar-dot-standby-scan');
+                    soilEcDot.style.display = '';
+                }
+            }
                 if (soilEcDot) {
                     soilEcDot.style.display = '';
                     soilEcDot.style.left = '50%';
@@ -4896,8 +4951,8 @@ async function refreshDashboard(forceNetwork = false) {
             }
             const pressDot = document.getElementById('pressure-slider-dot');
             if (pressDot) {
+                pressDot.classList.add('bar-dot-standby-scan');
                 pressDot.style.display = '';
-                pressDot.style.left = '50%';
             }
             const uvEl = document.getElementById('card-uv-val');
             if (uvEl) uvEl.innerText = '--';
@@ -4905,21 +4960,51 @@ async function refreshDashboard(forceNetwork = false) {
             if (uvNote) uvNote.innerText = '--';
             const uvDot = document.getElementById('uv-slider-dot');
             if (uvDot) {
+                uvDot.classList.add('bar-dot-standby-scan');
                 uvDot.style.display = '';
-                uvDot.style.left = '8%';
             }
             const ambTempEl = document.getElementById('card-weather-temp-val');
             if (ambTempEl) ambTempEl.innerText = '--';
+            const ambTempDot = document.getElementById('weather-temp-slider-dot');
+            if (ambTempDot) {
+                ambTempDot.classList.add('bar-dot-standby-scan');
+                ambTempDot.style.display = '';
+            }
             const ambHumEl = document.getElementById('card-weather-hum-val');
             if (ambHumEl) ambHumEl.innerText = '--';
+            const ambHumDot = document.getElementById('weather-hum-slider-dot');
+            if (ambHumDot) {
+                ambHumDot.classList.add('bar-dot-standby-scan');
+                ambHumDot.style.display = '';
+            }
             const soilTempEl = document.getElementById('soil-live-temp-val');
             if (soilTempEl) soilTempEl.innerText = '--';
+            const soilTempDot = document.getElementById('soil-live-temp-slider-dot');
+            if (soilTempDot) {
+                soilTempDot.classList.add('bar-dot-standby-scan');
+                soilTempDot.style.display = '';
+            }
             const soilHumEl = document.getElementById('soil-live-hum-val');
             if (soilHumEl) soilHumEl.innerText = '--';
+            const soilHumDot = document.getElementById('soil-live-hum-slider-dot');
+            if (soilHumDot) {
+                soilHumDot.classList.add('bar-dot-standby-scan');
+                soilHumDot.style.display = '';
+            }
             const soilPhEl = document.getElementById('soil-live-ph-val');
             if (soilPhEl) soilPhEl.innerText = '--';
+            const soilPhDot = document.getElementById('soil-live-ph-slider-dot');
+            if (soilPhDot) {
+                soilPhDot.classList.add('bar-dot-standby-scan');
+                soilPhDot.style.display = '';
+            }
             const soilEcEl = document.getElementById('soil-live-ec-val');
             if (soilEcEl) soilEcEl.innerText = '--';
+            const soilEcDot = document.getElementById('soil-live-ec-slider-dot');
+            if (soilEcDot) {
+                soilEcDot.classList.add('bar-dot-standby-scan');
+                soilEcDot.style.display = '';
+            }
         }
         
         // WEATHER & SOIL TABLES
@@ -5719,6 +5804,54 @@ if (!window.__pollutantModalListenersBound) {
         }
     });
 }
+
+// ══ Interactive Pointer & Touch Scrubbing for All Moving Gradient Bars ══
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.live-slider-track').forEach(function(track) {
+        let isScrubbing = false;
+        const dot = track.querySelector('[id$="-dot"], #hero-scale-indicator, #pm-modal-marker');
+        if (!dot) return;
+
+        function updatePosition(e) {
+            const rect = track.getBoundingClientRect();
+            if (rect.width <= 0) return;
+            const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+            const pct = Math.max(5, Math.min(95, Math.round(((clientX - rect.left) / rect.width) * 100)));
+            dot.classList.remove('bar-dot-standby-scan');
+            dot.style.left = `${pct}%`;
+        }
+
+        track.addEventListener('mousedown', function(e) {
+            isScrubbing = true;
+            updatePosition(e);
+        });
+
+        window.addEventListener('mousemove', function(e) {
+            if (!isScrubbing) return;
+            updatePosition(e);
+        });
+
+        window.addEventListener('mouseup', function() {
+            if (isScrubbing) {
+                isScrubbing = false;
+            }
+        });
+
+        track.addEventListener('touchstart', function(e) {
+            isScrubbing = true;
+            updatePosition(e);
+        }, { passive: true });
+
+        window.addEventListener('touchmove', function(e) {
+            if (!isScrubbing) return;
+            updatePosition(e);
+        }, { passive: true });
+
+        window.addEventListener('touchend', function() {
+            isScrubbing = false;
+        });
+    });
+});
 </script>
 
 <!-- Pollutant Detail Modal (Mounted directly to viewport) -->
@@ -5773,7 +5906,7 @@ if (!window.__pollutantModalListenersBound) {
                     <div style="color: #475569; text-align: right;">Hazardous</div>
                 </div>
                 
-                <div class="pm-scale-track" style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+                <div class="pm-scale-track live-slider-track" style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
                     <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
                     <div id="pm-modal-marker" style="position: absolute; top: 50%; left: 10%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: #ffffff; border: 3.5px solid #59b61f; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
                 </div>

@@ -1968,8 +1968,8 @@ body.weather-backdrop-active #app-layout-root,
           if (layoutRoot) {
               layoutRoot.style.removeProperty('background');
               layoutRoot.style.removeProperty('background-image');
-              layoutRoot.style.backgroundColor = (window.currentAQITheme && window.currentAQITheme.pageColor) ? window.currentAQITheme.pageColor : '#fefce8';
-              layoutRoot.style.backgroundImage = (window.currentAQITheme && window.currentAQITheme.pageBg) ? window.currentAQITheme.pageBg : 'radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%)';
+              layoutRoot.style.backgroundColor = (window.currentAQITheme && window.currentAQITheme.pageColor) ? window.currentAQITheme.pageColor : '#fde68a';
+              layoutRoot.style.backgroundImage = (window.currentAQITheme && window.currentAQITheme.pageBg) ? window.currentAQITheme.pageBg : 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)';
           }
           if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
       }
@@ -1998,8 +1998,8 @@ body.weather-backdrop-active #app-layout-root,
       if (lr) {
           lr.style.removeProperty('background');
           lr.style.removeProperty('background-image');
-          lr.style.backgroundColor = '#f0fdf4';
-          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%)';
+          lr.style.backgroundColor = '#dcfce7';
+          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #86efac 0%, #bbf7d0 35%, #dcfce7 65%, #bbf7d0 100%)';
       }
   } else {
       document.body.classList.remove('weather-backdrop-active');
@@ -2007,8 +2007,8 @@ body.weather-backdrop-active #app-layout-root,
       if (lr) {
           lr.style.removeProperty('background');
           lr.style.removeProperty('background-image');
-          lr.style.backgroundColor = '#fefce8';
-          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%)';
+          lr.style.backgroundColor = '#fde68a';
+          lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)';
       }
   }
 
@@ -4240,8 +4240,8 @@ async function refreshDashboard(forceNetwork = false) {
             if (isNaN(v) || v <= 50) {
                 return {
                     label: 'Good',
-                    pageColor: '#f0fdf4',
-                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #bbf7d0 35%, #f0fdf4 65%, #f8fafc 100%)',
+                    pageColor: '#dcfce7',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #86efac 0%, #bbf7d0 35%, #dcfce7 65%, #bbf7d0 100%)',
                     bg: 'linear-gradient(155deg, #86efac 0%, #4ade80 25%, #22c55e 55%, #16a34a 80%, #15803d 95%, #166534 100%)',
                     border: 'rgba(21, 128, 61, 0.45)',
                     shadow: 'rgba(22, 163, 74, 0.28)',
@@ -4254,8 +4254,8 @@ async function refreshDashboard(forceNetwork = false) {
             if (v <= 100) {
                 return {
                     label: 'Moderate',
-                    pageColor: '#fefce8',
-                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%)',
+                    pageColor: '#fde68a',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)',
                     bg: 'linear-gradient(155deg, #fde047 0%, #facc15 22%, #eab308 50%, #ca8a04 75%, #b45309 90%, #92400e 100%)',
                     border: 'rgba(180, 83, 9, 0.45)',
                     shadow: 'rgba(202, 138, 4, 0.28)',
@@ -4268,8 +4268,8 @@ async function refreshDashboard(forceNetwork = false) {
             if (v <= 200) {
                 return {
                     label: 'Poor',
-                    pageColor: '#fff7ed',
-                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fed7aa 0%, #ffedd5 35%, #fff7ed 65%, #fffaf5 100%)',
+                    pageColor: '#fed7aa',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fdba74 0%, #fed7aa 35%, #ffedd5 65%, #fed7aa 100%)',
                     bg: 'linear-gradient(155deg, #fdba74 0%, #fb923c 25%, #f97316 52%, #ea580c 78%, #c2410c 92%, #9a3412 100%)',
                     border: 'rgba(194, 65, 12, 0.45)',
                     shadow: 'rgba(234, 88, 12, 0.28)',
@@ -4282,8 +4282,8 @@ async function refreshDashboard(forceNetwork = false) {
             if (v <= 300) {
                 return {
                     label: 'Unhealthy',
-                    pageColor: '#fff1f2',
-                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fecdd3 0%, #ffe4e6 35%, #fff1f2 65%, #fffbfc 100%)',
+                    pageColor: '#fecdd3',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fda4af 0%, #fecdd3 35%, #ffe4e6 65%, #fecdd3 100%)',
                     bg: 'linear-gradient(155deg, #fda4af 0%, #fb7185 25%, #f43f5e 52%, #e11d48 78%, #be123c 92%, #881337 100%)',
                     border: 'rgba(190, 18, 60, 0.45)',
                     shadow: 'rgba(225, 29, 72, 0.28)',
@@ -4296,8 +4296,8 @@ async function refreshDashboard(forceNetwork = false) {
             if (v <= 400) {
                 return {
                     label: 'Severe',
-                    pageColor: '#faf5ff',
-                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #e9d5ff 0%, #f3e8ff 35%, #faf5ff 65%, #fcfaff 100%)',
+                    pageColor: '#e9d5ff',
+                    pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #d8b4fe 0%, #e9d5ff 35%, #f3e8ff 65%, #e9d5ff 100%)',
                     bg: 'linear-gradient(155deg, #d8b4fe 0%, #c084fc 25%, #a855f7 52%, #9333ea 78%, #7e22ce 92%, #581c87 100%)',
                     border: 'rgba(126, 34, 206, 0.45)',
                     shadow: 'rgba(147, 51, 234, 0.28)',
@@ -4309,8 +4309,8 @@ async function refreshDashboard(forceNetwork = false) {
             }
             return {
                 label: 'Hazardous',
-                pageColor: '#fef2f2',
-                pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fee2e2 0%, #fecaca 35%, #fef2f2 65%, #fff8f8 100%)',
+                pageColor: '#fecaca',
+                pageBg: 'radial-gradient(ellipse 120% 70% at 50% -10%, #fca5a5 0%, #fecaca 35%, #fee2e2 65%, #fecaca 100%)',
                 bg: 'linear-gradient(155deg, #fca5a5 0%, #f87171 25%, #ef4444 52%, #dc2626 78%, #b91c1c 92%, #7f1d1d 100%)',
                 border: 'rgba(185, 28, 28, 0.50)',
                 shadow: 'rgba(220, 38, 38, 0.32)',
@@ -5161,8 +5161,8 @@ window.__cleanupCurrentPage = function() {
     if (lr) {
         lr.style.removeProperty('background');
         lr.style.removeProperty('background-image');
-        lr.style.backgroundColor = '#fefce8';
-        lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%)';
+        lr.style.backgroundColor = '#fde68a';
+        lr.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)';
     }
 };
 

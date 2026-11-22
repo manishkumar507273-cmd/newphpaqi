@@ -614,7 +614,7 @@ window.updateGlobalLiveBadge = function(isLive, tooltip = null, timeStr = null) 
 <?php
 // Dynamic warm golden background for Live AQI and cool/light for other pages
 $cool_bg_styles = [
-    'live' => 'background-color: #fefce8; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fef08a 0%, #fef9c3 35%, #fefce8 65%, #fffdf0 100%);',
+    'live' => 'background-color: #fde68a; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%);',
     'historical' => 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
     'predictive' => 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',
     'overview' => 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);',

@@ -649,11 +649,13 @@ $active_layout_bg = $is_weather_tab_active
             <div style="font-size: 17px; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; line-height: 1.1;">
               Smart <span style="font-weight: 600; color: #00bfa5;">WeatherNet</span>
             </div>
+            <?php if (!empty($node_config['station_tag'])): ?>
             <div style="display: flex; align-items: center; gap: 5px; margin-top: 2px;">
               <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6.5px; height: 6.5px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
-              <span style="font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap;"><?= htmlspecialchars($node_config['station_tag'] ?? 'SMVITM Campus') ?></span>
+              <span style="font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap;"><?= htmlspecialchars($node_config['station_tag']) ?></span>
               <span id="navbar-station-coords" style="font-size: 9.5px; font-weight: 600; color: #94a3b8; border-left: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? '1px solid #e2e8f0' : 'none' ?>; padding-left: 5px; margin-left: 1px; white-space: nowrap; display: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? 'inline-block' : 'none' ?>;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : '' ?></span>
             </div>
+            <?php endif; ?>
           </div>
         </a>
 

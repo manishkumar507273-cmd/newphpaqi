@@ -3256,18 +3256,12 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
             Subsurface Soil Telemetry &amp; Agrimet Grid
           </h1>
           <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0; font-weight: 500;">
-            Precision root-zone sensing &bull; Field Station 2
+            Precision root-zone sensing
           </p>
         </div>
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <!-- Coordinates Badge (shows only when coordinates available from Supabase) -->
-        <div id="soil-station-coords-badge" style="display: <?= $has_coords ? 'inline-flex' : 'none' ?>; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ffffff; border: 1.5px solid #a7f3d0; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08); font-size: 11.5px; font-weight: 700; color: #065f46;">
-          <i data-lucide="map-pin" style="width: 13px; height: 13px; color: #10b981;"></i>
-          <span id="soil-coords-display"><?= $has_coords ? htmlspecialchars($init_dms ?? ($init_lat . '° N, ' . $init_lon . '° E')) : '' ?></span>
-        </div>
-
         <!-- Last Updated Badge -->
         <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #ffffff; border: 1.5px solid #e2e8f0; font-size: 11.5px; font-weight: 600; color: #475569;">
           <span>Last Updated: <strong id="soil-last-updated-val" style="color: #0f172a; font-family: var(--font-mono);"><?= date('h:i A') ?></strong></span>
@@ -3281,132 +3275,132 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
       </div>
     </div>
 
-    <!-- 4 Soil Frosted Glass KPI Cards (Soil Moisture, Temperature, pH, EC) -->
+    <!-- 4 Soil Frosted Glass KPI Cards (Soil Moisture, Temperature, pH, EC - Weather-style Dark Cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
 
       <!-- Card 1: Soil Moisture / Humidity -->
-      <div class="weather-card-dark" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid #bae6fd; border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 24px rgba(2, 132, 199, 0.08); display: flex; flex-direction: column; justify-content: space-between; min-height: 146px;">
+      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-          <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 34px; height: 34px;">
+          <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.35) 0%, rgba(3, 105, 161, 0.45) 100%); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 32px; height: 32px;">
               <g class="water-drop-anim">
-                <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="#ffffff" />
+                <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="#38bdf8" />
                 <ellipse cx="26" cy="34" rx="3.5" ry="6" transform="rotate(-28 26 34)" fill="rgba(255,255,255,0.7)" />
               </g>
             </svg>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 2px;">
+            <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
               Soil Moisture
             </div>
-            <div id="soil-live-hum-val" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #0369a1; line-height: 1.1; letter-spacing: -0.02em;">
+            <div id="soil-live-hum-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
               <?= $init_soil_hum ?>
             </div>
           </div>
         </div>
 
-        <div style="margin-top: 12px; width: 100%;">
-          <div class="live-slider-track" style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #10b981 45%, #0284c7 100%); position: relative;">
-            <div id="soil-live-hum-slider-dot" class="soil-hum-pulse-dot <?= $has_soil_hum ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #0284c7; box-shadow: 0 0 8px rgba(2, 132, 199, 0.9); transition: left 1s ease-in-out;"></div>
+        <div style="margin-top: 10px; width: 100%;">
+          <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #10b981 45%, #0284c7 100%); position: relative;">
+            <div id="soil-live-hum-slider-dot" class="soil-hum-pulse-dot <?= $has_soil_hum ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2, 132, 199, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
-        <div style="margin-top: 10px; font-size: 12px; color: #64748b; line-height: 1.35; font-weight: 500;">
-          Hydration status: <span id="soil-live-hum-note-val" style="color: #0284c7; font-weight: 700;"><?= $has_soil_hum ? "Adequate Field Capacity ({$init_soil_hum})" : '--' ?></span>
+        <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          Hydration status: <span id="soil-live-hum-note-val" style="color: #38bdf8; font-weight: 600;"><?= $has_soil_hum ? "Adequate Field Capacity ({$init_soil_hum})" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 2: Soil Temperature -->
-      <div class="weather-card-dark" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid #fed7aa; border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 24px rgba(234, 88, 12, 0.08); display: flex; flex-direction: column; justify-content: space-between; min-height: 146px;">
+      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-          <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 34px; height: 34px;">
-              <rect x="28" y="10" width="8" height="26" rx="4" fill="rgba(255,255,255,0.3)" stroke="#ffffff" stroke-width="1.6" />
-              <circle cx="32" cy="38" r="7.5" fill="#ffffff" />
-              <rect x="30" y="18" width="4" height="18" rx="2" fill="#ea580c" />
+          <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(234, 88, 12, 0.45) 100%); border: 1px solid rgba(251, 146, 60, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 32px; height: 32px;">
+              <rect x="28" y="10" width="8" height="26" rx="4" fill="rgba(255,255,255,0.2)" stroke="#ffffff" stroke-width="1.6" />
+              <circle cx="32" cy="38" r="7.5" fill="#f97316" />
+              <rect x="30" y="18" width="4" height="18" rx="2" fill="#f97316" />
               <line x1="38" y1="14" x2="41" y2="14" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
               <line x1="38" y1="20" x2="42" y2="20" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
               <line x1="38" y1="26" x2="41" y2="26" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
             </svg>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 2px;">
+            <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
               Soil Temperature
             </div>
-            <div id="soil-live-temp-val" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #c2410c; line-height: 1.1; letter-spacing: -0.02em;">
+            <div id="soil-live-temp-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
               <?= $init_soil_temp ?>
             </div>
           </div>
         </div>
 
-        <div style="margin-top: 12px; width: 100%;">
-          <div class="live-slider-track" style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
-            <div id="soil-live-temp-slider-dot" class="soil-temp-pulse-dot <?= $has_soil_temp ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #ea580c; box-shadow: 0 0 8px rgba(234, 88, 12, 0.9); transition: left 1s ease-in-out;"></div>
+        <div style="margin-top: 10px; width: 100%;">
+          <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
+            <div id="soil-live-temp-slider-dot" class="soil-temp-pulse-dot <?= $has_soil_temp ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ea580c; box-shadow: 0 0 8px rgba(234, 88, 12, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
-        <div style="margin-top: 10px; font-size: 12px; color: #64748b; line-height: 1.35; font-weight: 500;">
-          Root zone: <span id="soil-live-temp-note-val" style="color: #ea580c; font-weight: 700;"><?= $has_soil_temp ? "{$init_soil_temp} (Optimal Range)" : '--' ?></span>
+        <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          Root zone: <span id="soil-live-temp-note-val" style="color: #fed7aa; font-weight: 600;"><?= $has_soil_temp ? "{$init_soil_temp} (Optimal Range)" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 3: Soil pH -->
-      <div class="weather-card-dark" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid #a7f3d0; border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.08); display: flex; flex-direction: column; justify-content: space-between; min-height: 146px;">
+      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-          <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 34px; height: 34px;">
-              <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" />
-              <circle cx="32" cy="32" r="16" fill="#ffffff" />
-              <text x="32" y="33" font-size="11" font-weight="900" fill="#059669" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
+          <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.45) 100%); border: 1px solid rgba(52, 211, 153, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 32px; height: 32px;">
+              <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" />
+              <circle cx="32" cy="32" r="15" fill="#10b981" />
+              <text x="32" y="33" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
             </svg>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 2px;">
+            <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
               Soil Reaction (pH)
             </div>
-            <div id="soil-live-ph-val" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #047857; line-height: 1.1; letter-spacing: -0.02em;">
+            <div id="soil-live-ph-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
               <?= $init_soil_ph ?>
             </div>
           </div>
         </div>
 
-        <div style="margin-top: 12px; width: 100%;">
-          <div class="live-slider-track" style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
-            <div id="soil-live-ph-slider-dot" class="soil-ph-pulse-dot <?= $has_soil_ph ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.9); transition: left 1s ease-in-out;"></div>
+        <div style="margin-top: 10px; width: 100%;">
+          <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
+            <div id="soil-live-ph-slider-dot" class="soil-ph-pulse-dot <?= $has_soil_ph ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
-        <div style="margin-top: 10px; font-size: 12px; color: #64748b; line-height: 1.35; font-weight: 500;">
-          Acidity: <span id="soil-live-ph-note-val" style="color: #059669; font-weight: 700;"><?= $has_soil_ph ? "{$soil_ph_status} ({$init_soil_ph})" : '--' ?></span>
+        <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          Acidity: <span id="soil-live-ph-note-val" style="color: #34d399; font-weight: 600;"><?= $has_soil_ph ? "{$soil_ph_status} ({$init_soil_ph})" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 4: Soil Electrical Conductivity (EC) -->
-      <div class="weather-card-dark" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid #e9d5ff; border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.08); display: flex; flex-direction: column; justify-content: space-between; min-height: 146px;">
+      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-          <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 34px; height: 34px;">
-              <path d="M 34 10 L 22 34 L 32 34 L 28 54 L 44 28 L 34 28 Z" fill="#ffffff" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))" />
+          <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(109, 40, 217, 0.45) 100%); border: 1px solid rgba(192, 132, 252, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 32px; height: 32px;">
+              <path d="M 34 10 L 22 34 L 32 34 L 28 54 L 44 28 L 34 28 Z" fill="#c084fc" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))" />
             </svg>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 2px;">
+            <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
               Soil Conductivity (EC)
             </div>
-            <div id="soil-live-ec-val" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #6d28d9; line-height: 1.1; letter-spacing: -0.02em;">
+            <div id="soil-live-ec-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
               <?= $init_soil_ec ?>
             </div>
           </div>
         </div>
 
-        <div style="margin-top: 12px; width: 100%;">
-          <div class="live-slider-track" style="height: 6px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #10b981 0%, #06b6d4 40%, #8b5cf6 75%, #ef4444 100%); position: relative;">
-            <div id="soil-live-ec-slider-dot" class="soil-ec-pulse-dot <?= $has_soil_ec ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_ec_pct ?>%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2.5px solid #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.9); transition: left 1s ease-in-out;"></div>
+        <div style="margin-top: 10px; width: 100%;">
+          <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #10b981 0%, #06b6d4 40%, #8b5cf6 75%, #ef4444 100%); position: relative;">
+            <div id="soil-live-ec-slider-dot" class="soil-ec-pulse-dot <?= $has_soil_ec ? '' : 'bar-dot-standby-scan' ?>" style="position: absolute; top: 50%; left: <?= $soil_ec_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
-        <div style="margin-top: 10px; font-size: 12px; color: #64748b; line-height: 1.35; font-weight: 500;">
-          Salinity / Ion level: <span id="soil-live-ec-note-val" style="color: #7c3aed; font-weight: 700;"><?= $has_soil_ec ? "{$soil_ec_status} ({$init_soil_ec})" : '--' ?></span>
+        <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          Salinity / Ion level: <span id="soil-live-ec-note-val" style="color: #c084fc; font-weight: 600;"><?= $has_soil_ec ? "{$soil_ec_status} ({$init_soil_ec})" : '--' ?></span>
         </div>
       </div>
 

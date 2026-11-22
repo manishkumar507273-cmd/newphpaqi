@@ -10,7 +10,7 @@ return [
     'code'        => 'NODE2',
     'name'        => 'Node 2 - Field Station',
     'short_name'  => 'Node 2',
-    'station_tag' => 'Field Station 2',
+    'station_tag' => '',
     'status'      => 'ONLINE',
     'is_active'   => true,
     'has_data'    => true,

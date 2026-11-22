@@ -582,11 +582,14 @@ $init_border_colors = [
 }
 
 #hero-card {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 0 16px 0 !important;
+}
+
+.hero-aqi-col {
   max-width: 560px !important;
   width: 100% !important;
-  margin: 0 auto 16px 0 !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
 }
 
 @media (max-width: 768px) {
@@ -1957,8 +1960,8 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
     </div>
   </div>
 
-  <!-- UNIFIED HERO CARD (AQI Box - Half Width Left-Aligned) -->
-  <div id="hero-card" class="hero-card-responsive" style="max-width: 560px; width: 100%; margin: 0 auto 16px 0; margin-left: 0; margin-right: auto; background: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 22px 24px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 10px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background 0.6s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
+  <!-- UNIFIED HERO CARD (AQI Box - Full Width Card with Half-Width Content) -->
+  <div id="hero-card" class="hero-card-responsive" style="width: 100%; margin-bottom: 16px; background: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 22px 24px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 10px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background 0.6s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
     <!-- Indian Monuments Silhouette Watermark -->
     <div class="hero-skyline-silhouette" style="position: absolute; bottom: 0; left: 0; right: 0; height: 68px; pointer-events: none; z-index: 0; opacity: 0.14; overflow: hidden; display: flex; align-items: flex-end;">
       <svg id="hero-skyline-svg" viewBox="0 0 1000 90" preserveAspectRatio="none" style="width: 100%; height: 100%; fill: <?= $init_aqi_accent ?>; transition: fill 0.5s ease;">
@@ -1980,8 +1983,8 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
     <div style="position: relative; z-index: 1; width: 100%;">
       <div class="hero-flex-row flex flex-col items-stretch w-full" style="width: 100%;">
         
-        <!-- AQI Hero Card: Index, Category Badge, PM Quick Row & Scale Bar (Full Width) -->
-        <div class="w-full flex flex-col justify-between hero-aqi-col" style="width: 100%;">
+        <!-- AQI Hero Card: Index, Category Badge, PM Quick Row & Scale Bar (Restricted to Half Width) -->
+        <div class="w-full flex flex-col justify-between hero-aqi-col" style="max-width: 560px; width: 100%;">
           
           <!-- Top Row: Live AQI & Big Value + Air Quality is & Badge -->
           <div class="hero-header-row" style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 14px; flex-wrap: wrap;">

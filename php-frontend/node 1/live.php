@@ -860,55 +860,17 @@ $init_border_colors = [
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* ══ Active Moving Spectrum Bar & Slider Dot System ══ */
+/* ══ Telemetry Value-Driven Spectrum Bar & Indicator System (No continuous artificial movement) ══ */
 .live-slider-track {
   position: relative;
   border-radius: 999px;
-  background-size: 200% 100% !important;
-  animation: trackGradientShimmer 4s ease-in-out infinite alternate !important;
   overflow: visible !important;
-  cursor: pointer;
 }
 
-.live-slider-track::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
-  background-size: 40% 100%;
-  background-repeat: no-repeat;
-  animation: barTrackLightSweep 3s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes trackGradientShimmer {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
-}
-
-@keyframes barTrackLightSweep {
-  0% { background-position: -50% 0; }
-  100% { background-position: 150% 0; }
-}
-
-@keyframes heroScaleDotLiveMotion {
-  0%, 100% {
-    transform: translate(calc(-50% - 4px), -50%) scale(1);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.25), 0 0 8px rgba(255, 255, 255, 0.6);
-  }
-  50% {
-    transform: translate(calc(-50% + 4px), -50%) scale(1.1);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 14px rgba(255, 255, 255, 0.95);
-  }
-}
 #hero-scale-indicator, #pm-modal-marker {
-  animation: heroScaleDotLiveMotion 3.5s ease-in-out infinite !important;
-  will-change: transform, left;
-  transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease !important;
+  transform: translate(-50%, -50%) !important;
+  will-change: left;
+  transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease !important;
 }
 </style>
 
@@ -3094,53 +3056,6 @@ if (!window.__pollutantModalListenersBound) {
     });
 }
 
-// ══ Interactive Pointer & Touch Scrubbing for All Moving Gradient Bars ══
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.live-slider-track').forEach(function(track) {
-        let isScrubbing = false;
-        const dot = track.querySelector('[id$="-dot"], #hero-scale-indicator, #pm-modal-marker');
-        if (!dot) return;
-
-        function updatePosition(e) {
-            const rect = track.getBoundingClientRect();
-            if (rect.width <= 0) return;
-            const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
-            const pct = Math.max(5, Math.min(95, Math.round(((clientX - rect.left) / rect.width) * 100)));
-            dot.classList.remove('bar-dot-standby-scan');
-            dot.style.left = `${pct}%`;
-        }
-
-        track.addEventListener('mousedown', function(e) {
-            isScrubbing = true;
-            updatePosition(e);
-        });
-
-        window.addEventListener('mousemove', function(e) {
-            if (!isScrubbing) return;
-            updatePosition(e);
-        });
-
-        window.addEventListener('mouseup', function() {
-            if (isScrubbing) {
-                isScrubbing = false;
-            }
-        });
-
-        track.addEventListener('touchstart', function(e) {
-            isScrubbing = true;
-            updatePosition(e);
-        }, { passive: true });
-
-        window.addEventListener('touchmove', function(e) {
-            if (!isScrubbing) return;
-            updatePosition(e);
-        }, { passive: true });
-
-        window.addEventListener('touchend', function() {
-            isScrubbing = false;
-        });
-    });
-});
 </script>
 
 <!-- Pollutant Detail Modal (Mounted directly to viewport) -->

@@ -324,7 +324,7 @@ $has_pressure = isset($w_d['pressure']) && is_numeric($w_d['pressure']);
 $init_weather_pressure = $has_pressure ? round((float)$w_d['pressure']) . ' mb' : '--';
 $pressure_num = $has_pressure ? (float)$w_d['pressure'] : null;
 $pressure_pct = $has_pressure ? max(5, min(95, round((($pressure_num - 995) / (1025 - 995)) * 100))) : 50;
-$pressure_angle = $has_pressure ? round((($pressure_num - 1000) / 25) * 60) : 0;
+$pressure_angle = $has_pressure ? round(($pressure_num - 1011) * 30) : 60;
 
 $has_uv = isset($w_d['uv_index']) && is_numeric($w_d['uv_index']);
 if ($has_uv) {
@@ -1324,8 +1324,8 @@ $init_border_colors = [
 
 /* ══ Pressure Needle Gauge Breathing ══ */
 @keyframes pressureNeedleBreathe {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(8deg); }
+  0%, 100% { transform: rotate(57deg); }
+  50% { transform: rotate(63deg); }
 }
 .pressure-needle-breathe {
   animation: pressureNeedleBreathe 4s ease-in-out infinite;
@@ -1602,10 +1602,13 @@ $init_border_colors = [
     line-height: 1.1 !important;
   }
   .weather-precip-icon-wrap,
-  .weather-pressure-dial-wrap,
   .weather-soil-icon-wrap {
     width: 34px !important;
     height: 34px !important;
+  }
+  .weather-pressure-dial-wrap {
+    width: 58px !important;
+    height: 58px !important;
   }
   .weather-card-divider {
     margin: 8px 0 6px 0 !important;
@@ -2825,22 +2828,77 @@ body.weather-backdrop-active #app-layout-root,
         <div class="weather-card-dark weather-card-pressure" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
           <!-- Top: Barometer Dial + Value -->
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <!-- Circular Dial Gauge SVG -->
-            <div class="weather-pressure-dial-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
-              <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-                <!-- Outer ticks -->
-                <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="1.8" stroke-dasharray="2 4" />
-                <!-- Dial numbers -->
-                <text x="50" y="15" font-size="6.5" font-weight="700" fill="#94a3b8" text-anchor="middle">1013</text>
-                <text x="78" y="29" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1015</text>
-                <text x="85" y="52" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1020</text>
-                <text x="22" y="29" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1010</text>
-                <text x="15" y="52" font-size="5.5" font-weight="600" fill="#94a3b8" text-anchor="middle">1005</text>
-                <!-- Pink/Magenta needle -->
-                <g id="pressure-needle" class="<?= $has_pressure ? '' : 'pressure-needle-breathe' ?>" style="transform-origin: 50px 50px; transform: rotate(<?= $has_pressure ? $pressure_angle : 0 ?>deg); transition: transform 1.2s ease-out;">
-                  <polygon points="50,47 78,50 50,53" fill="#ec4899" filter="drop-shadow(0 0 4px #db2777)" />
-                  <circle cx="50" cy="50" r="4.2" fill="#ec4899" />
-                  <circle cx="50" cy="50" r="1.6" fill="#ffffff" />
+            <!-- Circular Dial Gauge SVG (Precision Barometer Dial) -->
+            <div class="weather-pressure-dial-wrap" style="width: 82px; height: 82px; flex-shrink: 0;">
+              <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));">
+                <!-- Barometer Dial Face Background -->
+                <circle cx="50" cy="50" r="48" fill="#1e293b" fill-opacity="0.6" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                
+                <!-- Minor Ticks (2 between each major tick mark) -->
+                <g stroke="rgba(148, 163, 184, 0.45)" stroke-width="1.2" stroke-linecap="round">
+                  <line x1="57.03" y1="10.12" x2="57.64" y2="6.67" />
+                  <line x1="63.85" y1="11.94" x2="65.05" y2="8.65" />
+                  <line x1="76.03" y1="18.98" x2="78.28" y2="16.29" />
+                  <line x1="81.02" y1="23.97" x2="83.71" y2="21.72" />
+                  <line x1="88.06" y1="36.15" x2="91.35" y2="34.95" />
+                  <line x1="89.88" y1="42.97" x2="93.33" y2="42.36" />
+                  <line x1="89.88" y1="57.03" x2="93.33" y2="57.64" />
+                  <line x1="88.06" y1="63.85" x2="91.35" y2="65.05" />
+                  <line x1="81.02" y1="76.03" x2="83.71" y2="78.28" />
+                  <line x1="76.03" y1="81.02" x2="78.28" y2="83.71" />
+                  <line x1="63.85" y1="88.06" x2="65.05" y2="91.35" />
+                  <line x1="57.03" y1="89.88" x2="57.64" y2="93.33" />
+                  <line x1="42.97" y1="89.88" x2="42.36" y2="93.33" />
+                  <line x1="36.15" y1="88.06" x2="34.95" y2="91.35" />
+                  <line x1="23.97" y1="81.02" x2="21.72" y2="83.71" />
+                  <line x1="18.98" y1="76.03" x2="16.29" y2="78.28" />
+                  <line x1="11.94" y1="63.85" x2="8.65" y2="65.05" />
+                  <line x1="10.12" y1="57.03" x2="6.67" y2="57.64" />
+                  <line x1="10.12" y1="42.97" x2="6.67" y2="42.36" />
+                  <line x1="11.94" y1="36.15" x2="8.65" y2="34.95" />
+                  <line x1="18.98" y1="23.97" x2="16.29" y2="21.72" />
+                  <line x1="23.97" y1="18.98" x2="21.72" y2="16.29" />
+                  <line x1="36.15" y1="11.94" x2="34.95" y2="8.65" />
+                  <line x1="42.97" y1="10.12" x2="42.36" y2="6.67" />
+                </g>
+
+                <!-- Major Ticks (at every hour position) -->
+                <g stroke="#ffffff" stroke-width="2.2" stroke-linecap="round">
+                  <line x1="50.00" y1="12.00" x2="50.00" y2="5.50" />
+                  <line x1="69.00" y1="17.09" x2="72.25" y2="11.46" />
+                  <line x1="82.91" y1="31.00" x2="88.54" y2="27.75" />
+                  <line x1="88.00" y1="50.00" x2="94.50" y2="50.00" />
+                  <line x1="82.91" y1="69.00" x2="88.54" y2="72.25" />
+                  <line x1="69.00" y1="82.91" x2="72.25" y2="88.54" />
+                  <line x1="50.00" y1="88.00" x2="50.00" y2="94.50" />
+                  <line x1="31.00" y1="82.91" x2="27.75" y2="88.54" />
+                  <line x1="17.09" y1="69.00" x2="11.46" y2="72.25" />
+                  <line x1="12.00" y1="50.00" x2="5.50" y2="50.00" />
+                  <line x1="17.09" y1="31.00" x2="11.46" y2="27.75" />
+                  <line x1="31.00" y1="17.09" x2="27.75" y2="11.46" />
+                </g>
+
+                <!-- Pressure Dial Inscribed Values (1008 to 1019 hPa) -->
+                <g font-size="4.4" font-weight="700" fill="#cbd5e1" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" dominant-baseline="central">
+                  <text x="50.00" y="22.00">1011</text>
+                  <text x="64.00" y="25.75">1012</text>
+                  <text x="74.25" y="36.00">1013</text>
+                  <text x="78.00" y="50.00">1014</text>
+                  <text x="74.25" y="64.00">1015</text>
+                  <text x="64.00" y="74.25">1016</text>
+                  <text x="50.00" y="78.00">1017</text>
+                  <text x="36.00" y="74.25">1018</text>
+                  <text x="25.75" y="64.00">1019</text>
+                  <text x="22.00" y="50.00">1008</text>
+                  <text x="25.75" y="36.00">1009</text>
+                  <text x="36.00" y="25.75">1010</text>
+                </g>
+
+                <!-- Precision Barometer Needle (Pink Arrowhead Pointer) -->
+                <g id="pressure-needle" class="<?= $has_pressure ? '' : 'pressure-needle-breathe' ?>" style="transform-origin: 50px 50px; transform: rotate(<?= $has_pressure ? $pressure_angle : 60 ?>deg); transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                  <polygon points="50,22 53.5,47.5 50,52 46.5,47.5" fill="#ec4899" filter="drop-shadow(0 1px 3px rgba(236,72,153,0.5))" />
+                  <circle cx="50" cy="50" r="2.5" fill="#db2777" />
+                  <circle cx="50" cy="50" r="1.1" fill="#ffffff" />
                 </g>
               </svg>
             </div>
@@ -4499,7 +4557,8 @@ async function refreshDashboard(forceNetwork = false) {
                 if (pressNeedle) {
                     pressNeedle.classList.remove('pressure-needle-breathe');
                     pressNeedle.style.display = '';
-                    pressNeedle.style.transform = `rotate(${Math.round(((pressVal - 1000) / 25) * 60)}deg)`;
+                    const angle = (Number(w.pressure) - 1011) * 30;
+                    pressNeedle.style.transform = `rotate(${angle.toFixed(1)}deg)`;
                 }
                 if (pressDot) {
                     pressDot.style.display = '';
@@ -4511,6 +4570,7 @@ async function refreshDashboard(forceNetwork = false) {
                 if (pressNeedle) {
                     pressNeedle.classList.add('pressure-needle-breathe');
                     pressNeedle.style.display = '';
+                    pressNeedle.style.transform = 'rotate(60deg)';
                 }
                 if (pressDot) {
                     pressDot.style.display = '';
@@ -4830,6 +4890,7 @@ async function refreshDashboard(forceNetwork = false) {
             if (pressNote) pressNote.innerText = '--';
             const pressNeedle = document.getElementById('pressure-needle');
             if (pressNeedle) {
+                pressNeedle.style.transform = 'rotate(60deg)';
                 pressNeedle.classList.add('pressure-needle-breathe');
                 pressNeedle.style.display = '';
             }

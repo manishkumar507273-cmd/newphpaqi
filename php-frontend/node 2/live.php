@@ -33,7 +33,7 @@ foreach ($cache_candidates as $cf) {
         $raw_cache = @file_get_contents($cf);
         if ($raw_cache && strlen($raw_cache) > 20) {
             $parsed = @json_decode($raw_cache, true);
-            if ($parsed && (!empty($parsed['aqi']) || !empty($parsed['weather']))) {
+            if ($parsed && !empty($parsed['aqi_history'])) {
                 $init_bulk = $parsed;
                 break;
             }
@@ -41,15 +41,37 @@ foreach ($cache_candidates as $cf) {
     }
 }
 
-// If no fresh cache exists (< 25s), query Supabase directly for Node 2 so server-render is never stale
-if ($init_bulk === null) {
+// If no fresh cache exists (< 25s) or cache lacks aqi_history, query Supabase directly for Node 2 so server-render is never stale
+if ($init_bulk === null || empty($init_bulk['aqi_history'])) {
     $sb_url = !empty($node_config['supabase']['url']) ? rtrim($node_config['supabase']['url'], '/') : 'https://nahabhzcaeppbteuxogg.supabase.co';
     $sb_key = !empty($node_config['supabase']['secret_key']) ? $node_config['supabase']['secret_key'] : (!empty($node_config['supabase']['anon_key']) ? $node_config['supabase']['anon_key'] : 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ');
     $tbl_aqi = $node_config['tables']['aqi_live'] ?? 'AQI_LIVE_NODE2';
+    $tbl_soil = $node_config['tables']['weather_live'] ?? ($node_config['tables']['soil_live'] ?? 'SOIL_LIVE_NODE2');
     
-    $ch = @curl_init("{$sb_url}/rest/v1/{$tbl_aqi}?order=id.desc&limit=1");
+    $aqi_rows = [];
+    $ch = @curl_init("{$sb_url}/rest/v1/{$tbl_aqi}?order=id.desc&limit=60");
     if ($ch) {
         @curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                "apikey: {$sb_key}",
+                "Authorization: Bearer {$sb_key}"
+            ],
+            CURLOPT_TIMEOUT_MS     => 2500,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        $raw_resp = @curl_exec($ch);
+        $http_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        @curl_close($ch);
+        if ($http_code === 200 && $raw_resp) {
+            $aqi_rows = @json_decode($raw_resp, true) ?: [];
+        }
+    }
+
+    $soil_rows = [];
+    $ch_s = @curl_init("{$sb_url}/rest/v1/{$tbl_soil}?select=*&order=id.desc&limit=60");
+    if ($ch_s) {
+        @curl_setopt_array($ch_s, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER     => [
                 "apikey: {$sb_key}",
@@ -58,49 +80,81 @@ if ($init_bulk === null) {
             CURLOPT_TIMEOUT_MS     => 2000,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
-        $raw_resp = @curl_exec($ch);
-        $http_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        @curl_close($ch);
-        if ($http_code === 200 && $raw_resp) {
-            $rows = @json_decode($raw_resp, true);
-            if (!empty($rows[0])) {
-                $row = $rows[0];
-                $rawPm25 = (isset($row['pm25']) && $row['pm25'] !== '') ? (float)$row['pm25'] : ((isset($row['pm2.5']) && $row['pm2.5'] !== '') ? (float)$row['pm2.5'] : ((isset($row['pm2_5']) && $row['pm2_5'] !== '') ? (float)$row['pm2_5'] : null));
-                $rawPm10 = (isset($row['pm10']) && $row['pm10'] !== '') ? (float)$row['pm10'] : null;
-                $rawCo   = (isset($row['co']) && $row['co'] !== '') ? (float)$row['co'] : null;
-                $rawNo2  = (isset($row['no2']) && $row['no2'] !== '') ? (float)$row['no2'] : null;
-                $rawO3   = (isset($row['o3']) && $row['o3'] !== '') ? (float)$row['o3'] : null;
-                
-                $cpcb_val = isset($row['cpcb_aqi']) ? (int)$row['cpcb_aqi'] : null;
-                if ($cpcb_val === null && $rawPm25 !== null) {
-                    if ($rawPm25 <= 30) $cpcb_val = round($rawPm25 * 50 / 30);
-                    elseif ($rawPm25 <= 60) $cpcb_val = round(50 + ($rawPm25 - 30) * 50 / 30);
-                    elseif ($rawPm25 <= 90) $cpcb_val = round(100 + ($rawPm25 - 60) * 100 / 30);
-                    elseif ($rawPm25 <= 120) $cpcb_val = round(200 + ($rawPm25 - 90) * 100 / 30);
-                    elseif ($rawPm25 <= 250) $cpcb_val = round(300 + ($rawPm25 - 120) * 100 / 130);
-                    else $cpcb_val = round(400 + ($rawPm25 - 250) * 100 / 130);
-                }
-                
-                $init_bulk = [
-                    'node' => '2',
-                    'status' => 'ONLINE',
-                    'aqi' => [
-                        'id' => $row['id'] ?? null,
-                        'timestamp' => $row['timestamp'] ?? ($row['created_at'] ?? date('c')),
-                        'cpcb_aqi' => $cpcb_val ?? '--',
-                        'pm25' => $rawPm25,
-                        'pm2.5' => $rawPm25,
-                        'pm2_5' => $rawPm25,
-                        'pm10' => $rawPm10,
-                        'co' => $rawCo,
-                        'no2' => $rawNo2,
-                        'o3' => $rawO3,
-                    ]
-                ];
-                if (!is_dir($CACHE_DIR)) @mkdir($CACHE_DIR, 0755, true);
-                @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json', json_encode($init_bulk));
-            }
+        $raw_soil = @curl_exec($ch_s);
+        $http_s_code = @curl_getinfo($ch_s, CURLINFO_HTTP_CODE);
+        @curl_close($ch_s);
+        if ($http_s_code === 200 && $raw_soil) {
+            $soil_rows = @json_decode($raw_soil, true) ?: [];
         }
+    }
+
+    $formatted_aqi = [];
+    foreach ($aqi_rows as $row) {
+        $rawPm25 = (isset($row['pm25']) && $row['pm25'] !== '') ? (float)$row['pm25'] : ((isset($row['pm2.5']) && $row['pm2.5'] !== '') ? (float)$row['pm2.5'] : ((isset($row['pm2_5']) && $row['pm2_5'] !== '') ? (float)$row['pm2_5'] : null));
+        $rawPm10 = (isset($row['pm10']) && $row['pm10'] !== '') ? (float)$row['pm10'] : null;
+        $rawCo   = (isset($row['co']) && $row['co'] !== '') ? (float)$row['co'] : null;
+        $rawNo2  = (isset($row['no2']) && $row['no2'] !== '') ? (float)$row['no2'] : null;
+        $rawO3   = (isset($row['o3']) && $row['o3'] !== '') ? (float)$row['o3'] : null;
+        
+        $cpcb_val = isset($row['cpcb_aqi']) ? (int)$row['cpcb_aqi'] : null;
+        if ($cpcb_val === null && $rawPm25 !== null) {
+            if ($rawPm25 <= 30) $cpcb_val = round($rawPm25 * 50 / 30);
+            elseif ($rawPm25 <= 60) $cpcb_val = round(50 + ($rawPm25 - 30) * 50 / 30);
+            elseif ($rawPm25 <= 90) $cpcb_val = round(100 + ($rawPm25 - 60) * 100 / 30);
+            elseif ($rawPm25 <= 120) $cpcb_val = round(200 + ($rawPm25 - 90) * 100 / 30);
+            elseif ($rawPm25 <= 250) $cpcb_val = round(300 + ($rawPm25 - 120) * 100 / 130);
+            else $cpcb_val = round(400 + ($rawPm25 - 250) * 100 / 130);
+        }
+
+        $formatted_aqi[] = [
+            'id' => $row['id'] ?? null,
+            'timestamp' => $row['timestamp'] ?? ($row['created_at'] ?? date('c')),
+            'created_at' => $row['created_at'] ?? ($row['timestamp'] ?? date('c')),
+            'cpcb_aqi' => $cpcb_val ?? '--',
+            'pm25' => $rawPm25,
+            'pm2.5' => $rawPm25,
+            'pm2_5' => $rawPm25,
+            'pm10' => $rawPm10,
+            'co' => $rawCo,
+            'no2' => $rawNo2,
+            'o3' => $rawO3,
+        ];
+    }
+
+    $formatted_soil = [];
+    foreach ($soil_rows as $srow) {
+        $sHum = isset($srow['soil_humidity']) ? (float)$srow['soil_humidity'] : (isset($srow['soil_moisture']) ? (float)$srow['soil_moisture'] : null);
+        $sTemp = isset($srow['soil_temperature']) ? (float)$srow['soil_temperature'] : null;
+        $formatted_soil[] = [
+            'id' => $srow['id'] ?? null,
+            'timestamp' => $srow['timestamp'] ?? ($srow['created_at'] ?? date('c')),
+            'created_at' => $srow['created_at'] ?? ($srow['timestamp'] ?? date('c')),
+            'temperature' => $sTemp,
+            'humidity' => $sHum,
+            'soil_temperature' => $sTemp,
+            'soil_humidity' => $sHum,
+            'soil_moisture' => $sHum,
+            'soil_ph' => isset($srow['soil_ph']) ? (float)$srow['soil_ph'] : null,
+            'soil_conductivity' => isset($srow['soil_conductivity']) ? (float)$srow['soil_conductivity'] : null,
+            'latitude' => $srow['latitude'] ?? null,
+            'longitude' => $srow['longitude'] ?? null,
+        ];
+    }
+
+    if (!empty($formatted_aqi) || !empty($formatted_soil)) {
+        $init_bulk = [
+            'node' => '2',
+            'status' => 'ONLINE',
+            'aqi' => !empty($formatted_aqi) ? $formatted_aqi[0] : null,
+            'weather' => !empty($formatted_soil) ? $formatted_soil[0] : null,
+            'aqi_history' => $formatted_aqi,
+            'weather_history' => $formatted_soil,
+            'history' => $formatted_aqi,
+        ];
+        if (!is_dir($CACHE_DIR)) @mkdir($CACHE_DIR, 0755, true);
+        @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json', json_encode($init_bulk));
+        @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_50') . '.json', json_encode($init_bulk));
+        @file_put_contents($CACHE_DIR . '/live_bulk_node_2_60.json', json_encode($init_bulk));
     }
 }
 
@@ -2311,8 +2365,8 @@ body.weather-backdrop-active #app-layout-root,
 
         <div style="width: 100%; height: 250px; position: relative;">
           <canvas id="comparison-chart"></canvas>
-          <div id="comparison-chart-empty" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); color: #64748b; font-size: 13px;">
-            <?= $is_node_2 ? 'Currently in standby mode. Chart active when live stream begins.' : 'Loading comparison graph...' ?>
+          <div id="comparison-chart-empty" style="position: absolute; inset: 0; display: <?= (!empty($init_bulk['aqi_history'])) ? 'none' : 'flex' ?>; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); color: #64748b; font-size: 13px;">
+            <?= (!empty($init_bulk['aqi_history'])) ? '' : ($is_node_2 ? 'Currently in standby mode. Chart active when live stream begins.' : 'Loading comparison graph...') ?>
           </div>
         </div>
       </div>
@@ -2350,11 +2404,38 @@ body.weather-backdrop-active #app-layout-root,
             </tr>
           </thead>
           <tbody id="live-table-body">
-            <tr>
-              <td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">
-                <?= $is_node_2 ? 'Currently in standby mode. No live telemetry recorded yet.' : 'Loading stream...' ?>
-              </td>
-            </tr>
+            <?php if (!empty($init_bulk['aqi_history'])): ?>
+              <?php foreach ($init_bulk['aqi_history'] as $idx => $row): ?>
+                <?php
+                  $raw_ts = $row['timestamp'] ?? ($row['created_at'] ?? '');
+                  $dt = $raw_ts ? new DateTime($raw_ts) : new DateTime();
+                  $dt->setTimezone(new DateTimeZone('Asia/Kolkata'));
+                  $time_disp = $dt->format('d M, h:i:s A');
+                  $aqi_disp = isset($row['cpcb_aqi']) ? round($row['cpcb_aqi']) : '--';
+                  $pm25_disp = isset($row['pm25']) && $row['pm25'] !== null ? number_format((float)$row['pm25'], 1) : (isset($row['pm2.5']) && $row['pm2.5'] !== null ? number_format((float)$row['pm2.5'], 1) : '--');
+                  $pm10_disp = isset($row['pm10']) && $row['pm10'] !== null ? number_format((float)$row['pm10'], 1) : '--';
+                  $co_disp = isset($row['co']) && $row['co'] !== null ? number_format((float)$row['co'], 2) : '--';
+                  $no2_disp = isset($row['no2']) && $row['no2'] !== null ? number_format((float)$row['no2'], 1) : '--';
+                  $o3_disp = isset($row['o3']) && $row['o3'] !== null ? number_format((float)$row['o3'], 1) : '--';
+                  $bg_row = ($idx % 2 === 0) ? '#ffffff' : '#f8fafc';
+                ?>
+                <tr style="border-bottom: 1px solid #f1f5f9; background-color: <?= $bg_row ?>;">
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;"><?= htmlspecialchars($time_disp) ?></td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 800; color: #0f172a; font-size: 14px;"><?= htmlspecialchars($aqi_disp) ?></td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;"><?= htmlspecialchars($pm25_disp) ?></td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;"><?= htmlspecialchars($pm10_disp) ?></td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: <?= ($co_disp === '--' ? '#94a3b8' : '#334155') ?>;"><?= htmlspecialchars($co_disp) ?></td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;"><?= htmlspecialchars($no2_disp) ?></td>
+                  <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #334155;"><?= htmlspecialchars($o3_disp) ?></td>
+                </tr>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">
+                  <?= $is_node_2 ? 'Currently in standby mode. No live telemetry recorded yet.' : 'Loading stream...' ?>
+                </td>
+              </tr>
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
@@ -3215,6 +3296,18 @@ body.weather-backdrop-active #app-layout-root,
   <?php endif; ?>
 </div> <!-- End .live-content-container -->
 
+<?php if (!empty($init_bulk)): ?>
+<script>
+window.INITIAL_DATA = <?= json_encode($init_bulk, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+if (window.INITIAL_DATA && window.INITIAL_DATA.aqi_history && window.INITIAL_DATA.aqi_history.length > 0) {
+    window.__liveDataStream = window.INITIAL_DATA.aqi_history;
+}
+if (window.INITIAL_DATA && window.INITIAL_DATA.weather_history && window.INITIAL_DATA.weather_history.length > 0) {
+    window.weatherHistory = window.INITIAL_DATA.weather_history;
+}
+</script>
+<?php endif; ?>
+
 <script>
 // Stream tables are now cleanly separated per view: AQI table in node2-view-aqi, Weather table in node2-view-weather
 function switchLiveTableStream(type) {
@@ -3493,6 +3586,20 @@ function togglePollutant(pollutant) {
 function renderComparisonChart() {
     const canvas = document.getElementById('comparison-chart');
     if (!canvas) return;
+
+    if (typeof Chart === 'undefined') {
+        setTimeout(renderComparisonChart, 100);
+        return;
+    }
+
+    if (!liveDataStream || liveDataStream.length === 0) {
+        if (window.__liveDataStream && window.__liveDataStream.length > 0) {
+            liveDataStream = window.__liveDataStream;
+        } else if (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.aqi_history) && window.INITIAL_DATA.aqi_history.length > 0) {
+            liveDataStream = window.INITIAL_DATA.aqi_history;
+            window.__liveDataStream = liveDataStream;
+        }
+    }
 
     if (!liveDataStream || liveDataStream.length === 0) {
         const empty = document.getElementById('comparison-chart-empty');
@@ -3861,7 +3968,11 @@ function renderSoilLiveTrendChart() {
 window.renderSoilLiveTrendChart = renderSoilLiveTrendChart;
 
 // Data Stream Formatting
-var liveDataStream = window.__liveDataStream || [];
+var liveDataStream = (window.__liveDataStream && window.__liveDataStream.length > 0)
+    ? window.__liveDataStream
+    : ((window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.aqi_history) && window.INITIAL_DATA.aqi_history.length > 0)
+        ? window.INITIAL_DATA.aqi_history
+        : []);
 window.__liveDataStream = liveDataStream;
 
 function formatStreamTimestamp(row) {
@@ -3945,6 +4056,18 @@ function renderLiveTable() {
     if (!tbody) return;
     
     if (liveDataStream.length === 0) {
+        if (window.__liveDataStream && window.__liveDataStream.length > 0) {
+            liveDataStream = window.__liveDataStream;
+        } else if (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.aqi_history) && window.INITIAL_DATA.aqi_history.length > 0) {
+            liveDataStream = window.INITIAL_DATA.aqi_history;
+            window.__liveDataStream = liveDataStream;
+        }
+    }
+
+    if (liveDataStream.length === 0) {
+        if (tbody.children.length > 1 || (tbody.children.length === 1 && !tbody.innerText.includes('mode') && !tbody.innerText.includes('Loading'))) {
+            return;
+        }
         tbody.innerHTML = `<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No air quality telemetry stream data.</td></tr>`;
         return;
     }
@@ -4084,7 +4207,7 @@ async function refreshDashboard(forceNetwork = false) {
         const aqiData = bulkData.aqi;
         const weatherData = bulkData.weather;
         const weatherHistory = bulkData.weather_history;
-        const historyData = bulkData.aqi_history;
+        const historyData = bulkData.aqi_history || bulkData.history;
         let currentAQITheme = null;
 
         if (window.updateGlobalLiveBadge) {
@@ -4946,9 +5069,13 @@ async function refreshDashboard(forceNetwork = false) {
         }
 
         // LIVE AQI HISTORY (for chart and table)
-        if (historyData && historyData.length > 0) {
-            liveDataStream = historyData;
+        const hist = historyData || bulkData.aqi_history || bulkData.history;
+        if (hist && hist.length > 0) {
+            liveDataStream = hist;
             window.__liveDataStream = liveDataStream;
+        }
+        if (weatherHistory && weatherHistory.length > 0) {
+            window.weatherHistory = weatherHistory;
         }
         try {
             if (typeof renderComparisonChart === 'function') renderComparisonChart();
@@ -5333,7 +5460,8 @@ window.initLiveAmbientCanvas = initNode2WeatherBackdrop;
 setTimeout(() => {
     refreshDashboard();
     initLiveAmbientCanvas();
-    if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 60);
+    if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
+    if (typeof renderLiveTable === 'function') setTimeout(renderLiveTable, 50);
     
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {

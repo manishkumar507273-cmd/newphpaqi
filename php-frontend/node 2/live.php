@@ -2057,6 +2057,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
               layoutRoot.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%)';
           }
           if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 50);
+          if (typeof renderSoilLiveTable === 'function') setTimeout(renderSoilLiveTable, 50);
       } else if (tab === 'weather') {
           if (aqiView) aqiView.style.display = 'none';
           if (soilView) soilView.style.display = 'none';
@@ -2071,6 +2072,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
               layoutRoot.style.setProperty('background-image', 'none', 'important');
           }
           if (typeof initLiveAmbientCanvas === 'function') initLiveAmbientCanvas();
+          if (typeof renderWeatherLiveTable === 'function') setTimeout(renderWeatherLiveTable, 50);
       } else {
           if (weatherView) weatherView.style.display = 'none';
           if (soilView) soilView.style.display = 'none';
@@ -2087,6 +2089,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
               layoutRoot.style.backgroundImage = (window.currentAQITheme && window.currentAQITheme.pageBg) ? window.currentAQITheme.pageBg : 'radial-gradient(ellipse 120% 70% at 50% -10%, #fde047 0%, #fde68a 35%, #fef08a 65%, #fde68a 100%)';
           }
           if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
+          if (typeof renderLiveTable === 'function') setTimeout(renderLiveTable, 50);
       }
 
       try {
@@ -3487,11 +3490,39 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
               </tr>
             </thead>
             <tbody id="soil-live-tbody">
-              <tr>
-                <td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">
-                  Loading subsurface soil telemetry...
-                </td>
-              </tr>
+              <?php if (!empty($init_weather_history) && is_array($init_weather_history)): ?>
+                <?php foreach ($init_weather_history as $i => $row): 
+                  $tsRaw = $row['timestamp'] ?? ($row['created_at'] ?? null);
+                  $timeStr = $tsRaw ? date('h:i:s A', strtotime($tsRaw)) : '--';
+                  $sHumRaw = $row['soil_moisture'] ?? ($row['soil_humidity'] ?? null);
+                  $sHum = (isset($sHumRaw) && is_numeric($sHumRaw)) ? number_format((float)$sHumRaw, 1) . '%' : '--';
+                  $sTempRaw = $row['soil_temperature'] ?? ($row['soil_temp'] ?? null);
+                  $sTemp = (isset($sTempRaw) && is_numeric($sTempRaw)) ? number_format((float)$sTempRaw, 1) . ' °C' : '--';
+                  $sPhRaw = $row['soil_ph'] ?? ($row['ph'] ?? null);
+                  $sPh = (isset($sPhRaw) && is_numeric($sPhRaw)) ? number_format((float)$sPhRaw, 2) : '--';
+                  $sEc = (isset($row['soil_conductivity']) && is_numeric($row['soil_conductivity'])) ? number_format((float)$row['soil_conductivity'], 1) : '--';
+                  $rowBg = ($i % 2 === 0) ? '#ffffff' : '#f8fafc';
+                  $badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">Optimal</span>';
+                  if ($sPh !== '--' && ((float)$sPh < 6.0 || (float)$sPh > 8.0)) {
+                      $badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;">Attn pH</span>';
+                  }
+                ?>
+                  <tr style="border-bottom: 1px solid #f1f5f9; background-color: <?= $rowBg ?>;">
+                    <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;"><?= htmlspecialchars($timeStr) ?></td>
+                    <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;"><?= $sHum ?></td>
+                    <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;"><?= $sTemp ?></td>
+                    <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;"><?= $sPh ?></td>
+                    <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #7c3aed;"><?= $sEc ?></td>
+                    <td style="padding: 11px 16px;"><?= $badge ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <tr>
+                  <td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">
+                    No live soil telemetry stream records yet.
+                  </td>
+                </tr>
+              <?php endif; ?>
             </tbody>
           </table>
         </div>
@@ -4310,6 +4341,128 @@ function renderLiveTable() {
         </tr>`;
     }).join('');
 }
+window.renderLiveTable = renderLiveTable;
+
+function renderWeatherLiveTable(hist) {
+    const tbodyWeather = document.getElementById('weather-tbody');
+    if (!tbodyWeather) return;
+    const history = (hist && Array.isArray(hist) && hist.length > 0)
+        ? hist
+        : (window.weatherHistory && window.weatherHistory.length > 0
+            ? window.weatherHistory
+            : (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.weather_history) ? window.INITIAL_DATA.weather_history : []));
+    if (!history || history.length === 0) {
+        if (tbodyWeather.children.length > 1 || (tbodyWeather.children.length === 1 && !tbodyWeather.innerText.includes('mode') && !tbodyWeather.innerText.includes('Loading'))) {
+            return;
+        }
+        tbodyWeather.innerHTML = '<tr><td colspan="13" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
+        return;
+    }
+    let temps = [];
+    tbodyWeather.innerHTML = history.map((row, i) => {
+        const timeStr = typeof formatStreamTimestamp === 'function' ? formatStreamTimestamp(row) : (row.timestamp || '--');
+        const rawTemp = (row.temperature != null && !isNaN(Number(row.temperature))) 
+            ? row.temperature 
+            : (row.soil_temperature != null && !isNaN(Number(row.soil_temperature)) ? row.soil_temperature : null);
+        const temp = rawTemp != null ? `${Number(rawTemp).toFixed(1)} °C` : '--';
+
+        const rawHum = (row.humidity != null && !isNaN(Number(row.humidity))) 
+            ? row.humidity 
+            : (row.soil_moisture != null ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null));
+        const hum = rawHum != null ? `${Number(rawHum).toFixed(1)}%` : '--';
+
+        const press = (row.pressure != null && !isNaN(Number(row.pressure))) ? `${Math.round(Number(row.pressure))} mb` : '--';
+        const uv = (row.uv_index != null && !isNaN(Number(row.uv_index))) ? Number(row.uv_index).toFixed(1) : '--';
+        const wSpd = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? `${Number(row.wind_speed).toFixed(1)} km/h` : '--';
+        const gust = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? `${Number(row.wind_gust).toFixed(1)} m/s` : '--';
+        const dir = (row.wind_direction != null && row.wind_direction !== '') ? (typeof getCompassDir === 'function' ? getCompassDir(row.wind_direction) : row.wind_direction) : '--';
+        const rain = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? `${Number(row.rain_gauge).toFixed(1)} mm` : '--';
+
+        const sHumRaw = (row.soil_moisture != null) ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null);
+        const sHum = (sHumRaw != null && !isNaN(Number(sHumRaw))) ? `${Number(sHumRaw).toFixed(1)}%` : '--';
+        const sTempRaw = row.soil_temperature != null ? row.soil_temperature : row.soil_temp;
+        const sTemp = (sTempRaw != null && !isNaN(Number(sTempRaw))) ? `${Number(sTempRaw).toFixed(1)} °C` : '--';
+        const sPhRaw = row.soil_ph != null ? row.soil_ph : row.ph;
+        const sPh = (sPhRaw != null && !isNaN(Number(sPhRaw))) ? Number(sPhRaw).toFixed(2) : '--';
+        const sEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity))) ? `${Number(row.soil_conductivity).toFixed(1)} µS/cm` : '--';
+
+        if (rawTemp != null) {
+            temps.push(Number(rawTemp));
+        }
+
+        return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #b45309; white-space: nowrap;">${temp}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0369a1; white-space: nowrap;">${hum}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #db2777; white-space: nowrap;">${press}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #e11d48; white-space: nowrap;">${uv}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #047857; white-space: nowrap;">${wSpd}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0d9488; white-space: nowrap;">${gust}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #475569; white-space: nowrap;">${dir}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2563eb; white-space: nowrap;">${rain}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; white-space: nowrap;">${sHum}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #ea580c; white-space: nowrap;">${sTemp}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #16a34a; white-space: nowrap;">${sPh}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #9333ea; white-space: nowrap;">${sEc}</td>
+        </tr>`;
+    }).join('');
+
+    if (temps.length > 0) {
+        const min = Math.min(...temps).toFixed(1);
+        const max = Math.max(...temps).toFixed(1);
+        const wMinEl = document.getElementById('weather-hero-temp-min');
+        if (wMinEl) wMinEl.innerText = `${min}°C`;
+        const wMaxEl = document.getElementById('weather-hero-temp-max');
+        if (wMaxEl) wMaxEl.innerText = `${max}°C`;
+    }
+}
+window.renderWeatherLiveTable = renderWeatherLiveTable;
+
+function renderSoilLiveTable(hist) {
+    const tbodySoil = document.getElementById('soil-live-tbody');
+    if (!tbodySoil) return;
+    const history = (hist && Array.isArray(hist) && hist.length > 0)
+        ? hist
+        : (window.weatherHistory && window.weatherHistory.length > 0
+            ? window.weatherHistory
+            : (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.weather_history) ? window.INITIAL_DATA.weather_history : []));
+    if (!history || history.length === 0) {
+        if (tbodySoil.children.length > 1 || (tbodySoil.children.length === 1 && !tbodySoil.innerText.includes('Loading'))) {
+            return;
+        }
+        tbodySoil.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">No live soil telemetry stream records yet.</td></tr>';
+        return;
+    }
+    tbodySoil.innerHTML = history.map((row, i) => {
+        const timeStr = typeof formatStreamTimestamp === 'function' ? formatStreamTimestamp(row) : (row.timestamp || '--');
+        const sHumRaw = (row.soil_moisture != null) ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null);
+        const sHum = (sHumRaw != null && !isNaN(Number(sHumRaw))) ? `${Number(sHumRaw).toFixed(1)}%` : '--';
+        const sTemp = (row.soil_temperature != null && !isNaN(Number(row.soil_temperature))) 
+            ? `${Number(row.soil_temperature).toFixed(1)} °C` 
+            : (row.soil_temp != null && !isNaN(Number(row.soil_temp)) ? `${Number(row.soil_temp).toFixed(1)} °C` : '--');
+        const sPh = (row.soil_ph != null && !isNaN(Number(row.soil_ph))) 
+            ? Number(row.soil_ph).toFixed(2) 
+            : (row.ph != null && !isNaN(Number(row.ph)) ? Number(row.ph).toFixed(2) : '--');
+        const sEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity))) 
+            ? `${Number(row.soil_conductivity).toFixed(1)}` 
+            : '--';
+
+        let badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">Optimal</span>';
+        if (sPh !== '--' && (Number(sPh) < 6.0 || Number(sPh) > 8.0)) {
+            badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;">Attn pH</span>';
+        }
+
+        return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+          <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
+          <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${sHum}</td>
+          <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${sTemp}</td>
+          <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${sPh}</td>
+          <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #7c3aed;">${sEc}</td>
+          <td style="padding: 11px 16px;">${badge}</td>
+        </tr>`;
+    }).join('');
+}
+window.renderSoilLiveTable = renderSoilLiveTable;
 
 async function refreshDashboard(forceNetwork = false) {
     try {
@@ -4822,7 +4975,12 @@ async function refreshDashboard(forceNetwork = false) {
 
             // Dedicated Soil View Cards (Soil Temperature, Moisture, pH, EC)
             const soilLastUpdated = document.getElementById('soil-last-updated-val');
-            if (soilLastUpdated) soilLastUpdated.innerText = currentFormattedTime || new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+            const weatherLatestTime = document.getElementById('weather-latest-time');
+            const soilTimeStr = (w && (w.timestamp || w.created_at)) 
+                ? (typeof formatStreamTimestamp === 'function' ? formatStreamTimestamp(w) : new Date(w.timestamp || w.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }))
+                : new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+            if (soilLastUpdated) soilLastUpdated.innerText = soilTimeStr;
+            if (weatherLatestTime) weatherLatestTime.innerText = soilTimeStr;
 
             const soilTempEl = document.getElementById('soil-live-temp-val');
             const soilTempNote = document.getElementById('soil-live-temp-note-val');
@@ -5139,109 +5297,9 @@ async function refreshDashboard(forceNetwork = false) {
         // WEATHER & SOIL TABLES
         let wMinFormatted = '--';
         let wMaxFormatted = '--';
-        const tbodyWeather = document.getElementById('weather-tbody');
-        const tbodySoil = document.getElementById('soil-live-tbody');
-
-        if (weatherHistory && weatherHistory.length > 0) {
-            let temps = [];
-            
-            // 1. Ambient Weather Table (All Node 2 Meteorological & Agrimet Parameters)
-            if (tbodyWeather) {
-                tbodyWeather.innerHTML = weatherHistory.map((row, i) => {
-                    const timeStr = formatStreamTimestamp(row);
-                    const rawTemp = (row.temperature != null && !isNaN(Number(row.temperature))) 
-                        ? row.temperature 
-                        : (row.soil_temperature != null && !isNaN(Number(row.soil_temperature)) ? row.soil_temperature : null);
-                    const temp = rawTemp != null ? `${Number(rawTemp).toFixed(1)} °C` : '--';
-
-                    const rawHum = (row.humidity != null && !isNaN(Number(row.humidity))) 
-                        ? row.humidity 
-                        : (row.soil_moisture != null ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null));
-                    const hum = rawHum != null ? `${Number(rawHum).toFixed(1)}%` : '--';
-
-                    const press = (row.pressure != null && !isNaN(Number(row.pressure))) ? `${Math.round(Number(row.pressure))} mb` : '--';
-                    const uv = (row.uv_index != null && !isNaN(Number(row.uv_index))) ? Number(row.uv_index).toFixed(1) : '--';
-                    const wSpd = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? `${Number(row.wind_speed).toFixed(1)} km/h` : '--';
-                    const gust = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? `${Number(row.wind_gust).toFixed(1)} m/s` : '--';
-                    const dir = (row.wind_direction != null && row.wind_direction !== '') ? getCompassDir(row.wind_direction) : '--';
-                    const rain = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? `${Number(row.rain_gauge).toFixed(1)} mm` : '--';
-
-                    const sHumRaw = (row.soil_moisture != null) ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null);
-                    const sHum = (sHumRaw != null && !isNaN(Number(sHumRaw))) ? `${Number(sHumRaw).toFixed(1)}%` : '--';
-                    const sTempRaw = row.soil_temperature != null ? row.soil_temperature : row.soil_temp;
-                    const sTemp = (sTempRaw != null && !isNaN(Number(sTempRaw))) ? `${Number(sTempRaw).toFixed(1)} °C` : '--';
-                    const sPhRaw = row.soil_ph != null ? row.soil_ph : row.ph;
-                    const sPh = (sPhRaw != null && !isNaN(Number(sPhRaw))) ? Number(sPhRaw).toFixed(2) : '--';
-                    const sEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity))) ? `${Number(row.soil_conductivity).toFixed(1)} µS/cm` : '--';
-
-                    if (rawTemp != null) {
-                        temps.push(Number(rawTemp));
-                    }
-                    
-                    return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #b45309; white-space: nowrap;">${temp}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0369a1; white-space: nowrap;">${hum}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #db2777; white-space: nowrap;">${press}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #e11d48; white-space: nowrap;">${uv}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #047857; white-space: nowrap;">${wSpd}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0d9488; white-space: nowrap;">${gust}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #475569; white-space: nowrap;">${dir}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2563eb; white-space: nowrap;">${rain}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; white-space: nowrap;">${sHum}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #ea580c; white-space: nowrap;">${sTemp}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #16a34a; white-space: nowrap;">${sPh}</td>
-                      <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #9333ea; white-space: nowrap;">${sEc}</td>
-                    </tr>`;
-                }).join('');
-            }
-
-            // 2. Subsurface Soil Telemetry Table
-            if (tbodySoil) {
-                tbodySoil.innerHTML = weatherHistory.map((row, i) => {
-                    const timeStr = formatStreamTimestamp(row);
-                    const sHumRaw = (row.soil_moisture != null) ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null);
-                    const sHum = (sHumRaw != null && !isNaN(Number(sHumRaw))) ? `${Number(sHumRaw).toFixed(1)}%` : '--';
-                    const sTemp = (row.soil_temperature != null && !isNaN(Number(row.soil_temperature))) 
-                        ? `${Number(row.soil_temperature).toFixed(1)} °C` 
-                        : (row.soil_temp != null && !isNaN(Number(row.soil_temp)) ? `${Number(row.soil_temp).toFixed(1)} °C` : '--');
-                    const sPh = (row.soil_ph != null && !isNaN(Number(row.soil_ph))) 
-                        ? Number(row.soil_ph).toFixed(2) 
-                        : (row.ph != null && !isNaN(Number(row.ph)) ? Number(row.ph).toFixed(2) : '--');
-                    const sEc = (row.soil_conductivity != null && !isNaN(Number(row.soil_conductivity))) 
-                        ? `${Number(row.soil_conductivity).toFixed(1)}` 
-                        : '--';
-
-                    let badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">Optimal</span>';
-                    if (sPh !== '--' && (Number(sPh) < 6.0 || Number(sPh) > 8.0)) {
-                        badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;">Attn pH</span>';
-                    }
-
-                    return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${sHum}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${sTemp}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${sPh}</td>
-                      <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #7c3aed;">${sEc}</td>
-                      <td style="padding: 11px 16px;">${badge}</td>
-                    </tr>`;
-                }).join('');
-            }
-            
-            if (temps.length > 0) {
-                const min = Math.min(...temps).toFixed(1);
-                const max = Math.max(...temps).toFixed(1);
-                wMinFormatted = min;
-                wMaxFormatted = max;
-                const wMinEl = document.getElementById('weather-hero-temp-min');
-                if (wMinEl) wMinEl.innerText = `${min}°C`;
-                const wMaxEl = document.getElementById('weather-hero-temp-max');
-                if (wMaxEl) wMaxEl.innerText = `${max}°C`;
-            }
-        } else {
-            if (tbodyWeather) tbodyWeather.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
-            if (tbodySoil) tbodySoil.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">No live soil telemetry found.</td></tr>';
-        }
+        // Render Weather & Soil Live Tables
+        renderWeatherLiveTable(weatherHistory);
+        renderSoilLiveTable(weatherHistory);
 
         // Cache unified hero state for 0ms instant reload
         try {
@@ -5798,6 +5856,9 @@ setTimeout(() => {
     initLiveAmbientCanvas();
     if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
     if (typeof renderLiveTable === 'function') setTimeout(renderLiveTable, 50);
+    if (typeof renderWeatherLiveTable === 'function') setTimeout(renderWeatherLiveTable, 50);
+    if (typeof renderSoilLiveTable === 'function') setTimeout(renderSoilLiveTable, 50);
+    if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 50);
     
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {

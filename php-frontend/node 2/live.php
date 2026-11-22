@@ -1580,9 +1580,10 @@ body.weather-backdrop-active {
   background-color: #1e293b !important;
   background-image: url('assets/sunset_clouds_backdrop.jpg'), url('/assets/sunset_clouds_backdrop.jpg') !important;
   background-size: cover !important;
-  background-position: center top !important;
+  background-position: center center !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
+  min-height: 100vh !important;
 }
 
 body.weather-backdrop-active #app-layout-root,
@@ -1636,68 +1637,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
 }
 
 .node2-weather-backdrop {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  transition: opacity 0.8s ease;
-  background-color: transparent;
-}
-
-/* Infinite GPU-accelerated horizontal cloud drift */
-@keyframes continuousCloudDrift {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-50%, 0, 0); }
-}
-
-.cloud-drift-track {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  width: 400vw;
-  height: 100%;
-  animation: continuousCloudDrift 60s linear infinite;
-  will-change: transform;
-}
-
-.cloud-drift-panel {
-  width: 100vw;
-  height: 100%;
-  flex-shrink: 0;
-  background-color: transparent;
-  background-image: url('assets/sunset_clouds_backdrop.jpg');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  opacity: 0.82;
-}
-
-.cloud-drift-panel.mirrored {
-  transform: none; /* Avoid unnatural reversed mirror seams across clouds */
-}
-
-.sky-ambient-vignette {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(ellipse 110% 75% at 50% 12%, rgba(20, 60, 120, 0.10) 0%, rgba(0, 0, 0, 0) 55%),
-              linear-gradient(180deg, rgba(15, 23, 42, 0.12) 0%, rgba(0, 0, 0, 0) 35%, rgba(245, 158, 11, 0.08) 85%, rgba(249, 115, 22, 0.16) 100%);
-}
-
-#weather-sky-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  pointer-events: none;
+  display: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1861,17 +1801,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
        Matches Reference: Rolling Green Hills + Dynamic Animated Sky
        (Drifting Cloud Animation if Temp Low & Hum High, else Sunny Bright)
        ═══════════════════════════════════════════════════════════════ -->
-  <div id="node2-weather-backdrop" class="node2-weather-backdrop <?= $is_cloudy_initial ? 'cloudy' : 'sunny' ?>" style="<?= ($is_node_2 && $active_live_subtab !== 'weather') ? 'display: none;' : '' ?>" aria-hidden="true">
-    <!-- Seamless Infinite Horizontal Drifting Panoramic Cloud Track -->
-    <div class="cloud-drift-track">
-      <div class="cloud-drift-panel"></div>
-      <div class="cloud-drift-panel mirrored"></div>
-      <div class="cloud-drift-panel"></div>
-      <div class="cloud-drift-panel mirrored"></div>
-    </div>
-    <div class="sky-ambient-vignette"></div>
-    <canvas id="weather-sky-canvas"></canvas>
-  </div>
+  <div id="node2-weather-backdrop" class="node2-weather-backdrop" style="display: none;" aria-hidden="true"></div>
 
   <!-- Live Content Container -->
   <div class="live-page-root live-content-container p-2 sm:p-6" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 1200px; margin: 0 auto; min-width: 0; box-sizing: border-box; overflow-x: hidden;">
@@ -1992,16 +1922,7 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
       }
   }
 
-  // Pre-check and guarantee cloud drift background image path
-  (function() {
-      const testImg = new Image();
-      testImg.src = 'assets/sunset_clouds_backdrop.jpg';
-      testImg.onerror = function() {
-          document.querySelectorAll('.cloud-drift-panel').forEach(function(p) {
-              p.style.backgroundImage = "url('/assets/sunset_clouds_backdrop.jpg')";
-          });
-      };
-  })();
+
   </script>
 
   <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather vs Live Soil (Compact Pill Switcher) -->
@@ -3024,30 +2945,30 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
         </h2>
       </div>
 
-      <div id="live-weather-table-container" style="background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.7); overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); transition: opacity 0.2s ease; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
+      <div id="live-weather-table-container" style="background: rgba(30, 41, 59, 0.72); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.16); overflow: hidden; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35); transition: opacity 0.2s ease; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
         <!-- Mobile swipe indicator -->
-        <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
+        <div class="block sm:hidden px-4 py-2 bg-slate-900/60 border-b border-white/10 text-[11px] text-slate-300 font-medium flex items-center justify-between">
           <span>👈 Swipe horizontally to view all weather parameters</span>
-          <span class="font-mono text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-bold">WEATHER STREAM</span>
+          <span class="font-mono text-[10px] bg-slate-800 text-sky-300 border border-slate-700 px-1.5 py-0.5 rounded font-bold">WEATHER STREAM</span>
         </div>
 
         <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
           <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 1100px;">
-            <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <thead style="position: sticky; top: 0; z-index: 1; background-color: rgba(15, 23, 42, 0.92); border-bottom: 1px solid rgba(255, 255, 255, 0.14);">
               <tr>
-                <th style="padding: 12px 14px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Temp (°C)</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #0369a1; font-size: 12px; white-space: nowrap;">Humidity (%)</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #db2777; font-size: 12px; white-space: nowrap;">Pressure (mb)</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #e11d48; font-size: 12px; white-space: nowrap;">UV Index</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Wind Speed</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #0d9488; font-size: 12px; white-space: nowrap;">Wind Gust</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Wind Dir</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #2563eb; font-size: 12px; white-space: nowrap;">Rain (mm)</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #0284c7; font-size: 12px; white-space: nowrap;">Soil Moisture</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #ea580c; font-size: 12px; white-space: nowrap;">Soil Temp</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #16a34a; font-size: 12px; white-space: nowrap;">Soil pH</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #9333ea; font-size: 12px; white-space: nowrap;">Soil EC</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #fbbf24; font-size: 12px; white-space: nowrap;">Temp (°C)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #38bdf8; font-size: 12px; white-space: nowrap;">Humidity (%)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #f472b6; font-size: 12px; white-space: nowrap;">Pressure (mb)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #fb7185; font-size: 12px; white-space: nowrap;">UV Index</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #34d399; font-size: 12px; white-space: nowrap;">Wind Speed</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #2dd4bf; font-size: 12px; white-space: nowrap;">Wind Gust</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Wind Dir</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #60a5fa; font-size: 12px; white-space: nowrap;">Rain (mm)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #38bdf8; font-size: 12px; white-space: nowrap;">Soil Moisture</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #fb923c; font-size: 12px; white-space: nowrap;">Soil Temp</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #4ade80; font-size: 12px; white-space: nowrap;">Soil pH</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #c084fc; font-size: 12px; white-space: nowrap;">Soil EC</th>
               </tr>
             </thead>
             <tbody id="weather-tbody">
@@ -3071,27 +2992,27 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
                   $sTemp = isset($row['soil_temperature']) && is_numeric($row['soil_temperature']) ? number_format((float)$row['soil_temperature'], 1) . ' °C' : (isset($row['soil_temp']) && is_numeric($row['soil_temp']) ? number_format((float)$row['soil_temp'], 1) . ' °C' : '--');
                   $sPh = isset($row['soil_ph']) && is_numeric($row['soil_ph']) ? number_format((float)$row['soil_ph'], 2) : (isset($row['ph']) && is_numeric($row['ph']) ? number_format((float)$row['ph'], 2) : '--');
                   $sEc = isset($row['soil_conductivity']) && is_numeric($row['soil_conductivity']) ? number_format((float)$row['soil_conductivity'], 1) . ' µS/cm' : '--';
-                  $rowBg = ($i % 2 === 0) ? '#ffffff' : '#f8fafc';
+                  $rowBg = ($i % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
                 ?>
-                  <tr style="border-bottom: 1px solid #f1f5f9; background-color: <?= $rowBg ?>;">
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;"><?= htmlspecialchars($timeStr) ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #b45309; white-space: nowrap;"><?= $rTemp ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0369a1; white-space: nowrap;"><?= $rHum ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #db2777; white-space: nowrap;"><?= $rPress ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #e11d48; white-space: nowrap;"><?= $rUv ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #047857; white-space: nowrap;"><?= $rWSpd ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0d9488; white-space: nowrap;"><?= $rGust ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #475569; white-space: nowrap;"><?= htmlspecialchars($rDir) ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2563eb; white-space: nowrap;"><?= $rRain ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; white-space: nowrap;"><?= $sMoist ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #ea580c; white-space: nowrap;"><?= $sTemp ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #16a34a; white-space: nowrap;"><?= $sPh ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #9333ea; white-space: nowrap;"><?= $sEc ?></td>
+                  <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: <?= $rowBg ?>;">
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #ffffff; white-space: nowrap; font-weight: 600;"><?= htmlspecialchars($timeStr) ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fbbf24; white-space: nowrap;"><?= $rTemp ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #38bdf8; white-space: nowrap;"><?= $rHum ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;"><?= $rPress ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb7185; white-space: nowrap;"><?= $rUv ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #34d399; white-space: nowrap;"><?= $rWSpd ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;"><?= $rGust ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;"><?= htmlspecialchars($rDir) ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #60a5fa; white-space: nowrap;"><?= $rRain ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #38bdf8; white-space: nowrap;"><?= $sMoist ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb923c; white-space: nowrap;"><?= $sTemp ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #4ade80; white-space: nowrap;"><?= $sPh ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #c084fc; white-space: nowrap;"><?= $sEc ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="13" style="padding: 40px; text-align: center; color: #64748b;">
+                  <td colspan="13" style="padding: 40px; text-align: center; color: #94a3b8;">
                     Currently in standby mode. Telemetry stream will populate when records arrive.
                   </td>
                 </tr>
@@ -4217,7 +4138,7 @@ function renderWeatherLiveTable(hist) {
         if (tbodyWeather.children.length > 1 || (tbodyWeather.children.length === 1 && !tbodyWeather.innerText.includes('mode') && !tbodyWeather.innerText.includes('Loading'))) {
             return;
         }
-        tbodyWeather.innerHTML = '<tr><td colspan="13" style="padding: 40px; text-align: center; color: #64748b;">No live weather telemetry found.</td></tr>';
+        tbodyWeather.innerHTML = '<tr><td colspan="13" style="padding: 40px; text-align: center; color: #94a3b8;">No live weather telemetry found.</td></tr>';
         return;
     }
     let temps = [];
@@ -4252,20 +4173,21 @@ function renderWeatherLiveTable(hist) {
             temps.push(Number(rawTemp));
         }
 
-        return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #b45309; white-space: nowrap;">${temp}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0369a1; white-space: nowrap;">${hum}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #db2777; white-space: nowrap;">${press}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #e11d48; white-space: nowrap;">${uv}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #047857; white-space: nowrap;">${wSpd}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0d9488; white-space: nowrap;">${gust}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #475569; white-space: nowrap;">${dir}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2563eb; white-space: nowrap;">${rain}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; white-space: nowrap;">${sHum}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #ea580c; white-space: nowrap;">${sTemp}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #16a34a; white-space: nowrap;">${sPh}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #9333ea; white-space: nowrap;">${sEc}</td>
+        const rowBg = (i % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
+        return `<tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: ${rowBg};">
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #ffffff; white-space: nowrap; font-weight: 600;">${timeStr}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fbbf24; white-space: nowrap;">${temp}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #38bdf8; white-space: nowrap;">${hum}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;">${press}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb7185; white-space: nowrap;">${uv}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #34d399; white-space: nowrap;">${wSpd}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;">${gust}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;">${dir}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #60a5fa; white-space: nowrap;">${rain}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #38bdf8; white-space: nowrap;">${sHum}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb923c; white-space: nowrap;">${sTemp}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #4ade80; white-space: nowrap;">${sPh}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #c084fc; white-space: nowrap;">${sEc}</td>
         </tr>`;
     }).join('');
 
@@ -5437,264 +5359,16 @@ window.evaluateNode2WeatherTheme = function(temp, hum, rain) {
 };
 
 function initNode2WeatherBackdrop() {
+    if (liveCanvasAnimId) {
+        cancelAnimationFrame(liveCanvasAnimId);
+        liveCanvasAnimId = null;
+    }
     const canvas = document.getElementById('weather-sky-canvas') || document.getElementById('live-ambient-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    if (liveCanvasAnimId) cancelAnimationFrame(liveCanvasAnimId);
-    if (liveCanvasResizeHandler) {
-        window.removeEventListener('resize', liveCanvasResizeHandler);
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.display = 'none';
     }
-
-    function resize() {
-        if (!canvas) return;
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        initElements();
-    }
-    liveCanvasResizeHandler = resize;
-    window.addEventListener('resize', liveCanvasResizeHandler);
-
-    // ─────────────────────────────────────────────────────────────
-    // REALISTIC VOLUMETRIC SUNSET CLOUD ENGINE (Cloudy Mode)
-    // Matches Reference Design: Volumetric Cumulus + Glowing Crests
-    // ─────────────────────────────────────────────────────────────
-    let clouds = [];
-    let wisps = [];
-    let twilightMotes = [];
-
-    // Pre-render soft Gaussian cloud puff brushes (Zero sharp circle edges)
-    function makeGaussianPuff(r, g, b, maxAlpha) {
-        const s = 140;
-        const off = document.createElement('canvas');
-        off.width = s;
-        off.height = s;
-        const octx = off.getContext('2d');
-        const imgData = octx.createImageData(s, s);
-        const data = imgData.data;
-        const half = s / 2;
-        for (let y = 0; y < s; y++) {
-            for (let x = 0; x < s; x++) {
-                const dx = (x - half) / half;
-                const dy = (y - half) / half;
-                const distSq = dx * dx + dy * dy;
-                if (distSq < 1.0) {
-                    const d = Math.sqrt(distSq);
-                    const falloff = 0.5 * (1 + Math.cos(Math.PI * d));
-                    const a = falloff * falloff * maxAlpha;
-                    const idx = (y * s + x) * 4;
-                    data[idx] = r;
-                    data[idx + 1] = g;
-                    data[idx + 2] = b;
-                    data[idx + 3] = Math.round(a * 255);
-                }
-            }
-        }
-        octx.putImageData(imgData, 0, 0);
-        return off;
-    }
-
-    const sprCrest = makeGaussianPuff(255, 185, 138, 0.40);
-    const sprPeak = makeGaussianPuff(255, 238, 220, 0.46);
-    const sprMauve = makeGaussianPuff(182, 135, 150, 0.38);
-    const sprBase = makeGaussianPuff(48, 54, 70, 0.48);
-
-    class DriftingSunsetCloud {
-        constructor(layer, initSpread = true) {
-            this.layer = layer; // 0 = distant haze, 1 = midground, 2 = foreground
-            this.reset(initSpread);
-        }
-
-        reset(initSpread = false) {
-            const w = canvas.width;
-            const h = canvas.height;
-            const isMobile = (w < 640);
-            const scale = (isMobile ? 0.70 : 1.0) * ((this.layer === 0) ? (0.75 + Math.random() * 0.25) :
-                          (this.layer === 1) ? (1.05 + Math.random() * 0.35) :
-                                               (1.40 + Math.random() * 0.40));
-
-            this.width = (320 + Math.random() * 240) * scale;
-            this.height = this.width * (0.32 + Math.random() * 0.08);
-            this.x = initSpread ? (Math.random() * (w + this.width * 2) - this.width) : (-this.width - Math.random() * 120);
-
-            if (this.layer === 0) {
-                this.y = (0.14 + Math.random() * 0.26) * h;
-                this.speed = 0.16 + Math.random() * 0.08;
-                this.alpha = 0.55 + Math.random() * 0.15;
-            } else if (this.layer === 1) {
-                this.y = (0.26 + Math.random() * 0.30) * h;
-                this.speed = 0.28 + Math.random() * 0.10;
-                this.alpha = 0.75 + Math.random() * 0.12;
-            } else {
-                this.y = (0.38 + Math.random() * 0.30) * h;
-                this.speed = 0.42 + Math.random() * 0.12;
-                this.alpha = 0.88 + Math.random() * 0.10;
-            }
-
-            this.phase = Math.random() * Math.PI * 2;
-            this.puffs = [];
-
-            // 1. Underbelly base puffs (flat condensation base with dark slate shade)
-            const nBase = isMobile ? 14 : 22;
-            for (let i = 0; i < nBase; i++) {
-                const rx = (i / (nBase - 1) - 0.5) * (this.width * 0.86) + (Math.random() - 0.5) * 25;
-                const ry = this.height * 0.16 + (Math.random() - 0.5) * (this.height * 0.12);
-                const sz = (this.height * 0.55) + Math.random() * (this.height * 0.30);
-                this.puffs.push({ x: rx, y: ry, size: sz, spr: sprBase, phase: Math.random() * Math.PI * 2, pulse: sz * 0.05 });
-            }
-
-            // 2. Mid volumetric body puffs
-            const nMid = isMobile ? 18 : 28;
-            for (let i = 0; i < nMid; i++) {
-                const rx = ((i + 0.5) / nMid - 0.5) * (this.width * 0.74) + (Math.random() - 0.5) * 28;
-                const ry = (Math.random() - 0.5) * (this.height * 0.18);
-                const sz = (this.height * 0.60) + Math.random() * (this.height * 0.35);
-                this.puffs.push({ x: rx, y: ry, size: sz, spr: sprMauve, phase: Math.random() * Math.PI * 2, pulse: sz * 0.06 });
-            }
-
-            // 3. Sunlit cauliflower top crests (golden peach & apricot)
-            const nCrest = isMobile ? 14 : 20;
-            for (let i = 0; i < nCrest; i++) {
-                const rx = ((i + 0.5) / nCrest - 0.5) * (this.width * 0.66) + (Math.random() - 0.5) * 22;
-                const ry = -this.height * 0.18 - Math.random() * (this.height * 0.24);
-                const sz = (this.height * 0.50) + Math.random() * (this.height * 0.30);
-                this.puffs.push({ x: rx, y: ry, size: sz, spr: (Math.random() > 0.35) ? sprCrest : sprPeak, phase: Math.random() * Math.PI * 2, pulse: sz * 0.05 });
-            }
-        }
-
-        update(t) {
-            this.x += this.speed;
-            this.phase += 0.005;
-            for (const p of this.puffs) {
-                p.curSize = p.size + Math.sin(p.phase + t * 0.8) * p.pulse;
-            }
-            if (this.x > canvas.width + this.width) {
-                this.reset(false);
-            }
-        }
-
-        draw(ctx, opacity) {
-            const effAlpha = this.alpha * opacity;
-            if (effAlpha <= 0.02) return;
-            const cy = this.y + Math.sin(this.phase) * 3;
-            ctx.save();
-            ctx.globalAlpha = effAlpha;
-            for (const p of this.puffs) {
-                const s = p.curSize || p.size;
-                ctx.drawImage(p.spr, this.x + p.x - s * 0.5, cy + p.y - s * 0.5, s, s);
-            }
-            ctx.restore();
-        }
-    }
-
-    // Horizontal Sunset Stratus Wisps (Matches low horizon streaks in reference)
-    class SunsetStratusWisp {
-        constructor(initSpread = true) {
-            this.reset(initSpread);
-        }
-        reset(initSpread = false) {
-            const w = canvas.width;
-            const h = canvas.height;
-            const isMobile = (w < 640);
-            this.width = (isMobile ? 200 : 260) + Math.random() * (isMobile ? 180 : 300);
-            this.height = (isMobile ? 12 : 16) + Math.random() * (isMobile ? 12 : 18);
-            this.x = initSpread ? (Math.random() * (w + this.width) - this.width * 0.5) : (-this.width - Math.random() * 80);
-            this.y = (0.50 + Math.random() * 0.38) * h;
-            this.speed = 0.44 + Math.random() * 0.18;
-            this.alpha = 0.50 + Math.random() * 0.22;
-            this.phase = Math.random() * Math.PI * 2;
-        }
-        update(t) {
-            this.x += this.speed;
-            this.phase += 0.006;
-            if (this.x > canvas.width + this.width) this.reset(false);
-        }
-        draw(ctx, opacity) {
-            const effAlpha = this.alpha * opacity;
-            if (effAlpha <= 0.02) return;
-            const cy = this.y + Math.sin(this.phase) * 2;
-            ctx.save();
-            ctx.globalAlpha = effAlpha;
-            const steps = 12;
-            for (let i = 0; i < steps; i++) {
-                const rx = (i / (steps - 1) - 0.5) * (this.width * 0.85);
-                const puffH = this.height * (0.8 + Math.random() * 0.4);
-                const puffW = puffH * 3.6;
-                ctx.drawImage(sprCrest, this.x + rx - puffW * 0.5, cy - puffH * 0.5, puffW, puffH);
-            }
-            ctx.restore();
-        }
-    }
-
-    function initElements() {
-        clouds = [];
-        const isMobile = (canvas.width < 640);
-        const numPerLayer = isMobile ? 2 : 3;
-        for (let l = 0; l < 3; l++) {
-            for (let c = 0; c < numPerLayer; c++) {
-                clouds.push(new DriftingSunsetCloud(l, true));
-            }
-        }
-
-        wisps = [];
-        const numWisps = isMobile ? 4 : 7;
-        for (let s = 0; s < numWisps; s++) {
-            wisps.push(new SunsetStratusWisp(true));
-        }
-
-        twilightMotes = Array.from({ length: isMobile ? 20 : 35 }, () => ({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            r: Math.random() * 2.2 + 0.8,
-            speedX: (Math.random() - 0.3) * 0.4,
-            speedY: -(Math.random() * 0.35 + 0.15),
-            alpha: Math.random() * 0.6 + 0.2,
-            pulse: Math.random() * Math.PI * 2
-        }));
-    }
-
-    resize();
-
-    let tick = 0;
-    function render() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        tick += 0.02;
-
-        // Render natural sunset cumulus clouds & stratus wisps across sky (no sun overlay)
-        const cloudyWeight = 1.0;
-        if (cloudyWeight > 0.015) {
-            for (const cloud of clouds) {
-                cloud.update(tick);
-                cloud.draw(ctx, cloudyWeight);
-            }
-            for (const wisp of wisps) {
-                wisp.update(tick);
-                wisp.draw(ctx, cloudyWeight);
-            }
-            // Ambient twilight floating motes
-            ctx.save();
-            for (const tm of twilightMotes) {
-                tm.pulse += 0.025;
-                const alpha = (tm.alpha + Math.sin(tm.pulse) * 0.15) * cloudyWeight;
-                if (alpha > 0.04) {
-                    ctx.beginPath();
-                    ctx.arc(tm.x, tm.y, tm.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(254, 215, 170, ${alpha * 0.75})`;
-                    ctx.fill();
-                }
-                tm.x += tm.speedX;
-                tm.y += tm.speedY;
-                if (tm.y < -10) { tm.y = canvas.height + 10; tm.x = Math.random() * canvas.width; }
-                if (tm.x < -10) tm.x = canvas.width + 10;
-                if (tm.x > canvas.width + 10) tm.x = -10;
-            }
-            ctx.restore();
-        }
-
-        liveCanvasAnimId = requestAnimationFrame(render);
-    }
-    render();
 }
 
 window.initLiveAmbientCanvas = initNode2WeatherBackdrop;

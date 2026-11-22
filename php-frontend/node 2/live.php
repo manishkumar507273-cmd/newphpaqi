@@ -1430,72 +1430,84 @@ $init_border_colors = [
   }
   #node2-live-subnav > div {
     width: 100% !important;
-    max-width: 320px !important;
+    max-width: 400px !important;
     margin: 0 auto !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 3px !important;
+    padding: 3px !important;
     box-sizing: border-box !important;
   }
   #node2-tab-aqi, #node2-tab-weather, #node2-tab-soil {
-    padding: 4px 10px !important;
+    flex: 1 1 0px !important;
+    min-width: 0 !important;
+    padding: 5px 6px !important;
     font-size: 11px !important;
     min-height: 28px !important;
-    gap: 4px !important;
+    gap: 3px !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+  .subtab-offline-badge {
+    font-size: 7.5px !important;
+    padding: 1.5px 4px !important;
+    margin-left: 2px !important;
+    letter-spacing: 0.02em !important;
   }
 
   /* Title font on mobile */
   .live-page-title {
     font-size: 17px !important;
+    line-height: 1.25 !important;
   }
 
-  /* Row 1: Direction & Speed (~60%) + Gust (~40%) Side-by-Side */
+  /* Offline banner on mobile */
+  #live-offline-banner {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    border-radius: 12px !important;
+  }
+  #live-offline-banner > div:first-child {
+    font-size: 12px !important;
+  }
+  #live-offline-badge-text {
+    font-size: 9px !important;
+    padding: 2.5px 7px !important;
+  }
+
+  /* Row 1: Direction & Speed on top, Gust below (Clean 100% full-width cards on mobile) */
   .weather-row-top {
     display: grid !important;
-    grid-template-columns: 1.55fr 1fr !important;
-    gap: 8px !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
 
-  /* Parameter Grid: 6 cards in 2 equal columns */
-  .weather-grid-params {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .weather-card-dark {
-    padding: 11px 12px !important;
-    border-radius: 18px !important;
-    min-height: 128px !important;
-    box-sizing: border-box !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
-  }
-
-  /* Card 1: Side-by-Side Compass + Stacked Metrics (Direction on top, Wind Speed on bottom) */
+  /* Card 1: Spacious Wind Gauge (Compass on left, Direction & Speed centered, Turbine on right) */
   .weather-card-wind {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    padding: 10px 10px !important;
-    gap: 8px !important;
+    justify-content: space-between !important;
+    padding: 12px 14px !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
     flex-wrap: nowrap !important;
   }
   .compass-widget-wrap {
-    width: 54px !important;
-    height: 54px !important;
+    width: 58px !important;
+    height: 58px !important;
     flex-shrink: 0 !important;
   }
   .weather-wind-metrics-group {
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
-    gap: 6px !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 4px !important;
     min-width: 0 !important;
     flex: 1 !important;
   }
@@ -1504,8 +1516,8 @@ $init_border_colors = [
   }
   .wind-turbine-wrap {
     display: flex !important;
-    width: 36px !important;
-    height: 54px !important;
+    width: 44px !important;
+    height: 58px !important;
     flex-shrink: 0 !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1515,29 +1527,52 @@ $init_border_colors = [
     margin: 0 !important;
   }
   .weather-metric-large {
-    font-size: 17px !important;
+    font-size: 18px !important;
     line-height: 1.1 !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
   }
   .weather-metric-label {
-    font-size: 10.5px !important;
+    font-size: 11px !important;
     color: #94a3b8 !important;
     margin-top: 1px !important;
     white-space: nowrap !important;
   }
 
-  /* Card 2: Gust Speed */
+  /* Card 2: Gust Speed (Full Width on mobile, centered gauge) */
   .weather-card-gust {
-    padding: 10px 10px !important;
+    padding: 12px 14px !important;
     text-align: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .weather-gust-graphic-wrap {
-    height: 44px !important;
+    height: 48px !important;
   }
   .weather-gust-val {
-    font-size: 17px !important;
+    font-size: 20px !important;
     line-height: 1.1 !important;
+  }
+
+  /* Parameter Grid: 6 cards in 2 equal columns */
+  .weather-grid-params {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .weather-card-dark {
+    padding: 11px 11px !important;
+    border-radius: 16px !important;
+    min-height: 118px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
   }
 
   /* Parameter cards typography & sizing */
@@ -1547,20 +1582,20 @@ $init_border_colors = [
   }
   .weather-precip-icon-wrap,
   .weather-soil-icon-wrap {
-    width: 34px !important;
-    height: 34px !important;
+    width: 32px !important;
+    height: 32px !important;
   }
   .weather-pressure-dial-wrap {
-    width: 58px !important;
-    height: 58px !important;
+    width: 54px !important;
+    height: 54px !important;
   }
   .weather-card-divider {
-    margin: 8px 0 6px 0 !important;
+    margin: 6px 0 5px 0 !important;
   }
   .weather-metric-note {
     font-size: 9.5px !important;
     line-height: 1.25 !important;
-    margin-top: 6px !important;
+    margin-top: 5px !important;
     color: #94a3b8 !important;
   }
 
@@ -1574,24 +1609,84 @@ $init_border_colors = [
     font-size: 10.5px !important;
   }
 
-  /* Weather Telemetry Table Container & Scroll on mobile */
-  #live-weather-table-container {
+  /* Weather & Soil Telemetry Tables Container & Scroll on mobile */
+  #live-weather-table-container,
+  #live-aqi-table-container,
+  #soil-live-table-container {
     border-radius: 16px !important;
     margin-top: 6px !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
   }
-  #live-weather-table-container > div:last-child {
+  #live-weather-table-container > div:last-child,
+  #live-aqi-table-container > div:last-child,
+  #soil-live-table-container > div:last-child {
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     box-sizing: border-box !important;
   }
-  #live-weather-table-container table {
-    min-width: 680px !important;
+  #live-weather-table-container table,
+  #live-aqi-table-container table,
+  #soil-live-table-container table {
+    min-width: 640px !important;
+  }
+
+  /* Trend graph on mobile */
+  .trend-graph-card {
+    padding: 14px 14px !important;
+    border-radius: 18px !important;
+  }
+
+  /* Mobile Pollutant Cards */
+  .pollutants-grid-responsive {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .pollutant-card {
+    padding: 9px 9px !important;
+    gap: 6px !important;
+    border-radius: 14px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .pollutant-name {
+    font-size: 13px !important;
+  }
+  .pollutant-who {
+    font-size: 8.5px !important;
+  }
+  .pollutant-icon-box {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+  .pollutant-info-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .pollutant-val-wrap .font-mono {
+    font-size: 17px !important;
+  }
+  .pollutant-unit {
+    font-size: 8.5px !important;
+  }
+  .pollutant-tag {
+    padding: 1.5px 5px !important;
+    font-size: 8.5px !important;
+  }
+
+  /* Safe padding above mobile bottom navigation */
+  .live-page-root {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-bottom: 96px !important;
   }
 }
 
@@ -1875,12 +1970,12 @@ body.weather-backdrop-active .node2-weather-backdrop,
   <div class="live-page-root live-content-container p-2 sm:p-6" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 1200px; margin: 0 auto; min-width: 0; box-sizing: border-box; overflow-x: hidden;">
 
 <!-- Offline Banner -->
-<div id="live-offline-banner" style="<?= $init_active_offline ? 'display: flex;' : 'display: none;' ?> background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
-  <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569;">
-    <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f97316; margin-top: 2px; flex-shrink: 0;"></i>
-    <span><strong id="live-offline-banner-title" style="color: #c2410c;"><?= htmlspecialchars($init_active_offline_name) ?> Offline:</strong> <span id="live-offline-banner-desc">No new live telemetry received in cloud for &gt;5 mins (Last update: <strong style="color: #f97316;" id="live-offline-last-update"><?= htmlspecialchars($init_active_offline_ts) ?></strong>). Showing last recorded cloud values below.</span></span>
+<div id="live-offline-banner" style="<?= $init_active_offline ? 'display: flex;' : 'display: none;' ?> background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 10px 12px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; width: 100%; max-width: 100%; box-sizing: border-box;">
+  <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #475569; flex: 1; min-width: 0;">
+    <i data-lucide="alert-triangle" style="width: 15px; height: 15px; color: #f97316; margin-top: 1.5px; flex-shrink: 0;"></i>
+    <span style="min-width: 0; word-break: break-word;"><strong id="live-offline-banner-title" style="color: #c2410c;"><?= htmlspecialchars($init_active_offline_name) ?> Offline:</strong> <span id="live-offline-banner-desc">No live telemetry in cloud for &gt;5 mins (Last update: <strong style="color: #f97316;" id="live-offline-last-update"><?= htmlspecialchars($init_active_offline_ts) ?></strong>). Showing cached values.</span></span>
   </div>
-  <div id="live-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap;">OFFLINE</div>
+  <div id="live-offline-badge-text" style="background-color: #ffedd5; color: #c2410c; font-size: 9.5px; font-weight: 800; padding: 2.5px 7px; border-radius: 999px; letter-spacing: 0.05em; font-family: var(--font-mono); white-space: nowrap; flex-shrink: 0;">OFFLINE</div>
 </div>
 
 <?php if ($is_node_2): ?>
@@ -1951,8 +2046,8 @@ body.weather-backdrop-active .node2-weather-backdrop,
       const backdrop = document.getElementById('node2-weather-backdrop');
       const layoutRoot = document.getElementById('app-layout-root');
 
-      const activeCls = 'flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
-      const inactiveCls = 'flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
+      const activeCls = 'flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
+      const inactiveCls = 'flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
 
       function showPaneWithGlide(targetView, otherViews) {
           otherViews.forEach(v => {
@@ -2066,27 +2161,27 @@ body.weather-backdrop-active .node2-weather-backdrop,
 
   <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather vs Live Soil (Compact Pill Switcher) -->
   <div class="flex items-center justify-center mb-1 w-full px-1" id="node2-live-subnav">
-    <div class="inline-flex items-center bg-white p-0.5 sm:p-1 rounded-full border border-slate-300 shadow-sm gap-1">
-      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+    <div class="inline-flex items-center bg-white p-0.5 sm:p-1 rounded-full border border-slate-300 shadow-sm gap-1 w-full max-w-[390px] sm:max-w-fit justify-between sm:justify-center">
+      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
         <i data-lucide="activity" class="w-3.5 h-3.5 shrink-0"></i>
-        <span>AQI Live</span>
+        <span>AQI<span class="hidden sm:inline"> Live</span></span>
         <span id="node2-tab-aqi-status" class="subtab-offline-badge" style="<?= $init_is_aqi_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
       </button>
-      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
         <i data-lucide="cloud-sun" class="w-3.5 h-3.5 shrink-0"></i>
-        <span>Weather Live</span>
+        <span>Weather<span class="hidden sm:inline"> Live</span></span>
         <span id="node2-tab-weather-status" class="subtab-offline-badge" style="<?= $init_is_weather_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
       </button>
-      <button id="node2-tab-soil" type="button" onclick="switchNode2LiveTab('soil')" class="flex items-center justify-center gap-1.5 py-1 sm:py-1 px-3 sm:px-3.5 rounded-full font-bold text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'soil') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
+      <button id="node2-tab-soil" type="button" onclick="switchNode2LiveTab('soil')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'soil') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
         <i data-lucide="sprout" class="w-3.5 h-3.5 shrink-0"></i>
-        <span>Soil Live</span>
+        <span>Soil<span class="hidden sm:inline"> Live</span></span>
         <span id="node2-tab-soil-status" class="subtab-offline-badge" style="<?= $init_is_soil_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
       </button>
     </div>
   </div>
 <?php endif; ?>
 
-<div id="node2-view-aqi" class="node2-live-view-panel" style="<?= ($is_node_2 && $active_live_subtab !== 'aqi') ? 'display: none;' : 'display: flex;' ?> width: 100%; flex-direction: column; gap: 14px;">
+<div id="node2-view-aqi" class="node2-live-view-panel" style="<?= ($is_node_2 && $active_live_subtab !== 'aqi') ? 'display: none;' : 'display: flex;' ?> width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; flex-direction: column; gap: 14px;">
 
   <!-- Page Header Titles -->
   <div style="display: flex; justify-content: flex-start; align-items: center; text-align: left; width: 100%; margin-top: 10px; margin-bottom: 6px;">
@@ -2380,9 +2475,9 @@ body.weather-backdrop-active .node2-weather-backdrop,
       </h2>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px;">
+    <div style="display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
       <!-- AQI Parameters Comparison Lineplot Card -->
-      <div class="comparison-chart-card" style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px;">
+      <div class="comparison-chart-card" style="background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
           <div>
             <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">

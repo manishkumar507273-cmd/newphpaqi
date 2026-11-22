@@ -77,9 +77,10 @@ $init_is_raining = is_numeric($init_live_rain) && (float)$init_live_rain > 0;
 $init_rain_bar_width = is_numeric($init_live_rain) ? max(5, min(95, round(((float)$init_live_rain / 20) * 100))) . '%' : '0%';
 
 $is_overview_offline = empty($init_bulk);
-$overview_offline_time_str = !empty($init_bulk['aqi']['timestamp']) ? date('h:i A', strtotime($init_bulk['aqi']['timestamp'])) : '--';
+$latest_epoch = !empty($init_bulk['aqi']['timestamp']) ? strtotime($init_bulk['aqi']['timestamp']) : (!empty($init_bulk['weather']['timestamp']) ? strtotime($init_bulk['weather']['timestamp']) : 0);
+$overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) : '--';
 ?>
-<div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow: hidden; padding: clamp(14px, 2.5vw, 20px); margin-bottom: 6px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
+<div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow-x: hidden; width: 100%; max-width: 100%; box-sizing: border-box; padding: clamp(12px, 2.5vw, 20px); margin-bottom: 6px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
   
   <!-- Dynamic Ambient Canvas -->
   <canvas id="ambient-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.9;"></canvas>
@@ -90,10 +91,10 @@ $overview_offline_time_str = !empty($init_bulk['aqi']['timestamp']) ? date('h:i 
   <div style="position: absolute; bottom: -10%; left: -5%; width: 45vw; height: 45vw; max-width: 500px; max-height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, rgba(241, 245, 249, 0) 70%); filter: blur(60px); pointer-events: none; z-index: 0;"></div>
 
   <!-- Content Container -->
-  <div class="overview-content-container" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px;">
+  <div class="overview-content-container" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
 
     <!-- Overview Header: Title & Last Updated Status -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 2px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 2px; width: 100%;">
       <div style="width: 100%;">
         <h1 class="overview-page-title" style="font-size: clamp(20px, 2.5vw, 26px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
           Campus Telemetry Overview
@@ -102,12 +103,15 @@ $overview_offline_time_str = !empty($init_bulk['aqi']['timestamp']) ? date('h:i 
           <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
             <i data-lucide="clock" style="width: 14px; height: 14px; color: #00bfa5;"></i>
             <span>Last Updated:</span>
-            <span id="overview-latest-time" style="color: #0f172a; font-weight: 700; font-family: var(--font-mono); background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);"><?= $latest_epoch > 0 ? date('h:i A', $latest_epoch) : 'Live Stream' ?></span>
+            <span id="overview-latest-time" style="color: #0f172a; font-weight: 700; font-family: var(--font-mono); background: #ffffff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);"><?= ($latest_epoch > 0) ? date('h:i A', $latest_epoch) : 'Live Stream' ?></span>
           </span>
           <span id="overview-live-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 2.5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
             <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #10b981;"></span>
             LIVE
           </span>
+        </div>
+      </div>
+    </div>
         </div>
       </div>
     </div>

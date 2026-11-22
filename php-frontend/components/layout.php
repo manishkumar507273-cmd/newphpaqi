@@ -758,7 +758,7 @@ $active_layout_bg = $is_weather_tab_active
         <div class="relative ml-1 shrink-0" id="mobile-node-dropdown-container" style="position: relative;">
           <button type="button" id="mobile-node-dropdown-trigger" onclick="window.toggleNodeDropdown(event, 'mobile')" style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05); transition: all 0.18s ease; outline: none; -webkit-tap-highlight-color: transparent;" onmouseover="this.style.borderColor='#00bfa5';" onmouseout="this.style.borderColor='#e2e8f0';">
             <span style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#94a3b8' ?>; display: inline-block; flex-shrink: 0;" class="<?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>"></span>
-            <span style="font-size: 11px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Node 1 (SMVITM)' : 'Node 2 (Field Station)' ?></span>
+            <span style="font-size: 11px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Node 1<span class="hidden sm:inline"> (SMVITM)</span>' : 'Node 2<span class="hidden sm:inline"> (Field Station)</span>' ?></span>
             <i data-lucide="chevron-down" id="mobile-node-dropdown-chevron" style="width: 12px; height: 12px; color: #64748b; transition: transform 0.2s;"></i>
           </button>
 

@@ -584,7 +584,9 @@ $init_border_colors = [
 #hero-card {
   max-width: 560px !important;
   width: 100% !important;
-  margin: 0 auto 16px auto !important;
+  margin: 0 auto 16px 0 !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
 }
 
 @media (max-width: 768px) {
@@ -2164,9 +2166,9 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
 <div id="node2-view-aqi" style="<?= ($is_node_2 && $active_live_subtab !== 'aqi') ? 'display: none;' : 'display: flex;' ?> width: 100%; flex-direction: column; gap: 14px;">
 
   <!-- Page Header Titles -->
-  <div style="display: flex; justify-content: center; align-items: center; text-align: center; width: 100%; margin-top: 10px; margin-bottom: 6px;">
-    <div style="width: 100%; text-align: center;">
-      <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: center;">
+  <div style="display: flex; justify-content: flex-start; align-items: center; text-align: left; width: 100%; margin-top: 10px; margin-bottom: 6px;">
+    <div style="width: 100%; text-align: left;">
+      <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: left;">
         Real-time Air Quality &amp; Weather Telemetry
       </h1>
       <span id="latest-time" style="display: none;"><?= htmlspecialchars($init_time_str) ?></span>
@@ -2174,8 +2176,8 @@ body.weather-backdrop-active #node2-tab-soil:not(.bg-\[\#00bfa5\]):hover {
     </div>
   </div>
 
-  <!-- UNIFIED HERO CARD (AQI Box - Half Width Centered) -->
-  <div id="hero-card" class="hero-card-responsive" style="max-width: 560px; width: 100%; margin: 0 auto 16px auto; background: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 22px 24px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 10px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background 0.6s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
+  <!-- UNIFIED HERO CARD (AQI Box - Half Width Left-Aligned) -->
+  <div id="hero-card" class="hero-card-responsive" style="max-width: 560px; width: 100%; margin: 0 auto 16px 0; margin-left: 0; margin-right: auto; background: <?= $init_aqi_bg ?>; border-radius: 24px; padding: 22px 24px; color: #0f172a; border: 1.5px solid <?= $init_aqi_border ?>; box-shadow: 0 10px 30px <?= $init_aqi_shadow ?>, 0 1px 3px rgba(15,23,42,0.04); position: relative; overflow: hidden; transition: background 0.6s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
     <!-- Indian Monuments Silhouette Watermark -->
     <div class="hero-skyline-silhouette" style="position: absolute; bottom: 0; left: 0; right: 0; height: 68px; pointer-events: none; z-index: 0; opacity: 0.14; overflow: hidden; display: flex; align-items: flex-end;">
       <svg id="hero-skyline-svg" viewBox="0 0 1000 90" preserveAspectRatio="none" style="width: 100%; height: 100%; fill: <?= $init_aqi_accent ?>; transition: fill 0.5s ease;">

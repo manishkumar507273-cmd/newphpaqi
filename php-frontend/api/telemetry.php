@@ -285,6 +285,13 @@ function formatWeatherReading($row) {
     if (isset($row['rain_gauge']) && $row['rain_gauge'] !== null) $row['rain_gauge'] = round((float)$row['rain_gauge'], 2);
     if (isset($row['pressure']) && $row['pressure'] !== null) $row['pressure'] = round((float)$row['pressure'], 1);
     if (isset($row['uv_index']) && $row['uv_index'] !== null) $row['uv_index'] = round((float)$row['uv_index'], 1);
+    if (isset($row['solar_radiation']) && $row['solar_radiation'] !== null) {
+        $row['solar_radiation'] = round((float)$row['solar_radiation'], 1);
+    } elseif (isset($row['solar']) && $row['solar'] !== null) {
+        $row['solar_radiation'] = round((float)$row['solar'], 1);
+    } elseif (isset($row['radiation']) && $row['radiation'] !== null) {
+        $row['solar_radiation'] = round((float)$row['radiation'], 1);
+    }
     if (isset($row['soil_temperature']) && $row['soil_temperature'] !== null) $row['soil_temperature'] = round((float)$row['soil_temperature'], 1);
     $soil_hum = $row['soil_moisture'] ?? ($row['soil_humidity'] ?? null);
     if ($soil_hum !== null && $soil_hum !== '') {

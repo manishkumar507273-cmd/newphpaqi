@@ -550,9 +550,13 @@ if ($latest_epoch > 0) {
     }
     @media (max-width: 768px) {
       .overview-page-root {
-        padding: 8px 10px 14px !important;
+        padding: 8px 10px 10px !important;
         min-height: auto !important;
         border-radius: 16px !important;
+        margin-bottom: 0px !important;
+      }
+      #overview-chart-dots {
+        margin-top: 8px !important;
       }
       .overview-content-container {
         gap: 10px !important;
@@ -1661,6 +1665,8 @@ function initCanvas() {
     canvasResizeHandler = resize;
     window.addEventListener('resize', canvasResizeHandler);
     resize();
+    setTimeout(resize, 120);
+    setTimeout(resize, 450);
 
     const speedFactor = Math.max(0.6, (Number(rawWind || 3.5) / 10.0));
 
@@ -1906,6 +1912,7 @@ window.addEventListener('resize', () => {
 
 if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", () => {
+        initCanvas();
         applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
         setupCarouselScrollListener();
         restoreOverviewState();
@@ -1913,6 +1920,7 @@ if (document.readyState === 'loading') {
         startAutoRefreshOverview();
     });
 } else {
+    initCanvas();
     applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
     setupCarouselScrollListener();
     restoreOverviewState();

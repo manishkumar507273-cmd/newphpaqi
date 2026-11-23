@@ -151,7 +151,7 @@
                 appRoot.style.setProperty('background', 'transparent', 'important');
                 appRoot.style.setProperty('background-image', 'none', 'important');
             } else {
-                appRoot.style.cssText = `min-height: 100vh; ${pageBgStyles[targetPage]} position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.4s ease;`;
+                appRoot.style.cssText = `min-height: 100vh; ${pageBgStyles[targetPage]} position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.15s ease, background-color 0.15s ease;`;
                 if (targetPage === 'live' && aqiTheme && aqiTheme.pageColor) {
                     document.body.style.backgroundColor = aqiTheme.pageColor;
                 }

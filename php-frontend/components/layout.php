@@ -657,7 +657,7 @@ $active_layout_bg = $is_weather_tab_active
         ? 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%);'
         : ($cool_bg_styles[$current_page] ?? $cool_bg_styles['live']));
 ?>
-<div id="app-layout-root" style="min-height: 100vh; <?= $active_layout_bg ?> position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);">
+<div id="app-layout-root" style="min-height: 100vh; <?= $active_layout_bg ?> position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.15s ease, background-color 0.15s ease;">
 
   <!-- Atmospheric Dynamic Weather Backdrop (Fixed full-bleed viewport layer, never cut off on scroll) -->
   <div id="node2-weather-backdrop" class="node2-weather-backdrop <?= $is_weather_tab_active ? 'active' : '' ?>" aria-hidden="true">
@@ -666,7 +666,7 @@ $active_layout_bg = $is_weather_tab_active
   </div>
 
   <!-- Sticky Header with Safe-Area Inset -->
-  <header class="px-3 sm:px-4 md:px-6" style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; transition: background-color 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);">
+  <header class="px-3 sm:px-4 md:px-6" style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;">
     
     <!-- Left: Desktop Brand & Mobile Header Selector -->
     <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
@@ -679,7 +679,7 @@ $active_layout_bg = $is_weather_tab_active
           </div>
           <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden; padding-top: 1px;">
             <div style="font-size: 17px; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; white-space: nowrap; line-height: 1.1;">
-              Smart <span style="font-weight: 600; color: #00bfa5;">WeatherNet</span>
+              Smart <span style="font-weight: 800; color: #00bfa5;">WeatherNet</span>
             </div>
             <?php if (!empty($node_config['station_tag'])): ?>
             <div style="display: flex; align-items: center; gap: 5px; margin-top: 2px;">
@@ -737,20 +737,15 @@ $active_layout_bg = $is_weather_tab_active
       </div>
 
       <!-- Mobile Top App Bar (Brand always visible across all pages) -->
-      <div class="flex md:hidden items-center gap-1.5 min-w-0" id="mobile-top-bar">
-        <a href="?page=overview&node=<?= $selected_node ?>" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 7px; text-decoration: none; min-width: 0; flex-shrink: 0;">
-          <div style="width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
+      <div class="flex md:hidden items-center gap-2 min-w-0" id="mobile-top-bar">
+        <a href="?page=overview&node=<?= $selected_node ?>" id="mobile-brand-overview" style="display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0; flex-shrink: 0;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
             <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
-          <div style="display: flex; flex-direction: column; flex-shrink: 0;">
-            <span class="mobile-brand-title" style="font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.15;">
-              Smart <span style="color: #00bfa5; font-size: inherit; font-weight: inherit;">WeatherNet</span>
+          <div style="display: flex; align-items: center; flex-shrink: 0;">
+            <span class="mobile-brand-title" style="font-size: 15.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1;">
+              Smart <span class="mobile-brand-weathernet" style="color: #00bfa5; font-size: 15.5px; font-weight: 800;">WeatherNet</span>
             </span>
-            <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
-              <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
-              <span style="font-size: 9.5px; font-weight: 700; color: #64748b; white-space: nowrap;"><?= htmlspecialchars($node_config['short_name'] ?? 'Node 1') ?></span>
-              <span id="navbar-station-coords-mobile" class="hidden min-[380px]:inline" style="font-size: 9px; font-weight: 600; color: #94a3b8; border-left: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? '1px solid #e2e8f0' : 'none' ?>; padding-left: 4px; margin-left: 1px; white-space: nowrap; display: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? 'inline' : 'none' ?>;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : '' ?></span>
-            </div>
           </div>
         </a>
 
@@ -896,7 +891,7 @@ $active_layout_bg = $is_weather_tab_active
 
   <!-- Main Content Area -->
   <main style="display: flex; flex-direction: column; position: relative;">
-    <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 0; min-height: auto; padding-top: 10px;">
+    <div id="page-content-wrapper" class="page-fade-active" style="flex-grow: 0; min-height: auto; padding-top: 10px; padding-bottom: 0px;">
       <?php
         $node_folder = ($active_node_id === '2') ? 'node 2' : 'node 1';
         $page_file = __DIR__ . '/../' . $node_folder . '/' . $current_page . '.php';
@@ -909,7 +904,7 @@ $active_layout_bg = $is_weather_tab_active
     </div>
     
     <!-- Global Footer (Differentiated styling with team LinkedIn links) -->
-    <footer id="global-footer" style="margin-top: 14px; padding: 18px 16px; text-align: center; position: relative; z-index: 10; font-size: 12.5px; background: #0f172a; color: #94a3b8; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.15);" class="mb-[84px] md:mb-0">
+    <footer id="global-footer" style="margin-top: 8px; padding: 16px 16px; text-align: center; position: relative; z-index: 10; font-size: 12.5px; background: #0f172a; color: #94a3b8; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.15);" class="mb-[84px] md:mb-0">
       
       <!-- Top Brand Row -->
       <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">

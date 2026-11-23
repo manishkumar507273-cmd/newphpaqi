@@ -881,8 +881,8 @@ $init_border_colors = [
   <!-- Live Content Container -->
   <div class="live-content-container" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: 100%;">
 
-<!-- Offline Banner -->
-<div id="live-offline-banner" style="display: none; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
+<!-- Offline Banner (Suppressed per user requirement) -->
+<div id="live-offline-banner" style="display: none !important; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 16px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
   <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569;">
     <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f97316; margin-top: 2px; flex-shrink: 0;"></i>
     <span><strong style="color: #c2410c;">Sensor Node Offline:</strong> No new live telemetry received in cloud for &gt;5 mins (Last update: <strong style="color: #f97316;" id="live-offline-last-update">--</strong>). Showing last recorded cloud values below.</span>
@@ -2629,7 +2629,7 @@ async function refreshDashboard(forceNetwork = false) {
 
         const isOverallOffline = isAqiOffline && isWeatherOffline;
         const liveBanner = document.getElementById('live-offline-banner');
-        if (liveBanner) liveBanner.style.display = isOverallOffline ? 'flex' : 'none';
+        if (liveBanner) liveBanner.style.display = 'none';
         
         const liveOffTime = document.getElementById('live-offline-last-update');
         if (liveOffTime) liveOffTime.innerText = aqiLastUpdateTimeStr !== '--' ? aqiLastUpdateTimeStr : weatherLastUpdateTimeStr;

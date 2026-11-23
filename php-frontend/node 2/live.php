@@ -359,6 +359,30 @@ if ($has_uv) {
     $uv_pct = 50;
 }
 
+// Solar Radiation for Node 2 Meteorological Dashboard
+$has_solar = (isset($w_d['solar_radiation']) && is_numeric($w_d['solar_radiation']))
+    || (isset($w_d['solar']) && is_numeric($w_d['solar']))
+    || (isset($w_d['radiation']) && is_numeric($w_d['radiation']));
+
+if ($has_solar) {
+    $solar_val = isset($w_d['solar_radiation']) && is_numeric($w_d['solar_radiation'])
+        ? (float)$w_d['solar_radiation']
+        : (isset($w_d['solar']) && is_numeric($w_d['solar']) ? (float)$w_d['solar'] : (float)$w_d['radiation']);
+    $init_weather_solar_num = number_format($solar_val, 1);
+    $init_weather_solar_display = "{$init_weather_solar_num} W/m²";
+    $solar_pct = max(5, min(95, round(($solar_val / 1000) * 100)));
+    if ($solar_val < 200) $solar_cat = 'Low / Overcast';
+    elseif ($solar_val < 600) $solar_cat = 'Moderate';
+    elseif ($solar_val < 900) $solar_cat = 'High';
+    else $solar_cat = 'Very High';
+    $init_weather_solar_note = "{$init_weather_solar_num} W/m² ({$solar_cat})";
+} else {
+    $init_weather_solar_num = '--';
+    $init_weather_solar_display = '-- W/m²';
+    $solar_pct = 20;
+    $init_weather_solar_note = '--';
+}
+
 // Soil Parameters for Node 2 Agrimet & Environmental Telemetry
 $has_soil_temp = isset($w_d['soil_temperature']) && is_numeric($w_d['soil_temperature']);
 $init_soil_temp = $has_soil_temp ? number_format((float)$w_d['soil_temperature'], 1) . ' °C' : '--';
@@ -1154,10 +1178,32 @@ $init_border_colors = [
               linear-gradient(135deg, rgba(62, 75, 88, 0.90) 0%, rgba(40, 50, 62, 0.94) 100%) !important;
 }
 
-.weather-grid-params {
+.weather-row-2col {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  width: 100%;
+}
+.weather-row-full {
+  width: 100%;
+}
+.weather-row-3col {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+.weather-card-solar {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.20) 0%, rgba(180, 83, 9, 0.30) 100%),
+              linear-gradient(135deg, rgba(62, 75, 88, 0.90) 0%, rgba(40, 50, 62, 0.94) 100%) !important;
+}
+@keyframes solarRaysSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.solar-rays-spin {
+  transform-origin: 32px 32px;
+  animation: solarRaysSpin 24s linear infinite;
 }
 
 /* Animations */
@@ -1366,12 +1412,12 @@ $init_border_colors = [
 }
 
 @media (max-width: 900px) {
-  .weather-row-top {
-    grid-template-columns: 1fr !important;
+  .weather-row-2col {
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
   }
-  .weather-grid-params {
-    grid-template-columns: repeat(2, 1fr) !important;
+  .weather-row-3col {
+    grid-template-columns: repeat(3, 1fr) !important;
     gap: 12px !important;
   }
   .weather-card-dark {
@@ -1461,106 +1507,110 @@ $init_border_colors = [
     line-height: 1.25 !important;
   }
 
-  /* Offline banner on mobile */
+  /* Offline banner suppressed completely per user requirement */
   #live-offline-banner {
-    padding: 10px 12px !important;
-    gap: 8px !important;
-    border-radius: 12px !important;
-  }
-  #live-offline-banner > div:first-child {
-    font-size: 12px !important;
-  }
-  #live-offline-badge-text {
-    font-size: 9px !important;
-    padding: 2.5px 7px !important;
+    display: none !important;
   }
 
-  /* Row 1: Direction & Speed on top, Gust below (Clean 100% full-width cards on mobile) */
-  .weather-row-top {
+  /* LINE 1 & 3: 2 Equal Columns on Mobile */
+  .weather-row-2col {
     display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
 
-  /* Card 1: Spacious Wind Gauge (Compass on left, Direction & Speed centered, Turbine on right) */
+  .weather-row-full {
+    width: 100% !important;
+  }
+
+  /* LINE 2: Wind Direction & Speed in the SAME line for mobile also (matching desktop view) */
   .weather-card-wind {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 12px 14px !important;
-    gap: 10px !important;
+    padding: 10px 12px !important;
+    gap: 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
     flex-wrap: nowrap !important;
   }
   .compass-widget-wrap {
-    width: 58px !important;
-    height: 58px !important;
+    width: 52px !important;
+    height: 52px !important;
     flex-shrink: 0 !important;
   }
   .weather-wind-metrics-group {
     display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
+    flex-direction: row !important;
+    justify-content: space-evenly !important;
     align-items: center !important;
-    text-align: center !important;
-    gap: 4px !important;
+    gap: 8px !important;
     min-width: 0 !important;
     flex: 1 !important;
   }
   .weather-wind-divider {
-    display: none !important;
+    display: block !important;
+    width: 1px !important;
+    height: 38px !important;
+    background: rgba(255,255,255,0.18) !important;
+    flex-shrink: 0 !important;
   }
   .wind-turbine-wrap {
     display: flex !important;
-    width: 44px !important;
-    height: 58px !important;
+    width: 34px !important;
+    height: 48px !important;
     flex-shrink: 0 !important;
     align-items: center !important;
     justify-content: center !important;
   }
   .weather-metric-block {
-    display: block !important;
-    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    min-width: 0 !important;
   }
   .weather-metric-large {
-    font-size: 18px !important;
+    font-size: 16px !important;
     line-height: 1.1 !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
   }
   .weather-metric-label {
-    font-size: 11px !important;
-    color: #94a3b8 !important;
+    font-size: 10px !important;
+    color: #cbd5e1 !important;
     margin-top: 1px !important;
     white-space: nowrap !important;
   }
 
-  /* Card 2: Gust Speed (Full Width on mobile, centered gauge) */
+  /* Card Gust Speed in 2-col row */
   .weather-card-gust {
-    padding: 12px 14px !important;
+    padding: 11px 11px !important;
     text-align: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
   .weather-gust-graphic-wrap {
-    height: 48px !important;
+    height: 44px !important;
   }
   .weather-gust-val {
     font-size: 20px !important;
     line-height: 1.1 !important;
   }
 
-  /* Parameter Grid: 6 cards in 2 equal columns */
-  .weather-grid-params {
+  /* LINE 4: Pressure, UV Radiation, Solar Radiation */
+  .weather-row-3col {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
+  }
+  .weather-card-solar {
+    grid-column: span 2 !important;
   }
 
   .weather-card-dark {
@@ -1581,9 +1631,15 @@ $init_border_colors = [
     line-height: 1.1 !important;
   }
   .weather-precip-icon-wrap,
-  .weather-soil-icon-wrap {
-    width: 32px !important;
-    height: 32px !important;
+  .weather-soil-icon-wrap,
+  .soil-kpi-icon-wrap {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+  .soil-kpi-icon-wrap svg {
+    width: 20px !important;
+    height: 20px !important;
   }
   .weather-pressure-dial-wrap {
     width: 54px !important;
@@ -1682,11 +1738,11 @@ $init_border_colors = [
     font-size: 8.5px !important;
   }
 
-  /* Safe padding above mobile bottom navigation */
+  /* Clean padding above mobile footer */
   .live-page-root {
     padding-left: 10px !important;
     padding-right: 10px !important;
-    padding-bottom: 96px !important;
+    padding-bottom: 10px !important;
   }
 }
 
@@ -1708,7 +1764,7 @@ body.weather-backdrop-active main {
 
 /* Keep header, navigation, and footer uniform and identical across all pages */
 
-/* Water-Smooth Atmospheric Backdrop */
+/* Immediate Atmospheric Dynamic Weather Backdrop */
 .node2-weather-backdrop {
   position: fixed;
   inset: 0;
@@ -1717,17 +1773,24 @@ body.weather-backdrop-active main {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  display: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.55s cubic-bezier(0.16, 1, 0.3, 1);
   background-color: #1e293b;
-  will-change: opacity;
 }
 
 body.weather-backdrop-active .node2-weather-backdrop,
 .node2-weather-backdrop.active {
+  display: block !important;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* One Single Hardware-Accelerated Full-Page Sky Pan Animation (Zero Lag, 100% GPU) */
@@ -1969,8 +2032,8 @@ body.weather-backdrop-active .node2-weather-backdrop,
   <!-- Live Content Container -->
   <div class="live-page-root live-content-container p-2 sm:p-6" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 1200px; margin: 0 auto; min-width: 0; box-sizing: border-box; overflow-x: hidden;">
 
-<!-- Offline Banner -->
-<div id="live-offline-banner" style="<?= $init_active_offline ? 'display: flex;' : 'display: none;' ?> background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 10px 12px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; width: 100%; max-width: 100%; box-sizing: border-box;">
+<!-- Offline Banner (Suppressed per user requirement) -->
+<div id="live-offline-banner" style="display: none !important; background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 10px 12px; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; width: 100%; max-width: 100%; box-sizing: border-box;">
   <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #475569; flex: 1; min-width: 0;">
     <i data-lucide="alert-triangle" style="width: 15px; height: 15px; color: #f97316; margin-top: 1.5px; flex-shrink: 0;"></i>
     <span style="min-width: 0; word-break: break-word;"><strong id="live-offline-banner-title" style="color: #c2410c;"><?= htmlspecialchars($init_active_offline_name) ?> Offline:</strong> <span id="live-offline-banner-desc">No live telemetry in cloud for &gt;5 mins (Last update: <strong style="color: #f97316;" id="live-offline-last-update"><?= htmlspecialchars($init_active_offline_ts) ?></strong>). Showing cached values.</span></span>
@@ -2016,13 +2079,7 @@ body.weather-backdrop-active .node2-weather-backdrop,
       }
 
       if (liveBanner) {
-          if (isCurrentOffline) {
-              liveBanner.style.display = 'flex';
-              if (bannerTitle) bannerTitle.innerText = targetName + ' Offline:';
-              if (bannerDesc) bannerDesc.innerHTML = `No live telemetry received in cloud for &gt;5 mins (Last update: <strong style="color: #f97316;">${targetTime}</strong>). Showing last recorded cloud values below.`;
-          } else {
-              liveBanner.style.display = 'none';
-          }
+          liveBanner.style.display = 'none';
       }
 
       if (window.updateGlobalLiveBadge) {
@@ -2069,7 +2126,13 @@ body.weather-backdrop-active .node2-weather-backdrop,
           if (btnAqi) btnAqi.className = inactiveCls;
           if (btnWeather) btnWeather.className = inactiveCls;
           document.body.classList.remove('weather-backdrop-active');
-          if (backdrop) backdrop.classList.remove('active');
+          document.body.style.backgroundColor = '#f0fdf4';
+          if (backdrop) {
+              backdrop.classList.remove('active');
+              backdrop.style.display = 'none';
+              backdrop.style.opacity = '0';
+              backdrop.style.visibility = 'hidden';
+          }
           if (typeof liveCanvasAnimId !== 'undefined' && liveCanvasAnimId) {
               cancelAnimationFrame(liveCanvasAnimId);
               liveCanvasAnimId = null;
@@ -2080,32 +2143,42 @@ body.weather-backdrop-active .node2-weather-backdrop,
               layoutRoot.style.backgroundColor = '#f0fdf4';
               layoutRoot.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%)';
           }
-          if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 40);
-          if (typeof renderSoilLiveTable === 'function') setTimeout(renderSoilLiveTable, 40);
+          if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 20);
+          if (typeof renderSoilLiveTable === 'function') setTimeout(renderSoilLiveTable, 20);
       } else if (tab === 'weather') {
           showPaneWithGlide(weatherView, [aqiView, soilView]);
           if (btnWeather) btnWeather.className = activeCls;
           if (btnAqi) btnAqi.className = inactiveCls;
           if (btnSoil) btnSoil.className = inactiveCls;
           document.body.classList.add('weather-backdrop-active');
+          document.body.style.backgroundColor = '#1e293b';
           if (backdrop) {
               backdrop.classList.add('active');
+              backdrop.style.display = 'block';
+              backdrop.style.opacity = '1';
+              backdrop.style.visibility = 'visible';
               const sky = backdrop.querySelector('.weather-sky-photo-layer');
               if (sky) sky.style.animationPlayState = 'running';
           }
           if (layoutRoot) {
               layoutRoot.style.setProperty('background', 'transparent', 'important');
               layoutRoot.style.setProperty('background-image', 'none', 'important');
+              layoutRoot.style.backgroundColor = 'transparent';
           }
           if (typeof initLiveAmbientCanvas === 'function') initLiveAmbientCanvas();
-          if (typeof renderWeatherLiveTable === 'function') setTimeout(renderWeatherLiveTable, 40);
+          if (typeof renderWeatherLiveTable === 'function') setTimeout(renderWeatherLiveTable, 20);
       } else {
           showPaneWithGlide(aqiView, [weatherView, soilView]);
           if (btnAqi) btnAqi.className = activeCls;
           if (btnWeather) btnWeather.className = inactiveCls;
           if (btnSoil) btnSoil.className = inactiveCls;
           document.body.classList.remove('weather-backdrop-active');
-          if (backdrop) backdrop.classList.remove('active');
+          if (backdrop) {
+              backdrop.classList.remove('active');
+              backdrop.style.display = 'none';
+              backdrop.style.opacity = '0';
+              backdrop.style.visibility = 'hidden';
+          }
           if (typeof liveCanvasAnimId !== 'undefined' && liveCanvasAnimId) {
               cancelAnimationFrame(liveCanvasAnimId);
               liveCanvasAnimId = null;
@@ -2114,14 +2187,20 @@ body.weather-backdrop-active .node2-weather-backdrop,
               layoutRoot.style.removeProperty('background');
               layoutRoot.style.removeProperty('background-image');
               if (typeof window.applyAQIPageTheme === 'function') {
-                  window.applyAQIPageTheme(window.currentAqiValue || 38);
+                  const th = window.applyAQIPageTheme(window.currentAqiValue || 38);
+                  if (th && th.pageColor) document.body.style.backgroundColor = th.pageColor;
               } else if (window.currentAQITheme && window.currentAQITheme.pageColor) {
                   layoutRoot.style.backgroundColor = window.currentAQITheme.pageColor;
                   layoutRoot.style.backgroundImage = window.currentAQITheme.pageBg;
+                  document.body.style.backgroundColor = window.currentAQITheme.pageColor;
+              } else {
+                  layoutRoot.style.backgroundColor = '#f0fdfa';
+                  layoutRoot.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #ccfbf1 0%, #e6fffa 35%, #f0fdfa 70%, #ffffff 100%)';
+                  document.body.style.backgroundColor = '#f0fdfa';
               }
           }
-          if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 40);
-          if (typeof renderLiveTable === 'function') setTimeout(renderLiveTable, 40);
+          if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 20);
+          if (typeof renderLiveTable === 'function') setTimeout(renderLiveTable, 20);
       }
 
       window.syncActiveSubtabOfflineState(tab);
@@ -2712,43 +2791,110 @@ body.weather-backdrop-active .node2-weather-backdrop,
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════════
-         ANIMATED WEATHER DASHBOARD (Matches Reference Designs 1 & 2)
+         ANIMATED WEATHER DASHBOARD (User Requested Exact Row Sequence)
+         Line 1: Temperature & Humidity
+         Line 2: Wind Direction & Speed (Same line on desktop & mobile)
+         Line 3: Wind Gust & Precipitation
+         Line 4: Pressure, UV Radiation, Solar Radiation
          ═══════════════════════════════════════════════════════════════ -->
-    <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 10px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 10px;">
 
-      <!-- ROW 1: Direction & Wind Speed (Wide Card) + Gust Speed Card -->
-      <div class="weather-row-top" style="display: grid; grid-template-columns: 1.85fr 1fr; gap: 16px;">
+      <!-- LINE 1: Temperature & Humidity -->
+      <div class="weather-row-2col">
+        <!-- Card 1A: Ambient Temperature -->
+        <div class="weather-card-dark weather-card-ambient-temp" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
+              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
+                <rect x="27" y="10" width="10" height="30" rx="5" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.6)" stroke-width="1.8" />
+                <circle cx="32" cy="44" r="9" fill="#f97316" filter="drop-shadow(0 0 5px rgba(249, 115, 22, 0.6))" />
+                <rect x="29" y="20" width="6" height="24" rx="3" fill="#f97316" />
+                <line x1="39" y1="16" x2="43" y2="16" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
+                <line x1="39" y1="23" x2="44" y2="23" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
+                <line x1="39" y1="30" x2="43" y2="30" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
+              </svg>
+            </div>
+            <div style="text-align: right;">
+              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
+                Temperature
+              </div>
+              <div id="card-weather-temp-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_weather_temp ?> <?= is_numeric($init_weather_temp) ? '°C' : '' ?>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 10px; width: 100%;">
+            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
+              <div id="weather-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f97316; box-shadow: 0 0 8px rgba(249,115,22,0.9); transition: left 1s ease-in-out;"></div>
+            </div>
+          </div>
+          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+            Thermal reading: <span id="weather-temp-note-val" style="color: #fed7aa; font-weight: 600;"><?= is_numeric($init_weather_temp) ? "{$init_weather_temp} °C (Ambient)" : '--' ?></span>
+          </div>
+        </div>
 
-        <!-- Card 1: Combined Direction & Wind Speed -->
-        <div class="weather-card-dark weather-card-wind" style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+        <!-- Card 1B: Relative Humidity -->
+        <div class="weather-card-dark weather-card-ambient-hum" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
+              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
+                <g class="water-drop-anim">
+                  <path d="M 32 10 C 32 10 16 28 16 38 C 16 46.8 23.2 54 32 54 C 40.8 54 48 46.8 48 38 C 48 28 32 10 32 10 Z" fill="url(#ambHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
+                  <ellipse cx="25" cy="35" rx="3.5" ry="7" transform="rotate(-25 25 35)" fill="#ffffff" opacity="0.55" />
+                </g>
+                <defs>
+                  <linearGradient id="ambHumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#38bdf8" />
+                    <stop offset="100%" stop-color="#0284c7" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div style="text-align: right;">
+              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
+                Humidity
+              </div>
+              <div id="card-weather-hum-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_weather_hum ?>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 10px; width: 100%;">
+            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #00bfa5 45%, #0284c7 100%); position: relative;">
+              <div id="weather-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2,132,199,0.9); transition: left 1s ease-in-out;"></div>
+            </div>
+          </div>
+          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+            Atmospheric moisture: <span id="weather-hum-note-val" style="color: #bae6fd; font-weight: 600;"><?= $init_weather_hum !== '--%' ? "Relative RH {$init_weather_hum}" : '--' ?></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LINE 2: Wind Direction & Speed in the SAME line for both Desktop & Mobile -->
+      <div class="weather-row-full" style="width: 100%;">
+        <div class="weather-card-dark weather-card-wind" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; box-sizing: border-box;">
           <!-- Left: Compass Widget -->
           <div class="compass-widget-wrap" style="position: relative; width: 84px; height: 84px; flex-shrink: 0;">
             <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-              <!-- Outer circle dashed ticks -->
               <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.6" stroke-dasharray="2 3.5" />
-              <!-- 4 Cardinal ticks crossing the ring -->
               <line x1="50" y1="29" x2="50" y2="38" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" />
               <line x1="50" y1="62" x2="50" y2="71" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" />
               <line x1="29" y1="50" x2="38" y2="50" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" />
               <line x1="62" y1="50" x2="71" y2="50" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" />
-              <!-- Cardinal text N, E, S, W -->
               <text x="50" y="17" font-size="8.5" font-weight="700" fill="#cbd5e1" text-anchor="middle" dominant-baseline="central">N</text>
               <text x="83" y="50" font-size="8.5" font-weight="700" fill="#cbd5e1" text-anchor="middle" dominant-baseline="central">E</text>
               <text x="50" y="83" font-size="8.5" font-weight="700" fill="#cbd5e1" text-anchor="middle" dominant-baseline="central">S</text>
               <text x="17" y="50" font-size="8.5" font-weight="700" fill="#cbd5e1" text-anchor="middle" dominant-baseline="central">W</text>
-              <!-- Center circle disc -->
               <circle cx="50" cy="50" r="18.5" fill="#607282" />
               <text id="compass-cardinal-label" x="50" y="50.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="central" style="letter-spacing: -0.01em; font-family: var(--font-sans); text-transform: lowercase;"><?= htmlspecialchars(strtolower($init_weather_cardinal)) ?></text>
-              <!-- Rotating blue pointer arrow sitting on track between center disc and outer ticks -->
               <g id="compass-needle-group" class="<?= $has_wind_dir ? '' : 'compass-idle-scan' ?>" style="transform-origin: 50px 50px; transform: rotate(<?= $compass_angle ?>deg); transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
                 <polygon points="50,18 45.8,29.5 54.2,29.5" fill="#38bdf8" stroke="#38bdf8" stroke-width="0.8" stroke-linejoin="round" filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.9))" />
               </g>
             </svg>
           </div>
 
-          <!-- Metrics Container: Row on desktop, vertical stacked column on mobile -->
-          <div class="weather-wind-metrics-group" style="display: flex; align-items: center; justify-content: space-between; flex: 1; gap: 18px; min-width: 0;">
-            <!-- Direction Text Block -->
+          <!-- Metrics Container: Same line on BOTH desktop and mobile -->
+          <div class="weather-wind-metrics-group" style="display: flex; align-items: center; justify-content: space-evenly; flex: 1; gap: 16px; min-width: 0;">
             <div class="weather-metric-block weather-dir-block">
               <div id="card-dir-val" class="weather-metric-large" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
                 <?= htmlspecialchars($init_weather_dir_deg) ?>
@@ -2758,32 +2904,22 @@ body.weather-backdrop-active .node2-weather-backdrop,
               </div>
             </div>
 
-            <!-- Divider (Desktop Only) -->
-            <div class="weather-wind-divider" style="width: 1px; height: 55px; background: rgba(255,255,255,0.14);"></div>
+            <div class="weather-wind-divider" style="width: 1px; height: 50px; background: rgba(255,255,255,0.18);"></div>
 
-            <!-- Animated Wind Turbine SVG (Desktop Only) -->
             <div class="wind-turbine-wrap" style="width: 50px; height: 75px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
               <svg viewBox="0 0 60 90" style="width: 100%; height: 100%; overflow: visible;">
-                <!-- Mast -->
                 <path d="M28 85 L29 36 L31 36 L32 85 Z" fill="#94a3b8" opacity="0.8" />
                 <path d="M24 85 L36 85" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" />
-                <!-- Nacelle -->
                 <circle cx="30" cy="35" r="4" fill="#e2e8f0" />
-                <!-- Rotating 3-blade rotor -->
                 <g class="wind-turbine-blades" style="transform-origin: 30px 35px;">
-                  <!-- Blade 1 -->
                   <path d="M30 35 C28.5 24 28.5 10 30 4 C31.5 10 31.5 24 30 35" fill="#f8fafc" />
-                  <!-- Blade 2 -->
                   <path d="M30 35 C39 40 50 47 57 51 C50 54 39 48 30 35" fill="#f8fafc" />
-                  <!-- Blade 3 -->
                   <path d="M30 35 C21 40 10 47 3 51 C10 54 21 48 30 35" fill="#f8fafc" />
-                  <!-- Center green pivot dot -->
                   <circle cx="30" cy="35" r="2.8" fill="#22c55e" />
                 </g>
               </svg>
             </div>
 
-            <!-- Wind Speed Text Block -->
             <div class="weather-metric-block weather-speed-block">
               <div id="card-wind-val" class="weather-metric-large" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
                 <?= $init_weather_wind ?>
@@ -2794,14 +2930,15 @@ body.weather-backdrop-active .node2-weather-backdrop,
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Card 2: Gust Speed with Animated Swaying Tree in Wind (Matches Reference Design) -->
+      <!-- LINE 3: Wind Gust & Precipitation (2 Columns on Desktop & Mobile) -->
+      <div class="weather-row-2col">
+        <!-- Card 3A: Gust Speed -->
         <div class="weather-card-dark weather-card-gust" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Graphic: Wind stream dashes & snowflakes + Swaying Autumn Tree with Flying Leaves -->
           <div class="weather-gust-graphic-wrap" style="display: flex; align-items: center; justify-content: center; height: 75px; width: 100%;">
             <svg viewBox="0 0 100 80" style="width: 100%; height: 100%; max-width: 140px; overflow: visible;">
               <defs>
-                <!-- Gradient for main rotating bands: White highlight to Cyan glow to Slate outline -->
                 <linearGradient id="bandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stop-color="#38bdf8" />
                   <stop offset="25%" stop-color="#ffffff" />
@@ -2810,84 +2947,40 @@ body.weather-backdrop-active .node2-weather-backdrop,
                   <stop offset="100%" stop-color="#38bdf8" />
                 </linearGradient>
               </defs>
-
-              <!-- ══ Animated Funnel Body ══ -->
               <g class="twister-container">
-                <!-- Translucent cone volume giving subtle 3D vortex depth without overhang -->
                 <path d="M 22 15 Q 36 45 46 67 Q 50 74 51 67 Q 62 45 78 15 Q 50 11 22 15 Z" fill="rgba(56, 189, 248, 0.08)" />
-
-                <!-- ── Top Rim (Tilted Elliptical Mouth) ── -->
                 <g transform="rotate(-8 50 14)">
-                  <!-- Outer Lip -->
                   <ellipse class="vortex-band band-1" cx="50" cy="14" rx="30" ry="8" fill="none" stroke="url(#bandGrad)" stroke-width="3" stroke-linecap="round" />
-                  <!-- Inner Rim -->
                   <ellipse cx="50" cy="14" rx="21" ry="5.5" fill="none" stroke="#ffffff" stroke-width="1.6" opacity="0.85" />
                 </g>
-
-                <!-- ── Tier 2 Band (Upper Funnel Ring) ── -->
                 <g transform="rotate(-5 50 24)">
                   <ellipse class="vortex-band band-2" cx="49" cy="24" rx="25" ry="6.8" fill="none" stroke="url(#bandGrad)" stroke-width="3" stroke-linecap="round" />
                   <path d="M 28 25 Q 49 20 70 25" stroke="#ffffff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.9" />
                 </g>
-
-                <!-- ── Tier 3 Band (Mid-Upper Ring) ── -->
                 <g transform="rotate(-2 49 35)">
                   <ellipse class="vortex-band band-3" cx="49" cy="35" rx="20" ry="5.5" fill="none" stroke="url(#bandGrad)" stroke-width="2.8" stroke-linecap="round" />
                   <path d="M 32 36 Q 49 32 66 36" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.9" />
                 </g>
-
-                <!-- ── Tier 4 Band (Mid-Lower Ring) ── -->
                 <g transform="rotate(2 49 46)">
                   <ellipse class="vortex-band band-4" cx="49" cy="46" rx="15" ry="4.2" fill="none" stroke="url(#bandGrad)" stroke-width="2.6" stroke-linecap="round" />
                   <path d="M 37 47 Q 49 43 61 47" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.9" />
                 </g>
-
-                <!-- ── Tier 5 Band (Lower Ring) ── -->
                 <g transform="rotate(5 50 56)">
                   <ellipse class="vortex-band band-5" cx="50" cy="56" rx="10.5" ry="3.2" fill="none" stroke="url(#bandGrad)" stroke-width="2.4" stroke-linecap="round" />
                   <path d="M 42 57 Q 50 54 58 57" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.9" />
                 </g>
-
-                <!-- ── Tier 6 Band (Near-Tip Ring) ── -->
                 <ellipse class="vortex-band band-6" cx="50" cy="65" rx="6.5" ry="2.2" fill="none" stroke="url(#bandGrad)" stroke-width="2" stroke-linecap="round" />
-
-                <!-- ── Whipping Touchdown Tail Tip (Exact match to reference S-tip) ── -->
-                <path d="M 50 67 
-                         C 51 70, 48 72, 47 74 
-                         C 46 76, 49 77, 51 77 
-                         C 53 77, 54 79, 52 80" 
-                      stroke="url(#bandGrad)" stroke-width="2.2" stroke-linecap="round" fill="none" />
+                <path d="M 50 67 C 51 70, 48 72, 47 74 C 46 76, 49 77, 51 77 C 53 77, 54 79, 52 80" stroke="url(#bandGrad)" stroke-width="2.2" stroke-linecap="round" fill="none" />
               </g>
-
-              <!-- ══ Orbiting Wind Particles & Diamond Sparkles ══ -->
-              <g transform="translate(50, 72)">
-                <g class="deb-orbit-1">
-                  <circle cx="0" cy="0" r="1.8" fill="#38bdf8" />
-                </g>
-              </g>
-              <g transform="translate(50, 70)">
-                <g class="deb-orbit-2">
-                  <polygon points="0,-3.5 2.5,0 0,3.5 -2.5,0" fill="#7dd3fc" />
-                </g>
-              </g>
-              <g transform="translate(50, 68)">
-                <g class="deb-orbit-3">
-                  <circle cx="0" cy="0" r="1.5" fill="#ffffff" />
-                </g>
-              </g>
-              <g transform="translate(50, 66)">
-                <g class="deb-orbit-4">
-                  <polygon points="0,-3 2,0 0,3 -2,0" fill="#38bdf8" />
-                </g>
-              </g>
-
-              </svg>
+              <g transform="translate(50, 72)"><g class="deb-orbit-1"><circle cx="0" cy="0" r="1.8" fill="#38bdf8" /></g></g>
+              <g transform="translate(50, 70)"><g class="deb-orbit-2"><polygon points="0,-3.5 2.5,0 0,3.5 -2.5,0" fill="#7dd3fc" /></g></g>
+              <g transform="translate(50, 68)"><g class="deb-orbit-3"><circle cx="0" cy="0" r="1.5" fill="#ffffff" /></g></g>
+              <g transform="translate(50, 66)"><g class="deb-orbit-4"><polygon points="0,-3 2,0 0,3 -2,0" fill="#38bdf8" /></g></g>
+            </svg>
           </div>
-
-          <!-- Gust Speed Text -->
           <div style="text-align: center; margin-top: 6px;">
             <div class="weather-metric-label" style="font-size: 14px; font-weight: 500; color: #cbd5e1; margin-bottom: 3px;">
-              Gust Speed
+              Wind Gust
             </div>
             <div id="card-gust-val" class="weather-gust-val" style="font-family: var(--font-sans); font-size: 32px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
               <?= $init_weather_gust ?>
@@ -2895,23 +2988,12 @@ body.weather-backdrop-active .node2-weather-backdrop,
           </div>
         </div>
 
-      </div>
-
-      <!-- PARAMS GRID: 6 Cards (Precipitation, Pressure, UV Index, Soil Temp, Soil Humidity, Soil pH) -->
-      <!-- Desktop: 2 rows of 3 cards | Mobile: 3 rows of 2 cards (Matches Reference) -->
-      <div class="weather-grid-params">
-
-        <!-- Card 3: Precipitation with Animated Left-Right Floating Rain Cloud (Matches Reference Design) -->
+        <!-- Card 3B: Precipitation -->
         <div class="weather-card-dark weather-card-precip" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Top: Animated Floating Rain Cloud + Value -->
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <!-- Cloud & Falling Rain SVG -->
             <div class="weather-precip-icon-wrap" style="width: 72px; height: 56px; flex-shrink: 0;">
               <svg viewBox="0 0 84 62" style="width: 100%; height: 100%; overflow: visible;">
-                <!-- Tiny sparkle star dot -->
                 <circle cx="16" cy="27" r="1.5" fill="#ffffff" opacity="0.85" />
-
-                <!-- Glowing Sun puff behind cloud -->
                 <g class="sun-puff-behind">
                   <circle cx="43" cy="11" r="2.2" fill="#f97316" />
                   <circle cx="44" cy="18" r="6" fill="#f97316" />
@@ -2919,29 +3001,14 @@ body.weather-backdrop-active .node2-weather-backdrop,
                   <circle cx="57" cy="23" r="4.5" fill="#f97316" />
                   <circle cx="50" cy="20" r="2.4" fill="#ffffff" />
                 </g>
-
-                <!-- Floating Rain Cloud (Smoothly moves left & right) -->
                 <g class="floating-rain-cloud">
-                  <!-- Cloud body -->
-                  <path d="M 22 36 
-                           C 18 36, 15 32, 16 28 
-                           C 17 24, 21 22, 24 23 
-                           C 26 18, 31 15, 36 16 
-                           C 42 17, 45 20, 46 24 
-                           C 50 23, 54 26, 54 30 
-                           C 54 34, 51 36, 48 36 Z" 
-                        fill="#ffffff" 
-                        filter="drop-shadow(0 2px 5px rgba(0,0,0,0.22))" />
-
-                  <!-- Falling Raindrops beneath cloud -->
+                  <path d="M 22 36 C 18 36, 15 32, 16 28 C 17 24, 21 22, 24 23 C 26 18, 31 15, 36 16 C 42 17, 45 20, 46 24 C 50 23, 54 26, 54 30 C 54 34, 51 36, 48 36 Z" fill="#ffffff" filter="drop-shadow(0 2px 5px rgba(0,0,0,0.22))" />
                   <ellipse cx="24" cy="45" rx="1.6" ry="2.2" fill="#38bdf8" class="drop-1" />
                   <ellipse cx="32" cy="46" rx="1.6" ry="2.2" fill="#38bdf8" class="drop-2" />
                   <ellipse cx="40" cy="45" rx="1.6" ry="2.2" fill="#38bdf8" class="drop-3" />
                 </g>
               </svg>
             </div>
-
-            <!-- Text: Precipitation / 0 mm -->
             <div style="text-align: right;">
               <div class="weather-metric-label" style="font-size: 14px; font-weight: 500; color: #cbd5e1; margin-bottom: 3px;">
                 Precipitation
@@ -2951,27 +3018,21 @@ body.weather-backdrop-active .node2-weather-backdrop,
               </div>
             </div>
           </div>
-
-          <!-- Divider line -->
           <div style="height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); margin: 12px 0 10px 0;"></div>
-
-          <!-- Bottom note -->
           <div class="weather-metric-note" style="font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-            Current precipitation chances sit at <span id="precipitation-note-val"><?= $init_weather_rain ?></span>
+            Current precipitation: <span id="precipitation-note-val"><?= $init_weather_rain ?></span>
           </div>
         </div>
+      </div>
 
-        <!-- Card 4: Pressure with Circular Gauge & Gradient Bar -->
+      <!-- LINE 4: Pressure, UV Radiation, Solar Radiation -->
+      <div class="weather-row-3col">
+        <!-- Card 4A: Pressure -->
         <div class="weather-card-dark weather-card-pressure" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Top: Barometer Dial + Value -->
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <!-- Circular Dial Gauge SVG (Precision Barometer Dial) -->
             <div class="weather-pressure-dial-wrap" style="width: 82px; height: 82px; flex-shrink: 0;">
               <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));">
-                <!-- Barometer Dial Face Background -->
                 <circle cx="50" cy="50" r="48" fill="#1e293b" fill-opacity="0.6" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
-                
-                <!-- Minor Ticks (2 between each major tick mark) -->
                 <g stroke="rgba(148, 163, 184, 0.45)" stroke-width="1.2" stroke-linecap="round">
                   <line x1="57.03" y1="10.12" x2="57.64" y2="6.67" />
                   <line x1="63.85" y1="11.94" x2="65.05" y2="8.65" />
@@ -2998,8 +3059,6 @@ body.weather-backdrop-active .node2-weather-backdrop,
                   <line x1="36.15" y1="11.94" x2="34.95" y2="8.65" />
                   <line x1="42.97" y1="10.12" x2="42.36" y2="6.67" />
                 </g>
-
-                <!-- Major Ticks (at every hour position) -->
                 <g stroke="#ffffff" stroke-width="2.2" stroke-linecap="round">
                   <line x1="50.00" y1="12.00" x2="50.00" y2="5.50" />
                   <line x1="69.00" y1="17.09" x2="72.25" y2="11.46" />
@@ -3014,8 +3073,6 @@ body.weather-backdrop-active .node2-weather-backdrop,
                   <line x1="17.09" y1="31.00" x2="11.46" y2="27.75" />
                   <line x1="31.00" y1="17.09" x2="27.75" y2="11.46" />
                 </g>
-
-                <!-- Pressure Dial Inscribed Values (1008 to 1019 hPa) -->
                 <g font-size="4.4" font-weight="700" fill="#cbd5e1" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" dominant-baseline="central">
                   <text x="50.00" y="22.00">1011</text>
                   <text x="64.00" y="25.75">1012</text>
@@ -3030,8 +3087,6 @@ body.weather-backdrop-active .node2-weather-backdrop,
                   <text x="25.75" y="36.00">1009</text>
                   <text x="36.00" y="25.75">1010</text>
                 </g>
-
-                <!-- Precision Barometer Needle (Pink Arrowhead Pointer) -->
                 <g id="pressure-needle" class="<?= $has_pressure ? '' : 'pressure-needle-breathe' ?>" style="transform-origin: 50px 50px; transform: rotate(<?= $has_pressure ? $pressure_angle : 60 ?>deg); transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
                   <polygon points="50,22 53.5,47.5 50,52 46.5,47.5" fill="#ec4899" filter="drop-shadow(0 1px 3px rgba(236,72,153,0.5))" />
                   <circle cx="50" cy="50" r="2.5" fill="#db2777" />
@@ -3039,8 +3094,6 @@ body.weather-backdrop-active .node2-weather-backdrop,
                 </g>
               </svg>
             </div>
-
-            <!-- Text: Pressure -->
             <div style="text-align: right;">
               <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
                 Pressure
@@ -3050,127 +3103,84 @@ body.weather-backdrop-active .node2-weather-backdrop,
               </div>
             </div>
           </div>
-
-          <!-- Middle: Gradient track + indicator dot -->
           <div style="margin-top: 10px; width: 100%;">
             <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 35%, #ef4444 70%, #ec4899 100%); position: relative;">
               <div id="pressure-slider-dot" class="pressure-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_pressure ? $pressure_pct : 50 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ec4899; box-shadow: 0 0 8px rgba(236,72,153,0.9); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
-
-          <!-- Bottom note -->
           <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
             Current pressure level is <span id="pressure-note-val"><?= $init_weather_pressure ?></span>.
           </div>
         </div>
 
-        <!-- Card 5: UV Index with Rose Gradient Accent & Bar Slider -->
+        <!-- Card 4B: UV Radiation -->
         <div class="weather-card-dark weather-card-uv" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Top: Label + Value -->
           <div>
             <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 3px;">
-              UV Index
+              UV Radiation
             </div>
             <div id="card-uv-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 26px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
               <?= $init_weather_uv_display ?>
             </div>
           </div>
-
-          <!-- Middle: Gradient track + glowing indicator dot -->
           <div style="margin-top: 14px; width: 100%;">
             <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c55e 0%, #eab308 25%, #f97316 50%, #ef4444 75%, #a855f7 100%); position: relative;">
               <div id="uv-slider-dot" class="uv-pulse-dot" style="position: absolute; top: 50%; left: <?= $has_uv ? $uv_pct : 8 ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f43f5e; box-shadow: 0 0 8px rgba(244,63,94,0.95); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
-
-          <!-- Bottom note -->
           <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
             The present UV index is <span id="uv-note-val"><?= $init_weather_uv_num ?></span><?= $has_uv ? ', consider suggestions for the same!' : '' ?>
           </div>
         </div>
 
-        <!-- Card 6: Ambient Temperature -->
-        <div class="weather-card-dark weather-card-ambient-temp" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Top: Thermometer SVG + Value -->
+        <!-- Card 4C: Solar Radiation (NEW PARAMETER) -->
+        <div class="weather-card-dark weather-card-solar" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
-              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
-                <rect x="27" y="10" width="10" height="30" rx="5" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.6)" stroke-width="1.8" />
-                <circle cx="32" cy="44" r="9" fill="#f97316" filter="drop-shadow(0 0 5px rgba(249, 115, 22, 0.6))" />
-                <rect x="29" y="20" width="6" height="24" rx="3" fill="#f97316" />
-                <line x1="39" y1="16" x2="43" y2="16" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
-                <line x1="39" y1="23" x2="44" y2="23" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
-                <line x1="39" y1="30" x2="43" y2="30" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
-              </svg>
-            </div>
-
-            <!-- Value Text -->
-            <div style="text-align: right;">
-              <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
-                Ambient Temperature
-              </div>
-              <div id="card-weather-temp-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
-                <?= $init_weather_temp ?> <?= is_numeric($init_weather_temp) ? '°C' : '' ?>
-              </div>
-            </div>
-          </div>
-
-          <!-- Middle: Thermal Spectrum Bar + Indicator Dot -->
-          <div style="margin-top: 10px; width: 100%;">
-            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
-              <div id="weather-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f97316; box-shadow: 0 0 8px rgba(249,115,22,0.9); transition: left 1s ease-in-out;"></div>
-            </div>
-          </div>
-
-          <!-- Bottom note -->
-          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-            Thermal reading: <span id="weather-temp-note-val" style="color: #fed7aa; font-weight: 600;"><?= is_numeric($init_weather_temp) ? "{$init_weather_temp} °C (Ambient)" : '--' ?></span>
-          </div>
-        </div>
-
-        <!-- Card 7: Ambient Humidity -->
-        <div class="weather-card-dark weather-card-ambient-hum" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-          <!-- Top: Humidity Droplet SVG + Value -->
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
-              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
-                <g class="water-drop-anim">
-                  <path d="M 32 10 C 32 10 16 28 16 38 C 16 46.8 23.2 54 32 54 C 40.8 54 48 46.8 48 38 C 48 28 32 10 32 10 Z" fill="url(#ambHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
-                  <ellipse cx="25" cy="35" rx="3.5" ry="7" transform="rotate(-25 25 35)" fill="#ffffff" opacity="0.55" />
-                </g>
+            <div class="weather-solar-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
+              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%; overflow: visible;">
                 <defs>
-                  <linearGradient id="ambHumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#38bdf8" />
-                    <stop offset="100%" stop-color="#0284c7" />
+                  <radialGradient id="solarGlowGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#fef08a" />
+                    <stop offset="45%" stop-color="#f59e0b" />
+                    <stop offset="100%" stop-color="#d97706" />
+                  </radialGradient>
+                  <linearGradient id="solarRayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#fde047" />
+                    <stop offset="100%" stop-color="#f97316" />
                   </linearGradient>
                 </defs>
+                <circle cx="32" cy="32" r="18" fill="rgba(245, 158, 11, 0.15)" filter="drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))" />
+                <g stroke="url(#solarRayGrad)" stroke-width="2.2" stroke-linecap="round" class="solar-rays-spin">
+                  <line x1="32" y1="6" x2="32" y2="12" />
+                  <line x1="32" y1="52" x2="32" y2="58" />
+                  <line x1="6" y1="32" x2="12" y2="32" />
+                  <line x1="52" y1="32" x2="58" y2="32" />
+                  <line x1="13.6" y1="13.6" x2="17.8" y2="17.8" />
+                  <line x1="46.2" y1="46.2" x2="50.4" y2="50.4" />
+                  <line x1="13.6" y1="50.4" x2="17.8" y2="46.2" />
+                  <line x1="46.2" y1="17.8" x2="50.4" y2="13.6" />
+                </g>
+                <circle cx="32" cy="32" r="11" fill="url(#solarGlowGrad)" filter="drop-shadow(0 0 6px rgba(245, 158, 11, 0.8))" />
               </svg>
             </div>
-
-            <!-- Value Text -->
             <div style="text-align: right;">
               <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
-                Relative Humidity
+                Solar Radiation
               </div>
-              <div id="card-weather-hum-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
-                <?= $init_weather_hum ?>
+              <div id="card-solar-val" class="weather-card-number" style="font-family: var(--font-sans); font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; letter-spacing: -0.02em;">
+                <?= $init_weather_solar_display ?>
               </div>
             </div>
           </div>
-
-          <!-- Middle: Moisture Gradient Bar + Indicator Dot -->
           <div style="margin-top: 10px; width: 100%;">
-            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #00bfa5 45%, #0284c7 100%); position: relative;">
-              <div id="weather-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2,132,199,0.9); transition: left 1s ease-in-out;"></div>
+            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #3b82f6 0%, #10b981 30%, #f59e0b 65%, #ef4444 100%); position: relative;">
+              <div id="solar-slider-dot" class="solar-pulse-dot" style="position: absolute; top: 50%; left: <?= $solar_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.95); transition: left 1s ease-in-out;"></div>
             </div>
           </div>
-
-          <!-- Bottom note -->
           <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-            Atmospheric moisture: <span id="weather-hum-note-val" style="color: #bae6fd; font-weight: 600;"><?= $init_weather_hum !== '--%' ? "Relative RH {$init_weather_hum}" : '--' ?></span>
+            Solar flux: <span id="solar-note-val" style="color: #fde047; font-weight: 600;"><?= $init_weather_solar_note ?></span>
           </div>
         </div>
-
       </div>
 
     </div>
@@ -3192,7 +3202,7 @@ body.weather-backdrop-active .node2-weather-backdrop,
         </div>
 
         <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 780px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 880px;">
             <thead style="position: sticky; top: 0; z-index: 1; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, 0.14);">
               <tr>
                 <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
@@ -3200,6 +3210,7 @@ body.weather-backdrop-active .node2-weather-backdrop,
                 <th style="padding: 12px 14px; font-weight: 700; color: #38bdf8; font-size: 12px; white-space: nowrap;">Humidity (%)</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #f472b6; font-size: 12px; white-space: nowrap;">Pressure (mb)</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #fb7185; font-size: 12px; white-space: nowrap;">UV Index</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #f59e0b; font-size: 12px; white-space: nowrap;">Solar (W/m²)</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #34d399; font-size: 12px; white-space: nowrap;">Wind Speed</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #2dd4bf; font-size: 12px; white-space: nowrap;">Wind Gust</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Wind Dir</th>
@@ -3219,6 +3230,13 @@ body.weather-backdrop-active .node2-weather-backdrop,
                       : (isset($row['soil_moisture']) && is_numeric($row['soil_moisture']) ? number_format((float)$row['soil_moisture'], 1) . '%' : (isset($row['soil_humidity']) && is_numeric($row['soil_humidity']) ? number_format((float)$row['soil_humidity'], 1) . '%' : '--'));
                   $rPress = isset($row['pressure']) && is_numeric($row['pressure']) ? round((float)$row['pressure']) . ' mb' : '--';
                   $rUv = isset($row['uv_index']) && is_numeric($row['uv_index']) ? number_format((float)$row['uv_index'], 1) : '--';
+                  $rSolar = isset($row['solar_radiation']) && is_numeric($row['solar_radiation']) 
+                      ? number_format((float)$row['solar_radiation'], 1) . ' W/m²' 
+                      : (isset($row['solar']) && is_numeric($row['solar']) 
+                          ? number_format((float)$row['solar'], 1) . ' W/m²' 
+                          : (isset($row['radiation']) && is_numeric($row['radiation']) 
+                              ? number_format((float)$row['radiation'], 1) . ' W/m²' 
+                              : '--'));
                   $rWSpd = isset($row['wind_speed']) && is_numeric($row['wind_speed']) ? number_format((float)$row['wind_speed'], 1) . ' km/h' : '--';
                   $rGust = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? number_format((float)$row['wind_gust'], 1) . ' m/s' : '--';
                   $rDir = !empty($row['wind_direction']) ? (smartairnet_parse_wind_direction($row['wind_direction'])['cardinal'] ?? $row['wind_direction']) : '--';
@@ -3231,6 +3249,7 @@ body.weather-backdrop-active .node2-weather-backdrop,
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #38bdf8; white-space: nowrap;"><?= $rHum ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;"><?= $rPress ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb7185; white-space: nowrap;"><?= $rUv ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f59e0b; white-space: nowrap;"><?= $rSolar ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #34d399; white-space: nowrap;"><?= $rWSpd ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;"><?= $rGust ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;"><?= htmlspecialchars($rDir) ?></td>
@@ -3239,7 +3258,7 @@ body.weather-backdrop-active .node2-weather-backdrop,
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="9" style="padding: 40px; text-align: center; color: #94a3b8;">
+                  <td colspan="10" style="padding: 40px; text-align: center; color: #94a3b8;">
                     Currently in standby mode. Telemetry stream will populate when records arrive.
                   </td>
                 </tr>
@@ -3290,21 +3309,21 @@ body.weather-backdrop-active .node2-weather-backdrop,
       </div>
     </div>
 
-    <!-- 4 Soil Frosted Glass KPI Cards (Soil Moisture, Temperature, pH, EC - Weather-style Dark Cards) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+    <!-- 4 Soil Frosted Glass KPI Cards (2 Columns in Mobile View) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
 
       <!-- Card 1: Soil Moisture / Humidity -->
-      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-          <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.35) 0%, rgba(3, 105, 161, 0.45) 100%); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 32px; height: 32px;">
+      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div class="soil-kpi-icon-wrap" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.35) 0%, rgba(3, 105, 161, 0.45) 100%); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 28px; height: 28px;">
               <g class="water-drop-anim">
                 <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="#38bdf8" />
                 <ellipse cx="26" cy="34" rx="3.5" ry="6" transform="rotate(-28 26 34)" fill="rgba(255,255,255,0.7)" />
               </g>
             </svg>
           </div>
-          <div style="text-align: right;">
+          <div style="text-align: right; min-width: 0;">
             <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
               Soil Moisture
             </div>
@@ -3314,22 +3333,22 @@ body.weather-backdrop-active .node2-weather-backdrop,
           </div>
         </div>
 
-        <div style="margin-top: 10px; width: 100%;">
+        <div style="margin-top: 8px; width: 100%;">
           <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #10b981 45%, #0284c7 100%); position: relative;">
             <div id="soil-live-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2, 132, 199, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
-        <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-          Hydration status: <span id="soil-live-hum-note-val" style="color: #38bdf8; font-weight: 600;"><?= $has_soil_hum ? "Adequate Field Capacity ({$init_soil_hum})" : '--' ?></span>
+        <div class="weather-metric-note" style="margin-top: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          Hydration: <span id="soil-live-hum-note-val" style="color: #38bdf8; font-weight: 600;"><?= $has_soil_hum ? "Adequate ({$init_soil_hum})" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 2: Soil Temperature -->
-      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-          <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(234, 88, 12, 0.45) 100%); border: 1px solid rgba(251, 146, 60, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 32px; height: 32px;">
+      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div class="soil-kpi-icon-wrap" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(234, 88, 12, 0.45) 100%); border: 1px solid rgba(251, 146, 60, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 28px; height: 28px;">
               <rect x="28" y="10" width="8" height="26" rx="4" fill="rgba(255,255,255,0.2)" stroke="#ffffff" stroke-width="1.6" />
               <circle cx="32" cy="38" r="7.5" fill="#f97316" />
               <rect x="30" y="18" width="4" height="18" rx="2" fill="#f97316" />
@@ -3338,7 +3357,7 @@ body.weather-backdrop-active .node2-weather-backdrop,
               <line x1="38" y1="26" x2="41" y2="26" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
             </svg>
           </div>
-          <div style="text-align: right;">
+          <div style="text-align: right; min-width: 0;">
             <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
               Soil Temperature
             </div>
@@ -3348,28 +3367,28 @@ body.weather-backdrop-active .node2-weather-backdrop,
           </div>
         </div>
 
-        <div style="margin-top: 10px; width: 100%;">
+        <div style="margin-top: 8px; width: 100%;">
           <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
             <div id="soil-live-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ea580c; box-shadow: 0 0 8px rgba(234, 88, 12, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
-        <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-          Root zone: <span id="soil-live-temp-note-val" style="color: #fed7aa; font-weight: 600;"><?= $has_soil_temp ? "{$init_soil_temp} (Optimal Range)" : '--' ?></span>
+        <div class="weather-metric-note" style="margin-top: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          Root zone: <span id="soil-live-temp-note-val" style="color: #fed7aa; font-weight: 600;"><?= $has_soil_temp ? "{$init_soil_temp}" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 3: Soil pH -->
-      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-          <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.45) 100%); border: 1px solid rgba(52, 211, 153, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 32px; height: 32px;">
+      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div class="soil-kpi-icon-wrap" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.45) 100%); border: 1px solid rgba(52, 211, 153, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 28px; height: 28px;">
               <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" />
               <circle cx="32" cy="32" r="15" fill="#10b981" />
               <text x="32" y="33" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
             </svg>
           </div>
-          <div style="text-align: right;">
+          <div style="text-align: right; min-width: 0;">
             <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
               Soil Reaction (pH)
             </div>
@@ -3379,26 +3398,26 @@ body.weather-backdrop-active .node2-weather-backdrop,
           </div>
         </div>
 
-        <div style="margin-top: 10px; width: 100%;">
+        <div style="margin-top: 8px; width: 100%;">
           <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
             <div id="soil-live-ph-slider-dot" class="soil-ph-pulse-dot" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
-        <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-          Acidity: <span id="soil-live-ph-note-val" style="color: #34d399; font-weight: 600;"><?= $has_soil_ph ? "{$soil_ph_status} ({$init_soil_ph})" : '--' ?></span>
+        <div class="weather-metric-note" style="margin-top: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          Acidity: <span id="soil-live-ph-note-val" style="color: #34d399; font-weight: 600;"><?= $has_soil_ph ? "{$soil_ph_status}" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 4: Soil Electrical Conductivity (EC) -->
-      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-          <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(109, 40, 217, 0.45) 100%); border: 1px solid rgba(192, 132, 252, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 32px; height: 32px;">
+      <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div class="soil-kpi-icon-wrap" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(109, 40, 217, 0.45) 100%); border: 1px solid rgba(192, 132, 252, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25); flex-shrink: 0;">
+            <svg viewBox="0 0 64 64" style="width: 28px; height: 28px;">
               <path d="M 34 10 L 22 34 L 32 34 L 28 54 L 44 28 L 34 28 Z" fill="#c084fc" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))" />
             </svg>
           </div>
-          <div style="text-align: right;">
+          <div style="text-align: right; min-width: 0;">
             <div class="weather-metric-label" style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 2px;">
               Soil Conductivity (EC)
             </div>
@@ -3408,14 +3427,14 @@ body.weather-backdrop-active .node2-weather-backdrop,
           </div>
         </div>
 
-        <div style="margin-top: 10px; width: 100%;">
+        <div style="margin-top: 8px; width: 100%;">
           <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #10b981 0%, #06b6d4 40%, #8b5cf6 75%, #ef4444 100%); position: relative;">
             <div id="soil-live-ec-slider-dot" class="soil-ec-pulse-dot" style="position: absolute; top: 50%; left: <?= $soil_ec_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.9); transition: left 1s ease-in-out;"></div>
           </div>
         </div>
 
-        <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
-          Salinity / Ion level: <span id="soil-live-ec-note-val" style="color: #c084fc; font-weight: 600;"><?= $has_soil_ec ? "{$soil_ec_status} ({$init_soil_ec})" : '--' ?></span>
+        <div class="weather-metric-note" style="margin-top: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          Salinity: <span id="soil-live-ec-note-val" style="color: #c084fc; font-weight: 600;"><?= $has_soil_ec ? "{$soil_ec_status}" : '--' ?></span>
         </div>
       </div>
 
@@ -3490,7 +3509,7 @@ body.weather-backdrop-active .node2-weather-backdrop,
         </div>
 
         <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 650px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 520px;">
             <thead style="position: sticky; top: 0; z-index: 1; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
               <tr>
                 <th style="padding: 12px 16px; font-weight: 700; color: #475569; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
@@ -3498,7 +3517,6 @@ body.weather-backdrop-active .node2-weather-backdrop,
                 <th style="padding: 12px 16px; font-weight: 700; color: #b45309; font-size: 12px; white-space: nowrap;">Soil Temp (°C)</th>
                 <th style="padding: 12px 16px; font-weight: 700; color: #047857; font-size: 12px; white-space: nowrap;">Soil pH</th>
                 <th style="padding: 12px 16px; font-weight: 700; color: #7c3aed; font-size: 12px; white-space: nowrap;">Soil EC (µS/cm)</th>
-                <th style="padding: 12px 16px; font-weight: 700; color: #0f172a; font-size: 12px; white-space: nowrap;">Agronomic Status</th>
               </tr>
             </thead>
             <tbody id="soil-live-tbody">
@@ -3514,10 +3532,6 @@ body.weather-backdrop-active .node2-weather-backdrop,
                   $sPh = (isset($sPhRaw) && is_numeric($sPhRaw)) ? number_format((float)$sPhRaw, 2) : '--';
                   $sEc = (isset($row['soil_conductivity']) && is_numeric($row['soil_conductivity'])) ? number_format((float)$row['soil_conductivity'], 1) : '--';
                   $rowBg = ($i % 2 === 0) ? '#ffffff' : '#f8fafc';
-                  $badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">Optimal</span>';
-                  if ($sPh !== '--' && ((float)$sPh < 6.0 || (float)$sPh > 8.0)) {
-                      $badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;">Attn pH</span>';
-                  }
                 ?>
                   <tr style="border-bottom: 1px solid #f1f5f9; background-color: <?= $rowBg ?>;">
                     <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;"><?= htmlspecialchars($timeStr) ?></td>
@@ -3525,12 +3539,11 @@ body.weather-backdrop-active .node2-weather-backdrop,
                     <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;"><?= $sTemp ?></td>
                     <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;"><?= $sPh ?></td>
                     <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #7c3aed;"><?= $sEc ?></td>
-                    <td style="padding: 11px 16px;"><?= $badge ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">
+                  <td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">
                     No live soil telemetry stream records yet.
                   </td>
                 </tr>
@@ -4367,7 +4380,7 @@ function renderWeatherLiveTable(hist) {
         if (tbodyWeather.children.length > 1 || (tbodyWeather.children.length === 1 && !tbodyWeather.innerText.includes('mode') && !tbodyWeather.innerText.includes('Loading'))) {
             return;
         }
-        tbodyWeather.innerHTML = '<tr><td colspan="9" style="padding: 40px; text-align: center; color: #94a3b8;">No live weather telemetry found.</td></tr>';
+        tbodyWeather.innerHTML = '<tr><td colspan="10" style="padding: 40px; text-align: center; color: #94a3b8;">No live weather telemetry found.</td></tr>';
         return;
     }
     let temps = [];
@@ -4385,6 +4398,12 @@ function renderWeatherLiveTable(hist) {
 
         const press = (row.pressure != null && !isNaN(Number(row.pressure))) ? `${Math.round(Number(row.pressure))} mb` : '--';
         const uv = (row.uv_index != null && !isNaN(Number(row.uv_index))) ? Number(row.uv_index).toFixed(1) : '--';
+        const rawSolar = (row.solar_radiation != null && !isNaN(Number(row.solar_radiation)))
+            ? row.solar_radiation
+            : ((row.solar != null && !isNaN(Number(row.solar)))
+                ? row.solar
+                : ((row.radiation != null && !isNaN(Number(row.radiation))) ? row.radiation : null));
+        const solar = rawSolar != null ? `${Number(rawSolar).toFixed(1)} W/m²` : '--';
         const wSpd = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? `${Number(row.wind_speed).toFixed(1)} km/h` : '--';
         const gust = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? `${Number(row.wind_gust).toFixed(1)} m/s` : '--';
         const dir = (row.wind_direction != null && row.wind_direction !== '') ? (typeof getCompassDir === 'function' ? getCompassDir(row.wind_direction) : row.wind_direction) : '--';
@@ -4401,6 +4420,7 @@ function renderWeatherLiveTable(hist) {
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #38bdf8; white-space: nowrap;">${hum}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;">${press}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb7185; white-space: nowrap;">${uv}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f59e0b; white-space: nowrap;">${solar}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #34d399; white-space: nowrap;">${wSpd}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;">${gust}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;">${dir}</td>
@@ -4431,7 +4451,7 @@ function renderSoilLiveTable(hist) {
         if (tbodySoil.children.length > 1 || (tbodySoil.children.length === 1 && !tbodySoil.innerText.includes('Loading'))) {
             return;
         }
-        tbodySoil.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #64748b;">No live soil telemetry stream records yet.</td></tr>';
+        tbodySoil.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">No live soil telemetry stream records yet.</td></tr>';
         return;
     }
     tbodySoil.innerHTML = history.map((row, i) => {
@@ -4448,18 +4468,12 @@ function renderSoilLiveTable(hist) {
             ? `${Number(row.soil_conductivity).toFixed(1)}` 
             : '--';
 
-        let badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">Optimal</span>';
-        if (sPh !== '--' && (Number(sPh) < 6.0 || Number(sPh) > 8.0)) {
-            badge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa;">Attn pH</span>';
-        }
-
         return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
           <td style="padding: 11px 16px; font-family: var(--font-mono); font-size: 12px; color: #1e293b; white-space: nowrap; font-weight: 600;">${timeStr}</td>
           <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #0369a1;">${sHum}</td>
           <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #b45309;">${sTemp}</td>
           <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #047857;">${sPh}</td>
           <td style="padding: 11px 16px; font-family: var(--font-mono); font-weight: 600; color: #7c3aed;">${sEc}</td>
-          <td style="padding: 11px 16px;">${badge}</td>
         </tr>`;
     }).join('');
 }
@@ -4975,6 +4989,36 @@ async function refreshDashboard(forceNetwork = false) {
                 }
             }
 
+            // Solar Radiation
+            const solarEl = document.getElementById('card-solar-val');
+            const solarNote = document.getElementById('solar-note-val');
+            const solarDot = document.getElementById('solar-slider-dot');
+            const rawSolarVal = (w.solar_radiation != null && !isNaN(Number(w.solar_radiation)))
+                ? w.solar_radiation
+                : ((w.solar != null && !isNaN(Number(w.solar)))
+                    ? w.solar
+                    : ((w.radiation != null && !isNaN(Number(w.radiation))) ? w.radiation : null));
+            if (rawSolarVal != null) {
+                const sF = Number(rawSolarVal);
+                if (solarEl) solarEl.innerText = `${sF.toFixed(1)} W/m²`;
+                let sNote = 'Low';
+                if (sF >= 1000) sNote = 'Very High';
+                else if (sF >= 600) sNote = 'High';
+                else if (sF >= 250) sNote = 'Moderate';
+                if (solarNote) solarNote.innerText = `${sF.toFixed(0)} W/m² (${sNote})`;
+                if (solarDot) {
+                    solarDot.style.display = '';
+                    solarDot.style.left = `${Math.max(5, Math.min(95, Math.round((sF / 1200) * 100)))}%`;
+                }
+            } else {
+                if (solarEl) solarEl.innerText = '-- W/m²';
+                if (solarNote) solarNote.innerText = '--';
+                if (solarDot) {
+                    solarDot.style.display = '';
+                    solarDot.style.left = '10%';
+                }
+            }
+
             // Dedicated Soil View Cards (Soil Temperature, Moisture, pH, EC)
             const soilLastUpdated = document.getElementById('soil-last-updated-val');
             const weatherLatestTime = document.getElementById('weather-latest-time');
@@ -5290,6 +5334,15 @@ async function refreshDashboard(forceNetwork = false) {
             if (ambHumDot) {
                 ambHumDot.style.display = '';
                 ambHumDot.style.left = '35%';
+            }
+            const solarEl = document.getElementById('card-solar-val');
+            if (solarEl) solarEl.innerText = '-- W/m²';
+            const solarNote = document.getElementById('solar-note-val');
+            if (solarNote) solarNote.innerText = '--';
+            const solarDot = document.getElementById('solar-slider-dot');
+            if (solarDot) {
+                solarDot.style.display = '';
+                solarDot.style.left = '10%';
             }
             const soilTempEl = document.getElementById('soil-live-temp-val');
             if (soilTempEl) soilTempEl.innerText = '--';

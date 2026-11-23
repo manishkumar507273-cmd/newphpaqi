@@ -74,7 +74,7 @@ function calcSubindex(paramKey, cp) {
         if (val <= c_hi) return Number((((i_hi - i_lo) / (c_hi - c_lo)) * (val - c_lo) + i_lo).toFixed(3));
     }
     const [c_lo, c_hi, i_lo, i_hi] = tiers[tiers.length - 1];
-    return Math.min(500.0, Number((((i_hi - i_lo) / (c_hi - c_lo)) * (val - c_lo) + i_lo).toFixed(3)));
+    return Number((((i_hi - i_lo) / (c_hi - c_lo)) * (val - c_lo) + i_lo).toFixed(3));
 }
 window.calcSubindex = calcSubindex;
 

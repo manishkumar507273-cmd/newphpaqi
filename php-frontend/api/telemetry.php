@@ -232,7 +232,7 @@ function calcSubindex(string $paramKey, $cp): float {
         if ($val <= $c_hi) return round((($i_hi-$i_lo)/($c_hi-$c_lo))*($val-$c_lo)+$i_lo, 3);
     }
     [$c_lo,$c_hi,$i_lo,$i_hi] = end($tiers);
-    return min(500.0, round((($i_hi-$i_lo)/($c_hi-$c_lo))*($val-$c_lo)+$i_lo, 3));
+    return round((($i_hi-$i_lo)/($c_hi-$c_lo))*($val-$c_lo)+$i_lo, 3);
 }
 
 function parseToIstIso($tsRaw): string {

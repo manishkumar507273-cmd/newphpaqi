@@ -64,7 +64,7 @@ def calculate_sub_index(param_key: str, val: float) -> float:
 
     if tiers:
         c_lo, c_hi, i_lo, i_hi = tiers[-1]
-        return min(500.0, round(((i_hi - i_lo) / (c_hi - c_lo)) * (val - c_lo) + i_lo), 1)
+        return round(((i_hi - i_lo) / (c_hi - c_lo)) * (val - c_lo) + i_lo, 1)
 
     return 0.0
 

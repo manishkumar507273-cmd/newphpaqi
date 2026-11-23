@@ -243,7 +243,7 @@ if (!empty($init_bulk['aqi'])) {
             $init_aqi_badge_border = 'rgba(194, 65, 12, 0.45)';
             $init_aqi_badge_text = '#7c2d12';
             $init_scale_pct = (33.333 + (($v - 100) / 100) * 16.667) . '%';
-        } else {
+        } elseif ($v <= 300) {
             $init_aqi_label = 'Unhealthy';
             $init_aqi_accent = '#881337';
             $init_aqi_bg = 'linear-gradient(155deg, #fda4af 0%, #fb7185 25%, #f43f5e 52%, #e11d48 78%, #be123c 92%, #881337 100%)';
@@ -252,7 +252,27 @@ if (!empty($init_bulk['aqi'])) {
             $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.88)';
             $init_aqi_badge_border = 'rgba(190, 18, 60, 0.45)';
             $init_aqi_badge_text = '#881337';
-            $init_scale_pct = '50%';
+            $init_scale_pct = (50.0 + (($v - 200) / 100) * 16.666) . '%';
+        } elseif ($v <= 400) {
+            $init_aqi_label = 'Severe';
+            $init_aqi_accent = '#581c87';
+            $init_aqi_bg = 'linear-gradient(155deg, #d8b4fe 0%, #c084fc 25%, #a855f7 52%, #9333ea 78%, #7e22ce 92%, #581c87 100%)';
+            $init_aqi_border = 'rgba(126, 34, 206, 0.45)';
+            $init_aqi_shadow = 'rgba(147, 51, 234, 0.28)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.88)';
+            $init_aqi_badge_border = 'rgba(126, 34, 206, 0.45)';
+            $init_aqi_badge_text = '#581c87';
+            $init_scale_pct = (66.666 + (($v - 300) / 100) * 16.667) . '%';
+        } else {
+            $init_aqi_label = 'Hazardous';
+            $init_aqi_accent = '#7f1d1d';
+            $init_aqi_bg = 'linear-gradient(155deg, #fca5a5 0%, #f87171 25%, #ef4444 52%, #dc2626 78%, #b91c1c 92%, #7f1d1d 100%)';
+            $init_aqi_border = 'rgba(185, 28, 28, 0.50)';
+            $init_aqi_shadow = 'rgba(220, 38, 38, 0.32)';
+            $init_aqi_badge_bg = 'rgba(255, 255, 255, 0.88)';
+            $init_aqi_badge_border = 'rgba(185, 28, 28, 0.50)';
+            $init_aqi_badge_text = '#7f1d1d';
+            $init_scale_pct = min(98, 83.333 + min(($v - 400) / 100, 1) * 15.667) . '%';
         }
     }
     $pm25_val = $aqi_d['pm25'] ?? ($aqi_d['pm2.5'] ?? ($aqi_d['pm2_5'] ?? null));
@@ -2611,7 +2631,7 @@ body.soil-backdrop-active footer {
     <div class="pollutants-grid-responsive grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
       
       <!-- 1. PM2.5 -->
-      <div id="card-box-pm25" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" style="border-left: 5px solid <?= $init_border_colors['pm25'] ?>;" onclick="openPollutantModal('pm25')">
+      <div id="card-box-pm25" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden cursor-pointer" style="border-left: 5px solid <?= $init_border_colors['pm25'] ?>;" onclick="openPollutantModal('pm25')" title="Click to view PM2.5 limits & scale">
         <div class="pollutant-card-top flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🌫️</div>
@@ -2620,7 +2640,7 @@ body.soil-backdrop-active footer {
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤60</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0 cursor-pointer hover:bg-slate-100 transition-colors" title="View details">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
@@ -2634,13 +2654,10 @@ body.soil-backdrop-active footer {
             <span><?= $init_tags['pm25']['text'] ?></span>
           </div>
         </div>
-        <div class="pollutant-chevron text-slate-400 shrink-0">
-          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-        </div>
       </div>
 
       <!-- 2. PM10 -->
-      <div id="card-box-pm10" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" style="border-left: 5px solid <?= $init_border_colors['pm10'] ?>;" onclick="openPollutantModal('pm10')">
+      <div id="card-box-pm10" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden cursor-pointer" style="border-left: 5px solid <?= $init_border_colors['pm10'] ?>;" onclick="openPollutantModal('pm10')" title="Click to view full PM10 details & limits">
         <div class="pollutant-card-top flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☁️</div>
@@ -2649,7 +2666,7 @@ body.soil-backdrop-active footer {
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤100</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0 cursor-pointer hover:bg-slate-100 transition-colors" title="View details">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
@@ -2663,13 +2680,10 @@ body.soil-backdrop-active footer {
             <span><?= $init_tags['pm10']['text'] ?></span>
           </div>
         </div>
-        <div class="pollutant-chevron text-slate-400 shrink-0">
-          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-        </div>
       </div>
 
       <!-- 3. CO -->
-      <div id="card-box-co" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" style="border-left: 5px solid <?= $init_border_colors['co'] ?>;" onclick="openPollutantModal('co')">
+      <div id="card-box-co" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden cursor-pointer" style="border-left: 5px solid <?= $init_border_colors['co'] ?>;" onclick="openPollutantModal('co')" title="Click to view full CO details & limits">
         <div class="pollutant-card-top flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center text-sm sm:text-lg shrink-0">💨</div>
@@ -2678,7 +2692,7 @@ body.soil-backdrop-active footer {
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤2</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0 cursor-pointer hover:bg-slate-100 transition-colors" title="View details">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
@@ -2692,13 +2706,10 @@ body.soil-backdrop-active footer {
             <span><?= $init_tags['co']['text'] ?></span>
           </div>
         </div>
-        <div class="pollutant-chevron text-slate-400 shrink-0">
-          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-        </div>
       </div>
 
       <!-- 4. NO2 -->
-      <div id="card-box-no2" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" style="border-left: 5px solid <?= $init_border_colors['no2'] ?>;" onclick="openPollutantModal('no2')">
+      <div id="card-box-no2" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden cursor-pointer" style="border-left: 5px solid <?= $init_border_colors['no2'] ?>;" onclick="openPollutantModal('no2')" title="Click to view NO₂ limits & scale">
         <div class="pollutant-card-top flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-sm sm:text-lg shrink-0">🏭</div>
@@ -2707,7 +2718,7 @@ body.soil-backdrop-active footer {
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤80</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0 cursor-pointer hover:bg-slate-100 transition-colors" title="View details">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
@@ -2721,13 +2732,10 @@ body.soil-backdrop-active footer {
             <span><?= $init_tags['no2']['text'] ?></span>
           </div>
         </div>
-        <div class="pollutant-chevron text-slate-400 shrink-0">
-          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-        </div>
       </div>
 
       <!-- 5. O3 -->
-      <div id="card-box-o3" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 cursor-pointer shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden" style="border-left: 5px solid <?= $init_border_colors['o3'] ?>;" onclick="openPollutantModal('o3')">
+      <div id="card-box-o3" class="pollutant-card flex flex-col justify-between gap-2.5 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-slate-900 shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden cursor-pointer" style="border-left: 5px solid <?= $init_border_colors['o3'] ?>;" onclick="openPollutantModal('o3')" title="Click to view O₃ limits & scale">
         <div class="pollutant-card-top flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <div class="pollutant-icon-box w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-sm sm:text-lg shrink-0">☀️</div>
@@ -2736,7 +2744,7 @@ body.soil-backdrop-active footer {
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤100</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
+          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0 cursor-pointer hover:bg-slate-100 transition-colors" title="View details">
             <i data-lucide="info" class="w-3 h-3"></i>
           </div>
         </div>
@@ -2749,9 +2757,6 @@ body.soil-backdrop-active footer {
             <span class="w-1.5 h-1.5 rounded-full" style="background-color: <?= $init_tags['o3']['dot'] ?>;"></span>
             <span><?= $init_tags['o3']['text'] ?></span>
           </div>
-        </div>
-        <div class="pollutant-chevron text-slate-400 shrink-0">
-          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
         </div>
       </div>
 
@@ -2880,20 +2885,47 @@ body.soil-backdrop-active footer {
     </div>
   </div>
 
-  <!-- Air Quality Index (AQI) Scale Card -->
-  <div style="background-color: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px; margin-top: 14px;">
-    <div>
-      <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
-        <i data-lucide="shield-alert" style="width: 20px; height: 20px; color: #00bfa5;"></i>
-        Air Quality Index (AQI) Scale
-      </h2>
-      <p style="font-size: 12.5px; color: #64748b; margin-top: 4px; margin-bottom: 0;">
-        Know what each category of the Air Quality Index implies for health and ambient safety.
-      </p>
+  <!-- Air Quality Parameters & AQI Limits Scale Card -->
+  <div id="bottom-aqi-scale-card" style="background-color: #ffffff; border-radius: 20px; padding: clamp(16px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 16px; margin-top: 14px; scroll-margin-top: 80px;">
+    
+    <!-- Top Header + Parameter Switcher Tabs -->
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+      <div>
+        <h2 id="scale-card-title" style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
+          <i data-lucide="shield-check" id="scale-card-icon" style="width: 20px; height: 20px; color: #00bfa5;"></i>
+          <span>Air Quality Index (AQI) Scale &amp; Limits</span>
+        </h2>
+        <p id="scale-card-sub" style="font-size: 12.5px; color: #64748b; margin-top: 4px; margin-bottom: 0;">
+          Select any parameter below to view its standard limits, threshold scale, and health advisories.
+        </p>
+      </div>
+
+      <!-- Parameter Switcher Pills (AQI, PM2.5, PM10, CO, NO2, O3) -->
+      <div id="scale-param-selector" style="display: flex; align-items: center; gap: 5px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; background: #f8fafc; padding: 4px; border-radius: 999px; border: 1px solid #e2e8f0; max-width: 100%; white-space: nowrap;">
+        <button type="button" onclick="selectScaleParam('aqi')" id="scale-tab-aqi" class="scale-param-tab active" style="padding: 5px 14px; border-radius: 999px; border: 1px solid #00bfa5; background: #00bfa5; color: #ffffff; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0, 191, 165, 0.25); flex-shrink: 0;">
+          AQI
+        </button>
+        <button type="button" onclick="selectScaleParam('pm25')" id="scale-tab-pm25" class="scale-param-tab" style="padding: 5px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: #475569; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          PM₂.₅
+        </button>
+        <button type="button" onclick="selectScaleParam('pm10')" id="scale-tab-pm10" class="scale-param-tab" style="padding: 5px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: #475569; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          PM₁₀
+        </button>
+        <button type="button" onclick="selectScaleParam('co')" id="scale-tab-co" class="scale-param-tab" style="padding: 5px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: #475569; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          CO
+        </button>
+        <button type="button" onclick="selectScaleParam('no2')" id="scale-tab-no2" class="scale-param-tab" style="padding: 5px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: #475569; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          NO₂
+        </button>
+        <button type="button" onclick="selectScaleParam('o3')" id="scale-tab-o3" class="scale-param-tab" style="padding: 5px 14px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: #475569; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          O₃
+        </button>
+      </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      <!-- Scale Items -->
+    <!-- Dynamic 6 Category Items List Container -->
+    <div id="scale-categories-container" style="display: flex; flex-direction: column; gap: 10px;">
+      <!-- Scale Items (Pre-rendered for AQI) -->
       <div class="aqi-scale-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: #f0fdf4; border: 1px solid #bbf7d0; gap: 12px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span class="scale-dot" style="width: 12px; height: 12px; border-radius: 4px; background-color: #59b61f; flex-shrink: 0;"></span>
@@ -3872,8 +3904,17 @@ function getComfortLevel(temp) {
 }
 
 var pollutantDetails = {
+    aqi: {
+        id: 'aqi', title: 'Air Quality Index (AQI)', icon: '🍃', limit: 100, unit: 'AQI',
+        cpcbLimitText: 'CPCB Standard Benchmark: ≤100 (Satisfactory)',
+        scale: [50, 100, 200, 300, 400],
+        maxTick: '500+',
+        desc: 'CPCB National Air Quality Index aggregates 5 criteria pollutants (PM2.5, PM10, CO, NO₂, O₃) into a single health-risk benchmark.',
+        health: 'AQI above 100 triggers breathing discomfort in sensitive groups; values above 200 cause broader respiratory illness on prolonged exposure.'
+    },
     pm25: {
         id: 'pm25', title: 'Particulate Matter 2.5 (PM2.5)', icon: '🌫️', limit: 60, unit: 'µg/m³',
+        cpcbLimitText: 'CPCB 24-Hour Standard: ≤60 µg/m³',
         scale: [30, 60, 90, 120, 250],
         maxTick: '250+',
         desc: 'Fine inhalable particles with diameters 2.5 micrometers or smaller (about 30 times smaller than a human hair). Due to their minute size, they penetrate deep into lung alveoli and enter the circulatory system.',
@@ -3881,6 +3922,7 @@ var pollutantDetails = {
     },
     pm10: {
         id: 'pm10', title: 'Particulate Matter 10 (PM10)', icon: '☁️', limit: 100, unit: 'µg/m³',
+        cpcbLimitText: 'CPCB 24-Hour Standard: ≤100 µg/m³',
         scale: [50, 100, 250, 350, 430],
         maxTick: '430+',
         desc: 'Inhalable particles with diameters that are generally 10 micrometers and smaller. Sources include crushing or grinding operations and dust stirred up by vehicles on roads.',
@@ -3888,6 +3930,7 @@ var pollutantDetails = {
     },
     co: {
         id: 'co', title: 'Carbon Monoxide (CO)', icon: '💨', limit: 2, unit: 'mg/m³',
+        cpcbLimitText: 'CPCB 8-Hour Standard: ≤2.0 mg/m³',
         scale: [1, 2, 10, 17, 34],
         maxTick: '34+',
         desc: 'A colorless, odorless gas that can be harmful when inhaled in large amounts. CO is released when something is burned, primarily from vehicle exhaust.',
@@ -3895,6 +3938,7 @@ var pollutantDetails = {
     },
     no2: {
         id: 'no2', title: 'Nitrogen Dioxide (NO₂)', icon: '🏭', limit: 80, unit: 'µg/m³',
+        cpcbLimitText: 'CPCB 24-Hour Standard: ≤80 µg/m³',
         scale: [40, 80, 180, 280, 400],
         maxTick: '400+',
         desc: 'A highly reactive gas that forms quickly from emissions from cars, trucks and buses, power plants, and off-road equipment.',
@@ -3902,6 +3946,7 @@ var pollutantDetails = {
     },
     o3: {
         id: 'o3', title: 'Ground-level Ozone (O₃)', icon: '☀️', limit: 100, unit: 'µg/m³',
+        cpcbLimitText: 'CPCB 8-Hour Standard: ≤100 µg/m³',
         scale: [50, 100, 168, 208, 748],
         maxTick: '748+',
         desc: 'Not emitted directly into the air, but created by chemical reactions between oxides of nitrogen (NOx) and volatile organic compounds (VOC) in the presence of sunlight.',
@@ -3910,9 +3955,22 @@ var pollutantDetails = {
 };
 
 var pollutantCategoryRanges = {
+    aqi: {
+        title: 'Air Quality Index (AQI) Scale & Limits',
+        sub: 'National Air Quality Index (CPCB NAQI) categories, numerical ranges, and health advisories.',
+        unit: 'AQI',
+        ranges: [
+            { name: 'Good', range: '0 to 50', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
+            { name: 'Moderate', range: '51 to 100', dot: '#eec732', bg: '#fefce8', border: '#fef08a', textCol: '#854d0e', desc: 'Acceptable air quality; minor breathing discomfort may occur for sensitive individuals.' },
+            { name: 'Poor', range: '101 to 200', dot: '#ea8c34', bg: '#fff7ed', border: '#fed7aa', textCol: '#ea8c34', desc: 'Breathing discomfort to people with lungs, asthma, and heart diseases.' },
+            { name: 'Unhealthy', range: '201 to 300', dot: '#e95478', bg: '#fef2f2', border: '#fecaca', textCol: '#e95478', desc: 'Breathing discomfort to most people on prolonged exposure. Limit strenuous outdoor exertion.' },
+            { name: 'Severe', range: '301 to 400', dot: '#b33fba', bg: '#faf5ff', border: '#e9d5ff', textCol: '#b33fba', desc: 'Respiratory illness on prolonged exposure; significantly impacts people with existing ailments.' },
+            { name: 'Hazardous', range: '401 to 500+', dot: '#c92033', bg: '#fef2f2', border: '#fecaca', textCol: '#c92033', desc: 'Emergency conditions. The entire population is likely to be affected. Serious risk of respiratory effects.' }
+        ]
+    },
     pm25: {
-        title: 'PM2.5 Scale (NAAQS Standard)',
-        sub: 'National Ambient Air Quality Standard limits for PM2.5 in µg/m³.',
+        title: 'PM2.5 Limits & Standard Scale',
+        sub: 'National Ambient Air Quality Standard (NAAQS) limits for PM2.5 in µg/m³.',
         unit: 'µg/m³',
         ranges: [
             { name: 'Good', range: '0 to 30', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
@@ -3924,8 +3982,8 @@ var pollutantCategoryRanges = {
         ]
     },
     pm10: {
-        title: 'PM10 Scale (NAAQS Standard)',
-        sub: 'National Ambient Air Quality Standard limits for PM10 in µg/m³.',
+        title: 'PM10 Limits & Standard Scale',
+        sub: 'National Ambient Air Quality Standard (NAAQS) limits for PM10 in µg/m³.',
         unit: 'µg/m³',
         ranges: [
             { name: 'Good', range: '0 to 50', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
@@ -3937,8 +3995,8 @@ var pollutantCategoryRanges = {
         ]
     },
     co: {
-        title: 'Carbon Monoxide (CO) Scale',
-        sub: 'National Ambient Air Quality Standard limits for CO in mg/m³.',
+        title: 'Carbon Monoxide (CO) Limits & Standard Scale',
+        sub: 'National Ambient Air Quality Standard (NAAQS) limits for CO in mg/m³.',
         unit: 'mg/m³',
         ranges: [
             { name: 'Good', range: '0.0 to 1.0', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
@@ -3950,8 +4008,8 @@ var pollutantCategoryRanges = {
         ]
     },
     no2: {
-        title: 'Nitrogen Dioxide (NO₂) Scale',
-        sub: 'National Ambient Air Quality Standard limits for NO₂ in µg/m³.',
+        title: 'Nitrogen Dioxide (NO₂) Limits & Standard Scale',
+        sub: 'National Ambient Air Quality Standard (NAAQS) limits for NO₂ in µg/m³.',
         unit: 'µg/m³',
         ranges: [
             { name: 'Good', range: '0 to 40', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
@@ -3963,8 +4021,8 @@ var pollutantCategoryRanges = {
         ]
     },
     o3: {
-        title: 'Ground-level Ozone (O₃) Scale',
-        sub: 'National Ambient Air Quality Standard limits for O₃ in µg/m³.',
+        title: 'Ground-level Ozone (O₃) Limits & Standard Scale',
+        sub: 'National Ambient Air Quality Standard (NAAQS) limits for O₃ in µg/m³.',
         unit: 'µg/m³',
         ranges: [
             { name: 'Good', range: '0 to 50', dot: '#59b61f', bg: '#f0fdf4', border: '#bbf7d0', textCol: '#59b61f', desc: 'Air quality is considered satisfactory, and air pollution poses little or no risk.' },
@@ -4015,6 +4073,146 @@ function getPollutantScaleInfo(param, value) {
         label: labels[tier]
     };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// DYNAMIC BOTTOM PARAMETER LIMITS & SCALE CONTROLLER
+// ═══════════════════════════════════════════════════════════════
+window.__activeScaleParam = 'aqi';
+
+window.selectScaleParam = function(param) {
+    if (!pollutantCategoryRanges[param]) param = 'aqi';
+    window.__activeScaleParam = param;
+
+    // 1. Update tab button states
+    const tabs = ['aqi', 'pm25', 'pm10', 'co', 'no2', 'o3'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`scale-tab-${t}`);
+        if (!btn) return;
+        if (t === param) {
+            btn.style.background = '#00bfa5';
+            btn.style.color = '#ffffff';
+            btn.style.borderColor = '#00bfa5';
+            btn.style.boxShadow = '0 2px 6px rgba(0, 191, 165, 0.25)';
+        } else {
+            btn.style.background = 'transparent';
+            btn.style.color = '#475569';
+            btn.style.borderColor = 'transparent';
+            btn.style.boxShadow = 'none';
+        }
+    });
+
+    const catData = pollutantCategoryRanges[param];
+    if (!catData) return;
+
+    // 2. Update Card Header Title & Subtitle
+    const titleEl = document.getElementById('scale-card-title');
+    if (titleEl) {
+        titleEl.innerHTML = `<i data-lucide="shield-check" id="scale-card-icon" style="width: 20px; height: 20px; color: #00bfa5;"></i> <span>${catData.title}</span>`;
+    }
+    const subEl = document.getElementById('scale-card-sub');
+    if (subEl) subEl.innerText = catData.sub;
+
+    // 3. Render 6 Category Items List (Pic 2)
+    const listContainer = document.getElementById('scale-categories-container');
+    if (listContainer) {
+        listContainer.innerHTML = catData.ranges.map(item => `
+            <div class="aqi-scale-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background-color: ${item.bg}; border: 1px solid ${item.border}; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="scale-dot" style="width: 12px; height: 12px; border-radius: 4px; background-color: ${item.dot}; flex-shrink: 0;"></span>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="scale-title" style="font-size: 14px; font-weight: 700; color: #0f172a;">${item.name}</span>
+                            <span class="scale-range" style="font-size: 12px; font-weight: 700; color: ${item.textCol}; font-family: var(--font-mono);">(${item.range} ${catData.unit})</span>
+                        </div>
+                        <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px;">${item.desc}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
+};
+
+window.updateScaleCardLiveValues = function() {
+    const param = window.__activeScaleParam || 'aqi';
+    const info = pollutantDetails[param];
+    const catData = pollutantCategoryRanges[param];
+    if (!info || !catData) return;
+
+    let currentVal = NaN;
+    let currentValStr = '--';
+    if (param === 'aqi') {
+        const el = document.getElementById('hero-aqi-val') || document.getElementById('hero-aqi-value');
+        currentValStr = el ? el.innerText.trim() : '--';
+        currentVal = parseFloat(currentValStr);
+    } else {
+        const el = document.getElementById(`card-${param}`);
+        currentValStr = el ? el.innerText.trim() : '--';
+        currentVal = parseFloat(currentValStr);
+    }
+
+    const currentBadge = document.getElementById('scale-banner-current-badge');
+    const currentValEl = document.getElementById('scale-banner-current-val');
+    const indicator = document.getElementById('param-scale-indicator');
+
+    if (isNaN(currentVal)) {
+        if (currentValEl) currentValEl.innerText = 'No Live Reading';
+        if (currentBadge) {
+            currentBadge.style.background = '#f1f5f9';
+            currentBadge.style.color = '#64748b';
+            currentBadge.style.borderColor = '#cbd5e1';
+            const dot = currentBadge.querySelector('span');
+            if (dot) dot.style.background = '#94a3b8';
+        }
+        if (indicator) {
+            indicator.style.left = '0%';
+            indicator.style.borderColor = '#94a3b8';
+        }
+        return;
+    }
+
+    let pct = 0;
+    let color = '#59b61f';
+    let label = 'Good';
+
+    if (param === 'aqi') {
+        pct = getAQIScalePercentage(currentVal);
+        const theme = getAQITheme(currentVal);
+        color = theme.accent;
+        label = theme.label;
+    } else {
+        const scaleInfo = getPollutantScaleInfo(param, currentVal);
+        pct = scaleInfo.pct;
+        color = scaleInfo.color;
+        label = scaleInfo.label;
+    }
+
+    if (currentValEl) {
+        currentValEl.innerText = `${currentVal.toFixed(param === 'co' ? 2 : 1)} ${catData.unit} • ${label}`;
+    }
+    if (currentBadge) {
+        currentBadge.style.background = `${color}18`;
+        currentBadge.style.color = color;
+        currentBadge.style.borderColor = `${color}40`;
+        const dot = currentBadge.querySelector('span');
+        if (dot) dot.style.background = color;
+    }
+    if (indicator) {
+        indicator.style.left = `clamp(8px, ${pct}%, calc(100% - 8px))`;
+        indicator.style.borderColor = color;
+    }
+};
+
+window.selectScaleParamAndScroll = function(param) {
+    if (window.selectScaleParam) {
+        window.selectScaleParam(param);
+    }
+    const target = document.getElementById('bottom-aqi-scale-card');
+    if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+};
 
 // ═══════════════════════════════════════════════════════════════
 // LIVE AQI COMPARISON CHART CONTROLLER (ORIGINAL GRAPH)
@@ -4778,6 +4976,9 @@ async function refreshDashboard(forceNetwork = false) {
             if (window.evaluateNode2WeatherTheme) {
                 window.evaluateNode2WeatherTheme(null, null, null);
             }
+            if (typeof window.updateScaleCardLiveValues === 'function') {
+                window.updateScaleCardLiveValues();
+            }
             return;
         }
 
@@ -4814,6 +5015,7 @@ async function refreshDashboard(forceNetwork = false) {
             if (v <= 400) return 66.666 + ((v - 300) / 100) * 16.667;
             return Math.min(98, 83.333 + Math.min((v - 400) / 100, 1) * 15.667);
         }
+        window.getAQIScalePercentage = getAQIScalePercentage;
 
         function getAQITheme(aqi) {
             const v = Number(aqi);
@@ -4998,6 +5200,10 @@ async function refreshDashboard(forceNetwork = false) {
             updateCardBorderAccent('card-box-co', 'co', d.co);
             updateCardBorderAccent('card-box-no2', 'no2', d.no2);
             updateCardBorderAccent('card-box-o3', 'o3', d.o3);
+
+            if (typeof window.updateScaleCardLiveValues === 'function') {
+                window.updateScaleCardLiveValues();
+            }
         }
         
         // WEATHER DATA POPULATION
@@ -5936,6 +6142,7 @@ window.initLiveAmbientCanvas = initNode2WeatherBackdrop;
 setTimeout(() => {
     refreshDashboard();
     initLiveAmbientCanvas();
+    if (typeof selectScaleParam === 'function') selectScaleParam('aqi');
     if (typeof renderComparisonChart === 'function') renderComparisonChart();
     if (typeof renderLiveTable === 'function') renderLiveTable();
     if (typeof renderWeatherLiveTable === 'function') renderWeatherLiveTable();
@@ -5954,15 +6161,7 @@ setTimeout(() => {
 
 window.openPollutantModal = function(type) {
     const data = pollutantDetails[type];
-    if(!data) return;
-    
-    const allModals = document.querySelectorAll('#pollutant-modal');
-    if (allModals.length > 1) {
-        for (let i = 0; i < allModals.length - 1; i++) {
-            allModals[i].remove();
-        }
-    }
-    
+    if (!data) return;
     const modal = document.getElementById('pollutant-modal');
     if (!modal) return;
     
@@ -5971,21 +6170,43 @@ window.openPollutantModal = function(type) {
     const titleEl = modal.querySelector('#pm-modal-title');
     if (titleEl) titleEl.innerText = data.title;
     const limitEl = modal.querySelector('#pm-modal-limit');
-    if (limitEl) limitEl.innerText = `${data.limit} ${data.unit}`;
+    if (limitEl) limitEl.innerText = `≤${data.limit} ${data.unit}`;
     
     let currentValStr = '--';
     const el = document.getElementById(`card-${type}`);
-    currentValStr = el ? el.innerText : '--';
+    currentValStr = el ? el.innerText.trim() : '--';
     const currentVal = parseFloat(currentValStr);
     
+    const scaleInfo = getPollutantScaleInfo(type, currentVal);
+
     const valEl = modal.querySelector('#pm-modal-val');
-    if (valEl) valEl.innerText = isNaN(currentVal) ? currentValStr : currentVal.toFixed(2);
+    if (valEl) valEl.innerText = isNaN(currentVal) ? currentValStr : currentVal.toFixed(type === 'co' ? 2 : 1);
     const unitEl = modal.querySelector('#pm-modal-unit');
     if (unitEl) unitEl.innerText = data.unit;
+    const tierLabel = modal.querySelector('#pm-modal-tier-label');
+    if (tierLabel) tierLabel.innerText = isNaN(currentVal) ? 'No Data' : scaleInfo.label;
+
+    const statusBox = modal.querySelector('#pm-modal-status');
+    const statusDot = modal.querySelector('#pm-modal-status-dot');
+    if (statusBox) {
+        if (isNaN(currentVal)) {
+            statusBox.style.background = '#f1f5f9';
+            statusBox.style.color = '#64748b';
+            statusBox.style.borderColor = '#cbd5e1';
+            if (statusDot) statusDot.style.background = '#94a3b8';
+        } else {
+            statusBox.style.background = `${scaleInfo.color}18`;
+            statusBox.style.color = scaleInfo.color;
+            statusBox.style.borderColor = `${scaleInfo.color}40`;
+            if (statusDot) statusDot.style.background = scaleInfo.color;
+        }
+    }
+
     const shortEl = modal.querySelector('#pm-modal-short');
     if (shortEl) shortEl.innerText = data.id.toUpperCase();
-    const qEl = modal.querySelector('#pm-modal-q');
-    if (qEl) qEl.innerText = data.id.toUpperCase();
+    const unitBadge = modal.querySelector('#pm-modal-unit-badge');
+    if (unitBadge) unitBadge.innerText = `Unit: ${data.unit}`;
+
     const descEl = modal.querySelector('#pm-modal-desc');
     if (descEl) descEl.innerText = data.desc;
     const healthEl = modal.querySelector('#pm-modal-health');
@@ -5998,52 +6219,10 @@ window.openPollutantModal = function(type) {
     const t5 = modal.querySelector('#pm-t5'); if (t5) t5.innerText = data.scale[4];
     const t6 = modal.querySelector('#pm-t6'); if (t6) t6.innerText = data.maxTick;
     
-    const statusBox = modal.querySelector('#pm-modal-status');
-    if (statusBox) {
-        if(isNaN(currentVal)) {
-            statusBox.style.display = 'none';
-        } else {
-            statusBox.style.display = 'flex';
-            if(currentVal <= data.limit) {
-                statusBox.innerHTML = '<i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Optimal / Normal Range';
-                statusBox.style.background = '#dcfce7';
-                statusBox.style.color = '#16a34a';
-            } else {
-                statusBox.innerHTML = '<i data-lucide="alert-triangle" style="width: 17px; height: 17px;"></i> Elevated / Above Standard';
-                statusBox.style.background = '#fee2e2';
-                statusBox.style.color = '#dc2626';
-            }
-        }
-    }
-    
     const marker = modal.querySelector('#pm-modal-marker');
-    const scaleInfo = getPollutantScaleInfo(type, currentVal);
     if (marker) {
         marker.style.left = `clamp(8px, ${scaleInfo.pct}%, calc(100% - 8px))`;
         marker.style.borderColor = scaleInfo.color;
-    }
-    
-    // Render pollutant's own limits and categories inside the modal
-    const scaleConfig = pollutantCategoryRanges[type];
-    const scaleHeading = modal.querySelector('#pm-modal-scale-heading');
-    const scaleSub = modal.querySelector('#pm-modal-scale-sub');
-    const scaleList = modal.querySelector('#pm-modal-scale-list');
-    
-    if (scaleConfig && scaleHeading && scaleSub && scaleList) {
-        scaleHeading.innerText = scaleConfig.title;
-        scaleSub.innerText = scaleConfig.sub;
-        scaleList.innerHTML = scaleConfig.ranges.map(item => `
-            <div class="aqi-scale-item" style="display: flex; align-items: center; padding: 11px 13px; border-radius: 14px; background-color: ${item.bg}; border: 1px solid ${item.border}; gap: 10px;">
-                <span class="scale-dot" style="width: 10px; height: 10px; border-radius: 3px; background-color: ${item.dot}; flex-shrink: 0;"></span>
-                <div style="flex: 1;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span class="scale-title" style="font-size: 13.5px; font-weight: 700; color: #0f172a;">${item.name}</span>
-                        <span class="scale-range" style="font-size: 12px; font-weight: 700; color: ${item.textCol}; font-family: var(--font-mono);">(${item.range} ${scaleConfig.unit})</span>
-                    </div>
-                    <div class="scale-desc" style="font-size: 11.5px; color: #475569; margin-top: 2px; line-height: 1.4;">${item.desc}</div>
-                </div>
-            </div>
-        `).join('');
     }
     
     if (modal.parentElement !== document.body) {
@@ -6114,100 +6293,89 @@ if (!window.__pollutantModalListenersBound) {
       <i data-lucide="x" style="width: 18px; height: 18px; pointer-events: none;"></i>
     </button>
     
-    <div class="pollutant-modal-scroll" style="padding: clamp(20px, 4vw, 32px); overflow-y: auto; overscroll-behavior: contain; flex: 1;">
-        <!-- Header -->
-        <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 22px; padding-right: 36px;">
-            <div id="pm-modal-icon-bg" style="width: 54px; height: 54px; border-radius: 16px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5); border: 1px solid #e2e8f0;">🌫️</div>
-            <div>
-                <h2 id="pm-modal-title" style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #0f172a; font-family: var(--font-sans); line-height: 1.25;">Particulate Matter 2.5 (PM2.5)</h2>
-                <div style="font-size: 13.5px; font-weight: 600; color: #64748b;">Indian Standard (CPCB Limit): <span id="pm-modal-limit" style="color: #00bfa5;">60 µg/m³</span></div>
-            </div>
-        </div>
-
-        <!-- Current Reading Box -->
-        <div class="pm-reading-box" style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
-            <div>
-                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">CURRENT READING</div>
-                <div style="display: flex; align-items: baseline; gap: 8px;">
-                    <div id="pm-modal-val" style="font-size: 38px; font-weight: 900; color: #0f172a; line-height: 1; font-family: var(--font-mono);">7.09</div>
-                    <div id="pm-modal-unit" style="font-size: 20px; font-weight: 700; color: #0f172a; font-family: var(--font-mono);">µg/m³</div>
+    <div class="pollutant-modal-scroll" style="padding: clamp(18px, 3.5vw, 26px); overflow-y: auto; overscroll-behavior: contain; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Parameter Header Banner (Matches Pic 1) -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div id="pm-modal-icon-bg" style="width: 44px; height: 44px; border-radius: 12px; background: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">🌫️</div>
+                <div>
+                    <h2 id="pm-modal-title" style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a; font-family: var(--font-sans); line-height: 1.25;">Particulate Matter 10 (PM10)</h2>
+                    <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-top: 2px;">
+                        <span id="pm-modal-limit-label">CPCB 24-Hour Standard:</span> <span id="pm-modal-limit" style="color: #00bfa5; font-weight: 700;">≤100 µg/m³</span>
+                    </div>
                 </div>
             </div>
-            <div id="pm-modal-status" style="display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; background: #dcfce7; color: #16a34a; font-size: 13px; font-weight: 700;">
-                <i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Optimal / Normal Range
+
+            <!-- Live Value Badge -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);">LIVE VALUE:</span>
+                <div id="pm-modal-status" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: #dcfce7; color: #16a34a; font-size: 12.5px; font-weight: 700; border: 1px solid #bbf7d0;">
+                    <span id="pm-modal-status-dot" style="width: 7px; height: 7px; border-radius: 50%; background-color: #16a34a;"></span>
+                    <span id="pm-modal-val-text"><span id="pm-modal-val">34.4</span> <span id="pm-modal-unit">µg/m³</span> • <span id="pm-modal-tier-label">Good</span></span>
+                </div>
             </div>
         </div>
 
-        <!-- Concentration Scale Box -->
-        <div class="pm-scale-box" style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); background: #ffffff;">
-            <div class="pm-scale-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; flex-wrap: wrap;">
-                <div class="pm-scale-title" style="font-size: 11.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);"><span id="pm-modal-short">PM2.5</span> CONCENTRATION SCALE (CPCB)</div>
-                <div class="pm-scale-badge" style="font-size: 11.5px; font-weight: 700; color: #00bfa5;">Indian NAQI Standard</div>
+        <!-- Range Scale & Tiers Box (Matches Pic 1) -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; flex-wrap: wrap;">
+                <div style="font-size: 11.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);">
+                    <span id="pm-modal-short">PM10</span> RANGE SCALE &amp; TIERS
+                </div>
+                <div id="pm-modal-unit-badge" style="font-size: 11.5px; font-weight: 700; color: #00bfa5; font-family: var(--font-mono);">
+                    Unit: µg/m³
+                </div>
             </div>
-            
+
             <div style="position: relative; width: 100%;">
-                <div class="pm-scale-labels" style="display: grid; grid-template-columns: repeat(6, 1fr); margin-bottom: 8px; font-size: 9.5px; font-weight: 700; line-height: 1;">
-                    <div style="color: #475569; text-align: left;">Good</div>
-                    <div style="color: #475569; text-align: center;">Moderate</div>
-                    <div style="color: #475569; text-align: center;">Poor</div>
-                    <div style="color: #475569; text-align: center;">Unhealthy</div>
-                    <div style="color: #475569; text-align: center;">Severe</div>
-                    <div style="color: #475569; text-align: right;">Hazardous</div>
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); margin-bottom: 8px; font-size: 10px; font-weight: 700; line-height: 1;">
+                    <div style="color: #334155; text-align: left;">Good</div>
+                    <div style="color: #334155; text-align: center;">Moderate</div>
+                    <div style="color: #334155; text-align: center;">Poor</div>
+                    <div style="color: #334155; text-align: center;">Unhealthy</div>
+                    <div style="color: #334155; text-align: center;">Severe</div>
+                    <div style="color: #334155; text-align: right;">Hazardous</div>
                 </div>
-                
-                <div class="pm-scale-track live-slider-track" style="position: relative; height: 6px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
+
+                <div class="pm-scale-track live-slider-track" style="position: relative; height: 8px; border-radius: 999px; background-color: #e2e8f0; margin-bottom: 8px;">
                     <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #59b61f 0%, #59b61f 16.666%, #eec732 16.666%, #eec732 33.333%, #ea8c34 33.333%, #ea8c34 50%, #e95478 50%, #e95478 66.666%, #b33fba 66.666%, #b33fba 83.333%, #c92033 83.333%, #c92033 100%); box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);"></div>
                     <div id="pm-modal-marker" style="position: absolute; top: 50%; left: 10%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: #ffffff; border: 3.5px solid #59b61f; box-shadow: 0 1px 4px rgba(0,0,0,0.25); z-index: 3; transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;"></div>
                 </div>
-                
-                <div id="pm-modal-ticks" class="pm-scale-ticks" style="position: relative; height: 16px; font-size: 10px; font-weight: 600; color: #64748b; font-family: var(--font-mono);">
+
+                <div id="pm-modal-ticks" class="pm-scale-ticks" style="position: relative; height: 16px; font-size: 10px; font-weight: 700; color: #475569; font-family: var(--font-mono);">
                     <span style="position: absolute; left: 0%; line-height: 1;">0</span>
-                    <span id="pm-t1" style="position: absolute; left: 16.666%; transform: translateX(-50%); line-height: 1;">30</span>
-                    <span id="pm-t2" style="position: absolute; left: 33.333%; transform: translateX(-50%); line-height: 1;">60</span>
-                    <span id="pm-t3" style="position: absolute; left: 50%; transform: translateX(-50%); line-height: 1;">90</span>
-                    <span id="pm-t4" style="position: absolute; left: 66.666%; transform: translateX(-50%); line-height: 1;">120</span>
-                    <span id="pm-t5" style="position: absolute; left: 83.333%; transform: translateX(-50%); line-height: 1;">250</span>
-                    <span id="pm-t6" style="position: absolute; right: 0%; line-height: 1;">250+</span>
+                    <span id="pm-t1" style="position: absolute; left: 16.666%; transform: translateX(-50%); line-height: 1;">50</span>
+                    <span id="pm-t2" style="position: absolute; left: 33.333%; transform: translateX(-50%); line-height: 1;">100</span>
+                    <span id="pm-t3" style="position: absolute; left: 50%; transform: translateX(-50%); line-height: 1;">250</span>
+                    <span id="pm-t4" style="position: absolute; left: 66.666%; transform: translateX(-50%); line-height: 1;">350</span>
+                    <span id="pm-t5" style="position: absolute; left: 83.333%; transform: translateX(-50%); line-height: 1;">430</span>
+                    <span id="pm-t6" style="position: absolute; right: 0%; line-height: 1;">430+</span>
                 </div>
             </div>
         </div>
 
-        <!-- Info sections -->
-        <div style="margin-bottom: 20px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
-            <h3 style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="info" style="width: 16px; height: 16px; color: #00bfa5;"></i> What is <span id="pm-modal-q">PM2.5</span>?
-            </h3>
-            <p id="pm-modal-desc" style="font-size: 13.5px; color: #475569; line-height: 1.6; margin: 0;">
-                Fine inhalable particles with diameters 2.5 micrometers or smaller.
-            </p>
-        </div>
-
-        <div>
-            <h3 style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="heart-pulse" style="width: 16px; height: 16px; color: #ef4444;"></i> Health &amp; Environmental Impact
-            </h3>
-            <p id="pm-modal-health" style="font-size: 13.5px; color: #475569; line-height: 1.6; margin: 0;">
-                Causes respiratory inflammation and impacts sensitive individuals on prolonged exposure.
-            </p>
-        </div>
-
-        <!-- Dynamic Pollutant Concentration Scale Section (Inside Modal) -->
-        <div id="pm-modal-scale-section" style="margin-top: 22px; border-top: 1px solid #e2e8f0; padding-top: 18px;">
-            <div style="margin-bottom: 12px;">
-                <h3 style="font-size: 15.5px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-sans);">
-                    <i data-lucide="shield-alert" style="width: 18px; height: 18px; color: #00bfa5;"></i>
-                    <span id="pm-modal-scale-heading">PM2.5 Scale (NAAQS Standard)</span>
+        <!-- About & Health Side-by-Side (Matches Pic 1) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);" class="grid-cols-1 sm:grid-cols-2">
+            <div>
+                <h3 style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="info" style="width: 15px; height: 15px; color: #00bfa5;"></i> About Parameter
                 </h3>
-                <p id="pm-modal-scale-sub" style="font-size: 12px; color: #64748b; margin-top: 4px; margin-bottom: 0; line-height: 1.4;">
-                    National Ambient Air Quality Standard limits for PM2.5 in µg/m³.
+                <p id="pm-modal-desc" style="font-size: 12px; color: #475569; line-height: 1.55; margin: 0;">
+                    Inhalable particles with diameters that are generally 10 micrometers and smaller.
                 </p>
             </div>
 
-            <div id="pm-modal-scale-list" style="display: flex; flex-direction: column; gap: 9px;">
-                <!-- Populated dynamically per pollutant in openPollutantModal -->
+            <div>
+                <h3 style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="heart-pulse" style="width: 15px; height: 15px; color: #ef4444;"></i> Health &amp; Ambient Impact
+                </h3>
+                <p id="pm-modal-health" style="font-size: 12px; color: #475569; line-height: 1.55; margin: 0;">
+                    Can irritate the eyes, nose, and throat. Reduces lung function and exacerbates asthma.
+                </p>
             </div>
         </div>
 
-    </div>
+    </div></div>
   </div>
 </div>

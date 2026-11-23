@@ -819,7 +819,7 @@ var calculateCpcbSubIndex = function(param, val) {
         if (v <= chi) return Math.round(((ihi - ilo) / (chi - clo)) * (v - clo) + ilo);
     }
     const [clo, chi, ilo, ihi] = tiers[tiers.length - 1];
-    return Math.min(500, Math.round(((ihi - ilo) / (chi - clo)) * (v - clo) + ilo));
+    return Math.round(((ihi - ilo) / (chi - clo)) * (v - clo) + ilo);
 };
 
 // 6-Tier scales matching the Live page bar standards for each air pollutant

@@ -36,7 +36,7 @@ if (!$is_node_2) {
   </div>
 
   <!-- Sub-Navigation Selector: AQI Historical vs Weather Historical -->
-  <div class="flex items-center justify-center mb-1">
+  <div class="flex items-center justify-center mb-2.5 sm:mb-4">
     <div class="w-full sm:w-auto grid grid-cols-2 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
       <button id="tab-aqi" onclick="switchHistTab('aqi')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'aqi' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[42px]">
         <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>

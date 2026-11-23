@@ -10,7 +10,7 @@ $req_subtab = (isset($_GET['tab']) && in_array($_GET['tab'], ['aqi', 'weather', 
 $req_range_days = (isset($_GET['days']) && in_array((int)$_GET['days'], [1, 3, 7, 30])) ? (int)$_GET['days'] : 1;
 $valid_params = [
     'cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3',
-    'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge', 'pressure', 'uv_index',
+    'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge', 'pressure', 'uv_index', 'solar_radiation',
     'soil_temperature', 'soil_humidity', 'soil_moisture', 'soil_ph', 'soil_conductivity'
 ];
 $default_param = ($req_subtab === 'soil') ? 'soil_moisture' : (($req_subtab === 'weather') ? 'temperature' : 'cpcb_aqi');
@@ -140,144 +140,46 @@ $init_history_json = 'null';
   </div>
 
   <!-- ── Analytics Date & Range Picker Card ── -->
-  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-5 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-3.5 sm:p-5 border border-slate-200/90 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,191,165,0.08)] transition-all">
 
     <!-- Top Header Row: Date & Range Selector Controls -->
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+    <div class="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
       
-      <!-- Left Title & Status -->
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 40px; height: 40px; border-radius: 12px; background-color: #ecfdf5; border: 1px solid #a7f3d0; display: flex; align-items: center; justify-content: center; color: #00bfa5; flex-shrink: 0;">
-          <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+      <!-- Left Title & Subtitle -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200/70 flex items-center justify-center text-[#00bfa5] shrink-0 shadow-xs">
+          <i data-lucide="calendar" class="w-5 h-5"></i>
         </div>
         <div>
-          <div style="font-size: 14px; sm:font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+          <div class="text-sm sm:text-[15px] font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
             <span id="range-header-title">Select Date (24-Hour Telemetry)</span>
           </div>
-          <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-            <span id="date-subtitle-desktop">Hourly records: 12:00 AM – 12:00 AM</span>
+          <div class="text-[11.5px] sm:text-xs text-slate-500 font-medium mt-0.5">
+            <span id="date-subtitle-desktop">Hourly sensor progression: 12:00 AM – 12:00 AM</span>
           </div>
         </div>
       </div>
 
-      <!-- Right Action Controls: Range Dropdown (24h, 3D, 7D, 30D) & Date Picker -->
-      <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
+      <!-- Right Action Controls: Range Dropdown & Date Picker -->
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
         <!-- Range Selector Dropdown -->
-        <div style="position: relative; display: inline-flex; align-items: center;">
-          <select id="range-select" onchange="setRangeDays(this.value)" class="min-h-[38px] sm:min-h-[42px] cursor-pointer text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all duration-200" style="padding: 7px 32px 7px 32px; border-radius: 12px; border: 1.5px solid #cbd5e1; outline: none; appearance: none; -webkit-appearance: none; -moz-appearance: none; font-family: var(--font-sans); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="relative inline-flex items-center">
+          <select id="range-select" onchange="setRangeDays(this.value)" class="min-h-[38px] sm:min-h-[40px] cursor-pointer text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all duration-200 pl-8 pr-7 py-2 rounded-xl border border-slate-200 outline-none appearance-none shadow-xs">
             <option value="1" <?= $req_range_days === 1 ? 'selected' : '' ?>>24h</option>
             <option value="3" <?= $req_range_days === 3 ? 'selected' : '' ?>>3 Days</option>
             <option value="7" <?= $req_range_days === 7 ? 'selected' : '' ?>>7 Days</option>
             <option value="30" <?= $req_range_days === 30 ? 'selected' : '' ?>>30 Days</option>
           </select>
-          <i data-lucide="clock-4" style="position: absolute; left: 10px; width: 14px; height: 14px; color: #00bfa5; pointer-events: none;"></i>
-          <i data-lucide="chevron-down" style="position: absolute; right: 10px; width: 14px; height: 14px; color: #64748b; pointer-events: none;"></i>
+          <i data-lucide="clock-4" class="absolute left-2.5 w-3.5 h-3.5 text-[#00bfa5] pointer-events-none"></i>
+          <i data-lucide="chevron-down" class="absolute right-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none"></i>
         </div>
 
         <!-- Date Picker Input -->
-        <div style="position: relative; display: inline-flex; align-items: center;">
-          <input type="date" id="history-date-picker" value="<?= htmlspecialchars($req_date) ?>" max="<?= htmlspecialchars($today_ist) ?>" class="min-h-[38px] sm:min-h-[42px]" style="padding: 7px 12px 7px 32px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background-color: #f8fafc; cursor: pointer; font-family: var(--font-sans); outline: none;">
-          <i data-lucide="calendar" style="position: absolute; left: 10px; width: 14px; height: 14px; color: #00bfa5; pointer-events: none;"></i>
+        <div class="relative inline-flex items-center">
+          <input type="date" id="history-date-picker" value="<?= htmlspecialchars($req_date) ?>" max="<?= htmlspecialchars($today_ist) ?>" class="min-h-[38px] sm:min-h-[40px] pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all cursor-pointer outline-none shadow-xs">
+          <i data-lucide="calendar" class="absolute left-2.5 w-3.5 h-3.5 text-[#00bfa5] pointer-events-none"></i>
         </div>
       </div>
-    </div>
-
-    <!-- Bottom Integrated Section: 24-Hour Dynamic Metrics (Shown for 1 Day range) -->
-    <div id="summary-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; transition: max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, margin 0.25s ease, padding 0.25s ease; overflow: hidden; max-height: 380px; opacity: 1;">
-      
-      <!-- Left: Date & Logged Count -->
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 2px 10px rgba(0, 191, 165, 0.25); flex-shrink: 0;">
-          <i data-lucide="clock" style="width: 19px; height: 19px;"></i>
-        </div>
-        <div>
-          <div id="summary-date-display" style="font-size: 15px; font-weight: 800; color: #0f172a;">--</div>
-          <div style="font-size: 12px; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-weight: 700; color: #00bfa5;">24 Hourly Points (<span id="log-count">0</span> Logged)</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: Dynamic Average Section -->
-      <div id="summary-aqi-block" style="display: <?= $req_subtab === 'weather' ? 'none' : 'flex' ?>; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <!-- Avg AQI Card Badge -->
-        <div id="avg-aqi-badge-container" style="display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-radius: 16px; background-color: #f8fafc; border: 1.5px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: all 0.25s ease;">
-          <div style="display: flex; flex-direction: column;">
-            <div id="avg-aqi-title" style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 5px;">
-              <span id="avg-aqi-dot" style="width: 7px; height: 7px; border-radius: 50%; background-color: #94a3b8; display: inline-block;"></span>
-              Avg AQI
-            </div>
-            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 2px;">
-              <span id="avg-aqi-val" style="font-size: 24px; font-weight: 900; color: #64748b; font-family: var(--font-mono); line-height: 1;">--</span>
-              <span id="avg-aqi-label" style="display: none; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background-color: #e2e8f0; color: #475569; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">--</span>
-            </div>
-          </div>
-          <div id="min-max-aqi" style="display: none; border-left: 1px solid #e2e8f0; padding-left: 12px; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 600; color: #64748b;">
-            <div>Min: <strong id="min-aqi-val" style="font-family: var(--font-mono);">--</strong></div>
-            <div>Peak: <strong id="max-aqi-val" style="font-family: var(--font-mono);">--</strong></div>
-          </div>
-        </div>
-
-        <!-- Pollutants & Meteorological Mini-Chips -->
-        <div id="mini-chips-container" style="display: none; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">PM2.5: </span><strong id="avg-pm25" style="color: #0284c7; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">PM10: </span><strong id="avg-pm10" style="color: #6366f1; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">CO: </span><strong id="avg-co" style="color: #16a34a; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">NO₂: </span><strong id="avg-no2" style="color: #9333ea; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">O₃: </span><strong id="avg-o3" style="color: #d97706; font-family: var(--font-mono);">--</strong>
-          </div>
-        </div>
-      </div>
-
-      <!-- Ambient Weather Summary Block -->
-      <div id="summary-weather-block" style="display: <?= $req_subtab === 'weather' ? 'flex' : 'none' ?>; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #9a3412; font-weight: 600;">Avg Temp: </span>
-          <strong id="w-avg-temp" style="color: #ea580c; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #0369a1; font-weight: 600;">Avg Humidity: </span>
-          <strong id="w-avg-hum" style="color: #0284c7; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #065f46; font-weight: 600;">Avg Wind Speed: </span>
-          <strong id="w-avg-wind" style="color: #059669; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #1e40af; font-weight: 600;">Rain Gauge: </span>
-          <strong id="w-avg-rain" style="color: #2563eb; font-family: var(--font-mono);">--</strong>
-        </div>
-      </div>
-
-      <!-- Dedicated Soil Summary Block -->
-      <div id="summary-soil-block" style="display: <?= $req_subtab === 'soil' ? 'flex' : 'none' ?>; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #0369a1; font-weight: 600;">Avg Soil Moisture: </span>
-          <strong id="w-avg-soil-hum" style="color: #0284c7; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #9a3412; font-weight: 600;">Avg Soil Temp: </span>
-          <strong id="w-avg-soil-temp" style="color: #ea580c; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #065f46; font-weight: 600;">Avg Soil pH: </span>
-          <strong id="w-avg-soil-ph" style="color: #059669; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #6b21a8; font-weight: 600;">Avg Soil EC: </span>
-          <strong id="w-avg-soil-ec" style="color: #7c3aed; font-family: var(--font-mono);">--</strong>
-        </div>
-      </div>
-      
     </div>
   </div>
 
@@ -389,6 +291,13 @@ $init_history_json = 'null';
                 </div>
                 <div class="trend-check-box"><?= $req_param === 'uv_index' ? '✓' : '' ?></div>
               </div>
+              <div class="trend-dropdown-item <?= $req_param === 'solar_radiation' ? 'active' : '' ?>" data-param="solar_radiation" onclick="selectTrendParam('solar_radiation', '☀️', 'Solar Radiation', 'W/m²')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">☀️</span>
+                  <span>Solar Radiation</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'solar_radiation' ? '✓' : '' ?></div>
+              </div>
             </div>
 
             <!-- AQI Items for Node 2 -->
@@ -497,7 +406,7 @@ $init_history_json = 'null';
     </div>
 
     <div style="overflow-x: auto; max-height: 440px; -webkit-overflow-scrolling: touch;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 750px;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 980px;">
         <thead style="position: sticky; top: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; z-index: 2;">
           <tr style="color: #475569; font-size: 12px;" id="table-head-row">
             <!-- Headers injected by JS -->
@@ -755,43 +664,10 @@ function persistHistoricalState() {
 // High-performance in-memory cache for instant 0ms range switching
 var clientRangeCache = window.__historicalCache = window.__historicalCache || {};
 var pendingRangeFetches = window.__pendingHistFetches = window.__pendingHistFetches || {};
-var summaryCollapseTimer = null;
 
 function getCacheKey(date, days) {
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '2'));
     return `${date}_${days}_n${activeNode}`;
-}
-
-function animateSummarySection(show) {
-    const summarySection = document.getElementById('summary-section');
-    if (!summarySection) return;
-    if (summaryCollapseTimer) {
-        clearTimeout(summaryCollapseTimer);
-        summaryCollapseTimer = null;
-    }
-    if (show) {
-        summarySection.style.display = 'flex';
-        requestAnimationFrame(() => {
-            summarySection.style.maxHeight = '380px';
-            summarySection.style.opacity = '1';
-            summarySection.style.marginTop = '18px';
-            summarySection.style.paddingTop = '16px';
-            summarySection.style.borderTopWidth = '1px';
-            summarySection.style.pointerEvents = 'auto';
-        });
-    } else {
-        summarySection.style.maxHeight = '0px';
-        summarySection.style.opacity = '0';
-        summarySection.style.marginTop = '0px';
-        summarySection.style.paddingTop = '0px';
-        summarySection.style.borderTopWidth = '0px';
-        summarySection.style.pointerEvents = 'none';
-        summaryCollapseTimer = setTimeout(() => {
-            if (currentRangeDays > 1 && summarySection) {
-                summarySection.style.display = 'none';
-            }
-        }, 320);
-    }
 }
 
 function setRangeDays(days, skipFetch = false) {
@@ -841,7 +717,7 @@ var PARAM_COLORS = {
     temperature: '#00bfa5', humidity: '#00bfa5',
     wind_speed: '#4f46e5', wind_gust: '#8b5cf6',
     wind_direction: '#0284c7', rain_gauge: '#0891b2',
-    pressure: '#06b6d4', uv_index: '#f59e0b',
+    pressure: '#ec4899', uv_index: '#f43f5e', solar_radiation: '#f59e0b',
     soil_temperature: '#d97706', soil_humidity: '#0284c7', soil_ph: '#10b981'
 };
 
@@ -892,8 +768,8 @@ var PARAM_UNITS = {
     cpcb_aqi: '', aqi: '', pm25: 'µg/m³', pm10: 'µg/m³',
     co: 'mg/m³', no2: 'µg/m³', o3: 'µg/m³',
     temperature: '°C', humidity: '%',
-    wind_speed: 'km/h', wind_gust: 'km/h', wind_direction: '°', rain_gauge: 'mm',
-    pressure: 'mb', uv_index: '',
+    wind_speed: 'km/h', wind_gust: 'm/s', wind_direction: '°', rain_gauge: 'mm',
+    pressure: 'mb', uv_index: '', solar_radiation: 'W/m²',
     soil_temperature: '°C', soil_humidity: '%', soil_moisture: '%', soil_ph: 'pH', soil_conductivity: 'µS/cm'
 };
 
@@ -937,6 +813,7 @@ function getParamDisplayName(param) {
     if (param === 'rain_gauge') return 'Rainfall';
     if (param === 'pressure') return 'Pressure';
     if (param === 'uv_index') return 'UV Index';
+    if (param === 'solar_radiation') return 'Solar Radiation';
     if (param === 'soil_temperature') return 'Soil Temperature';
     if (param === 'soil_humidity') return 'Soil Humidity';
     if (param === 'soil_ph') return 'Soil pH';
@@ -1094,9 +971,15 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
             // Silently fetch fresh data in background to ensure all latest hours are rendered
             fetchRangeData(queryDate, days, true).then(freshData => {
                 if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
-                    historicalDataAqi = freshData.aqi || [];
-                    historicalDataWeather = freshData.weather || [];
-                    renderUI();
+                    const prevLenAqi = historicalDataAqi.length;
+                    const prevLenW = historicalDataWeather.length;
+                    const newLenAqi = (freshData.aqi || []).length;
+                    const newLenW = (freshData.weather || []).length;
+                    if (prevLenAqi !== newLenAqi || prevLenW !== newLenW) {
+                        historicalDataAqi = freshData.aqi || [];
+                        historicalDataWeather = freshData.weather || [];
+                        renderUI();
+                    }
                 }
             }).catch(() => {});
             return;
@@ -1123,9 +1006,15 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
             if (isToday || ageMs > 30000) {
                 fetchRangeData(queryDate, days, true).then(freshData => {
                     if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
-                        historicalDataAqi = freshData.aqi || [];
-                        historicalDataWeather = freshData.weather || [];
-                        renderUI();
+                        const prevLenAqi = historicalDataAqi.length;
+                        const prevLenW = historicalDataWeather.length;
+                        const newLenAqi = (freshData.aqi || []).length;
+                        const newLenW = (freshData.weather || []).length;
+                        if (prevLenAqi !== newLenAqi || prevLenW !== newLenW) {
+                            historicalDataAqi = freshData.aqi || [];
+                            historicalDataWeather = freshData.weather || [];
+                            renderUI();
+                        }
                     }
                 }).catch(() => {});
             }
@@ -1227,7 +1116,7 @@ function switchHistTab(tab, skipRender = false) {
             currentParam = 'cpcb_aqi';
         }
     } else if (tab === 'weather') {
-        if (!['temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge', 'pressure', 'uv_index'].includes(currentParam)) {
+        if (!['temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge', 'pressure', 'uv_index', 'solar_radiation'].includes(currentParam)) {
             currentParam = 'temperature';
         }
     } else { // soil
@@ -1248,13 +1137,6 @@ function switchHistTab(tab, skipRender = false) {
     if (tabAqi) tabAqi.className = (tab === 'aqi') ? activeCls : inactiveCls;
     if (tabWeather) tabWeather.className = (tab === 'weather') ? activeCls : inactiveCls;
     if (tabSoil) tabSoil.className = (tab === 'soil') ? activeCls : inactiveCls;
-
-    const aqiBlock = document.getElementById('summary-aqi-block');
-    const weatherBlock = document.getElementById('summary-weather-block');
-    const soilBlock = document.getElementById('summary-soil-block');
-    if (aqiBlock) aqiBlock.style.display = (tab === 'aqi') ? 'flex' : 'none';
-    if (weatherBlock) weatherBlock.style.display = (tab === 'weather') ? 'flex' : 'none';
-    if (soilBlock) soilBlock.style.display = (tab === 'soil') ? 'flex' : 'none';
 
     const tTitle = document.getElementById('trend-graph-title-text');
     const tSub = document.getElementById('trend-graph-subtitle');
@@ -1315,6 +1197,7 @@ function setParam(param, skipRender = false) {
         'rain_gauge': { icon: '🌧️', label: 'Rain Gauge', unit: 'mm', color: '#2563eb' },
         'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
         'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
+        'solar_radiation': { icon: '☀️', label: 'Solar Radiation', unit: 'W/m²', color: '#f59e0b' },
         'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' },
         'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
         'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
@@ -1443,6 +1326,9 @@ function renderUI(skipDayFilter = false) {
                         o3: null,
                         temperature: null,
                         humidity: null,
+                        pressure: null,
+                        uv_index: null,
+                        solar_radiation: null,
                         wind_speed: null,
                         wind_gust: null,
                         wind_direction: null,
@@ -1460,13 +1346,15 @@ function renderUI(skipDayFilter = false) {
         const isSoil = currentSubTab === 'soil';
         const loggedCount = filteredDayData.filter(d => !d.isMissing && (
             isAqi ? d.cpcb_aqi != null : (
-                isSoil ? (d.soil_temperature != null || d.soil_humidity != null || d.soil_moisture != null) : (d.temperature != null || d.humidity != null)
+                isSoil ? (d.soil_temperature != null || d.soil_humidity != null || d.soil_moisture != null) : (d.temperature != null || d.humidity != null || d.pressure != null || d.uv_index != null || d.solar_radiation != null)
             )
         )).length;
         
         const subtitleEl = document.getElementById('date-subtitle-desktop');
         if (subtitleEl) {
-            subtitleEl.innerText = `Showing ${filteredDayData.length} records (${loggedCount} logged) (${rangeLabel})`;
+            subtitleEl.innerText = days === 1
+                ? 'Hourly sensor progression telemetry (12:00 AM – 12:00 AM)'
+                : `Multi-day telemetry trend analysis (${days} Days: ${rangeLabel})`;
         }
         
         const chartTitle = document.getElementById('chart-main-title');
@@ -1494,11 +1382,6 @@ function renderUI(skipDayFilter = false) {
         if (tableSubtitle) {
             tableSubtitle.innerText = `${days === 1 ? '24 Hourly Telemetry Rows' : days + '-Day Telemetry Rows'} (${rangeLabel}) — ${loggedCount} Logged Readings`;
         }
-    }
-    
-    const summarySection = document.getElementById('summary-section');
-    if (summarySection) {
-        animateSummarySection(days === 1);
     }
     
     if (filteredDayData.length === 0) {
@@ -1538,7 +1421,7 @@ function renderUI(skipDayFilter = false) {
             chartInstance.destroy();
             chartInstance = null;
         }
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 36px 20px; color: #64748b;">No telemetry records available for ${rangeLabel}.</td></tr>`;
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 36px 20px; color: #64748b;">No telemetry records available for ${rangeLabel}.</td></tr>`;
         return;
     }
 
@@ -1546,7 +1429,7 @@ function renderUI(skipDayFilter = false) {
     const isSoilCurrent = currentSubTab === 'soil';
     const loggedCount = filteredDayData.filter(d => !d.isMissing && (
         isAqiCurrent ? d.cpcb_aqi != null : (
-            isSoilCurrent ? (d.soil_temperature != null || d.soil_humidity != null || d.soil_moisture != null) : (d.temperature != null || d.humidity != null)
+            isSoilCurrent ? (d.soil_temperature != null || d.soil_humidity != null || d.soil_moisture != null) : (d.temperature != null || d.humidity != null || d.pressure != null || d.uv_index != null || d.solar_radiation != null)
         )
     )).length;
 
@@ -1653,24 +1536,6 @@ function renderUI(skipDayFilter = false) {
                 }
             }
         });
-
-        const summaryDateEl = document.getElementById('summary-date-display');
-        if (summaryDateEl) {
-            const [y, m, d] = parseDateParts(dateInput);
-            const dtObj = new Date(y, m - 1, d);
-            summaryDateEl.innerText = dtObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-        }
-        const logCountEl = document.getElementById('log-count');
-        if (logCountEl) {
-            logCountEl.innerText = loggedCount;
-        }
-
-        const aqiBlock = document.getElementById('summary-aqi-block');
-        const weatherBlock = document.getElementById('summary-weather-block');
-        const soilBlock = document.getElementById('summary-soil-block');
-        if (aqiBlock) aqiBlock.style.display = currentSubTab === 'aqi' ? 'flex' : 'none';
-        if (weatherBlock) weatherBlock.style.display = currentSubTab === 'weather' ? 'flex' : 'none';
-        if (soilBlock) soilBlock.style.display = currentSubTab === 'soil' ? 'flex' : 'none';
 
         if (currentSubTab === 'aqi') {
             // Node 2 standard CPCB NAQI calculation from 24-hr mean criteria pollutant concentrations
@@ -1818,6 +1683,7 @@ function renderUI(skipDayFilter = false) {
             'rain_gauge': { icon: '🌧️', label: 'Rain Gauge', unit: 'mm', color: '#2563eb' },
             'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
             'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
+            'solar_radiation': { icon: '☀️', label: 'Solar Radiation', unit: 'W/m²', color: '#f59e0b' },
             'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' },
             'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
             'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
@@ -1857,6 +1723,15 @@ function renderUI(skipDayFilter = false) {
                         if ((val === null || val === undefined || val === '') && (currentParam === 'soil_humidity' || currentParam === 'soil_moisture')) {
                             val = d.soil_moisture != null ? d.soil_moisture : d.soil_humidity;
                         }
+                        if ((val === null || val === undefined || val === '') && currentParam === 'solar_radiation') {
+                            val = d.solar_radiation != null ? d.solar_radiation : (d.solar != null ? d.solar : d.radiation);
+                        }
+                        if ((val === null || val === undefined || val === '') && currentParam === 'temperature') {
+                            val = d.temperature != null ? d.temperature : d.soil_temperature;
+                        }
+                        if ((val === null || val === undefined || val === '') && currentParam === 'humidity') {
+                            val = d.humidity != null ? d.humidity : (d.soil_moisture != null ? d.soil_moisture : d.soil_humidity);
+                        }
                         if (val !== null && val !== undefined && val !== '') {
                             const num = parseFloat(val);
                             if (!isNaN(num)) hourMap[hr] = num;
@@ -1880,6 +1755,15 @@ function renderUI(skipDayFilter = false) {
                 let val = d[currentParam];
                 if ((val === null || val === undefined || val === '') && (currentParam === 'soil_humidity' || currentParam === 'soil_moisture')) {
                     val = d.soil_moisture != null ? d.soil_moisture : d.soil_humidity;
+                }
+                if ((val === null || val === undefined || val === '') && currentParam === 'solar_radiation') {
+                    val = d.solar_radiation != null ? d.solar_radiation : (d.solar != null ? d.solar : d.radiation);
+                }
+                if ((val === null || val === undefined || val === '') && currentParam === 'temperature') {
+                    val = d.temperature != null ? d.temperature : d.soil_temperature;
+                }
+                if ((val === null || val === undefined || val === '') && currentParam === 'humidity') {
+                    val = d.humidity != null ? d.humidity : (d.soil_moisture != null ? d.soil_moisture : d.soil_humidity);
                 }
                 if (val !== null && val !== undefined && val !== '') {
                     const num = parseFloat(val);
@@ -2172,6 +2056,9 @@ function renderUI(skipDayFilter = false) {
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Time</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ea580c;">Temp (°C)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0284c7;">Humidity (%)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ec4899;">Pressure (mb)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f43f5e;">UV Index</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f59e0b;">Solar (W/m²)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0d9488;">Wind Speed (km/h)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0891b2;">Wind Gust (m/s)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #64748b;">Wind Dir</th>
@@ -2195,7 +2082,7 @@ function renderUI(skipDayFilter = false) {
                 dateStr = dt.toLocaleDateString('en-GB');
                 timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
             }
-            const isMissing = Boolean(d.isMissing || (d.temperature == null && d.humidity == null));
+            const isMissing = Boolean(d.isMissing || (d.temperature == null && d.humidity == null && d.pressure == null && d.uv_index == null && d.solar_radiation == null));
             const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
 
             const tempCell = (d.temperature != null && d.temperature !== '') 
@@ -2203,6 +2090,18 @@ function renderUI(skipDayFilter = false) {
                 : emptyCell;
             const humCell = (d.humidity != null && d.humidity !== '') 
                 ? `<span style="color: #0284c7; font-weight: 700; font-family: var(--font-mono);">${Number(d.humidity).toFixed(1)}%</span>` 
+                : emptyCell;
+            const pressCell = (d.pressure != null && d.pressure !== '') 
+                ? `<span style="color: #ec4899; font-weight: 700; font-family: var(--font-mono);">${Math.round(Number(d.pressure))} mb</span>` 
+                : emptyCell;
+            const uvCell = (d.uv_index != null && d.uv_index !== '') 
+                ? `<span style="color: #f43f5e; font-weight: 700; font-family: var(--font-mono);">${Number(d.uv_index).toFixed(1)}</span>` 
+                : emptyCell;
+            const rawSolarVal = (d.solar_radiation != null && d.solar_radiation !== '')
+                ? d.solar_radiation
+                : ((d.solar != null && d.solar !== '') ? d.solar : ((d.radiation != null && d.radiation !== '') ? d.radiation : null));
+            const solarCell = (rawSolarVal != null && rawSolarVal !== '')
+                ? `<span style="color: #f59e0b; font-weight: 700; font-family: var(--font-mono);">${Number(rawSolarVal).toFixed(1)} W/m²</span>` 
                 : emptyCell;
             const windCell = (d.wind_speed != null && d.wind_speed !== '') 
                 ? `<span style="color: #0d9488; font-weight: 700; font-family: var(--font-mono);">${Number(d.wind_speed).toFixed(1)}</span>` 
@@ -2222,6 +2121,9 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
                 <td style="padding: 10px 16px;">${tempCell}</td>
                 <td style="padding: 10px 16px;">${humCell}</td>
+                <td style="padding: 10px 16px;">${pressCell}</td>
+                <td style="padding: 10px 16px;">${uvCell}</td>
+                <td style="padding: 10px 16px;">${solarCell}</td>
                 <td style="padding: 10px 16px;">${windCell}</td>
                 <td style="padding: 10px 16px;">${gustCell}</td>
                 <td style="padding: 10px 16px;">${dirCell}</td>
@@ -2720,7 +2622,7 @@ function downloadCSV() {
             csv += `${dateStr},${timeStr},${sHum},${sTemp},${sPh},${sEc}\n`;
         });
     } else {
-        csv += 'Date,Time,Temp,Humidity,WindSpeed,WindGust,WindDir,Rain\n';
+        csv += 'Date,Time,Temp,Humidity,Pressure,UVIndex,SolarRadiation,WindSpeed,WindGust,WindDir,Rain\n';
         filteredDayData.forEach(d => {
             const parts = (d.timestamp || '').split('T');
             let dateStr = '', timeStr = '';
@@ -2740,11 +2642,14 @@ function downloadCSV() {
             }
             const temp = d.temperature != null ? d.temperature : '';
             const hum = d.humidity != null ? d.humidity : '';
+            const press = d.pressure != null ? d.pressure : '';
+            const uv = d.uv_index != null ? d.uv_index : '';
+            const rawSolar = d.solar_radiation != null ? d.solar_radiation : (d.solar != null ? d.solar : (d.radiation != null ? d.radiation : ''));
             const wind = d.wind_speed != null ? d.wind_speed : '';
             const gust = d.wind_gust != null ? d.wind_gust : '';
             const dir = d.wind_direction != null ? getCompassDir(d.wind_direction) : '';
             const rain = d.rain_gauge != null ? d.rain_gauge : '';
-            csv += `${dateStr},${timeStr},${temp},${hum},${wind},${gust},${dir},${rain}\n`;
+            csv += `${dateStr},${timeStr},${temp},${hum},${press},${uv},${rawSolar},${wind},${gust},${dir},${rain}\n`;
         });
     }
     
@@ -2760,17 +2665,12 @@ function downloadCSV() {
 var autoRefreshHistInterval = null;
 
 function startAutoRefreshHist() {
-    if (autoRefreshHistInterval) clearInterval(autoRefreshHistInterval);
-    autoRefreshHistInterval = setInterval(() => {
-        if (document.hidden) return;
-        const dp = document.getElementById('history-date-picker');
-        if (!dp) return;
-        const todayStr = getLocalDateStr();
-        const currentPickerVal = normalizeDateToYmd(dp.value);
-        if (currentPickerVal === todayStr && currentRangeDays === 1) {
-            fetchAllHistory(todayStr, true);
-        }
-    }, 12000);
+    // Disabled: Historical telemetry is an archive explorer; disabling the 12s timer
+    // prevents constant reloading, spinner flashing, and chart re-animations.
+    if (autoRefreshHistInterval) {
+        clearInterval(autoRefreshHistInterval);
+        autoRefreshHistInterval = null;
+    }
 }
 
 window.__cleanupCurrentPage = function() {
@@ -2841,6 +2741,9 @@ setTimeout(() => {
 
     persistHistoricalState();
     fetchAllHistory();
+    if (window.lucide) {
+        lucide.createIcons();
+    }
     startAutoRefreshHist();
 }, 0);
 </script>

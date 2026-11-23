@@ -651,11 +651,15 @@ $is_weather_tab_active = ($is_node_2 && (
     (isset($_GET['tab']) && $_GET['tab'] === 'weather') ||
     ($current_page === 'live-weather')
 ));
-$active_layout_bg = $is_weather_tab_active
+$is_soil_tab_active = ($is_node_2 && (
+    (isset($_GET['tab']) && $_GET['tab'] === 'soil') ||
+    (isset($_GET['page']) && in_array($_GET['page'], ['live-soil', 'soil'])) ||
+    $current_page === 'live-soil' ||
+    $current_page === 'soil'
+));
+$active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
     ? 'background: transparent; background-image: none;'
-    : (($is_node_2 && (isset($_GET['tab']) && $_GET['tab'] === 'soil' || (isset($_GET['page']) && in_array($_GET['page'], ['live-soil', 'soil'])) || $current_page === 'live-soil' || $current_page === 'soil'))
-        ? 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%);'
-        : ($cool_bg_styles[$current_page] ?? $cool_bg_styles['live']));
+    : ($cool_bg_styles[$current_page] ?? $cool_bg_styles['live']);
 ?>
 <div id="app-layout-root" style="min-height: 100vh; <?= $active_layout_bg ?> position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.15s ease, background-color 0.15s ease;">
 
@@ -663,6 +667,12 @@ $active_layout_bg = $is_weather_tab_active
   <div id="node2-weather-backdrop" class="node2-weather-backdrop <?= $is_weather_tab_active ? 'active' : '' ?>" aria-hidden="true">
     <div class="weather-sky-photo-layer"></div>
     <div class="sky-ambient-vignette"></div>
+  </div>
+
+  <!-- Immediate Full-Page Light Soil Backdrop for Node 2 -->
+  <div id="node2-soil-backdrop" class="node2-soil-backdrop <?= $is_soil_tab_active ? 'active' : '' ?>" aria-hidden="true">
+    <div class="soil-photo-layer"></div>
+    <div class="soil-ambient-overlay"></div>
   </div>
 
   <!-- Sticky Header with Safe-Area Inset -->

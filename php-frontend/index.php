@@ -438,8 +438,13 @@ $is_initial_weather_live = ((string)$active_node === '2' && (
     (isset($_GET['tab']) && $_GET['tab'] === 'weather') ||
     ($page === 'live-weather')
 ));
+$is_initial_soil_live = ((string)$active_node === '2' && (
+    (isset($_GET['page']) && ($_GET['page'] === 'live-soil' || $_GET['page'] === 'soil')) ||
+    (isset($_GET['tab']) && $_GET['tab'] === 'soil') ||
+    ($page === 'live-soil')
+));
 ?>
-<body class="text-[#0f172a] font-sans antialiased <?= $is_initial_weather_live ? 'weather-backdrop-active' : '' ?>">
+<body class="text-[#0f172a] font-sans antialiased <?= $is_initial_weather_live ? 'weather-backdrop-active' : '' ?> <?= $is_initial_soil_live ? 'soil-backdrop-active' : '' ?>">
     
     <?php include __DIR__ . '/components/layout.php'; ?>
 

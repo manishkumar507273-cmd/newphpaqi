@@ -1488,39 +1488,6 @@ $init_border_colors = [
     display: none !important;
   }
 
-  /* Sub-navigation selector pills on mobile */
-  #node2-live-subnav {
-    width: 100% !important;
-    padding: 0 4px !important;
-    box-sizing: border-box !important;
-  }
-  #node2-live-subnav > div {
-    width: 100% !important;
-    max-width: 400px !important;
-    margin: 0 auto !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    gap: 3px !important;
-    padding: 3px !important;
-    box-sizing: border-box !important;
-  }
-  #node2-tab-aqi, #node2-tab-weather, #node2-tab-soil {
-    flex: 1 1 0px !important;
-    min-width: 0 !important;
-    padding: 5px 6px !important;
-    font-size: 11px !important;
-    min-height: 28px !important;
-    gap: 3px !important;
-    justify-content: center !important;
-    white-space: nowrap !important;
-  }
-  .subtab-offline-badge {
-    font-size: 7.5px !important;
-    padding: 1.5px 4px !important;
-    margin-left: 2px !important;
-    letter-spacing: 0.02em !important;
-  }
-
   /* Title font on mobile */
   .live-page-title {
     font-size: 17px !important;
@@ -1789,6 +1756,91 @@ $init_border_colors = [
   }
 }
 
+/* Unified Node 2 Sub-Navigation Switcher (Identical across Live & Analytical on Mobile & Desktop) */
+#node2-live-subnav, #node2-hist-subnav {
+  width: 100% !important;
+  padding: 0 4px !important;
+  box-sizing: border-box !important;
+}
+.node2-subtab-container {
+  display: inline-flex !important;
+  align-items: center !important;
+  background-color: #ffffff !important;
+  padding: 3.5px !important;
+  border-radius: 9999px !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  gap: 3px !important;
+  width: 100% !important;
+  max-width: 390px !important;
+  margin: 0 auto !important;
+  justify-content: space-between !important;
+  box-sizing: border-box !important;
+}
+@media (min-width: 640px) {
+  .node2-subtab-container {
+    width: auto !important;
+    max-width: none !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    padding: 4px !important;
+  }
+}
+.node2-subtab-btn {
+  flex: 1 1 0px !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 5px 8px !important;
+  border-radius: 9999px !important;
+  font-weight: 700 !important;
+  font-size: 11.5px !important;
+  min-height: 30px !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  border: none !important;
+  outline: none !important;
+  text-decoration: none !important;
+}
+@media (min-width: 640px) {
+  .node2-subtab-btn {
+    flex: 0 0 auto !important;
+    padding: 6px 16px !important;
+    font-size: 12.5px !important;
+    min-height: 32px !important;
+    gap: 6px !important;
+  }
+}
+.node2-subtab-btn.active {
+  background-color: #00bfa5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 191, 165, 0.28) !important;
+}
+.node2-subtab-btn:not(.active) {
+  background-color: transparent !important;
+  color: #64748b !important;
+}
+.node2-subtab-btn:not(.active):hover {
+  color: #0f172a !important;
+  background-color: #f8fafc !important;
+}
+.subtab-offline-badge {
+  font-size: 8px !important;
+  font-weight: 700 !important;
+  padding: 1.5px 5px !important;
+  border-radius: 9999px !important;
+  background-color: #fee2e2 !important;
+  color: #ef4444 !important;
+  border: 1px solid #fecaca !important;
+  margin-left: 2px !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    NODE 2 ATMOSPHERIC DYNAMIC WEATHER BACKDROP (FULL-BLEED)
    Matches Reference: Moving Sunset Clouds + Radiant Sky
@@ -1839,27 +1891,27 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
 /* One Single Hardware-Accelerated Full-Page Sky Pan Animation (Zero Lag, 100% GPU) */
 .weather-sky-photo-layer {
   position: absolute;
-  inset: -60px -80px;
-  width: calc(100% + 160px);
-  height: calc(100% + 120px);
+  inset: -70px -90px;
+  width: calc(100% + 180px);
+  height: calc(100% + 140px);
   background-image: url('assets/sunset_clouds_backdrop.jpg'), url('/assets/sunset_clouds_backdrop.jpg');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
   will-change: transform;
-  animation: singleCompletePageSkyGlide 32s ease-in-out infinite alternate;
+  animation: singleCompletePageSkyGlide 14s ease-in-out infinite alternate;
   animation-play-state: running;
 }
 
 @keyframes singleCompletePageSkyGlide {
   0% {
-    transform: translate3d(-35px, -15px, 0) scale(1.02);
+    transform: translate3d(-45px, -18px, 0) scale(1.03);
   }
   50% {
-    transform: translate3d(25px, 12px, 0) scale(1.05);
+    transform: translate3d(30px, 14px, 0) scale(1.06);
   }
   100% {
-    transform: translate3d(35px, -18px, 0) scale(1.03);
+    transform: translate3d(45px, -22px, 0) scale(1.04);
   }
 }
 
@@ -1874,10 +1926,85 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
               linear-gradient(180deg, rgba(15, 23, 42, 0.10) 0%, rgba(0, 0, 0, 0) 35%, rgba(245, 158, 11, 0.06) 85%, rgba(249, 115, 22, 0.12) 100%);
 }
 
+/* Immediate Atmospheric Dynamic Light Soil Backdrop for Node 2 */
+.node2-soil-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  background-color: #f7faf7;
+  transition: opacity 0.35s ease;
+}
+
+body.soil-backdrop-active .node2-soil-backdrop,
+.node2-soil-backdrop.active {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+body:not(.soil-backdrop-active) .node2-soil-backdrop:not(.active) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.soil-backdrop-active #app-layout-root,
+body.soil-backdrop-active #page-content-wrapper,
+body.soil-backdrop-active main {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+body.soil-backdrop-active header {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+}
+
+body.soil-backdrop-active footer {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.soil-photo-layer {
+  position: absolute;
+  inset: -20px;
+  width: calc(100% + 40px);
+  height: calc(100% + 40px);
+  background-image: url('assets/soil_backdrop.jpg'), url('/assets/soil_backdrop.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: 0.82;
+  filter: brightness(1.04) contrast(1.0) saturate(1.06);
+}
+
+.soil-ambient-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(ellipse 120% 80% at 50% 20%, rgba(255, 255, 255, 0.28) 0%, rgba(240, 253, 244, 0.16) 50%, rgba(255, 255, 255, 0.38) 100%);
+}
+
 /* Water-Smooth Tab Content Transitions */
 .node2-live-view-panel {
   width: 100%;
   will-change: opacity, transform;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes waterGlideIn {
@@ -2161,10 +2288,11 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
       const btnWeather = document.getElementById('node2-tab-weather');
       const btnSoil = document.getElementById('node2-tab-soil');
       const backdrop = document.getElementById('node2-weather-backdrop');
+      const soilBackdrop = document.getElementById('node2-soil-backdrop');
       const layoutRoot = document.getElementById('app-layout-root');
 
-      const activeCls = 'flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
-      const inactiveCls = 'flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[28px] sm:min-h-[30px] whitespace-nowrap';
+      const activeCls = 'node2-subtab-btn active';
+      const inactiveCls = 'node2-subtab-btn';
 
       function showPaneWithGlide(targetView, otherViews) {
           otherViews.forEach(v => {
@@ -2186,22 +2314,29 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
           if (btnAqi) btnAqi.className = inactiveCls;
           if (btnWeather) btnWeather.className = inactiveCls;
           document.body.classList.remove('weather-backdrop-active');
-          document.body.style.backgroundColor = '#f0fdf4';
+    document.body.classList.remove('soil-backdrop-active');
+          document.body.classList.add('soil-backdrop-active');
+          document.body.style.backgroundColor = '#f7faf7';
           if (backdrop) {
               backdrop.classList.remove('active');
               backdrop.style.display = 'none';
               backdrop.style.opacity = '0';
               backdrop.style.visibility = 'hidden';
           }
+          if (soilBackdrop) {
+              soilBackdrop.classList.add('active');
+              soilBackdrop.style.display = 'block';
+              soilBackdrop.style.opacity = '1';
+              soilBackdrop.style.visibility = 'visible';
+          }
           if (typeof liveCanvasAnimId !== 'undefined' && liveCanvasAnimId) {
               cancelAnimationFrame(liveCanvasAnimId);
               liveCanvasAnimId = null;
           }
           if (layoutRoot) {
-              layoutRoot.style.removeProperty('background');
-              layoutRoot.style.removeProperty('background-image');
-              layoutRoot.style.backgroundColor = '#f0fdf4';
-              layoutRoot.style.backgroundImage = 'radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #ecfdf5 35%, #f0fdfa 65%, #f8fafc 100%)';
+              layoutRoot.style.setProperty('background', 'transparent', 'important');
+              layoutRoot.style.setProperty('background-image', 'none', 'important');
+              layoutRoot.style.backgroundColor = 'transparent';
           }
           if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 20);
           if (typeof renderSoilLiveTable === 'function') setTimeout(renderSoilLiveTable, 20);
@@ -2210,8 +2345,15 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
           if (btnWeather) btnWeather.className = activeCls;
           if (btnAqi) btnAqi.className = inactiveCls;
           if (btnSoil) btnSoil.className = inactiveCls;
+          document.body.classList.remove('soil-backdrop-active');
           document.body.classList.add('weather-backdrop-active');
           document.body.style.backgroundColor = '#1e293b';
+          if (soilBackdrop) {
+              soilBackdrop.classList.remove('active');
+              soilBackdrop.style.display = 'none';
+              soilBackdrop.style.opacity = '0';
+              soilBackdrop.style.visibility = 'hidden';
+          }
           if (backdrop) {
               backdrop.classList.add('active');
               backdrop.style.display = 'block';
@@ -2233,6 +2375,14 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
           if (btnWeather) btnWeather.className = inactiveCls;
           if (btnSoil) btnSoil.className = inactiveCls;
           document.body.classList.remove('weather-backdrop-active');
+    document.body.classList.remove('soil-backdrop-active');
+          document.body.classList.remove('soil-backdrop-active');
+          if (soilBackdrop) {
+              soilBackdrop.classList.remove('active');
+              soilBackdrop.style.display = 'none';
+              soilBackdrop.style.opacity = '0';
+              soilBackdrop.style.visibility = 'hidden';
+          }
           if (backdrop) {
               backdrop.classList.remove('active');
               backdrop.style.display = 'none';
@@ -2287,6 +2437,29 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
       return <?= json_encode($active_live_subtab) ?>;
   })();
 
+  </script>
+
+  <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather vs Live Soil (Compact Pill Switcher) -->
+  <div class="flex items-center justify-center mb-1 w-full px-1" id="node2-live-subnav">
+    <div class="node2-subtab-container">
+      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="node2-subtab-btn <?= ($active_live_subtab === 'aqi') ? 'active' : '' ?>">
+        <i data-lucide="activity" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>AQI<span class="hidden sm:inline"> Live</span></span>
+        <span id="node2-tab-aqi-status" class="subtab-offline-badge" style="<?= $init_is_aqi_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
+      </button>
+      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="node2-subtab-btn <?= ($active_live_subtab === 'weather') ? 'active' : '' ?>">
+        <i data-lucide="cloud-sun" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>Weather<span class="hidden sm:inline"> Live</span></span>
+        <span id="node2-tab-weather-status" class="subtab-offline-badge" style="<?= $init_is_weather_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
+      </button>
+      <button id="node2-tab-soil" type="button" onclick="switchNode2LiveTab('soil')" class="node2-subtab-btn <?= ($active_live_subtab === 'soil') ? 'active' : '' ?>">
+        <i data-lucide="sprout" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>Soil<span class="hidden sm:inline"> Live</span></span>
+        <span id="node2-tab-soil-status" class="subtab-offline-badge" style="<?= $init_is_soil_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
+      </button>
+    </div>
+  </div>
+  <script>
   if (initSavedSubtab === 'weather') {
       window.switchNode2LiveTab('weather');
   } else if (initSavedSubtab === 'soil') {
@@ -2294,30 +2467,10 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
   } else {
       window.switchNode2LiveTab('aqi');
   }
-
-
+  if (window.lucide && lucide.createIcons) {
+      lucide.createIcons();
+  }
   </script>
-
-  <!-- Sub-Navigation Selector for Node 2: Live AQI vs Live Weather vs Live Soil (Compact Pill Switcher) -->
-  <div class="flex items-center justify-center mb-1 w-full px-1" id="node2-live-subnav">
-    <div class="inline-flex items-center bg-white p-0.5 sm:p-1 rounded-full border border-slate-300 shadow-sm gap-1 w-full max-w-[390px] sm:max-w-fit justify-between sm:justify-center">
-      <button id="node2-tab-aqi" type="button" onclick="switchNode2LiveTab('aqi')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'aqi') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
-        <i data-lucide="activity" class="w-3.5 h-3.5 shrink-0"></i>
-        <span>AQI<span class="hidden sm:inline"> Live</span></span>
-        <span id="node2-tab-aqi-status" class="subtab-offline-badge" style="<?= $init_is_aqi_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
-      </button>
-      <button id="node2-tab-weather" type="button" onclick="switchNode2LiveTab('weather')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'weather') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
-        <i data-lucide="cloud-sun" class="w-3.5 h-3.5 shrink-0"></i>
-        <span>Weather<span class="hidden sm:inline"> Live</span></span>
-        <span id="node2-tab-weather-status" class="subtab-offline-badge" style="<?= $init_is_weather_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
-      </button>
-      <button id="node2-tab-soil" type="button" onclick="switchNode2LiveTab('soil')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2.5 sm:px-3.5 rounded-full font-bold text-[11px] sm:text-xs cursor-pointer transition-all <?= ($active_live_subtab === 'soil') ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[28px] sm:min-h-[30px] whitespace-nowrap">
-        <i data-lucide="sprout" class="w-3.5 h-3.5 shrink-0"></i>
-        <span>Soil<span class="hidden sm:inline"> Live</span></span>
-        <span id="node2-tab-soil-status" class="subtab-offline-badge" style="<?= $init_is_soil_offline ? 'display: inline-flex;' : 'display: none;' ?>">Offline</span>
-      </button>
-    </div>
-  </div>
 <?php endif; ?>
 
 <div id="node2-view-aqi" class="node2-live-view-panel" style="<?= ($is_node_2 && $active_live_subtab !== 'aqi') ? 'display: none;' : 'display: flex;' ?> width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; flex-direction: column; gap: 14px;">
@@ -3335,7 +3488,7 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
        NODE 2 DEDICATED SOIL LIVE VIEW (ONLY SOIL PARAMETERS)
        Design: Frosted glass KPI cards + Dark trend graph + Live streaming table
        ════════════════════════════════════════════════════════════════════════════ -->
-  <div id="node2-view-soil" class="node2-live-view-panel" style="<?= ($active_live_subtab === 'soil') ? 'display: flex;' : 'display: none;' ?> width: 100%; flex-direction: column; gap: 14px;">
+  <div id="node2-view-soil" class="node2-live-view-panel" style="<?= ($active_live_subtab === 'soil') ? 'display: flex;' : 'display: none;' ?> width: 100%; flex-direction: column; gap: 14px; position: relative; z-index: 1;">
 
     <!-- Soil Header / Location / Live status row -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
@@ -3535,20 +3688,6 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
         <canvas id="soil-live-trend-chart"></canvas>
         <div id="soil-live-chart-empty" style="position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(22, 28, 40, 0.85); color: #94a3b8; font-size: 13px; font-weight: 600;">
           Waiting for live soil telemetry stream...
-        </div>
-      </div>
-
-      <!-- Diurnal Legend and Stats Bar -->
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: #cbd5e1;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span id="soil-chart-legend-swatch" style="width: 18px; height: 3.5px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
-          <span id="soil-chart-legend-label" style="font-weight: 700; color: #ffffff;">Soil Moisture (Recorded Telemetry)</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 11.5px; color: #94a3b8; flex-wrap: wrap;">
-          <span>Recorded: <strong id="soil-stat-recorded" style="color: #ffffff;">--</strong></span>
-          <span>Peak: <strong id="soil-stat-peak" style="color: #ffffff;">--</strong></span>
-          <span>Min: <strong id="soil-stat-min" style="color: #ffffff;">--</strong></span>
-          <span>Avg: <strong id="soil-stat-avg" style="color: #ffffff;">--</strong></span>
         </div>
       </div>
     </div>
@@ -4154,28 +4293,28 @@ function renderSoilLiveTrendChart() {
 
     const paramConfig = {
         'soil_moisture': {
-            label: 'Soil Moisture (Recorded Telemetry)',
+            label: 'Soil Moisture',
             unit: '%',
             color: '#0284c7',
             bgColor: 'rgba(2, 132, 199, 0.14)',
             extractor: d => (d.soil_moisture != null ? Number(d.soil_moisture) : (d.soil_humidity != null ? Number(d.soil_humidity) : null))
         },
         'soil_temperature': {
-            label: 'Soil Temperature (Recorded Telemetry)',
+            label: 'Soil Temperature',
             unit: '°C',
             color: '#ea580c',
             bgColor: 'rgba(234, 88, 12, 0.14)',
             extractor: d => (d.soil_temperature != null ? Number(d.soil_temperature) : (d.soil_temp != null ? Number(d.soil_temp) : null))
         },
         'soil_ph': {
-            label: 'Soil pH (Recorded Telemetry)',
+            label: 'Soil pH',
             unit: '',
             color: '#10b981',
             bgColor: 'rgba(16, 185, 129, 0.14)',
             extractor: d => (d.soil_ph != null ? Number(d.soil_ph) : (d.ph != null ? Number(d.ph) : null))
         },
         'soil_conductivity': {
-            label: 'Soil Conductivity (Recorded Telemetry)',
+            label: 'Soil Conductivity',
             unit: ' µS/cm',
             color: '#8b5cf6',
             bgColor: 'rgba(139, 92, 246, 0.14)',
@@ -4185,37 +4324,6 @@ function renderSoilLiveTrendChart() {
 
     const cfg = paramConfig[currentSoilLiveChartParam] || paramConfig['soil_moisture'];
     const values = dataPoints.map(cfg.extractor);
-
-    // Compute stats
-    const validVals = values.filter(v => v !== null && !isNaN(v));
-    const statRec = document.getElementById('soil-stat-recorded');
-    const statPeak = document.getElementById('soil-stat-peak');
-    const statMin = document.getElementById('soil-stat-min');
-    const statAvg = document.getElementById('soil-stat-avg');
-    const legLabel = document.getElementById('soil-chart-legend-label');
-    const legSwatch = document.getElementById('soil-chart-legend-swatch');
-
-    if (legLabel) legLabel.innerText = cfg.label;
-    if (legSwatch) legSwatch.style.backgroundColor = cfg.color;
-
-    if (validVals.length > 0) {
-        const lastVal = validVals[validVals.length - 1];
-        const peakVal = Math.max(...validVals);
-        const minVal = Math.min(...validVals);
-        const avgVal = validVals.reduce((a, b) => a + b, 0) / validVals.length;
-
-        const isPh = currentSoilLiveChartParam === 'soil_ph';
-        const decimals = isPh ? 2 : 1;
-        if (statRec) statRec.innerText = `${lastVal.toFixed(decimals)}${cfg.unit}`;
-        if (statPeak) statPeak.innerText = `${peakVal.toFixed(decimals)}${cfg.unit}`;
-        if (statMin) statMin.innerText = `${minVal.toFixed(decimals)}${cfg.unit}`;
-        if (statAvg) statAvg.innerText = `${avgVal.toFixed(decimals)}${cfg.unit}`;
-    } else {
-        if (statRec) statRec.innerText = '--';
-        if (statPeak) statPeak.innerText = '--';
-        if (statMin) statMin.innerText = '--';
-        if (statAvg) statAvg.innerText = '--';
-    }
 
     try {
         if (soilLiveChartInstance && soilLiveChartInstance.ctx && soilLiveChartInstance.canvas === canvas) {
@@ -5762,6 +5870,7 @@ window.__cleanupCurrentPage = function() {
     bodyModals.forEach(m => m.remove());
     document.body.style.overflow = '';
     document.body.classList.remove('weather-backdrop-active');
+    document.body.classList.remove('soil-backdrop-active');
     const lr = document.getElementById('app-layout-root');
     if (lr) {
         if (typeof window.applyAQIPageTheme === 'function') {

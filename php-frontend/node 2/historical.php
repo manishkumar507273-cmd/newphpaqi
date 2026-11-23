@@ -110,6 +110,78 @@ $init_history_json = 'null';
     border-color: #00bfa5;
     color: #ffffff;
 }
+
+/* Unified Node 2 Sub-Navigation Switcher (Identical across Live & Analytical on Mobile & Desktop) */
+#node2-hist-subnav {
+    width: 100% !important;
+    padding: 0 4px !important;
+    box-sizing: border-box !important;
+}
+.node2-subtab-container {
+    display: inline-flex !important;
+    align-items: center !important;
+    background-color: #ffffff !important;
+    padding: 3.5px !important;
+    border-radius: 9999px !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    gap: 3px !important;
+    width: 100% !important;
+    max-width: 390px !important;
+    margin: 0 auto !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+}
+@media (min-width: 640px) {
+    .node2-subtab-container {
+        width: auto !important;
+        max-width: none !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        padding: 4px !important;
+    }
+}
+.node2-subtab-btn {
+    flex: 1 1 0px !important;
+    min-width: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 5px 8px !important;
+    border-radius: 9999px !important;
+    font-weight: 700 !important;
+    font-size: 11.5px !important;
+    min-height: 30px !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: none !important;
+    outline: none !important;
+    text-decoration: none !important;
+}
+@media (min-width: 640px) {
+    .node2-subtab-btn {
+        flex: 0 0 auto !important;
+        padding: 6px 16px !important;
+        font-size: 12.5px !important;
+        min-height: 32px !important;
+        gap: 6px !important;
+    }
+}
+.node2-subtab-btn.active {
+    background-color: #00bfa5 !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 191, 165, 0.28) !important;
+}
+.node2-subtab-btn:not(.active) {
+    background-color: transparent !important;
+    color: #64748b !important;
+}
+.node2-subtab-btn:not(.active):hover {
+    color: #0f172a !important;
+    background-color: #f8fafc !important;
+}
 </style>
 <div class="p-2.5 sm:p-6 flex flex-col gap-3.5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
   
@@ -122,18 +194,18 @@ $init_history_json = 'null';
   </div>
 
   <!-- Sub-Navigation Selector: AQI vs Weather vs Soil (Comfortable Responsive Switcher) -->
-  <div class="flex items-center justify-center mb-2.5 sm:mb-4 w-full px-1">
-    <div class="w-full sm:w-auto grid grid-cols-3 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5 max-w-[480px]">
-      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'aqi' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px] whitespace-nowrap">
-        <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
+  <div class="flex items-center justify-center mb-2.5 sm:mb-4 w-full px-1" id="node2-hist-subnav">
+    <div class="node2-subtab-container">
+      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="node2-subtab-btn <?= $req_subtab === 'aqi' ? 'active' : '' ?>">
+        <i data-lucide="activity" class="w-3.5 h-3.5 shrink-0"></i>
         <span>AQI</span>
       </button>
-      <button id="tab-weather" onclick="switchHistTab('weather')" class="flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'weather' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px] whitespace-nowrap">
-        <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
+      <button id="tab-weather" onclick="switchHistTab('weather')" class="node2-subtab-btn <?= $req_subtab === 'weather' ? 'active' : '' ?>">
+        <i data-lucide="cloud-sun" class="w-3.5 h-3.5 shrink-0"></i>
         <span>Weather</span>
       </button>
-      <button id="tab-soil" onclick="switchHistTab('soil')" class="flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'soil' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[38px] sm:min-h-[42px] whitespace-nowrap">
-        <i data-lucide="sprout" class="w-4 h-4 shrink-0"></i>
+      <button id="tab-soil" onclick="switchHistTab('soil')" class="node2-subtab-btn <?= $req_subtab === 'soil' ? 'active' : '' ?>">
+        <i data-lucide="sprout" class="w-3.5 h-3.5 shrink-0"></i>
         <span>Soil</span>
       </button>
     </div>
@@ -1131,8 +1203,8 @@ function switchHistTab(tab, skipRender = false) {
     const tabSoil = document.getElementById('tab-soil');
     const days = currentRangeDays || 1;
 
-    const activeCls = 'flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-[#00bfa5] text-white shadow-sm min-h-[38px] sm:min-h-[42px] whitespace-nowrap';
-    const inactiveCls = 'flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2 px-2.5 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all bg-transparent text-slate-500 hover:text-slate-800 min-h-[38px] sm:min-h-[42px] whitespace-nowrap';
+    const activeCls = 'node2-subtab-btn active';
+    const inactiveCls = 'node2-subtab-btn';
 
     if (tabAqi) tabAqi.className = (tab === 'aqi') ? activeCls : inactiveCls;
     if (tabWeather) tabWeather.className = (tab === 'weather') ? activeCls : inactiveCls;

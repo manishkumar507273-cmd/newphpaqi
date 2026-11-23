@@ -15,14 +15,23 @@ $cache_candidates = [
     $CACHE_DIR . '/overview_bulk_node_2.json',
 ];
 $init_bulk = null;
+$best_epoch = 0;
 foreach ($cache_candidates as $cf) {
-    if (file_exists($cf) && (time() - filemtime($cf)) < 25) {
+    if (file_exists($cf)) {
         $raw_cache = @file_get_contents($cf);
         if ($raw_cache && strlen($raw_cache) > 20) {
             $parsed = @json_decode($raw_cache, true);
-            if ($parsed && (!empty($parsed['aqi']) || !empty($parsed['weather']))) {
-                $init_bulk = $parsed;
-                break;
+            if ($parsed && (!empty($parsed['aqi']) || !empty($parsed['weather']) || !empty($parsed['aqi_history']) || !empty($parsed['weather_history']))) {
+                $e = filemtime($cf);
+                if (isset($parsed['time']) && is_numeric($parsed['time'])) {
+                    $e = (int)($parsed['time'] / 1000);
+                } elseif (!empty($parsed['aqi']['timestamp'])) {
+                    $e = strtotime($parsed['aqi']['timestamp']) ?: $e;
+                }
+                if ($e >= $best_epoch) {
+                    $best_epoch = $e;
+                    $init_bulk = $parsed;
+                }
             }
         }
     }
@@ -80,7 +89,7 @@ $is_overview_offline = empty($init_bulk);
 $latest_epoch = !empty($init_bulk['aqi']['timestamp']) ? strtotime($init_bulk['aqi']['timestamp']) : (!empty($init_bulk['weather']['timestamp']) ? strtotime($init_bulk['weather']['timestamp']) : 0);
 $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) : '--';
 ?>
-<div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow-x: hidden; width: 100%; max-width: 100%; box-sizing: border-box; padding: clamp(12px, 2.5vw, 20px); margin-bottom: 6px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
+<div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow-x: hidden; width: 100%; max-width: 100%; box-sizing: border-box; padding: clamp(12px, 2.5vw, 20px) clamp(12px, 2.5vw, 20px) 6px; margin-bottom: 2px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
   
   <!-- Dynamic Ambient Canvas -->
   <canvas id="ambient-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.9;"></canvas>
@@ -326,7 +335,7 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
       </div>
 
       <!-- Horizontal Swipeable Carousel (One graph visible at a time on mobile/tablet/desktop) -->
-      <div id="overview-chart-carousel" class="overview-chart-carousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; gap: 16px; padding-bottom: 6px; scrollbar-width: none;">
+      <div id="overview-chart-carousel" class="overview-chart-carousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; gap: 16px; padding-bottom: 2px; scrollbar-width: none;">
         
         <!-- SLIDE 0: AQI Card -->
         <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
@@ -437,7 +446,7 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
       </div>
 
       <!-- Carousel Dot Pagination Indicators -->
-      <div id="overview-chart-dots" style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px;">
+      <div id="overview-chart-dots" style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px;">
         <button type="button" onclick="scrollChartTo(0)" class="chart-dot-item" id="chart-dot-0" title="AQI Chart" style="width: 22px; height: 6px; border-radius: 999px; background: #00bfa5; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);"></button>
         <button type="button" onclick="scrollChartTo(1)" class="chart-dot-item" id="chart-dot-1" title="Temperature Chart" style="width: 6px; height: 6px; border-radius: 999px; background: #cbd5e1; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);"></button>
         <button type="button" onclick="scrollChartTo(2)" class="chart-dot-item" id="chart-dot-2" title="Humidity Chart" style="width: 6px; height: 6px; border-radius: 999px; background: #cbd5e1; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);"></button>
@@ -825,6 +834,13 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
   </style>
 
 <script>
+window.INITIAL_DATA = <?= !empty($init_bulk) ? json_encode($init_bulk, JSON_HEX_TAG | JSON_HEX_AMP) : 'null' ?>;
+if (!window.INITIAL_DATA) {
+    try {
+        const lsCached = localStorage.getItem('smartairnet_bulk_telemetry_n2') || localStorage.getItem('smartairnet_bulk_telemetry');
+        if (lsCached) window.INITIAL_DATA = JSON.parse(lsCached);
+    } catch(e) {}
+}
 var tempUnit = (function() { try { return localStorage.getItem('aqi_temp_unit') || 'C'; } catch(e) { return 'C'; } })();
 var windUnit = (function() { try { return localStorage.getItem('aqi_wind_unit') || 'kmh'; } catch(e) { return 'kmh'; } })();
 var rainUnit = (function() { try { return localStorage.getItem('aqi_rain_unit') || 'mm'; } catch(e) { return 'mm'; } })();

@@ -17,7 +17,7 @@ if (!isset($node_config) || empty($node_config) || !is_array($node_config)) {
     }
 }
 
-// Load Node 2 cached live telemetry if fresh (< 25s)
+// Load Node 2 cached live telemetry for 0ms instant first-paint on both desktop and mobile
 $CACHE_DIR = sys_get_temp_dir() . '/smartairnet_cache';
 $cache_candidates = [
     $CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json',
@@ -28,64 +28,80 @@ $cache_candidates = [
     $CACHE_DIR . '/overview_bulk_node_2.json',
 ];
 $init_bulk = null;
+$best_epoch = 0;
 foreach ($cache_candidates as $cf) {
-    if (file_exists($cf) && (time() - filemtime($cf)) < 25) {
+    if (file_exists($cf)) {
         $raw_cache = @file_get_contents($cf);
         if ($raw_cache && strlen($raw_cache) > 20) {
             $parsed = @json_decode($raw_cache, true);
-            if ($parsed && !empty($parsed['aqi_history'])) {
-                $init_bulk = $parsed;
-                break;
+            if ($parsed && (!empty($parsed['aqi_history']) || !empty($parsed['weather_history']) || !empty($parsed['aqi']) || !empty($parsed['weather']))) {
+                $e = filemtime($cf);
+                if (isset($parsed['time']) && is_numeric($parsed['time'])) {
+                    $e = (int)($parsed['time'] / 1000);
+                } elseif (!empty($parsed['aqi']['timestamp'])) {
+                    $e = strtotime($parsed['aqi']['timestamp']) ?: $e;
+                }
+                if ($e >= $best_epoch) {
+                    $best_epoch = $e;
+                    $init_bulk = $parsed;
+                }
             }
         }
     }
 }
 
-// If no fresh cache exists (< 25s) or cache lacks aqi_history, query Supabase directly for Node 2 so server-render is never stale
-if ($init_bulk === null || empty($init_bulk['aqi_history'])) {
+// If no cached records exist at all, query Supabase directly using parallel curl_multi
+if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk['weather_history']))) {
     $sb_url = !empty($node_config['supabase']['url']) ? rtrim($node_config['supabase']['url'], '/') : 'https://nahabhzcaeppbteuxogg.supabase.co';
     $sb_key = !empty($node_config['supabase']['secret_key']) ? $node_config['supabase']['secret_key'] : (!empty($node_config['supabase']['anon_key']) ? $node_config['supabase']['anon_key'] : 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ');
     $tbl_aqi = $node_config['tables']['aqi_live'] ?? 'AQI_LIVE_NODE2';
     $tbl_soil = $node_config['tables']['weather_live'] ?? ($node_config['tables']['soil_live'] ?? 'SOIL_LIVE_NODE2');
     
-    $aqi_rows = [];
-    $ch = @curl_init("{$sb_url}/rest/v1/{$tbl_aqi}?order=id.desc&limit=60");
-    if ($ch) {
-        @curl_setopt_array($ch, [
+    $mh = @curl_multi_init();
+    $ch_aqi = @curl_init("{$sb_url}/rest/v1/{$tbl_aqi}?order=id.desc&limit=60");
+    $ch_soil = @curl_init("{$sb_url}/rest/v1/{$tbl_soil}?select=*&order=id.desc&limit=60");
+    
+    $headers = [
+        "apikey: {$sb_key}",
+        "Authorization: Bearer {$sb_key}"
+    ];
+    
+    if ($ch_aqi && $ch_soil && $mh) {
+        @curl_setopt_array($ch_aqi, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => [
-                "apikey: {$sb_key}",
-                "Authorization: Bearer {$sb_key}"
-            ],
-            CURLOPT_TIMEOUT_MS     => 4000,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_TIMEOUT_MS     => 2000,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
-        $raw_resp = @curl_exec($ch);
-        $http_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        @curl_close($ch);
-        if ($http_code === 200 && $raw_resp) {
-            $aqi_rows = @json_decode($raw_resp, true) ?: [];
-        }
-    }
+        @curl_setopt_array($ch_soil, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_TIMEOUT_MS     => 2000,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        @curl_multi_add_handle($mh, $ch_aqi);
+        @curl_multi_add_handle($mh, $ch_soil);
 
-    $soil_rows = [];
-    $ch_s = @curl_init("{$sb_url}/rest/v1/{$tbl_soil}?select=*&order=id.desc&limit=60");
-    if ($ch_s) {
-        @curl_setopt_array($ch_s, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => [
-                "apikey: {$sb_key}",
-                "Authorization: Bearer {$sb_key}"
-            ],
-            CURLOPT_TIMEOUT_MS     => 4000,
-            CURLOPT_SSL_VERIFYPEER => false,
-        ]);
-        $raw_soil = @curl_exec($ch_s);
-        $http_s_code = @curl_getinfo($ch_s, CURLINFO_HTTP_CODE);
-        @curl_close($ch_s);
-        if ($http_s_code === 200 && $raw_soil) {
-            $soil_rows = @json_decode($raw_soil, true) ?: [];
-        }
+        $running = null;
+        do {
+            @curl_multi_exec($mh, $running);
+            @curl_multi_select($mh, 0.05);
+        } while ($running > 0);
+
+        $raw_resp = @curl_multi_getcontent($ch_aqi);
+        $raw_soil = @curl_multi_getcontent($ch_soil);
+
+        @curl_multi_remove_handle($mh, $ch_aqi);
+        @curl_multi_remove_handle($mh, $ch_soil);
+        @curl_multi_close($mh);
+        @curl_close($ch_aqi);
+        @curl_close($ch_soil);
+
+        $aqi_rows = ($raw_resp) ? (@json_decode($raw_resp, true) ?: []) : [];
+        $soil_rows = ($raw_soil) ? (@json_decode($raw_soil, true) ?: []) : [];
+    } else {
+        $aqi_rows = [];
+        $soil_rows = [];
     }
 
     $formatted_aqi = [];
@@ -152,20 +168,24 @@ if ($init_bulk === null || empty($init_bulk['aqi_history'])) {
             'history' => $formatted_aqi,
         ];
         if (!is_dir($CACHE_DIR)) @mkdir($CACHE_DIR, 0755, true);
-        @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json', json_encode($init_bulk));
-        @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_50') . '.json', json_encode($init_bulk));
-        @file_put_contents($CACHE_DIR . '/live_bulk_node_2_60.json', json_encode($init_bulk));
+        $encoded_bulk = json_encode($init_bulk);
+        @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_60') . '.json', $encoded_bulk);
+        @file_put_contents($CACHE_DIR . '/' . md5('live_bulk_node_2_50') . '.json', $encoded_bulk);
+        @file_put_contents($CACHE_DIR . '/live_bulk_node_2_60.json', $encoded_bulk);
+        @file_put_contents($CACHE_DIR . '/' . md5('overview_bulk_node_2') . '.json', $encoded_bulk);
+        @file_put_contents($CACHE_DIR . '/overview_bulk_node_2.json', $encoded_bulk);
+        @file_put_contents($CACHE_DIR . '/last_known_hero_node_2.json', $encoded_bulk);
     }
 }
 
 // Fallback: If live Supabase query returned no data (or timed out), use any available cached records
-if ($init_bulk === null || empty($init_bulk['aqi_history'])) {
+if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk['weather_history']))) {
     foreach ($cache_candidates as $cf) {
         if (file_exists($cf)) {
             $raw_cache = @file_get_contents($cf);
             if ($raw_cache && strlen($raw_cache) > 20) {
                 $parsed = @json_decode($raw_cache, true);
-                if ($parsed && !empty($parsed['aqi_history'])) {
+                if ($parsed && (!empty($parsed['aqi_history']) || !empty($parsed['weather_history']) || !empty($parsed['aqi']) || !empty($parsed['weather']))) {
                     $init_bulk = $parsed;
                     break;
                 }
@@ -1697,6 +1717,29 @@ $init_border_colors = [
     padding: 14px 14px !important;
     border-radius: 18px !important;
   }
+  .soil-trend-switcher-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-bottom: 2px !important;
+  }
+  .soil-trend-switcher-row::-webkit-scrollbar {
+    display: none !important;
+  }
+  .soil-trend-switcher-row .trend-pill-btn {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+    border-radius: 999px !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
 
   /* Mobile Pollutant Cards */
   .pollutants-grid-responsive {
@@ -1907,6 +1950,23 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+.soil-trend-switcher-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.soil-trend-switcher-row::-webkit-scrollbar {
+  display: none;
+}
+.soil-trend-switcher-row .trend-pill-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .trend-pill-btn {
   display: inline-flex;
@@ -3453,8 +3513,8 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
           </div>
         </div>
 
-        <!-- Parameter Switcher Buttons -->
-        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <!-- Parameter Switcher Buttons (Always single line on mobile & desktop) -->
+        <div class="soil-trend-switcher-row">
           <button type="button" onclick="switchSoilLiveChartParam('soil_moisture')" id="btn-soil-param-moisture" class="trend-pill-btn" style="background: rgba(16, 185, 129, 0.25); border-color: #10b981; color: #34d399;">
             <span>💧 Moisture (%)</span>
           </button>
@@ -3558,17 +3618,23 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
   <?php endif; ?>
 </div> <!-- End .live-content-container -->
 
-<?php if (!empty($init_bulk)): ?>
 <script>
-window.INITIAL_DATA = <?= json_encode($init_bulk, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
-if (window.INITIAL_DATA && window.INITIAL_DATA.aqi_history && window.INITIAL_DATA.aqi_history.length > 0) {
-    window.__liveDataStream = window.INITIAL_DATA.aqi_history;
+window.INITIAL_DATA = <?= !empty($init_bulk) ? json_encode($init_bulk, JSON_HEX_TAG | JSON_HEX_AMP) : 'null' ?>;
+if (!window.INITIAL_DATA) {
+    try {
+        const lsCached = localStorage.getItem('smartairnet_bulk_telemetry_n2') || localStorage.getItem('smartairnet_bulk_telemetry');
+        if (lsCached) window.INITIAL_DATA = JSON.parse(lsCached);
+    } catch(e) {}
 }
-if (window.INITIAL_DATA && window.INITIAL_DATA.weather_history && window.INITIAL_DATA.weather_history.length > 0) {
-    window.weatherHistory = window.INITIAL_DATA.weather_history;
+if (window.INITIAL_DATA) {
+    if (window.INITIAL_DATA.aqi_history && window.INITIAL_DATA.aqi_history.length > 0) {
+        window.__liveDataStream = window.INITIAL_DATA.aqi_history;
+    }
+    if (window.INITIAL_DATA.weather_history && window.INITIAL_DATA.weather_history.length > 0) {
+        window.weatherHistory = window.INITIAL_DATA.weather_history;
+    }
 }
 </script>
-<?php endif; ?>
 
 <script>
 // Stream tables are now cleanly separated per view: AQI table in node2-view-aqi, Weather table in node2-view-weather
@@ -4058,9 +4124,16 @@ function renderSoilLiveTrendChart() {
     const canvas = document.getElementById('soil-live-trend-chart');
     if (!canvas) return;
 
-    const stream = (window.weatherHistory && window.weatherHistory.length > 0) 
+    let stream = (window.weatherHistory && window.weatherHistory.length > 0) 
         ? window.weatherHistory 
-        : ((window.__liveDataStream && window.__liveDataStream.length > 0) ? window.__liveDataStream : []);
+        : ((window.__liveDataStream && window.__liveDataStream.length > 0) ? window.__liveDataStream : (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.weather_history) ? window.INITIAL_DATA.weather_history : []));
+    if ((!stream || stream.length === 0) && typeof getLocalCache === 'function') {
+        const cached = getLocalCache('smartairnet_bulk_telemetry_n2') || getLocalCache('smartairnet_bulk_telemetry');
+        if (cached && Array.isArray(cached.weather_history) && cached.weather_history.length > 0) {
+            stream = cached.weather_history;
+            window.weatherHistory = stream;
+        }
+    }
 
     const empty = document.getElementById('soil-live-chart-empty');
     if (!stream || stream.length === 0) {
@@ -4371,11 +4444,18 @@ window.renderLiveTable = renderLiveTable;
 function renderWeatherLiveTable(hist) {
     const tbodyWeather = document.getElementById('weather-tbody');
     if (!tbodyWeather) return;
-    const history = (hist && Array.isArray(hist) && hist.length > 0)
+    let history = (hist && Array.isArray(hist) && hist.length > 0)
         ? hist
         : (window.weatherHistory && window.weatherHistory.length > 0
             ? window.weatherHistory
             : (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.weather_history) ? window.INITIAL_DATA.weather_history : []));
+    if ((!history || history.length === 0) && typeof getLocalCache === 'function') {
+        const cached = getLocalCache('smartairnet_bulk_telemetry_n2') || getLocalCache('smartairnet_bulk_telemetry');
+        if (cached && Array.isArray(cached.weather_history) && cached.weather_history.length > 0) {
+            history = cached.weather_history;
+            window.weatherHistory = history;
+        }
+    }
     if (!history || history.length === 0) {
         if (tbodyWeather.children.length > 1 || (tbodyWeather.children.length === 1 && !tbodyWeather.innerText.includes('mode') && !tbodyWeather.innerText.includes('Loading'))) {
             return;
@@ -4442,11 +4522,18 @@ window.renderWeatherLiveTable = renderWeatherLiveTable;
 function renderSoilLiveTable(hist) {
     const tbodySoil = document.getElementById('soil-live-tbody');
     if (!tbodySoil) return;
-    const history = (hist && Array.isArray(hist) && hist.length > 0)
+    let history = (hist && Array.isArray(hist) && hist.length > 0)
         ? hist
         : (window.weatherHistory && window.weatherHistory.length > 0
             ? window.weatherHistory
             : (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.weather_history) ? window.INITIAL_DATA.weather_history : []));
+    if ((!history || history.length === 0) && typeof getLocalCache === 'function') {
+        const cached = getLocalCache('smartairnet_bulk_telemetry_n2') || getLocalCache('smartairnet_bulk_telemetry');
+        if (cached && Array.isArray(cached.weather_history) && cached.weather_history.length > 0) {
+            history = cached.weather_history;
+            window.weatherHistory = history;
+        }
+    }
     if (!history || history.length === 0) {
         if (tbodySoil.children.length > 1 || (tbodySoil.children.length === 1 && !tbodySoil.innerText.includes('Loading'))) {
             return;
@@ -5185,8 +5272,10 @@ async function refreshDashboard(forceNetwork = false) {
                 }
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = dmsStr;
-                    navCoordsMobileEl.style.borderLeft = '1px solid #e2e8f0';
+                    navCoordsMobileEl.style.borderLeft = 'none';
                     navCoordsMobileEl.style.display = 'inline';
+                    const mobSub = document.getElementById('mobile-station-subline');
+                    if (mobSub) mobSub.style.display = 'flex';
                 }
                 const soilBadge = document.getElementById('soil-station-coords-badge');
                 const soilDisp = document.getElementById('soil-coords-display');
@@ -5203,8 +5292,10 @@ async function refreshDashboard(forceNetwork = false) {
                 }
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = coordsDisplay;
-                    navCoordsMobileEl.style.borderLeft = '1px solid #e2e8f0';
+                    navCoordsMobileEl.style.borderLeft = 'none';
                     navCoordsMobileEl.style.display = 'inline';
+                    const mobSub = document.getElementById('mobile-station-subline');
+                    if (mobSub) mobSub.style.display = 'flex';
                 }
             } else {
                 if (navCoordsEl) {
@@ -5214,6 +5305,8 @@ async function refreshDashboard(forceNetwork = false) {
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = '';
                     navCoordsMobileEl.style.display = 'none';
+                    const mobSub = document.getElementById('mobile-station-subline');
+                    if (mobSub) mobSub.style.display = 'none';
                 }
                 const soilBadge = document.getElementById('soil-station-coords-badge');
                 if (soilBadge) soilBadge.style.display = 'none';
@@ -5243,8 +5336,10 @@ async function refreshDashboard(forceNetwork = false) {
                 }
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = dmsStr;
-                    navCoordsMobileEl.style.borderLeft = '1px solid #e2e8f0';
+                    navCoordsMobileEl.style.borderLeft = 'none';
                     navCoordsMobileEl.style.display = 'inline';
+                    const mobSub = document.getElementById('mobile-station-subline');
+                    if (mobSub) mobSub.style.display = 'flex';
                 }
                 const soilBadge = document.getElementById('soil-station-coords-badge');
                 const soilDisp = document.getElementById('soil-coords-display');
@@ -5261,8 +5356,10 @@ async function refreshDashboard(forceNetwork = false) {
                 }
                 if (navCoordsMobileEl) {
                     navCoordsMobileEl.innerText = coordsDisplay;
-                    navCoordsMobileEl.style.borderLeft = '1px solid #e2e8f0';
+                    navCoordsMobileEl.style.borderLeft = 'none';
                     navCoordsMobileEl.style.display = 'inline';
+                    const mobSub = document.getElementById('mobile-station-subline');
+                    if (mobSub) mobSub.style.display = 'flex';
                 }
             } else {
                 if (latEl) latEl.innerText = '--';
@@ -5730,11 +5827,11 @@ window.initLiveAmbientCanvas = initNode2WeatherBackdrop;
 setTimeout(() => {
     refreshDashboard();
     initLiveAmbientCanvas();
-    if (typeof renderComparisonChart === 'function') setTimeout(renderComparisonChart, 50);
-    if (typeof renderLiveTable === 'function') setTimeout(renderLiveTable, 50);
-    if (typeof renderWeatherLiveTable === 'function') setTimeout(renderWeatherLiveTable, 50);
-    if (typeof renderSoilLiveTable === 'function') setTimeout(renderSoilLiveTable, 50);
-    if (typeof renderSoilLiveTrendChart === 'function') setTimeout(renderSoilLiveTrendChart, 50);
+    if (typeof renderComparisonChart === 'function') renderComparisonChart();
+    if (typeof renderLiveTable === 'function') renderLiveTable();
+    if (typeof renderWeatherLiveTable === 'function') renderWeatherLiveTable();
+    if (typeof renderSoilLiveTable === 'function') renderSoilLiveTable();
+    if (typeof renderSoilLiveTrendChart === 'function') renderSoilLiveTrendChart();
     
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {

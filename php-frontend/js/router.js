@@ -395,6 +395,18 @@
             }
             currentPage = targetPage;
             window.__selectedNode = String(targetNode);
+            const footerStation = document.getElementById('footer-station-name');
+            const footerBullet = document.getElementById('footer-station-bullet');
+            if (footerStation) {
+                if (String(targetNode) === '2') {
+                    footerStation.style.display = 'none';
+                    if (footerBullet) footerBullet.style.display = 'none';
+                } else {
+                    footerStation.innerText = 'SMVITM Campus';
+                    footerStation.style.display = 'inline';
+                    if (footerBullet) footerBullet.style.display = 'inline';
+                }
+            }
             try {
                 localStorage.setItem('smartairnet_selected_node', String(targetNode));
                 document.cookie = "smartairnet_selected_node=" + targetNode + "; path=/; max-age=" + (365 * 86400) + "; SameSite=Lax";

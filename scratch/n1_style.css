@@ -1,0 +1,374 @@
+<style>
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes breathAtmosphere {
+      0% { opacity: 0.4; transform: scale(0.96) translate(0, 0); }
+      50% { opacity: 0.7; transform: scale(1.04) translate(-10px, 10px); }
+      100% { opacity: 0.4; transform: scale(0.96) translate(0, 0); }
+    }
+    .overview-grid {
+      display: grid !important;
+      grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+      gap: 12px !important;
+      margin-bottom: 8px !important;
+    }
+    #rain-live-badge,
+    #rain-bar-container {
+      display: none !important;
+    }
+    @media (max-width: 1024px) {
+      .overview-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+    }
+    @media (max-width: 768px) {
+      .overview-page-root {
+        padding: 8px 10px 10px !important;
+        min-height: auto !important;
+        border-radius: 16px !important;
+        margin-bottom: 0px !important;
+      }
+      #overview-chart-dots {
+        margin-top: 8px !important;
+      }
+      .overview-content-container {
+        gap: 10px !important;
+      }
+      .overview-page-title {
+        font-size: 16px !important;
+        line-height: 1.25 !important;
+      }
+      .overview-page-meta {
+        font-size: 11px !important;
+        margin-top: 3px !important;
+        gap: 6px !important;
+      }
+      .overview-page-meta #overview-latest-time {
+        padding: 1.5px 6px !important;
+        font-size: 10px !important;
+      }
+      .overview-page-meta #overview-live-badge {
+        padding: 1.5px 6px !important;
+        font-size: 9.5px !important;
+      }
+      .overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        margin-bottom: 4px !important;
+      }
+      /* Card 1: Air Quality is the full-width dominant hero card on mobile */
+      .overview-grid > *:nth-child(1) {
+        grid-column: span 2 !important;
+      }
+      /* Secondary weather cards sit in clean 2x2 grid */
+      .overview-grid > *:nth-child(5) {
+        grid-column: span 1 !important;
+      }
+      .overview-card-title {
+        font-size: 11.5px !important;
+        letter-spacing: -0.01em !important;
+      }
+      #card-wind .overview-card-title {
+        font-size: 11px !important;
+        white-space: normal !important;
+        line-height: 1.15 !important;
+        max-width: 58px;
+      }
+      .overview-card-icon {
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 6px !important;
+      }
+      .overview-card-icon svg {
+        width: 11px !important;
+        height: 11px !important;
+      }
+      .segmented-unit-btn {
+        padding: 1px !important;
+        flex-shrink: 0 !important;
+      }
+      .segmented-unit-btn .unit-opt {
+        padding: 1px 3.5px !important;
+        font-size: 7.5px !important;
+      }
+      #btn-wind .unit-opt {
+        padding: 1px 3px !important;
+        font-size: 7.5px !important;
+      }
+      .overview-core-card {
+        padding: 7px 9px 7px !important;
+        min-height: 80px !important;
+        border-radius: 13px !important;
+      }
+      .overview-card-hero {
+        padding: 9px 11px 9px !important;
+        min-height: auto !important;
+        border-radius: 14px !important;
+      }
+      .overview-card-val {
+        font-size: 19px !important;
+        line-height: 1 !important;
+      }
+      .overview-card-hero .overview-card-val {
+        font-size: 24px !important;
+        line-height: 1 !important;
+      }
+      .overview-card-hero #aqi-val + span {
+        font-size: 10px !important;
+      }
+      .overview-card-hero #aqi-dom {
+        font-size: 10px !important;
+      }
+      .overview-card-hero [style*="padding: 3px 9px"] {
+        padding: 2px 6px !important;
+        font-size: 9.5px !important;
+      }
+      .overview-card-hero #aqi-bar {
+        height: 4px !important;
+      }
+      .overview-core-card #temp-bar,
+      .overview-core-card #hum-bar,
+      .overview-core-card #wind-bar {
+        height: 3px !important;
+      }
+      .overview-wind-equalizer {
+        height: 11px !important;
+        gap: 2px !important;
+      }
+      .overview-wind-equalizer > div {
+        width: 2.5px !important;
+      }
+      /* Clean uncluttered gauges on mobile secondary cards */
+      .overview-bar-scale {
+        display: none !important;
+      }
+      /* Card 5 Rainfall mobile compact formatting */
+      .overview-rain-container {
+        padding: 1px 0 !important;
+        margin: auto 0 0 !important;
+      }
+      .overview-rain-divider {
+        height: 22px !important;
+      }
+      .overview-rain-label {
+        font-size: 8.5px !important;
+        margin-bottom: 1px !important;
+      }
+      .overview-card-val-sm {
+        font-size: 16px !important;
+      }
+      .overview-rain-unit {
+        font-size: 9px !important;
+      }
+      /* Rain Active (Raining Mode: Only on Mobile, Rainfall switches with AQI to take hero slot 1) */
+      .overview-grid.rain-active #card-rain {
+        order: -1 !important;
+        grid-column: span 2 !important;
+        padding: 9px 11px 9px !important;
+        min-height: auto !important;
+        border-radius: 14px !important;
+      }
+      .overview-grid.rain-active #card-rain .overview-card-val-sm {
+        font-size: 24px !important;
+        line-height: 1 !important;
+      }
+      .overview-grid.rain-active #card-rain .overview-rain-unit {
+        font-size: 11px !important;
+      }
+      .overview-grid.rain-active #card-rain .overview-rain-label {
+        font-size: 9.5px !important;
+      }
+      .overview-grid.rain-active #card-rain .overview-rain-divider {
+        height: 28px !important;
+      }
+      .overview-grid.rain-active #card-rain #rain-bar {
+        height: 4px !important;
+      }
+      .overview-grid.rain-active #card-rain #rain-live-badge {
+        display: inline-flex !important;
+      }
+      .overview-grid.rain-active #card-rain #rain-bar-container {
+        display: block !important;
+      }
+
+      .overview-grid.rain-active #card-temp { order: 1 !important; }
+      .overview-grid.rain-active #card-hum  { order: 2 !important; }
+      .overview-grid.rain-active #card-wind { order: 3 !important; }
+
+      .overview-grid.rain-active #card-aqi {
+        order: 5 !important;
+        grid-column: span 1 !important;
+        padding: 7px 9px 7px !important;
+        min-height: 80px !important;
+        border-radius: 13px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-aqi-header-row {
+        margin-bottom: 4px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-card-title {
+        font-size: 11px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 65px !important;
+      }
+      .overview-grid.rain-active #card-aqi .aqi-title-long {
+        display: none !important;
+      }
+      .overview-grid.rain-active #card-aqi .aqi-title-short {
+        display: inline !important;
+        font-size: 11px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-card-icon {
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 6px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-card-icon svg {
+        width: 11px !important;
+        height: 11px !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-badge {
+        padding: 1.5px 5px !important;
+        font-size: 8px !important;
+        gap: 3px !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-badge-dot {
+        width: 4px !important;
+        height: 4px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-aqi-val-row {
+        margin: 3px 0 !important;
+        gap: 4px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-card-val {
+        font-size: 19px !important;
+        line-height: 1 !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-val + span {
+        font-size: 8.5px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-aqi-dom-wrap {
+        padding: 1.5px 4px !important;
+        font-size: 8px !important;
+        gap: 2px !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-dom {
+        font-size: 8.5px !important;
+      }
+      .overview-grid.rain-active #card-aqi .overview-aqi-bar-cont {
+        padding-top: 4px !important;
+      }
+      .overview-grid.rain-active #card-aqi #aqi-bar {
+        height: 3px !important;
+      }
+      /* Microclimate trends carousel adjustments */
+      .overview-chart-carousel-section {
+        margin-top: 4px !important;
+      }
+      .overview-chart-carousel-section .chart-slide-card {
+        padding: 9px 11px !important;
+        border-radius: 13px !important;
+        gap: 6px !important;
+      }
+      .overview-chart-carousel-section [style*="height: clamp(200px"] {
+        height: 155px !important;
+      }
+      #btn-chart-prev, #btn-chart-next {
+        width: 26px !important;
+        height: 26px !important;
+      }
+      #btn-chart-prev svg, #btn-chart-next svg {
+        width: 13px !important;
+        height: 13px !important;
+      }
+      #chart-slide-counter {
+        font-size: 9.5px !important;
+        padding: 2px 6px !important;
+      }
+    }
+    .overview-chart-carousel::-webkit-scrollbar {
+      display: none;
+    }
+
+    .overview-core-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 13px 13px 12px;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 136px;
+      box-sizing: border-box;
+      transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .overview-core-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07) !important;
+    }
+    .segmented-unit-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 1.5px;
+      border-radius: 999px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.15s ease;
+      line-height: 1;
+      flex-shrink: 0;
+      border: 1px solid transparent;
+      outline: none;
+      background: transparent;
+    }
+    .segmented-unit-btn .unit-opt {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 6.5px;
+      border-radius: 999px;
+      font-size: 9.5px;
+      font-weight: 700;
+      transition: all 0.15s ease;
+      color: inherit;
+      opacity: 0.6;
+    }
+    .segmented-unit-btn .unit-opt.active {
+      background: #ffffff;
+      opacity: 1;
+      font-weight: 800;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    .segmented-unit-btn:hover {
+      transform: translateY(-1px);
+    }
+    .segmented-unit-btn:active {
+      transform: translateY(0);
+    }
+    .overview-bar-scale {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      font-family: var(--font-mono);
+      line-height: 1;
+      margin-top: 5px;
+    }
+    .overview-sub-badge {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+  </style>

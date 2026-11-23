@@ -428,9 +428,24 @@ async function fetchLiveBulk(forceNetwork = false) {
     const isNode2 = (activeNode === '2');
     const cacheKey = STORAGE_KEYS.BULK + '_n' + activeNode;
 
-    // 1. Fast Memory Cache Return only if freshly fetched within the last 4 seconds
-    if (!forceNetwork && apiCache.liveBulk && apiCache.liveBulk.time && (Date.now() - apiCache.liveBulk.time < 4000) && apiCache.liveBulk.node === activeNode) {
-        return apiCache.liveBulk.data;
+    // 1. Instant Cache / INITIAL_DATA return (0ms First Paint)
+    if (!forceNetwork) {
+        if (apiCache.liveBulk && apiCache.liveBulk.time && (Date.now() - apiCache.liveBulk.time < 4000) && apiCache.liveBulk.node === activeNode) {
+            return apiCache.liveBulk.data;
+        }
+        if (window.INITIAL_DATA && (String(window.INITIAL_DATA.node) === String(activeNode) || (!window.INITIAL_DATA.node && activeNode === '1')) && (window.INITIAL_DATA.aqi || window.INITIAL_DATA.weather)) {
+            apiCache.liveBulk = { data: window.INITIAL_DATA, time: Date.now(), node: activeNode };
+            apiCache.overviewBulk = { data: window.INITIAL_DATA, time: Date.now(), node: activeNode };
+            setTimeout(() => { fetchLiveBulk(true).catch(() => {}); }, 15);
+            return window.INITIAL_DATA;
+        }
+        const localCached = getLocalCache(cacheKey);
+        if (localCached && (localCached.aqi || localCached.weather)) {
+            apiCache.liveBulk = { data: localCached, time: Date.now(), node: activeNode };
+            apiCache.overviewBulk = { data: localCached, time: Date.now(), node: activeNode };
+            setTimeout(() => { fetchLiveBulk(true).catch(() => {}); }, 15);
+            return localCached;
+        }
     }
 
     const cfg = getSbConfig(activeNode);
@@ -547,13 +562,17 @@ async function fetchLiveBulk(forceNetwork = false) {
         if (coordsDisplay) {
             const navCoords = document.getElementById('navbar-station-coords');
             const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
+            const mobSub = document.getElementById('mobile-station-subline');
             if (navCoords) { navCoords.innerText = coordsDisplay; navCoords.style.borderLeft = '1px solid #e2e8f0'; navCoords.style.display = 'inline-block'; }
-            if (navCoordsMob) { navCoordsMob.innerText = coordsDisplay; navCoordsMob.style.borderLeft = '1px solid #e2e8f0'; navCoordsMob.style.display = 'inline-block'; }
+            if (navCoordsMob) { navCoordsMob.innerText = coordsDisplay; navCoordsMob.style.borderLeft = 'none'; navCoordsMob.style.display = 'inline-block'; }
+            if (mobSub) mobSub.style.display = 'flex';
         } else if (activeNode === '2') {
             const navCoords = document.getElementById('navbar-station-coords');
             const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
+            const mobSub = document.getElementById('mobile-station-subline');
             if (navCoords) { navCoords.innerText = ''; navCoords.style.display = 'none'; }
             if (navCoordsMob) { navCoordsMob.innerText = ''; navCoordsMob.style.display = 'none'; }
+            if (mobSub) mobSub.style.display = 'none';
         }
 
         // Cache results locally
@@ -577,13 +596,17 @@ async function fetchLiveBulk(forceNetwork = false) {
                 if (data.coords_display) {
                     const navCoords = document.getElementById('navbar-station-coords');
                     const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
+                    const mobSub = document.getElementById('mobile-station-subline');
                     if (navCoords) { navCoords.innerText = data.coords_display; navCoords.style.borderLeft = '1px solid #e2e8f0'; navCoords.style.display = 'inline-block'; }
-                    if (navCoordsMob) { navCoordsMob.innerText = data.coords_display; navCoordsMob.style.borderLeft = '1px solid #e2e8f0'; navCoordsMob.style.display = 'inline-block'; }
+                    if (navCoordsMob) { navCoordsMob.innerText = data.coords_display; navCoordsMob.style.borderLeft = 'none'; navCoordsMob.style.display = 'inline-block'; }
+                    if (mobSub) mobSub.style.display = 'flex';
                 } else if (activeNode === '2') {
                     const navCoords = document.getElementById('navbar-station-coords');
                     const navCoordsMob = document.getElementById('navbar-station-coords-mobile');
+                    const mobSub = document.getElementById('mobile-station-subline');
                     if (navCoords) { navCoords.innerText = ''; navCoords.style.display = 'none'; }
                     if (navCoordsMob) { navCoordsMob.innerText = ''; navCoordsMob.style.display = 'none'; }
+                    if (mobSub) mobSub.style.display = 'none';
                 }
                 apiCache.liveBulk = { data, time: Date.now(), node: activeNode };
                 apiCache.overviewBulk = { data, time: Date.now(), node: activeNode };
@@ -654,7 +677,14 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode
 
     if (!force) {
         const cached = getLocalCache(storageKey);
-        if (cached && (cached.aqi?.length || cached.weather?.length) && (Date.now() - (cached.fetchedAt || 0) < maxAge)) {
+        if (cached && (cached.aqi?.length || cached.weather?.length)) {
+            if (Date.now() - (cached.fetchedAt || 0) < maxAge) {
+                return cached;
+            }
+            // Return stale cache immediately for 0ms First Paint, revalidate in background
+            setTimeout(() => {
+                fetchHistoryBulk(queryDate, days, true, explicitNode).catch(() => {});
+            }, 15);
             return cached;
         }
     }
@@ -695,7 +725,21 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode
         ]);
 
         const aqiList = Array.isArray(aqiRaw) ? aqiRaw.map(formatRawReadingClient).filter(Boolean) : [];
-        const weatherList = Array.isArray(weatherRaw) ? weatherRaw.map(formatWeatherReadingClient).filter(Boolean) : [];
+        let weatherList = Array.isArray(weatherRaw) ? weatherRaw.map(formatWeatherReadingClient).filter(Boolean) : [];
+
+        // For Node 2: If weatherList is empty (SOIL_NODE2 historical table empty), fall back to recent SOIL_LIVE_NODE2
+        if (isNode2 && weatherList.length === 0) {
+            try {
+                const fbSoilUrl = `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?order=id.desc&limit=60`;
+                const fbRes = await fetch(fbSoilUrl, { headers });
+                if (fbRes.ok) {
+                    const fbJson = await fbRes.json();
+                    if (Array.isArray(fbJson) && fbJson.length > 0) {
+                        weatherList = fbJson.map(formatWeatherReadingClient).filter(Boolean);
+                    }
+                }
+            } catch(e) {}
+        }
 
         const payload = {
             node: activeNode,

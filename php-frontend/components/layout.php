@@ -725,7 +725,7 @@ $active_layout_bg = $is_weather_tab_active
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '2' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
                   <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 2 - Field Station</span>
-                  <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active • Air & Soil Grid</span>
+                  <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
                 </div>
               </div>
               <?php if ($selected_node === '2'): ?>
@@ -742,10 +742,14 @@ $active_layout_bg = $is_weather_tab_active
           <div style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; flex-shrink: 0; overflow: hidden; padding: 2px;">
             <img src="<?= defined('SMART_WEATHERNET_LOGO_MARK') ? SMART_WEATHERNET_LOGO_MARK : 'assets/logo-mark.png' ?>" alt="Smart WeatherNet Logo" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
-          <div style="display: flex; align-items: center; flex-shrink: 0;">
-            <span class="mobile-brand-title" style="font-size: 15.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1;">
+          <div style="display: flex; flex-direction: column; flex-shrink: 0;">
+            <span class="mobile-brand-title" style="font-size: 15.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; line-height: 1.15;">
               Smart <span class="mobile-brand-weathernet" style="color: #00bfa5; font-size: 15.5px; font-weight: 800;">WeatherNet</span>
             </span>
+            <div id="mobile-station-subline" style="display: <?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? 'flex' : 'none' ?>; align-items: center; gap: 4px; margin-top: 1px;">
+              <span class="campus-status-dot <?= (!$is_node_2 && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>" style="width: 5.5px; height: 5.5px; border-radius: 50%; background-color: <?= $node_status_dot ?>; display: inline-block; flex-shrink: 0;"></span>
+              <span id="navbar-station-coords-mobile" style="font-size: 9.5px; font-weight: 600; color: #94a3b8; white-space: nowrap;"><?= (!empty($node_config['location']['coords_display']) && $node_config['location']['coords_display'] !== '--') ? htmlspecialchars($node_config['location']['coords_display']) : '' ?></span>
+            </div>
           </div>
         </a>
 
@@ -783,7 +787,7 @@ $active_layout_bg = $is_weather_tab_active
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '2' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
                   <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 2 - Field Station</span>
-                  <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active • Air & Soil Grid</span>
+                  <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
                 </div>
               </div>
               <?php if ($selected_node === '2'): ?>
@@ -904,7 +908,7 @@ $active_layout_bg = $is_weather_tab_active
     </div>
     
     <!-- Global Footer (Differentiated styling with team LinkedIn links) -->
-    <footer id="global-footer" style="margin-top: 8px; padding: 16px 16px; text-align: center; position: relative; z-index: 10; font-size: 12.5px; background: #0f172a; color: #94a3b8; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.15);" class="mb-[84px] md:mb-0">
+    <footer id="global-footer" style="margin-top: 4px; padding: 12px 16px; text-align: center; position: relative; z-index: 10; font-size: 12.5px; background: #0f172a; color: #94a3b8; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.15);" class="mb-[84px] md:mb-0">
       
       <!-- Top Brand Row -->
       <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
@@ -913,8 +917,9 @@ $active_layout_bg = $is_weather_tab_active
           <span style="font-weight: 800; color: #f8fafc; font-size: 13px; letter-spacing: -0.01em;">Smart WeatherNet</span>
         </div>
 
-        <span style="color: rgba(255, 255, 255, 0.25); font-weight: 300;">•</span>
-        <span style="font-size: 11.5px; color: #cbd5e1; font-weight: 500;">SMVITM Campus</span>
+        <?php $has_footer_station = ($active_node_id === '1' && !empty($node_config['station_tag'])); ?>
+        <span id="footer-station-bullet" style="color: rgba(255, 255, 255, 0.25); font-weight: 300; display: <?= $has_footer_station ? 'inline' : 'none' ?>;">•</span>
+        <span id="footer-station-name" style="font-size: 11.5px; color: #cbd5e1; font-weight: 500; display: <?= $has_footer_station ? 'inline' : 'none' ?>;"><?= $has_footer_station ? htmlspecialchars($node_config['station_tag']) : '' ?></span>
         <span style="color: rgba(255, 255, 255, 0.25); font-weight: 300;">•</span>
 
         <button type="button" onclick="document.getElementById('contact-modal').style.display='flex'; if (window.lucide) { lucide.createIcons(); }" style="background: none; border: none; font-size: 12px; font-weight: 700; color: #00e5c5; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(0,229,197,0.4); text-underline-offset: 3px; transition: all 0.2s; padding: 0;" onmouseover="this.style.color='#38bdf8';" onmouseout="this.style.color='#00e5c5';">

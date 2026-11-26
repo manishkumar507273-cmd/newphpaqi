@@ -1193,9 +1193,7 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
                             <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ${it.footerVal}</div>
                           </div>
                         </div>
-                        <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                        </div>
+
                       </div>
 
                       <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">

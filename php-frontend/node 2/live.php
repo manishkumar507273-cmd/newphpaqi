@@ -5542,15 +5542,17 @@ async function refreshDashboard(forceNetwork = false) {
                     if (mobSub) mobSub.style.display = 'flex';
                 }
             } else {
+                const isN2 = String(window.__selectedNode || '1') === '2';
+                const n1Coords = (!isN2 && window.__nodeConfig && window.__nodeConfig.location && window.__nodeConfig.location.coords_display) ? window.__nodeConfig.location.coords_display : '';
                 if (navCoordsEl) {
-                    navCoordsEl.innerText = '';
-                    navCoordsEl.style.display = 'none';
+                    navCoordsEl.innerText = n1Coords;
+                    navCoordsEl.style.display = n1Coords ? 'inline-block' : 'none';
                 }
                 if (navCoordsMobileEl) {
-                    navCoordsMobileEl.innerText = '';
-                    navCoordsMobileEl.style.display = 'none';
+                    navCoordsMobileEl.innerText = n1Coords;
+                    navCoordsMobileEl.style.display = n1Coords ? 'inline' : 'none';
                     const mobSub = document.getElementById('mobile-station-subline');
-                    if (mobSub) mobSub.style.display = 'none';
+                    if (mobSub) mobSub.style.display = n1Coords ? 'flex' : 'none';
                 }
                 const soilBadge = document.getElementById('soil-station-coords-badge');
                 if (soilBadge) soilBadge.style.display = 'none';
@@ -5609,13 +5611,17 @@ async function refreshDashboard(forceNetwork = false) {
                 if (latEl) latEl.innerText = '--';
                 if (lonEl) lonEl.innerText = '--';
                 if (dmsEl) dmsEl.innerText = 'Awaiting GPS Sync';
+                const isN2 = String(window.__selectedNode || '1') === '2';
+                const n1Coords = (!isN2 && window.__nodeConfig && window.__nodeConfig.location && window.__nodeConfig.location.coords_display) ? window.__nodeConfig.location.coords_display : '';
                 if (navCoordsEl) {
-                    navCoordsEl.innerText = '';
-                    navCoordsEl.style.display = 'none';
+                    navCoordsEl.innerText = n1Coords;
+                    navCoordsEl.style.display = n1Coords ? 'inline-block' : 'none';
                 }
                 if (navCoordsMobileEl) {
-                    navCoordsMobileEl.innerText = '';
-                    navCoordsMobileEl.style.display = 'none';
+                    navCoordsMobileEl.innerText = n1Coords;
+                    navCoordsMobileEl.style.display = n1Coords ? 'inline' : 'none';
+                    const mobSub = document.getElementById('mobile-station-subline');
+                    if (mobSub) mobSub.style.display = n1Coords ? 'flex' : 'none';
                 }
                 const soilBadge = document.getElementById('soil-station-coords-badge');
                 if (soilBadge) soilBadge.style.display = 'none';

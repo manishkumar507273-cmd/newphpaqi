@@ -188,9 +188,7 @@ $init_f_pin_y = 58;
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤60</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
-            <i data-lucide="info" class="w-3 h-3"></i>
-          </div>
+
         </div>
         <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
           <div class="pollutant-val-wrap flex flex-col">
@@ -214,9 +212,7 @@ $init_f_pin_y = 58;
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤100</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
-            <i data-lucide="info" class="w-3 h-3"></i>
-          </div>
+
         </div>
         <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
           <div class="pollutant-val-wrap flex flex-col">
@@ -240,9 +236,7 @@ $init_f_pin_y = 58;
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤2</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
-            <i data-lucide="info" class="w-3 h-3"></i>
-          </div>
+
         </div>
         <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
           <div class="pollutant-val-wrap flex flex-col">
@@ -266,9 +260,7 @@ $init_f_pin_y = 58;
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤80</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
-            <i data-lucide="info" class="w-3 h-3"></i>
-          </div>
+
         </div>
         <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
           <div class="pollutant-val-wrap flex flex-col">
@@ -292,9 +284,7 @@ $init_f_pin_y = 58;
               <div class="pollutant-who text-[9px] sm:text-[10.5px] text-slate-500 mt-[2px] whitespace-nowrap">CPCB: ≤100</div>
             </div>
           </div>
-          <div class="pollutant-info-icon w-6 h-6 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
-            <i data-lucide="info" class="w-3 h-3"></i>
-          </div>
+
         </div>
         <div class="pollutant-card-bottom flex items-end justify-between w-full mt-1">
           <div class="pollutant-val-wrap flex flex-col">

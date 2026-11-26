@@ -100,24 +100,24 @@
         } catch (e) { return null; }
     }
 
-    // Eagerly pre-cache all main pages in background so page switching is 0ms instant
+    // Eagerly pre-cache main pages sequentially in background so Vercel serverless & mobile connections aren't saturated
     const CORE_PAGES = ['overview', 'live', 'historical', 'predictive'];
     if (document.readyState === 'complete') {
-        setTimeout(initPrecache, 20);
+        setTimeout(initPrecache, 350);
     } else {
-        window.addEventListener('DOMContentLoaded', () => setTimeout(initPrecache, 20));
+        window.addEventListener('load', () => setTimeout(initPrecache, 350));
     }
-    function initPrecache() {
+    async function initPrecache() {
         const isUserLoggedIn = isUserAuthenticated();
         const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
         const nodeSuffix = (activeNode === '2') ? '&node=2' : '';
-        CORE_PAGES.forEach((pg) => {
-            if (PROTECTED_PAGES.includes(pg) && !isUserLoggedIn) return;
+        for (const pg of CORE_PAGES) {
+            if (PROTECTED_PAGES.includes(pg) && !isUserLoggedIn) continue;
             const cacheKey = `${pg}_n${activeNode}`;
             if (!pageCache.has(cacheKey)) {
-                prefetchPage(`?page=${pg}${nodeSuffix}`, pg === currentPage);
+                await prefetchPage(`?page=${pg}${nodeSuffix}`, pg === currentPage);
             }
-        });
+        }
     }
 
     // Update Header Navigation elements to match target page
@@ -360,6 +360,12 @@
             prefetchPage(`?page=${encodeURIComponent(targetPage)}${nodeSuffix}`, true);
         }
 
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+            timedOut = true;
+            try { controller.abort(); } catch (e) {}
+        }, 4500);
+
         try {
             let data = hasFreshCache ? cached.data : null;
             if (!data) {
@@ -379,7 +385,14 @@
                 }
             }
 
+            clearTimeout(timeoutId);
+
             if (controller.signal.aborted || activeNavController !== controller) {
+                return;
+            }
+
+            if (!data) {
+                window.location.href = url;
                 return;
             }
 
@@ -511,12 +524,14 @@
             resetProgressBar();
 
         } catch (err) {
-            if (err && err.name === 'AbortError') {
+            clearTimeout(timeoutId);
+            if (err && err.name === 'AbortError' && !timedOut) {
                 return;
             }
             console.error('Smooth navigation error, falling back to standard load:', err);
             window.location.href = url;
         } finally {
+            clearTimeout(timeoutId);
             if (activeNavController === controller) {
                 activeNavController = null;
             }

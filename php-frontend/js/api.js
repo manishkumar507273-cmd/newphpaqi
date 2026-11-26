@@ -466,22 +466,33 @@ async function fetchLiveBulk(forceNetwork = false) {
     };
 
     try {
+        const now = new Date();
+        const istOffsetMs = 5.5 * 3600 * 1000;
+        const nowIst = new Date(now.getTime() + istOffsetMs);
+        const midnightIst = new Date(Date.UTC(nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate()) - istOffsetMs);
+        const midnightIstIso = midnightIst.toISOString();
+
         const orderCol = isNode2 ? 'id.desc' : 'created_at.desc.nullslast';
         const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiLive}?order=${orderCol}&limit=60`;
         const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=*&order=${orderCol}&limit=60`;
+        const urlTodayRain = !isNode2
+            ? `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=rain_gauge&created_at=gte.${encodeURIComponent(midnightIstIso)}&rain_gauge=gt.0&limit=500`
+            : null;
 
-        const [resAqi, resWeather] = await Promise.all([
+        const [resAqi, resWeather, resTodayRain] = await Promise.all([
             fetch(urlAqi, { headers, cache: 'no-cache' }),
-            fetch(urlWeather, { headers, cache: 'no-cache' })
+            fetch(urlWeather, { headers, cache: 'no-cache' }),
+            urlTodayRain ? fetch(urlTodayRain, { headers, cache: 'no-cache' }).catch(() => null) : Promise.resolve(null)
         ]);
 
         if (!resAqi.ok || !resWeather.ok) {
             throw new Error(`Direct Supabase fetch non-200 status (${resAqi.status}, ${resWeather.status})`);
         }
 
-        const [aqiRawList, weatherRawList] = await Promise.all([
+        const [aqiRawList, weatherRawList, todayRainRawList] = await Promise.all([
             resAqi.json(),
-            resWeather.json()
+            resWeather.json(),
+            (resTodayRain && resTodayRain.ok) ? resTodayRain.json().catch(() => null) : Promise.resolve(null)
         ]);
 
         const aqiHist = Array.isArray(aqiRawList) ? aqiRawList.map(formatRawReadingClient).filter(Boolean) : [];
@@ -526,13 +537,15 @@ async function fetchLiveBulk(forceNetwork = false) {
         }
 
         // Calculate today's rain sum & temperature range from readings
-        const now = new Date();
-        const istOffsetMs = 5.5 * 3600 * 1000;
-        const nowIst = new Date(now.getTime() + istOffsetMs);
-        const midnightIst = new Date(Date.UTC(nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate()) - istOffsetMs);
-
         let todayRainSum = 0.0;
         const todayTemps = [];
+
+        if (Array.isArray(todayRainRawList)) {
+            todayRainRawList.forEach(r => {
+                const rg = r && r.rain_gauge != null ? Number(r.rain_gauge) : 0;
+                if (!isNaN(rg) && rg > 0) todayRainSum += rg;
+            });
+        }
 
         weatherHist.forEach(w => {
             if (!w) return;
@@ -541,7 +554,7 @@ async function fetchLiveBulk(forceNetwork = false) {
                 if (w.temperature != null && !isNaN(w.temperature)) {
                     todayTemps.push(Number(w.temperature));
                 }
-                if (w.rain_gauge != null && Number(w.rain_gauge) > 0) {
+                if (!Array.isArray(todayRainRawList) && w.rain_gauge != null && Number(w.rain_gauge) > 0) {
                     todayRainSum += Number(w.rain_gauge);
                 }
             }

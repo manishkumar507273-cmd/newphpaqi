@@ -231,24 +231,62 @@ $init_history_json = 'null';
         </div>
       </div>
 
-      <!-- Right Action Controls: Range Dropdown & Date Picker -->
+      <!-- Right Action Controls: Custom Range Dropdown & Custom Date Picker -->
       <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
-        <!-- Range Selector Dropdown -->
-        <div class="relative inline-flex items-center">
-          <select id="range-select" onchange="setRangeDays(this.value)" class="min-h-[38px] sm:min-h-[40px] cursor-pointer text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all duration-200 pl-8 pr-7 py-2 rounded-xl border border-slate-200 outline-none appearance-none shadow-xs">
+        <!-- Custom Range Selector Dropdown -->
+        <div class="relative inline-flex items-center" id="custom-range-dropdown">
+          <select id="range-select" onchange="setRangeDays(this.value)" class="sr-only" aria-hidden="true" tabindex="-1">
             <option value="1" <?= $req_range_days === 1 ? 'selected' : '' ?>>24h</option>
             <option value="3" <?= $req_range_days === 3 ? 'selected' : '' ?>>3 Days</option>
             <option value="7" <?= $req_range_days === 7 ? 'selected' : '' ?>>7 Days</option>
             <option value="30" <?= $req_range_days === 30 ? 'selected' : '' ?>>30 Days</option>
           </select>
-          <i data-lucide="clock-4" class="absolute left-2.5 w-3.5 h-3.5 text-[#00bfa5] pointer-events-none"></i>
-          <i data-lucide="chevron-down" class="absolute right-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none"></i>
+          <button type="button" id="range-dropdown-btn" onclick="toggleRangeMenu(event)" class="min-h-[38px] sm:min-h-[40px] inline-flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] text-xs sm:text-[13px] font-bold text-slate-800 shadow-xs transition-all cursor-pointer outline-none select-none">
+            <i data-lucide="clock-4" class="w-3.5 h-3.5 text-[#00bfa5] shrink-0"></i>
+            <span id="range-dropdown-label"><?= $req_range_days === 1 ? '24h' : ($req_range_days . ' Days') ?></span>
+            <i data-lucide="chevron-down" id="range-dropdown-chevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-150 shrink-0"></i>
+          </button>
+          <div id="range-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; min-width: 158px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 6px; box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.16); z-index: 80;">
+            <?php foreach ([1 => '24h', 3 => '3 Days', 7 => '7 Days', 30 => '30 Days'] as $rv => $rl): ?>
+            <button type="button" data-range-opt="<?= $rv ?>" onclick="selectRangeOption(<?= $rv ?>)" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition-all cursor-pointer <?= $req_range_days === $rv ? 'bg-teal-50 text-[#00bfa5]' : 'text-slate-700 hover:bg-slate-50' ?>">
+              <span><?= $rl ?></span>
+              <span class="range-opt-check text-[#00bfa5] font-extrabold text-xs"><?= $req_range_days === $rv ? '✓' : '' ?></span>
+            </button>
+            <?php endforeach; ?>
+          </div>
         </div>
 
-        <!-- Date Picker Input -->
-        <div class="relative inline-flex items-center">
-          <input type="date" id="history-date-picker" value="<?= htmlspecialchars($req_date) ?>" max="<?= htmlspecialchars($today_ist) ?>" class="min-h-[38px] sm:min-h-[40px] pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all cursor-pointer outline-none shadow-xs">
-          <i data-lucide="calendar" class="absolute left-2.5 w-3.5 h-3.5 text-[#00bfa5] pointer-events-none"></i>
+        <!-- Custom Date Picker -->
+        <div class="relative inline-flex items-center" id="custom-date-picker">
+          <input type="date" id="history-date-picker" value="<?= htmlspecialchars($req_date) ?>" max="<?= htmlspecialchars($today_ist) ?>" class="sr-only" aria-hidden="true" tabindex="-1">
+          <button type="button" id="date-picker-btn" onclick="toggleDateCalendar(event)" class="min-h-[38px] sm:min-h-[40px] inline-flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] text-xs sm:text-[13px] font-bold text-slate-800 shadow-xs transition-all cursor-pointer outline-none select-none">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-[#00bfa5] shrink-0"></i>
+            <span id="date-picker-label"><?= htmlspecialchars(date('d M Y', strtotime($req_date))) ?></span>
+            <i data-lucide="chevron-down" id="date-picker-chevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-150 shrink-0"></i>
+          </button>
+          <div id="date-calendar-popover" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; width: 286px; max-width: calc(100vw - 24px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 14px; box-shadow: 0 18px 42px -8px rgba(15, 23, 42, 0.2); z-index: 80;">
+            <div class="flex items-center justify-between mb-3">
+              <span id="cal-month-title" class="text-sm font-extrabold text-slate-800 tracking-tight">November 2026</span>
+              <div class="flex items-center gap-1">
+                <button type="button" id="cal-prev-btn" onclick="shiftCalendarMonth(-1)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-teal-50 hover:border-[#00bfa5] hover:text-[#00bfa5] flex items-center justify-center text-slate-600 font-bold cursor-pointer transition-all" aria-label="Previous Month">‹</button>
+                <button type="button" id="cal-next-btn" onclick="shiftCalendarMonth(1)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-teal-50 hover:border-[#00bfa5] hover:text-[#00bfa5] flex items-center justify-center text-slate-600 font-bold cursor-pointer transition-all" aria-label="Next Month">›</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-7 gap-1 text-center mb-1.5">
+              <span class="text-[10.5px] font-bold text-slate-400">Mo</span>
+              <span class="text-[10.5px] font-bold text-slate-400">Tu</span>
+              <span class="text-[10.5px] font-bold text-slate-400">We</span>
+              <span class="text-[10.5px] font-bold text-slate-400">Th</span>
+              <span class="text-[10.5px] font-bold text-slate-400">Fr</span>
+              <span class="text-[10.5px] font-bold text-slate-400">Sa</span>
+              <span class="text-[10.5px] font-bold text-slate-400">Su</span>
+            </div>
+            <div id="cal-days-grid" class="grid grid-cols-7 gap-1 text-center"></div>
+            <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100">
+              <button type="button" onclick="selectCalendarDate('<?= htmlspecialchars($today_ist) ?>')" class="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-[#00bfa5] text-[#00bfa5] hover:text-white text-xs font-bold transition-all cursor-pointer">Today</button>
+              <button type="button" onclick="closeDateCalendar()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer">Close</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -444,20 +482,6 @@ $init_history_json = 'null';
       <div id="chart-empty" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; background: rgba(22, 28, 40, 0.85); gap: 8px; color: #94a3b8; z-index: 5;">
         <i data-lucide="info" style="width: 24px; height: 24px; color: #64748b;"></i>
         <p style="margin: 0; font-size: 13.5px; font-weight: 600;" id="chart-empty-text">No records found.</p>
-      </div>
-    </div>
-
-    <!-- Bottom Dynamic Legend Bar (Single recorded series matching table below) -->
-    <div class="flex items-center justify-center gap-5 sm:gap-7 flex-wrap mt-3 pt-3 border-t border-slate-700/50 text-xs font-semibold text-slate-300">
-      <div class="flex items-center gap-2">
-        <span id="leg-swatch" style="width: 18px; height: 3.5px; border-radius: 2px; background: #00bfa5; display: inline-block;"></span>
-        <span id="leg-text"><?= $req_subtab === 'soil' ? 'Soil Telemetry (Recorded)' : ($req_subtab === 'weather' ? 'Weather Telemetry (Recorded)' : 'AQI Telemetry (Recorded)') ?></span>
-      </div>
-      <div id="leg-stats" class="flex items-center gap-4 text-slate-400 font-mono text-[11px] flex-wrap">
-        <span>Recorded: <strong id="leg-latest-val" class="text-white">--</strong></span>
-        <span>Peak: <strong id="leg-peak-val" class="text-white">--</strong></span>
-        <span>Min: <strong id="leg-min-val" class="text-white">--</strong></span>
-        <span>Avg: <strong id="leg-avg-val" class="text-white">--</strong></span>
       </div>
     </div>
   </div>
@@ -753,6 +777,167 @@ function getCacheKey(date, days) {
     return `${date}_${days}_n${activeNode}`;
 }
 
+function syncCustomRangeUI(days) {
+    const lbl = document.getElementById('range-dropdown-label');
+    if (lbl) lbl.innerText = Number(days) === 1 ? '24h' : `${Number(days)} Days`;
+    document.querySelectorAll('[data-range-opt]').forEach(btn => {
+        const isAct = Number(btn.getAttribute('data-range-opt')) === Number(days);
+        btn.className = `w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition-all cursor-pointer ${isAct ? 'bg-teal-50 text-[#00bfa5]' : 'text-slate-700 hover:bg-slate-50'}`;
+        const chk = btn.querySelector('.range-opt-check');
+        if (chk) chk.innerText = isAct ? '✓' : '';
+    });
+}
+
+function toggleRangeMenu(e) {
+    if (e) e.stopPropagation();
+    closeDateCalendar();
+    const menu = document.getElementById('range-dropdown-menu');
+    const chev = document.getElementById('range-dropdown-chevron');
+    if (!menu) return;
+    const isOpen = menu.style.display === 'block';
+    menu.style.display = isOpen ? 'none' : 'block';
+    if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+function selectRangeOption(days) {
+    const menu = document.getElementById('range-dropdown-menu');
+    const chev = document.getElementById('range-dropdown-chevron');
+    if (menu) menu.style.display = 'none';
+    if (chev) chev.style.transform = 'rotate(0deg)';
+    setRangeDays(days);
+}
+
+var calViewYear = null;
+var calViewMonth = null;
+
+function syncCustomDateUI(ymd) {
+    const lbl = document.getElementById('date-picker-label');
+    if (lbl && ymd) {
+        const [y, m, d] = parseDateParts(ymd);
+        const dt = new Date(y, m - 1, d);
+        lbl.innerText = dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+}
+
+function closeDateCalendar() {
+    const pop = document.getElementById('date-calendar-popover');
+    const chev = document.getElementById('date-picker-chevron');
+    if (pop) pop.style.display = 'none';
+    if (chev) chev.style.transform = 'rotate(0deg)';
+}
+
+function toggleDateCalendar(e) {
+    if (e) e.stopPropagation();
+    const rMenu = document.getElementById('range-dropdown-menu');
+    if (rMenu) rMenu.style.display = 'none';
+    const pop = document.getElementById('date-calendar-popover');
+    const chev = document.getElementById('date-picker-chevron');
+    if (!pop) return;
+    const isOpen = pop.style.display === 'block';
+    if (!isOpen) {
+        const dp = document.getElementById('history-date-picker');
+        const curYmd = normalizeDateToYmd(dp && dp.value ? dp.value : getLocalDateStr());
+        const [y, m] = parseDateParts(curYmd);
+        calViewYear = y;
+        calViewMonth = m - 1;
+        renderCustomCalendar();
+        pop.style.display = 'block';
+        if (chev) chev.style.transform = 'rotate(180deg)';
+        // Prefetch 30d data on calendar open for instant date selection
+        const k30 = getCacheKey('<?= $today_ist ?>', 30);
+        if (!clientRangeCache[k30] && !pendingRangeFetches[k30]) {
+            fetchRangeData('<?= $today_ist ?>', 30).catch(() => {});
+        }
+    } else {
+        closeDateCalendar();
+    }
+}
+
+function shiftCalendarMonth(delta) {
+    if (calViewYear === null || calViewMonth === null) return;
+    const next = new Date(calViewYear, calViewMonth + delta, 1);
+    const todayStr = getLocalDateStr();
+    const [ty, tm] = parseDateParts(todayStr);
+    if (next.getFullYear() > ty || (next.getFullYear() === ty && next.getMonth() > tm - 1)) return;
+    calViewYear = next.getFullYear();
+    calViewMonth = next.getMonth();
+    renderCustomCalendar();
+}
+
+function renderCustomCalendar() {
+    const titleEl = document.getElementById('cal-month-title');
+    const gridEl = document.getElementById('cal-days-grid');
+    const nextBtn = document.getElementById('cal-next-btn');
+    if (!gridEl) return;
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    if (titleEl) titleEl.innerText = `${monthNames[calViewMonth]} ${calViewYear}`;
+
+    const todayStr = getLocalDateStr();
+    const [ty, tm] = parseDateParts(todayStr);
+    if (nextBtn) {
+        const atMax = (calViewYear > ty || (calViewYear === ty && calViewMonth >= tm - 1));
+        nextBtn.disabled = atMax;
+        nextBtn.style.opacity = atMax ? '0.35' : '1';
+        nextBtn.style.pointerEvents = atMax ? 'none' : 'auto';
+    }
+
+    const dp = document.getElementById('history-date-picker');
+    const selectedYmd = normalizeDateToYmd(dp && dp.value ? dp.value : todayStr);
+    const firstDay = new Date(calViewYear, calViewMonth, 1).getDay();
+    const offset = (firstDay + 6) % 7; // Monday-first
+    const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+
+    let html = '';
+    for (let i = 0; i < offset; i++) {
+        html += '<span></span>';
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+        const ymd = `${calViewYear}-${String(calViewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isFuture = ymd > todayStr;
+        const isSelected = ymd === selectedYmd;
+        const isToday = ymd === todayStr;
+        let cls = 'h-8 w-8 mx-auto rounded-xl text-xs font-bold flex items-center justify-center transition-all ';
+        if (isFuture) {
+            cls += 'text-slate-300 cursor-not-allowed';
+            html += `<button type="button" disabled class="${cls}">${day}</button>`;
+        } else if (isSelected) {
+            cls += 'bg-[#00bfa5] text-white shadow-[0_4px_12px_rgba(0,191,165,0.35)] cursor-pointer';
+            html += `<button type="button" data-cal-date="${ymd}" onclick="selectCalendarDate('${ymd}')" class="${cls}">${day}</button>`;
+        } else if (isToday) {
+            cls += 'border border-[#00bfa5] text-[#00bfa5] bg-teal-50/50 hover:bg-teal-50 cursor-pointer';
+            html += `<button type="button" data-cal-date="${ymd}" onclick="selectCalendarDate('${ymd}')" class="${cls}">${day}</button>`;
+        } else {
+            cls += 'text-slate-700 hover:bg-teal-50 hover:text-[#00bfa5] cursor-pointer';
+            html += `<button type="button" data-cal-date="${ymd}" onclick="selectCalendarDate('${ymd}')" class="${cls}">${day}</button>`;
+        }
+    }
+    gridEl.innerHTML = html;
+}
+
+function selectCalendarDate(ymd) {
+    closeDateCalendar();
+    const dp = document.getElementById('history-date-picker');
+    if (dp) dp.value = ymd;
+    syncCustomDateUI(ymd);
+    persistHistoricalState();
+    fetchAllHistory(ymd);
+}
+
+if (!window.__histPopoverDocListenerAttached) {
+    window.__histPopoverDocListenerAttached = true;
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#custom-range-dropdown')) {
+            const rm = document.getElementById('range-dropdown-menu');
+            const rc = document.getElementById('range-dropdown-chevron');
+            if (rm) rm.style.display = 'none';
+            if (rc) rc.style.transform = 'rotate(0deg)';
+        }
+        if (!e.target.closest('#custom-date-picker')) {
+            closeDateCalendar();
+        }
+    });
+}
+
 function setRangeDays(days, skipFetch = false) {
     currentRangeDays = Number(days) || 1;
     
@@ -761,6 +946,7 @@ function setRangeDays(days, skipFetch = false) {
     if (rangeSelect && Number(rangeSelect.value) !== currentRangeDays) {
         rangeSelect.value = currentRangeDays;
     }
+    syncCustomRangeUI(currentRangeDays);
 
     // Tactile & smooth pill transitions (if present)
     [1, 3, 7, 30].forEach(d => {
@@ -787,8 +973,6 @@ function setRangeDays(days, skipFetch = false) {
     if (mobileBadge) {
         mobileBadge.innerText = currentRangeDays === 1 ? '24 HRS' : `${currentRangeDays} DAYS`;
     }
-
-    if (typeof animateSummarySection === 'function') animateSummarySection(currentRangeDays === 1);
 
     persistHistoricalState();
     if (!skipFetch) fetchAllHistory();
@@ -1032,6 +1216,7 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
         if (datePicker && datePicker.value !== queryDate) {
             datePicker.value = queryDate;
         }
+        syncCustomDateUI(queryDate);
         if (datePicker && !datePicker.max) {
             datePicker.max = getLocalDateStr();
         }

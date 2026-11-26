@@ -185,14 +185,6 @@ $init_history_json = 'null';
 </style>
 <div class="p-2.5 sm:p-6 flex flex-col gap-3.5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
   
-  <!-- Header -->
-  <div class="flex justify-between items-end mb-1 sm:mb-4">
-    <div>
-      <h1 class="text-xl sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Analytics Archive</h1>
-      <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Access and analyze historical telemetry logs.</p>
-    </div>
-  </div>
-
   <!-- Sub-Navigation Selector: AQI vs Weather vs Soil (Comfortable Responsive Switcher) -->
   <div class="flex items-center justify-center mb-2.5 sm:mb-4 w-full px-1" id="node2-hist-subnav">
     <div class="node2-subtab-container">

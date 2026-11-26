@@ -482,21 +482,21 @@ window.updateBottomNavLockedState = function(isLoggedIn) {
             el.classList.add('bottom-nav-locked');
             el.classList.remove('active');
             el.removeAttribute('aria-disabled');
-            el.style.opacity = '0.12';
-            el.style.color = '#cbd5e1';
+            el.style.opacity = '0.88';
+            el.style.color = '#475569';
             el.style.cursor = 'pointer';
             el.style.backgroundColor = 'transparent';
             if (icon) {
-                icon.style.color = '#cbd5e1';
-                icon.style.stroke = '#cbd5e1';
-                icon.style.opacity = '0.2';
+                icon.style.color = '#475569';
+                icon.style.stroke = '#475569';
+                icon.style.opacity = '1';
                 icon.style.transform = 'scale(1)';
-                icon.style.strokeWidth = '1.5';
+                icon.style.strokeWidth = '1.8';
             }
             if (label) {
-                label.style.color = '#cbd5e1';
-                label.style.fontWeight = '500';
-                label.style.opacity = '0.2';
+                label.style.color = '#475569';
+                label.style.fontWeight = '600';
+                label.style.opacity = '1';
             }
             if (liveDot) {
                 liveDot.style.display = 'none';
@@ -646,12 +646,12 @@ $cool_bg_styles = [
     'overview' => 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);',
     'live-weather' => 'background: transparent; background-image: none;'
 ];
-$is_weather_tab_active = ($is_node_2 && (
+$is_weather_tab_active = ((
     (isset($_GET['page']) && ($_GET['page'] === 'live-weather' || $_GET['page'] === 'weather')) ||
     (isset($_GET['tab']) && $_GET['tab'] === 'weather') ||
     ($current_page === 'live-weather')
 ));
-$is_soil_tab_active = ($is_node_2 && (
+$is_soil_tab_active = ((
     (isset($_GET['tab']) && $_GET['tab'] === 'soil') ||
     (isset($_GET['page']) && in_array($_GET['page'], ['live-soil', 'soil'])) ||
     $current_page === 'live-soil' ||
@@ -874,7 +874,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
       </div>
 
       <!-- Mobile Right Items (Visible on mobile screens) -->
-      <div class="flex md:hidden items-center gap-2 flex-shrink-0">
+      <div id="mobile-right-actions" class="flex md:hidden items-center gap-2 flex-shrink-0">
         <!-- Live / Standby / Offline Badge (Mobile) -->
         <div id="header-live-badge-mobile" class="header-status-badge" onclick="showLiveStatusInfo()" title="<?= $is_telemetry_live ? 'Live telemetry streaming from cloud' : 'Sensor node offline' ?>" style="display: flex; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; align-items: center; gap: 4px; background-color: <?= $node_status_bg ?>; color: <?= $node_status_color ?>; border: 1.5px solid <?= $node_status_border ?>; font-family: var(--font-mono); white-space: nowrap; transition: all 0.25s ease; cursor: pointer; flex-shrink: 0;">
           <span class="status-dot <?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>" style="width: 6px; height: 6px; border-radius: 50%; background-color: <?= $node_status_dot ?>;"></span>
@@ -981,24 +981,24 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
     </a>
 
     <!-- Live Feed -->
-    <a href="?page=live<?= $node_suffix ?>" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && !$is_live_page_active) ? 'bottom-nav-locked' : ($is_live_page_active ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 48px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $is_live_page_active ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>; background-color: <?= $is_live_page_active ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $is_live_page_active ? '1' : ($is_nav_locked ? '0.12' : '1') ?>; cursor: pointer;">
+    <a href="?page=live<?= $node_suffix ?>" data-bottom-nav="live" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && !$is_live_page_active) ? 'bottom-nav-locked' : ($is_live_page_active ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 48px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $is_live_page_active ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>; background-color: <?= $is_live_page_active ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $is_live_page_active ? '1' : (($is_nav_locked ? '0.88' : '1')) ?>; cursor: pointer;">
       <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
-        <i data-lucide="activity" style="width: 19px; height: 19px; stroke-width: <?= $is_live_page_active ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $is_live_page_active ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;"></i>
+        <i data-lucide="activity" style="width: 19px; height: 19px; stroke-width: <?= $is_live_page_active ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $is_live_page_active ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>;"></i>
         <span class="campus-status-dot <?= ($is_telemetry_live && !$is_node_2) ? 'live-dot-pulse' : '' ?>" style="position: absolute; top: -1px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $is_node_2 ? '#94a3b8' : ($is_telemetry_live ? '#10b981' : '#f97316') ?>; border: 1px solid #ffffff; <?= $is_nav_locked ? 'display: none;' : '' ?>"></span>
       </div>
-      <span style="font-size: 10px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $is_live_page_active ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;">Live Feed</span>
+      <span style="font-size: 10px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $is_live_page_active ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>;">Live Feed</span>
     </a>
 
     <!-- Analytics -->
-    <a href="?page=historical<?= $node_suffix ?>" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : ($current_page === 'historical' ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : ($is_nav_locked ? '0.12' : '1') ?>; cursor: pointer;">
-      <i data-lucide="database" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'historical' ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;"></i>
-      <span style="font-size: 9.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $current_page === 'historical' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;">Analytics</span>
+    <a href="?page=historical<?= $node_suffix ?>" data-bottom-nav="historical" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'historical') ? 'bottom-nav-locked' : ($current_page === 'historical' ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'historical' ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>; background-color: <?= $current_page === 'historical' ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $current_page === 'historical' ? '1' : (($is_nav_locked ? '0.88' : '1')) ?>; cursor: pointer;">
+      <i data-lucide="database" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'historical' ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $current_page === 'historical' ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>;"></i>
+      <span style="font-size: 9.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $current_page === 'historical' ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>;">Analytics</span>
     </a>
 
     <!-- Forecast -->
-    <a href="?page=predictive<?= $node_suffix ?>" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : ($current_page === 'predictive' ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : ($is_nav_locked ? '0.12' : '1') ?>; cursor: pointer;">
-      <i data-lucide="cloud-rain" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'predictive' ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;"></i>
-      <span style="font-size: 9.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $current_page === 'predictive' ? '#00bfa5' : ($is_nav_locked ? '#cbd5e1' : '#0f172a') ?>;">Forecast</span>
+    <a href="?page=predictive<?= $node_suffix ?>" data-bottom-nav="predictive" onclick="window.triggerHaptic('light')" class="<?= ($is_nav_locked && $current_page !== 'predictive') ? 'bottom-nav-locked' : ($current_page === 'predictive' ? 'active' : '') ?>" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 44px; padding: 4px 2px; border-radius: 12px; text-decoration: none; transition: all 0.18s cubic-bezier(0.16,1,0.3,1); color: <?= $current_page === 'predictive' ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>; background-color: <?= $current_page === 'predictive' ? 'rgba(0, 191, 165, 0.12)' : 'transparent' ?>; opacity: <?= $current_page === 'predictive' ? '1' : (($is_nav_locked ? '0.88' : '1')) ?>; cursor: pointer;">
+      <i data-lucide="cloud-rain" style="width: 19px; height: 19px; stroke-width: <?= $current_page === 'predictive' ? '2.3' : '2.2' ?>; flex-shrink: 0; color: <?= $current_page === 'predictive' ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>;"></i>
+      <span style="font-size: 9.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; color: <?= $current_page === 'predictive' ? '#00bfa5' : (($is_nav_locked ? '#475569' : '#0f172a')) ?>;">Forecast</span>
     </a>
 
   </nav>

@@ -6,236 +6,439 @@ $active_node_id = '1';
 $is_node_2 = false;
 
 $today_ist = (new DateTime('now', new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
-$req_subtab = (isset($_GET['tab']) && in_array($_GET['tab'], ['aqi', 'weather'])) ? $_GET['tab'] : 'aqi';
+$req_subtab = (isset($_GET['tab']) && in_array($_GET['tab'], ['aqi', 'weather', 'soil'])) ? $_GET['tab'] : 'aqi';
 $req_range_days = (isset($_GET['days']) && in_array((int)$_GET['days'], [1, 3, 7, 30])) ? (int)$_GET['days'] : 1;
-$valid_params = ['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge'];
-$req_param = (isset($_GET['param']) && in_array($_GET['param'], $valid_params)) ? $_GET['param'] : ($req_subtab === 'weather' ? 'temperature' : 'cpcb_aqi');
+$valid_params = [
+    'cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3',
+    'temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge', 'pressure', 'uv_index', 'solar_radiation',
+    'soil_temperature', 'soil_humidity', 'soil_moisture', 'soil_ph', 'soil_conductivity'
+];
+$default_param = ($req_subtab === 'soil') ? 'soil_moisture' : (($req_subtab === 'weather') ? 'temperature' : 'cpcb_aqi');
+$req_param = (isset($_GET['param']) && in_array($_GET['param'], $valid_params)) ? $_GET['param'] : $default_param;
 $req_type = (isset($_GET['type']) && in_array($_GET['type'], ['bar', 'line'])) ? $_GET['type'] : 'bar';
 $req_date = (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) ? $_GET['date'] : $today_ist;
 
-// 0ms instant pre-hydration from disk cache for today's historical records (strictly 15s TTL for today)
 $init_history_json = 'null';
-if (!$is_node_2) {
-    $cache_file_today = sys_get_temp_dir() . '/smartairnet_cache/' . md5("history_bulk_" . md5($today_ist . '_1_150')) . '.json';
-    if (file_exists($cache_file_today) && (time() - filemtime($cache_file_today)) < 15) {
-        $raw_cache_today = @file_get_contents($cache_file_today);
-        if ($raw_cache_today && strlen($raw_cache_today) > 50) {
-            $init_history_json = $raw_cache_today;
-        }
+?>
+<style>
+/* Sleek Dark Trend Graph Card matching user's requested specification */
+.trend-graph-card {
+    background: linear-gradient(145deg, #181e2b 0%, #202736 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    color: #f8fafc;
+    position: relative;
+    overflow: visible;
+}
+.trend-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #f1f5f9;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+}
+.trend-pill-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+.trend-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 60;
+    background: rgba(22, 28, 40, 0.98);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    padding: 6px;
+    min-width: 220px;
+    display: none;
+}
+@media (max-width: 640px) {
+    .trend-dropdown-menu {
+        left: 0 !important;
+        right: auto !important;
+        max-width: calc(100vw - 36px) !important;
     }
 }
-?>
+.trend-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.trend-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+.trend-dropdown-item.active {
+    background: rgba(0, 191, 165, 0.15);
+    color: #00d6b9;
+}
+.trend-check-box {
+    width: 17px;
+    height: 17px;
+    border-radius: 4px;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: transparent;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+.trend-dropdown-item.active .trend-check-box {
+    background: #00bfa5;
+    border-color: #00bfa5;
+    color: #ffffff;
+}
+
+/* Unified Node 2 Sub-Navigation Switcher (Identical across Live & Analytical on Mobile & Desktop) */
+#node2-hist-subnav {
+    width: 100% !important;
+    padding: 0 4px !important;
+    box-sizing: border-box !important;
+}
+.node2-subtab-container {
+    display: inline-flex !important;
+    align-items: center !important;
+    background-color: #ffffff !important;
+    padding: 3.5px !important;
+    border-radius: 9999px !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    gap: 3px !important;
+    width: 100% !important;
+    max-width: 390px !important;
+    margin: 0 auto !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+}
+@media (min-width: 640px) {
+    .node2-subtab-container {
+        width: auto !important;
+        max-width: none !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        padding: 4px !important;
+    }
+}
+.node2-subtab-btn {
+    flex: 1 1 0px !important;
+    min-width: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 5px 8px !important;
+    border-radius: 9999px !important;
+    font-weight: 700 !important;
+    font-size: 11.5px !important;
+    min-height: 30px !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: none !important;
+    outline: none !important;
+    text-decoration: none !important;
+}
+@media (min-width: 640px) {
+    .node2-subtab-btn {
+        flex: 0 0 auto !important;
+        padding: 6px 16px !important;
+        font-size: 12.5px !important;
+        min-height: 32px !important;
+        gap: 6px !important;
+    }
+}
+.node2-subtab-btn.active {
+    background-color: #00bfa5 !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 191, 165, 0.28) !important;
+}
+.node2-subtab-btn:not(.active) {
+    background-color: transparent !important;
+    color: #64748b !important;
+}
+.node2-subtab-btn:not(.active):hover {
+    color: #0f172a !important;
+    background-color: #f8fafc !important;
+}
+</style>
 <div class="p-2.5 sm:p-6 flex flex-col gap-3.5 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
   
-  <!-- Header -->
-  <div class="flex justify-between items-end mb-1 sm:mb-4">
-    <div>
-      <h1 class="text-xl sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Analytics Archive</h1>
-      <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Access and analyze historical telemetry logs.</p>
-    </div>
-  </div>
-
-  <!-- Sub-Navigation Selector: AQI Historical vs Weather Historical -->
-  <div class="flex items-center justify-center mb-2.5 sm:mb-4">
-    <div class="w-full sm:w-auto grid grid-cols-2 sm:flex items-center bg-white p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-slate-300 shadow-sm gap-1 sm:gap-1.5">
-      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'aqi' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[42px]">
-        <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
-        <span>AQI <span class="hidden min-[400px]:inline">Historical</span></span>
+  <!-- Sub-Navigation Selector: AQI vs Weather vs Soil (Comfortable Responsive Switcher) -->
+  <div class="flex items-center justify-center mb-2.5 sm:mb-4 w-full px-1" id="node2-hist-subnav">
+    <div class="node2-subtab-container">
+      <button id="tab-aqi" onclick="switchHistTab('aqi')" class="node2-subtab-btn <?= $req_subtab === 'aqi' ? 'active' : '' ?>">
+        <i data-lucide="activity" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>AQI</span>
       </button>
-      <button id="tab-weather" onclick="switchHistTab('weather')" class="flex items-center justify-center gap-2 py-2.5 sm:py-2 px-3 sm:px-6 rounded-xl sm:rounded-full font-bold text-xs sm:text-sm cursor-pointer transition-all <?= $req_subtab === 'weather' ? 'bg-[#00bfa5] text-white shadow-sm' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> min-h-[42px]">
-        <i data-lucide="cloud-sun" class="w-4 h-4 shrink-0"></i>
-        <span>Weather <span class="hidden min-[400px]:inline">Historical</span></span>
+      <button id="tab-weather" onclick="switchHistTab('weather')" class="node2-subtab-btn <?= $req_subtab === 'weather' ? 'active' : '' ?>">
+        <i data-lucide="cloud-sun" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>Weather</span>
+      </button>
+      <button id="tab-soil" onclick="switchHistTab('soil')" class="node2-subtab-btn <?= $req_subtab === 'soil' ? 'active' : '' ?>">
+        <i data-lucide="sprout" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>Soil</span>
       </button>
     </div>
   </div>
 
   <!-- ── Analytics Date & Range Picker Card ── -->
-  <div class="bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-5 border-[1.5px] border-[#00bfa5] shadow-[0_4px_20px_rgba(0,191,165,0.08)]">
+  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-3.5 sm:p-5 border border-slate-200/90 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,191,165,0.08)] transition-all">
 
     <!-- Top Header Row: Date & Range Selector Controls -->
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+    <div class="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
       
-      <!-- Left Title & Status -->
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 40px; height: 40px; border-radius: 12px; background-color: #ecfdf5; border: 1px solid #a7f3d0; display: flex; align-items: center; justify-content: center; color: #00bfa5; flex-shrink: 0;">
-          <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+      <!-- Left Title & Subtitle -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200/70 flex items-center justify-center text-[#00bfa5] shrink-0 shadow-xs">
+          <i data-lucide="calendar" class="w-5 h-5"></i>
         </div>
         <div>
-          <div style="font-size: 14px; sm:font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+          <div class="text-sm sm:text-[15px] font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
             <span id="range-header-title">Select Date (24-Hour Telemetry)</span>
           </div>
-          <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-            <span id="date-subtitle-desktop">Hourly records: 12:00 AM – 12:00 AM</span>
+          <div class="text-[11.5px] sm:text-xs text-slate-500 font-medium mt-0.5">
+            <span id="date-subtitle-desktop">Hourly sensor progression: 12:00 AM – 12:00 AM</span>
           </div>
         </div>
       </div>
 
-      <!-- Right Action Controls: Range Dropdown (24h, 3D, 7D, 30D) & Date Picker -->
-      <div class="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
+      <!-- Right Action Controls: Range Dropdown & Date Picker -->
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
         <!-- Range Selector Dropdown -->
-        <div style="position: relative; display: inline-flex; align-items: center;">
-          <select id="range-select" onchange="setRangeDays(this.value)" class="min-h-[38px] sm:min-h-[42px] cursor-pointer text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all duration-200" style="padding: 7px 32px 7px 32px; border-radius: 12px; border: 1.5px solid #cbd5e1; outline: none; appearance: none; -webkit-appearance: none; -moz-appearance: none; font-family: var(--font-sans); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="relative inline-flex items-center">
+          <select id="range-select" onchange="setRangeDays(this.value)" class="min-h-[38px] sm:min-h-[40px] cursor-pointer text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all duration-200 pl-8 pr-7 py-2 rounded-xl border border-slate-200 outline-none appearance-none shadow-xs">
             <option value="1" <?= $req_range_days === 1 ? 'selected' : '' ?>>24h</option>
             <option value="3" <?= $req_range_days === 3 ? 'selected' : '' ?>>3 Days</option>
             <option value="7" <?= $req_range_days === 7 ? 'selected' : '' ?>>7 Days</option>
             <option value="30" <?= $req_range_days === 30 ? 'selected' : '' ?>>30 Days</option>
           </select>
-          <i data-lucide="clock-4" style="position: absolute; left: 10px; width: 14px; height: 14px; color: #00bfa5; pointer-events: none;"></i>
-          <i data-lucide="chevron-down" style="position: absolute; right: 10px; width: 14px; height: 14px; color: #64748b; pointer-events: none;"></i>
+          <i data-lucide="clock-4" class="absolute left-2.5 w-3.5 h-3.5 text-[#00bfa5] pointer-events-none"></i>
+          <i data-lucide="chevron-down" class="absolute right-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none"></i>
         </div>
 
         <!-- Date Picker Input -->
-        <div style="position: relative; display: inline-flex; align-items: center;">
-          <input type="date" id="history-date-picker" value="<?= htmlspecialchars($req_date) ?>" max="<?= htmlspecialchars($today_ist) ?>" class="min-h-[38px] sm:min-h-[42px]" style="padding: 7px 12px 7px 32px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background-color: #f8fafc; cursor: pointer; font-family: var(--font-sans); outline: none;">
-          <i data-lucide="calendar" style="position: absolute; left: 10px; width: 14px; height: 14px; color: #00bfa5; pointer-events: none;"></i>
+        <div class="relative inline-flex items-center">
+          <input type="date" id="history-date-picker" value="<?= htmlspecialchars($req_date) ?>" max="<?= htmlspecialchars($today_ist) ?>" class="min-h-[38px] sm:min-h-[40px] pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-[13px] font-bold text-slate-800 bg-[#f8fafc] hover:bg-white hover:border-[#00bfa5] focus:border-[#00bfa5] transition-all cursor-pointer outline-none shadow-xs">
+          <i data-lucide="calendar" class="absolute left-2.5 w-3.5 h-3.5 text-[#00bfa5] pointer-events-none"></i>
         </div>
       </div>
-    </div>
-
-    <!-- Bottom Integrated Section: 24-Hour Dynamic Metrics (Shown for 1 Day range) -->
-    <div id="summary-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; transition: max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, margin 0.25s ease, padding 0.25s ease; overflow: hidden; max-height: 380px; opacity: 1;">
-      
-      <!-- Left: Date & Logged Count -->
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 38px; height: 38px; border-radius: 12px; background-color: #00bfa5; display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 2px 10px rgba(0, 191, 165, 0.25); flex-shrink: 0;">
-          <i data-lucide="clock" style="width: 19px; height: 19px;"></i>
-        </div>
-        <div>
-          <div id="summary-date-display" style="font-size: 15px; font-weight: 800; color: #0f172a;">--</div>
-          <div style="font-size: 12px; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-weight: 700; color: #00bfa5;">24 Hourly Points (<span id="log-count">0</span> Logged)</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: Dynamic Average Section -->
-      <div id="summary-aqi-block" style="display: <?= $req_subtab === 'weather' ? 'none' : 'flex' ?>; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <!-- Avg AQI Card Badge -->
-        <div id="avg-aqi-badge-container" style="display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-radius: 16px; background-color: #f8fafc; border: 1.5px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: all 0.25s ease;">
-          <div style="display: flex; flex-direction: column;">
-            <div id="avg-aqi-title" style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 5px;">
-              <span id="avg-aqi-dot" style="width: 7px; height: 7px; border-radius: 50%; background-color: #94a3b8; display: inline-block;"></span>
-              Avg AQI
-            </div>
-            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 2px;">
-              <span id="avg-aqi-val" style="font-size: 24px; font-weight: 900; color: #64748b; font-family: var(--font-mono); line-height: 1;">--</span>
-              <span id="avg-aqi-label" style="display: none; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background-color: #e2e8f0; color: #475569; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">--</span>
-            </div>
-          </div>
-          <div id="min-max-aqi" style="display: none; border-left: 1px solid #e2e8f0; padding-left: 12px; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 600; color: #64748b;">
-            <div>Min: <strong id="min-aqi-val" style="font-family: var(--font-mono);">--</strong></div>
-            <div>Peak: <strong id="max-aqi-val" style="font-family: var(--font-mono);">--</strong></div>
-          </div>
-        </div>
-
-        <!-- Pollutants Mini-Chips -->
-        <div id="mini-chips-container" style="display: none; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">PM2.5: </span><strong id="avg-pm25" style="color: #0284c7; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">PM10: </span><strong id="avg-pm10" style="color: #6366f1; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">CO: </span><strong id="avg-co" style="color: #16a34a; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">NO₂: </span><strong id="avg-no2" style="color: #9333ea; font-family: var(--font-mono);">--</strong>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 9px; font-size: 11px;">
-            <span style="color: #64748b; font-weight: 600;">O₃: </span><strong id="avg-o3" style="color: #d97706; font-family: var(--font-mono);">--</strong>
-          </div>
-        </div>
-      </div>
-
-      <div id="summary-weather-block" style="display: <?= $req_subtab === 'weather' ? 'flex' : 'none' ?>; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #9a3412; font-weight: 600;">Avg Temp: </span>
-          <strong id="w-avg-temp" style="color: #ea580c; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #065f46; font-weight: 600;">Avg Hum: </span>
-          <strong id="w-avg-hum" style="color: #00bfa5; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #e0e7ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #3730a3; font-weight: 600;">Avg Wind: </span>
-          <strong id="w-avg-wind" style="color: #4f46e5; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #6b21a8; font-weight: 600;">Max Wind Gust: </span>
-          <strong id="w-max-gust" style="color: #8b5cf6; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #115e59; font-weight: 600;">Avg Wind Dir: </span>
-          <strong id="w-mode-dir" style="color: #0d9488; font-family: var(--font-mono);">--</strong>
-        </div>
-        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 6px 12px; font-size: 11.5px;">
-          <span style="color: #1e40af; font-weight: 600;">Total Rain: </span>
-          <strong id="w-total-rain" style="color: #2563eb; font-family: var(--font-mono);">--</strong>
-        </div>
-      </div>
-      
     </div>
   </div>
 
-  <!-- CHART SECTION -->
-  <div class="bg-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.05)]">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+  <!-- ── TREND GRAPH CARD (Historical Telemetry & Diurnal Baselines) ── -->
+  <div class="trend-graph-card p-4 sm:p-6 mb-4">
+    <!-- Top Header: Title & Pill Controls -->
+    <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
       <div>
-        <h2 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 6px;">
-          <i data-lucide="layers" style="width: 16px; height: 16px; color: #00bfa5;" id="chart-title-icon"></i>
-          <span id="chart-main-title">Air Quality Hourly Trend Analysis (12:00 AM – 12:00 AM)</span>
+        <h2 id="trend-graph-title" class="text-base sm:text-lg font-bold text-white m-0 tracking-tight flex items-center gap-2">
+          <i data-lucide="trending-up" class="w-4 h-4 text-[#00bfa5]" id="trend-title-icon"></i>
+          <span id="trend-graph-title-text"><?= $req_subtab === 'weather' ? 'Soil Telemetry Trend Graph' : 'Air Quality Trend Graph' ?></span>
         </h2>
-        <p style="font-size: 12px; color: #64748b; margin-top: 2px; margin-bottom: 0;">
-          <span id="chart-sub-title">24 Hourly data points progression</span>
+        <p id="trend-graph-subtitle" class="m-0 text-slate-400 text-xs font-medium mt-1">
+          <?= $req_subtab === 'weather' ? 'Hourly soil subsurface telemetry (Temperature, Moisture, pH, EC)' : 'Hourly pollutant concentration telemetry and measured trends' ?>
         </p>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full lg:w-auto">
-        <!-- Chart Type Toggle -->
-        <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 999px; border: 1px solid #e2e8f0;">
-          <button onclick="setChartType('line')" id="btn-type-line" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; <?= $req_type === 'line' ? 'background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06);' : 'background-color: transparent; color: #64748b; box-shadow: none;' ?> transition: all 0.15s ease; min-height: 36px;">
-            <i data-lucide="trending-up" style="width: 13px; height: 13px; color: <?= $req_type === 'line' ? '#00bfa5' : '#64748b' ?>;" id="icon-type-line"></i>
-            <span>Curve</span>
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <!-- Parameter Selector Dropdown Pill Button -->
+        <div class="relative inline-flex items-center" id="trend-param-container">
+          <button type="button" id="trend-param-btn" class="trend-pill-btn" onclick="toggleTrendParamMenu()">
+            <span id="trend-param-icon"><?= $req_subtab === 'weather' ? ($req_param === 'soil_humidity' ? '💧' : ($req_param === 'soil_ph' ? '🧪' : ($req_param === 'soil_conductivity' ? '⚡' : '🌱'))) : ($req_param === 'pm25' ? '🌁' : ($req_param === 'pm10' ? '💨' : ($req_param === 'co' ? '🧪' : ($req_param === 'no2' ? '🚗' : ($req_param === 'o3' ? '☀️' : '🌿'))))) ?></span>
+            <span id="trend-param-label"><?= $req_subtab === 'weather' ? ($req_param === 'soil_humidity' ? 'Soil Humidity' : ($req_param === 'soil_ph' ? 'Soil pH' : ($req_param === 'soil_conductivity' ? 'Soil Conductivity' : 'Soil Temperature'))) : ($req_param === 'pm25' ? 'PM2.5' : ($req_param === 'pm10' ? 'PM10' : ($req_param === 'co' ? 'CO' : ($req_param === 'no2' ? 'NO₂' : ($req_param === 'o3' ? 'O₃' : 'CPCB AQI'))))) ?></span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
           </button>
-          <button onclick="setChartType('bar')" id="btn-type-bar" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; border: none; font-size: 11.5px; font-weight: 600; cursor: pointer; <?= $req_type === 'bar' ? 'background-color: #ffffff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.06);' : 'background-color: transparent; color: #64748b; box-shadow: none;' ?> transition: all 0.15s ease; min-height: 36px;">
-            <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: <?= $req_type === 'bar' ? '#00bfa5' : '#64748b' ?>;" id="icon-type-bar"></i>
-            <span>Bars</span>
-          </button>
-        </div>
 
-        <!-- Parameter Filter Chips (AQI) - horizontally scrollable on mobile -->
-        <div id="chips-aqi" class="<?= $req_subtab === 'weather' ? 'hidden' : 'flex' ?> gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
-          <button onclick="setParam('cpcb_aqi')" id="btn-cpcb_aqi" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'cpcb_aqi' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">AQI</button>
-          <button onclick="setParam('pm25')" id="btn-pm25" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'pm25' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">PM2.5</button>
-          <button onclick="setParam('pm10')" id="btn-pm10" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'pm10' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">PM10</button>
-          <button onclick="setParam('co')" id="btn-co" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'co' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">CO</button>
-          <button onclick="setParam('no2')" id="btn-no2" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'no2' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">NO₂</button>
-          <button onclick="setParam('o3')" id="btn-o3" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'o3' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">O₃</button>
-        </div>
+          <!-- Floating Parameter Checklist Menu -->
+          <div id="trend-param-menu" class="trend-dropdown-menu">
+            <!-- Soil Items for Node 2 -->
+            <div id="trend-menu-soil" style="display: <?= $req_subtab === 'soil' ? 'block' : 'none' ?>;">
+              <div class="trend-dropdown-item <?= in_array($req_param, ['soil_moisture', 'soil_humidity']) ? 'active' : '' ?>" data-param="soil_moisture" onclick="selectTrendParam('soil_moisture', '💧', 'Soil Moisture', '%')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">💧</span>
+                  <span>Soil Moisture</span>
+                </div>
+                <div class="trend-check-box"><?= in_array($req_param, ['soil_moisture', 'soil_humidity']) ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'soil_temperature' ? 'active' : '' ?>" data-param="soil_temperature" onclick="selectTrendParam('soil_temperature', '🌱', 'Soil Temperature', '°C')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">🌱</span>
+                  <span>Soil Temperature</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'soil_temperature' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'soil_ph' ? 'active' : '' ?>" data-param="soil_ph" onclick="selectTrendParam('soil_ph', '🧪', 'Soil pH', 'pH')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">🧪</span>
+                  <span>Soil pH</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'soil_ph' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'soil_conductivity' ? 'active' : '' ?>" data-param="soil_conductivity" onclick="selectTrendParam('soil_conductivity', '⚡', 'Soil Conductivity', 'µS/cm')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">⚡</span>
+                  <span>Soil Conductivity</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'soil_conductivity' ? '✓' : '' ?></div>
+              </div>
+            </div>
 
-        <!-- Parameter Filter Chips (Weather) - horizontally scrollable on mobile -->
-        <div id="chips-weather" class="<?= $req_subtab === 'weather' ? 'flex' : 'hidden' ?> gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full flex-nowrap bg-slate-50 p-1 rounded-full border border-slate-200">
-          <button onclick="setParam('temperature')" id="btn-temperature" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'temperature' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Temp</button>
-          <button onclick="setParam('humidity')" id="btn-humidity" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'humidity' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Hum.</button>
-          <button onclick="setParam('wind_speed')" id="btn-wind_speed" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'wind_speed' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Wind Spd</button>
-          <button onclick="setParam('wind_gust')" id="btn-wind_gust" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'wind_gust' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Wind Gust</button>
-          <button onclick="setParam('rain_gauge')" id="btn-rain_gauge" class="shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full border-none font-semibold text-xs cursor-pointer <?= $req_param === 'rain_gauge' ? 'bg-[#00bfa5] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800' ?> transition-all">Rain</button>
+            <!-- Weather Items for Node 2 -->
+            <div id="trend-menu-weather" style="display: <?= $req_subtab === 'weather' ? 'block' : 'none' ?>;">
+              <div class="trend-dropdown-item <?= $req_param === 'temperature' ? 'active' : '' ?>" data-param="temperature" onclick="selectTrendParam('temperature', '🌡️', 'Temperature', '°C')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">🌡️</span>
+                  <span>Temperature</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'temperature' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'humidity' ? 'active' : '' ?>" data-param="humidity" onclick="selectTrendParam('humidity', '💧', 'Humidity', '%')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">💧</span>
+                  <span>Humidity</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'humidity' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'wind_speed' ? 'active' : '' ?>" data-param="wind_speed" onclick="selectTrendParam('wind_speed', '💨', 'Wind Speed', 'km/h')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">💨</span>
+                  <span>Wind Speed</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'wind_speed' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'wind_gust' ? 'active' : '' ?>" data-param="wind_gust" onclick="selectTrendParam('wind_gust', '⚡', 'Wind Gust', 'm/s')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">⚡</span>
+                  <span>Wind Gust</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'wind_gust' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'rain_gauge' ? 'active' : '' ?>" data-param="rain_gauge" onclick="selectTrendParam('rain_gauge', '🌧️', 'Rain Gauge', 'mm')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">🌧️</span>
+                  <span>Rain Gauge</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'rain_gauge' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'pressure' ? 'active' : '' ?>" data-param="pressure" onclick="selectTrendParam('pressure', '⏱️', 'Pressure', 'mb')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">⏱️</span>
+                  <span>Pressure</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'pressure' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'uv_index' ? 'active' : '' ?>" data-param="uv_index" onclick="selectTrendParam('uv_index', '☀️', 'UV Index', '')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">☀️</span>
+                  <span>UV Index</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'uv_index' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'solar_radiation' ? 'active' : '' ?>" data-param="solar_radiation" onclick="selectTrendParam('solar_radiation', '☀️', 'Solar Radiation', 'W/m²')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">☀️</span>
+                  <span>Solar Radiation</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'solar_radiation' ? '✓' : '' ?></div>
+              </div>
+            </div>
+
+            <!-- AQI Items for Node 2 -->
+            <div id="trend-menu-aqi" style="display: <?= $req_subtab === 'aqi' ? 'block' : 'none' ?>;">
+              <div class="trend-dropdown-item <?= $req_param === 'cpcb_aqi' ? 'active' : '' ?>" data-param="cpcb_aqi" onclick="selectTrendParam('cpcb_aqi', '🌿', 'CPCB AQI', '')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">🌿</span>
+                  <span>CPCB AQI</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'cpcb_aqi' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'pm25' ? 'active' : '' ?>" data-param="pm25" onclick="selectTrendParam('pm25', '🌁', 'PM2.5', 'µg/m³')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">🌁</span>
+                  <span>PM2.5</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'pm25' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'pm10' ? 'active' : '' ?>" data-param="pm10" onclick="selectTrendParam('pm10', '💨', 'PM10', 'µg/m³')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">💨</span>
+                  <span>PM10</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'pm10' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'co' ? 'active' : '' ?>" data-param="co" onclick="selectTrendParam('co', '🧪', 'CO', 'mg/m³')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">🧪</span>
+                  <span>CO</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'co' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'no2' ? 'active' : '' ?>" data-param="no2" onclick="selectTrendParam('no2', '🚗', 'NO₂', 'µg/m³')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">🚗</span>
+                  <span>NO₂</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'no2' ? '✓' : '' ?></div>
+              </div>
+              <div class="trend-dropdown-item <?= $req_param === 'o3' ? 'active' : '' ?>" data-param="o3" onclick="selectTrendParam('o3', '☀️', 'O₃', 'µg/m³')">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">☀️</span>
+                  <span>O₃</span>
+                </div>
+                <div class="trend-check-box"><?= $req_param === 'o3' ? '✓' : '' ?></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Chart Canvas Container -->
-    <div style="width: 100%; height: 300px; position: relative;">
+    <div style="width: 100%; height: 320px; position: relative;">
       <canvas id="historical-chart" style="transition: opacity 0.2s ease-in-out;"></canvas>
-      <!-- Chart Loading Indicator (Clean spinner, never flashes false empty) -->
-      <div id="chart-loading" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.85); gap: 10px; color: #00bfa5; z-index: 4;">
+      <!-- Chart Loading Indicator -->
+      <div id="chart-loading" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; background: rgba(22, 28, 40, 0.85); gap: 10px; color: #00bfa5; z-index: 4;">
         <div style="width: 28px; height: 28px; border: 3px solid #00bfa5; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-        <span style="font-size: 12px; font-weight: 600; color: #64748b;">Loading telemetry data...</span>
+        <span style="font-size: 12px; font-weight: 600; color: #94a3b8;">Loading telemetry data...</span>
       </div>
-      <div id="chart-empty" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.85); gap: 8px; color: #64748b; z-index: 5;">
-        <i data-lucide="info" style="width: 24px; height: 24px; color: #94a3b8;"></i>
+      <div id="chart-empty" style="display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; background: rgba(22, 28, 40, 0.85); gap: 8px; color: #94a3b8; z-index: 5;">
+        <i data-lucide="info" style="width: 24px; height: 24px; color: #64748b;"></i>
         <p style="margin: 0; font-size: 13.5px; font-weight: 600;" id="chart-empty-text">No records found.</p>
+      </div>
+    </div>
+
+    <!-- Bottom Dynamic Legend Bar (Single recorded series matching table below) -->
+    <div class="flex items-center justify-center gap-5 sm:gap-7 flex-wrap mt-3 pt-3 border-t border-slate-700/50 text-xs font-semibold text-slate-300">
+      <div class="flex items-center gap-2">
+        <span id="leg-swatch" style="width: 18px; height: 3.5px; border-radius: 2px; background: #00bfa5; display: inline-block;"></span>
+        <span id="leg-text"><?= $req_subtab === 'soil' ? 'Soil Telemetry (Recorded)' : ($req_subtab === 'weather' ? 'Weather Telemetry (Recorded)' : 'AQI Telemetry (Recorded)') ?></span>
+      </div>
+      <div id="leg-stats" class="flex items-center gap-4 text-slate-400 font-mono text-[11px] flex-wrap">
+        <span>Recorded: <strong id="leg-latest-val" class="text-white">--</strong></span>
+        <span>Peak: <strong id="leg-peak-val" class="text-white">--</strong></span>
+        <span>Min: <strong id="leg-min-val" class="text-white">--</strong></span>
+        <span>Avg: <strong id="leg-avg-val" class="text-white">--</strong></span>
       </div>
     </div>
   </div>
@@ -267,7 +470,7 @@ if (!$is_node_2) {
     </div>
 
     <div style="overflow-x: auto; max-height: 440px; -webkit-overflow-scrolling: touch;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 750px;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 980px;">
         <thead style="position: sticky; top: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; z-index: 2;">
           <tr style="color: #475569; font-size: 12px;" id="table-head-row">
             <!-- Headers injected by JS -->
@@ -457,7 +660,7 @@ if (!$is_node_2) {
 <script>
 function getHistoricalInitialState() {
     let tab = '<?= $req_subtab ?>';
-    let param = tab === 'aqi' ? 'cpcb_aqi' : 'temperature';
+    let param = tab === 'aqi' ? 'cpcb_aqi' : 'soil_temperature';
     let days = <?= $req_range_days ?>;
     let type = 'bar';
     let date = '';
@@ -525,43 +728,10 @@ function persistHistoricalState() {
 // High-performance in-memory cache for instant 0ms range switching
 var clientRangeCache = window.__historicalCache = window.__historicalCache || {};
 var pendingRangeFetches = window.__pendingHistFetches = window.__pendingHistFetches || {};
-var summaryCollapseTimer = null;
 
 function getCacheKey(date, days) {
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
     return `${date}_${days}_n${activeNode}`;
-}
-
-function animateSummarySection(show) {
-    const summarySection = document.getElementById('summary-section');
-    if (!summarySection) return;
-    if (summaryCollapseTimer) {
-        clearTimeout(summaryCollapseTimer);
-        summaryCollapseTimer = null;
-    }
-    if (show) {
-        summarySection.style.display = 'flex';
-        requestAnimationFrame(() => {
-            summarySection.style.maxHeight = '380px';
-            summarySection.style.opacity = '1';
-            summarySection.style.marginTop = '18px';
-            summarySection.style.paddingTop = '16px';
-            summarySection.style.borderTopWidth = '1px';
-            summarySection.style.pointerEvents = 'auto';
-        });
-    } else {
-        summarySection.style.maxHeight = '0px';
-        summarySection.style.opacity = '0';
-        summarySection.style.marginTop = '0px';
-        summarySection.style.paddingTop = '0px';
-        summarySection.style.borderTopWidth = '0px';
-        summarySection.style.pointerEvents = 'none';
-        summaryCollapseTimer = setTimeout(() => {
-            if (currentRangeDays > 1 && summarySection) {
-                summarySection.style.display = 'none';
-            }
-        }, 320);
-    }
 }
 
 function setRangeDays(days, skipFetch = false) {
@@ -610,7 +780,9 @@ var PARAM_COLORS = {
     co: '#16a34a', no2: '#9333ea', o3: '#d97706',
     temperature: '#00bfa5', humidity: '#00bfa5',
     wind_speed: '#4f46e5', wind_gust: '#8b5cf6',
-    wind_direction: '#0284c7', rain_gauge: '#0891b2'
+    wind_direction: '#0284c7', rain_gauge: '#0891b2',
+    pressure: '#ec4899', uv_index: '#f43f5e', solar_radiation: '#f59e0b',
+    soil_temperature: '#d97706', soil_humidity: '#0284c7', soil_ph: '#10b981'
 };
 
 var getAqiCategory = function(val) {
@@ -621,6 +793,25 @@ var getAqiCategory = function(val) {
     if (v <= 300) return { label: 'Unhealthy', color: '#e95478', bg: '#fff1f2', border: 'rgba(233, 84, 120, 0.45)', text: '#991b1b', badgeBg: '#e95478', badgeText: '#ffffff' };
     if (v <= 400) return { label: 'Severe', color: '#b33fba', bg: '#faf5ff', border: 'rgba(179, 63, 186, 0.45)', text: '#6b21a8', badgeBg: '#b33fba', badgeText: '#ffffff' };
     return { label: 'Hazardous', color: '#c92033', bg: '#fef2f2', border: 'rgba(201, 32, 51, 0.45)', text: '#9f1239', badgeBg: '#c92033', badgeText: '#ffffff' };
+};
+
+var calculateCpcbSubIndex = function(param, val) {
+    if (val == null || isNaN(val)) return 0;
+    const v = Number(val);
+    const breakpoints = {
+        pm25: [[0,30,0,50],[30,60,51,100],[60,90,101,200],[90,120,201,300],[120,250,301,400],[250,500,401,500]],
+        pm10: [[0,50,0,50],[50,100,51,100],[100,250,101,200],[250,350,201,300],[350,430,301,400],[430,600,401,500]],
+        co:   [[0,1,0,50],[1,2,51,100],[2,10,101,200],[10,17,201,300],[17,34,301,400],[34,50,401,500]],
+        no2:  [[0,40,0,50],[40,80,51,100],[80,180,101,200],[180,280,201,300],[280,400,301,400],[400,500,401,500]],
+        o3:   [[0,50,0,50],[50,100,51,100],[100,168,101,200],[168,208,201,300],[208,748,301,400],[748,1000,401,500]]
+    };
+    const tiers = breakpoints[param];
+    if (!tiers) return 0;
+    for (const [clo, chi, ilo, ihi] of tiers) {
+        if (v <= chi) return Math.round(((ihi - ilo) / (chi - clo)) * (v - clo) + ilo);
+    }
+    const [clo, chi, ilo, ihi] = tiers[tiers.length - 1];
+    return Math.round(((ihi - ilo) / (chi - clo)) * (v - clo) + ilo);
 };
 
 // 6-Tier scales matching the Live page bar standards for each air pollutant
@@ -641,7 +832,9 @@ var PARAM_UNITS = {
     cpcb_aqi: '', aqi: '', pm25: 'µg/m³', pm10: 'µg/m³',
     co: 'mg/m³', no2: 'µg/m³', o3: 'µg/m³',
     temperature: '°C', humidity: '%',
-    wind_speed: 'km/h', wind_gust: 'km/h', wind_direction: '°', rain_gauge: 'mm'
+    wind_speed: 'km/h', wind_gust: 'm/s', wind_direction: '°', rain_gauge: 'mm',
+    pressure: 'mb', uv_index: '', solar_radiation: 'W/m²',
+    soil_temperature: '°C', soil_humidity: '%', soil_moisture: '%', soil_ph: 'pH', soil_conductivity: 'µS/cm'
 };
 
 function getParamTierInfo(param, val) {
@@ -682,6 +875,12 @@ function getParamDisplayName(param) {
     if (param === 'wind_speed') return 'Wind Speed';
     if (param === 'wind_gust') return 'Wind Gust';
     if (param === 'rain_gauge') return 'Rainfall';
+    if (param === 'pressure') return 'Pressure';
+    if (param === 'uv_index') return 'UV Index';
+    if (param === 'solar_radiation') return 'Solar Radiation';
+    if (param === 'soil_temperature') return 'Soil Temperature';
+    if (param === 'soil_humidity') return 'Soil Humidity';
+    if (param === 'soil_ph') return 'Soil pH';
     return param ? param.toUpperCase() : '';
 }
 
@@ -755,10 +954,11 @@ async function fetchRangeData(queryDate, days, force = false) {
     const fetchPromise = (async () => {
         try {
             let payload;
+            const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
             if (typeof window.fetchHistoryBulk === 'function') {
                 payload = await window.fetchHistoryBulk(normDate, days, force, '1');
             } else {
-                const response = await fetch(`api/telemetry.php?action=history_bulk&date=${normDate}&days=${days}&_t=${Date.now()}`);
+                const response = await fetch(`api/telemetry.php?action=history_bulk&node=${activeNode}&date=${normDate}&days=${days}&_t=${Date.now()}`);
                 const data = await response.json();
                 payload = {
                     aqi: data.aqi || [],
@@ -835,9 +1035,15 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
             // Silently fetch fresh data in background to ensure all latest hours are rendered
             fetchRangeData(queryDate, days, true).then(freshData => {
                 if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
-                    historicalDataAqi = freshData.aqi || [];
-                    historicalDataWeather = freshData.weather || [];
-                    renderUI();
+                    const prevLenAqi = historicalDataAqi.length;
+                    const prevLenW = historicalDataWeather.length;
+                    const newLenAqi = (freshData.aqi || []).length;
+                    const newLenW = (freshData.weather || []).length;
+                    if (prevLenAqi !== newLenAqi || prevLenW !== newLenW) {
+                        historicalDataAqi = freshData.aqi || [];
+                        historicalDataWeather = freshData.weather || [];
+                        renderUI();
+                    }
                 }
             }).catch(() => {});
             return;
@@ -864,9 +1070,15 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
             if (isToday || ageMs > 30000) {
                 fetchRangeData(queryDate, days, true).then(freshData => {
                     if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
-                        historicalDataAqi = freshData.aqi || [];
-                        historicalDataWeather = freshData.weather || [];
-                        renderUI();
+                        const prevLenAqi = historicalDataAqi.length;
+                        const prevLenW = historicalDataWeather.length;
+                        const newLenAqi = (freshData.aqi || []).length;
+                        const newLenW = (freshData.weather || []).length;
+                        if (prevLenAqi !== newLenAqi || prevLenW !== newLenW) {
+                            historicalDataAqi = freshData.aqi || [];
+                            historicalDataWeather = freshData.weather || [];
+                            renderUI();
+                        }
                     }
                 }).catch(() => {});
             }
@@ -913,54 +1125,129 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
     }
 }
 
+
+function toggleTrendParamMenu() {
+    const menu = document.getElementById('trend-param-menu');
+    if (!menu) return;
+    const isHidden = (menu.style.display === 'none' || !menu.style.display);
+    menu.style.display = isHidden ? 'block' : 'none';
+}
+
+function updateTrendLegend(paramKey, label) {
+    const legText = document.getElementById('leg-text');
+    const legSwatch = document.getElementById('leg-swatch');
+    const colorMap = {
+        'soil_temperature': '#f59e0b',
+        'soil_humidity': '#0284c7',
+        'soil_ph': '#10b981',
+        'soil_conductivity': '#8b5cf6',
+        'cpcb_aqi': '#00bfa5',
+        'pm25': '#00bfa5',
+        'pm10': '#6366f1',
+        'co': '#10b981',
+        'no2': '#a855f7',
+        'o3': '#f59e0b'
+    };
+    const c = colorMap[paramKey] || '#00bfa5';
+    if (legText) legText.innerText = `${label} (Recorded Telemetry)`;
+    if (legSwatch) legSwatch.style.background = c;
+}
+
+function selectTrendParam(paramKey, icon, label, unitLabel) {
+    if (window.triggerHaptic) window.triggerHaptic('selection');
+    currentParam = paramKey;
+
+    const iconEl = document.getElementById('trend-param-icon');
+    const labelEl = document.getElementById('trend-param-label');
+    if (iconEl) iconEl.innerText = icon;
+    if (labelEl) labelEl.innerText = label;
+
+    const menu = document.getElementById('trend-param-menu');
+    if (menu) {
+        const items = menu.querySelectorAll('.trend-dropdown-item');
+        items.forEach(it => {
+            const isMatch = it.getAttribute('data-param') === paramKey;
+            it.classList.toggle('active', isMatch);
+            const chk = it.querySelector('.trend-check-box');
+            if (chk) chk.innerText = isMatch ? '✓' : '';
+        });
+        menu.style.display = 'none';
+    }
+
+    updateTrendLegend(paramKey, label);
+    persistHistoricalState();
+    renderUI();
+}
+
+document.addEventListener('click', function(e) {
+    const container = document.getElementById('trend-param-container');
+    const menu = document.getElementById('trend-param-menu');
+    if (menu && container && !container.contains(e.target)) {
+        menu.style.display = 'none';
+    }
+});
+
 function switchHistTab(tab, skipRender = false) {
     currentSubTab = tab;
     if (tab === 'aqi') {
         if (!['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3'].includes(currentParam)) {
             currentParam = 'cpcb_aqi';
         }
-    } else {
-        if (!['temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge'].includes(currentParam)) {
+    } else if (tab === 'weather') {
+        if (!['temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge', 'pressure', 'uv_index', 'solar_radiation'].includes(currentParam)) {
             currentParam = 'temperature';
+        }
+    } else { // soil
+        if (!['soil_moisture', 'soil_humidity', 'soil_temperature', 'soil_ph', 'soil_conductivity'].includes(currentParam)) {
+            currentParam = 'soil_moisture';
         }
     }
     
-    // Switch styles
+    // Switch styles on subnav pills
     const tabAqi = document.getElementById('tab-aqi');
     const tabWeather = document.getElementById('tab-weather');
+    const tabSoil = document.getElementById('tab-soil');
     const days = currentRangeDays || 1;
-    if(tab === 'aqi') {
-        tabAqi.style.backgroundColor = '#00bfa5';
-        tabAqi.style.color = '#ffffff';
-        tabWeather.style.backgroundColor = 'transparent';
-        tabWeather.style.color = '#64748b';
-        
-        document.getElementById('chips-aqi').style.display = 'flex';
-        document.getElementById('chips-weather').style.display = 'none';
-        
-        const aqiBlock = document.getElementById('summary-aqi-block');
-        const weatherBlock = document.getElementById('summary-weather-block');
-        if (aqiBlock) aqiBlock.style.display = 'flex';
-        if (weatherBlock) weatherBlock.style.display = 'none';
 
-        document.getElementById('chart-main-title').innerText = days === 1 ? 'Air Quality Hourly Trend Analysis (12:00 AM – 12:00 AM)' : `Air Quality ${days}-Day Trend Analysis`;
-        document.getElementById('table-title').innerText = days === 1 ? 'AQI Historical Telemetry Table (12:00 AM – 12:00 AM)' : `AQI Historical Telemetry Table (${days} Days)`;
+    const activeCls = 'node2-subtab-btn active';
+    const inactiveCls = 'node2-subtab-btn';
+
+    if (tabAqi) tabAqi.className = (tab === 'aqi') ? activeCls : inactiveCls;
+    if (tabWeather) tabWeather.className = (tab === 'weather') ? activeCls : inactiveCls;
+    if (tabSoil) tabSoil.className = (tab === 'soil') ? activeCls : inactiveCls;
+
+    const tTitle = document.getElementById('trend-graph-title-text');
+    const tSub = document.getElementById('trend-graph-subtitle');
+    const legText = document.getElementById('leg-text');
+    const mWeather = document.getElementById('trend-menu-weather');
+    const mAqi = document.getElementById('trend-menu-aqi');
+    const mSoil = document.getElementById('trend-menu-soil');
+    const tableTitle = document.getElementById('table-title');
+
+    if (tab === 'aqi') {
+        if (tTitle) tTitle.innerText = 'Air Quality Trend Graph';
+        if (tSub) tSub.innerText = 'Hourly pollutant concentration telemetry and measured trends';
+        if (legText) legText.innerText = 'AQI Telemetry (Recorded)';
+        if (mAqi) mAqi.style.display = 'block';
+        if (mWeather) mWeather.style.display = 'none';
+        if (mSoil) mSoil.style.display = 'none';
+        if (tableTitle) tableTitle.innerText = days === 1 ? 'AQI Historical Telemetry Table (12:00 AM – 12:00 AM)' : `AQI Historical Telemetry Table (${days} Days)`;
+    } else if (tab === 'weather') {
+        if (tTitle) tTitle.innerText = 'Weather Trend Graph';
+        if (tSub) tSub.innerText = 'Hourly ambient meteorological telemetry and measured trends';
+        if (legText) legText.innerText = 'Weather Telemetry (Recorded)';
+        if (mAqi) mAqi.style.display = 'none';
+        if (mWeather) mWeather.style.display = 'block';
+        if (mSoil) mSoil.style.display = 'none';
+        if (tableTitle) tableTitle.innerText = days === 1 ? 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)' : `Weather Historical Telemetry Table (${days} Days)`;
     } else {
-        tabWeather.style.backgroundColor = '#00bfa5';
-        tabWeather.style.color = '#ffffff';
-        tabAqi.style.backgroundColor = 'transparent';
-        tabAqi.style.color = '#64748b';
-        
-        document.getElementById('chips-aqi').style.display = 'none';
-        document.getElementById('chips-weather').style.display = 'flex';
-        
-        const aqiBlock = document.getElementById('summary-aqi-block');
-        const weatherBlock = document.getElementById('summary-weather-block');
-        if (aqiBlock) aqiBlock.style.display = 'none';
-        if (weatherBlock) weatherBlock.style.display = 'flex';
-
-        document.getElementById('chart-main-title').innerText = days === 1 ? 'Weather Hourly Trend Analysis (12:00 AM – 12:00 AM)' : `Weather ${days}-Day Trend Analysis`;
-        document.getElementById('table-title').innerText = days === 1 ? 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)' : `Weather Historical Telemetry Table (${days} Days)`;
+        if (tTitle) tTitle.innerText = 'Soil Telemetry Trend Graph';
+        if (tSub) tSub.innerText = 'Hourly soil subsurface telemetry (Moisture, Temperature, pH, EC)';
+        if (legText) legText.innerText = 'Soil Telemetry (Recorded)';
+        if (mAqi) mAqi.style.display = 'none';
+        if (mWeather) mWeather.style.display = 'none';
+        if (mSoil) mSoil.style.display = 'block';
+        if (tableTitle) tableTitle.innerText = days === 1 ? 'Soil Historical Telemetry Table (12:00 AM – 12:00 AM)' : `Soil Historical Telemetry Table (${days} Days)`;
     }
     
     setParam(currentParam, skipRender);
@@ -969,55 +1256,57 @@ function switchHistTab(tab, skipRender = false) {
 
 function setChartType(type, skipRender = false) {
     currentChartType = type;
-    const btnLine = document.getElementById('btn-type-line');
-    const iconLine = document.getElementById('icon-type-line');
-    const btnBar = document.getElementById('btn-type-bar');
-    const iconBar = document.getElementById('icon-type-bar');
-    
-    if(type === 'line') {
-        btnLine.style.backgroundColor = '#ffffff';
-        btnLine.style.color = '#0f172a';
-        btnLine.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
-        iconLine.style.color = '#00bfa5';
-        
-        btnBar.style.backgroundColor = 'transparent';
-        btnBar.style.color = '#64748b';
-        btnBar.style.boxShadow = 'none';
-        iconBar.style.color = '#64748b';
-    } else {
-        btnBar.style.backgroundColor = '#ffffff';
-        btnBar.style.color = '#0f172a';
-        btnBar.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
-        iconBar.style.color = '#00bfa5';
-        
-        btnLine.style.backgroundColor = 'transparent';
-        btnLine.style.color = '#64748b';
-        btnLine.style.boxShadow = 'none';
-        iconLine.style.color = '#64748b';
-    }
     persistHistoricalState();
     if (!skipRender) renderUI();
 }
 
 function setParam(param, skipRender = false) {
     currentParam = param;
-    const allBtns = ['cpcb_aqi', 'pm25', 'pm10', 'co', 'no2', 'o3', 'temperature', 'humidity', 'wind_speed', 'wind_gust', 'rain_gauge'];
-    allBtns.forEach(b => {
-        const el = document.getElementById(`btn-${b}`);
-        if(el) {
-            if(b === param) {
-                el.style.background = PARAM_COLORS[b];
-                el.style.color = '#ffffff';
-            } else {
-                el.style.background = 'transparent';
-                el.style.color = '#64748b';
-            }
-        }
-    });
-    const titleIcon = document.getElementById('chart-title-icon');
-    if (titleIcon && PARAM_COLORS[param]) {
-        titleIcon.style.color = PARAM_COLORS[param];
+    const paramMeta = {
+        'soil_moisture': { icon: '💧', label: 'Soil Moisture', unit: '%', color: '#0284c7' },
+        'soil_humidity': { icon: '💧', label: 'Soil Humidity', unit: '%', color: '#0284c7' },
+        'soil_temperature': { icon: '🌱', label: 'Soil Temperature', unit: '°C', color: '#ea580c' },
+        'soil_ph': { icon: '🧪', label: 'Soil pH', unit: 'pH', color: '#10b981' },
+        'soil_conductivity': { icon: '⚡', label: 'Soil Conductivity', unit: 'µS/cm', color: '#8b5cf6' },
+        'temperature': { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' },
+        'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0284c7' },
+        'wind_speed': { icon: '💨', label: 'Wind Speed', unit: 'km/h', color: '#0d9488' },
+        'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'm/s', color: '#0891b2' },
+        'rain_gauge': { icon: '🌧️', label: 'Rain Gauge', unit: 'mm', color: '#2563eb' },
+        'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
+        'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
+        'solar_radiation': { icon: '☀️', label: 'Solar Radiation', unit: 'W/m²', color: '#f59e0b' },
+        'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' },
+        'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
+        'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
+        'co': { icon: '🧪', label: 'CO', unit: 'mg/m³', color: '#10b981' },
+        'no2': { icon: '🚗', label: 'NO₂', unit: 'µg/m³', color: '#a855f7' },
+        'o3': { icon: '☀️', label: 'O₃', unit: 'µg/m³', color: '#f59e0b' }
+    };
+    const meta = paramMeta[param] || (currentSubTab === 'soil'
+        ? { icon: '💧', label: 'Soil Moisture', unit: '%', color: '#0284c7' }
+        : (currentSubTab === 'weather'
+            ? { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' }
+            : { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' }));
+
+    const iconEl = document.getElementById('trend-param-icon');
+    const labelEl = document.getElementById('trend-param-label');
+    if (iconEl) iconEl.innerText = meta.icon;
+    if (labelEl) labelEl.innerText = meta.label;
+
+    const menu = document.getElementById('trend-param-menu');
+    if (menu) {
+        const items = menu.querySelectorAll('.trend-dropdown-item');
+        items.forEach(it => {
+            const itemParam = it.getAttribute('data-param');
+            const isMatch = (itemParam === param) || (param === 'soil_moisture' && itemParam === 'soil_humidity');
+            it.classList.toggle('active', isMatch);
+            const chk = it.querySelector('.trend-check-box');
+            if (chk) chk.innerText = isMatch ? '✓' : '';
+        });
     }
+
+    updateTrendLegend(param, meta.label);
     persistHistoricalState();
     if (!skipRender) renderUI();
 }
@@ -1115,6 +1404,9 @@ function renderUI(skipDayFilter = false) {
                         o3: null,
                         temperature: null,
                         humidity: null,
+                        pressure: null,
+                        uv_index: null,
+                        solar_radiation: null,
                         wind_speed: null,
                         wind_gust: null,
                         wind_direction: null,
@@ -1129,18 +1421,26 @@ function renderUI(skipDayFilter = false) {
         filteredDayData.sort((a,b) => parseIsoLocal(a.timestamp) - parseIsoLocal(b.timestamp));
         
         const isAqi = currentSubTab === 'aqi';
-        const loggedCount = filteredDayData.filter(d => !d.isMissing && (isAqi ? d.cpcb_aqi != null : d.temperature != null)).length;
+        const isSoil = currentSubTab === 'soil';
+        const loggedCount = filteredDayData.filter(d => !d.isMissing && (
+            isAqi ? d.cpcb_aqi != null : (
+                isSoil ? (d.soil_temperature != null || d.soil_humidity != null || d.soil_moisture != null) : (d.temperature != null || d.humidity != null || d.pressure != null || d.uv_index != null || d.solar_radiation != null)
+            )
+        )).length;
         
         const subtitleEl = document.getElementById('date-subtitle-desktop');
         if (subtitleEl) {
-            subtitleEl.innerText = `Showing ${filteredDayData.length} records (${loggedCount} logged) (${rangeLabel})`;
+            subtitleEl.innerText = days === 1
+                ? 'Hourly sensor progression telemetry (12:00 AM – 12:00 AM)'
+                : `Multi-day telemetry trend analysis (${days} Days: ${rangeLabel})`;
         }
         
         const chartTitle = document.getElementById('chart-main-title');
         if (chartTitle) {
+            const subLabel = isAqi ? 'Air Quality' : (isSoil ? 'Soil Telemetry' : 'Weather');
             chartTitle.innerText = days === 1
-                ? (isAqi ? 'Air Quality Hourly Trend Analysis (12:00 AM – 12:00 AM)' : 'Weather Hourly Trend Analysis (12:00 AM – 12:00 AM)')
-                : (isAqi ? `Air Quality ${days}-Day Trend Analysis (${rangeLabel})` : `Weather ${days}-Day Trend Analysis (${rangeLabel})`);
+                ? `${subLabel} Hourly Trend Analysis (12:00 AM – 12:00 AM)`
+                : `${subLabel} ${days}-Day Trend Analysis (${rangeLabel})`;
         }
         
         const chartSubTitle = document.getElementById('chart-sub-title');
@@ -1150,20 +1450,16 @@ function renderUI(skipDayFilter = false) {
         
         const tableTitle = document.getElementById('table-title');
         if (tableTitle) {
+            const subLabel = isAqi ? 'AQI' : (isSoil ? 'Soil' : 'Weather');
             tableTitle.innerText = days === 1
-                ? (isAqi ? 'AQI Historical Telemetry Table (12:00 AM – 12:00 AM)' : 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)')
-                : (isAqi ? `AQI Historical Telemetry Table (${days} Days: ${rangeLabel})` : `Weather Historical Telemetry Table (${days} Days: ${rangeLabel})`);
+                ? `${subLabel} Historical Telemetry Table (12:00 AM – 12:00 AM)`
+                : `${subLabel} Historical Telemetry Table (${days} Days: ${rangeLabel})`;
         }
         
         const tableSubtitle = document.getElementById('table-subtitle');
         if (tableSubtitle) {
             tableSubtitle.innerText = `${days === 1 ? '24 Hourly Telemetry Rows' : days + '-Day Telemetry Rows'} (${rangeLabel}) — ${loggedCount} Logged Readings`;
         }
-    }
-    
-    const summarySection = document.getElementById('summary-section');
-    if (summarySection) {
-        animateSummarySection(days === 1);
     }
     
     if (filteredDayData.length === 0) {
@@ -1178,18 +1474,24 @@ function renderUI(skipDayFilter = false) {
             if (minMaxAqi) minMaxAqi.style.display = 'none';
             const miniChips = document.getElementById('mini-chips-container');
             if (miniChips) miniChips.style.display = 'none';
-            const elTemp = document.getElementById('w-avg-temp');
-            if (elTemp) elTemp.innerText = '--';
-            const elHum = document.getElementById('w-avg-hum');
-            if (elHum) elHum.innerText = '--';
-            const elWind = document.getElementById('w-avg-wind');
-            if (elWind) elWind.innerText = '--';
-            const elGust = document.getElementById('w-max-gust');
-            if (elGust) elGust.innerText = '--';
-            const elDir = document.getElementById('w-mode-dir');
-            if (elDir) elDir.innerText = '--';
-            const elRain = document.getElementById('w-total-rain');
-            if (elRain) elRain.innerText = '--';
+
+            const elSoilTemp = document.getElementById('w-avg-soil-temp');
+            if (elSoilTemp) elSoilTemp.innerText = '--';
+            const elSoilHum = document.getElementById('w-avg-soil-hum');
+            if (elSoilHum) elSoilHum.innerText = '--';
+            const elSoilPh = document.getElementById('w-avg-soil-ph');
+            if (elSoilPh) elSoilPh.innerText = '--';
+            const elSoilEc = document.getElementById('w-avg-soil-ec');
+            if (elSoilEc) elSoilEc.innerText = '--';
+
+            const elWTemp = document.getElementById('w-avg-temp');
+            if (elWTemp) elWTemp.innerText = '--';
+            const elWHum = document.getElementById('w-avg-hum');
+            if (elWHum) elWHum.innerText = '--';
+            const elWWind = document.getElementById('w-avg-wind');
+            if (elWWind) elWWind.innerText = '--';
+            const elWRain = document.getElementById('w-avg-rain');
+            if (elWRain) elWRain.innerText = '--';
         }
         document.getElementById('chart-empty').style.display = 'flex';
         document.getElementById('chart-empty-text').innerText = `No records found for ${rangeLabel}.`;
@@ -1197,12 +1499,17 @@ function renderUI(skipDayFilter = false) {
             chartInstance.destroy();
             chartInstance = null;
         }
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 36px 20px; color: #64748b;">No telemetry records available for ${rangeLabel}.</td></tr>`;
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 36px 20px; color: #64748b;">No telemetry records available for ${rangeLabel}.</td></tr>`;
         return;
     }
 
     const isAqiCurrent = currentSubTab === 'aqi';
-    const loggedCount = filteredDayData.filter(d => !d.isMissing && (isAqiCurrent ? d.cpcb_aqi != null : d.temperature != null)).length;
+    const isSoilCurrent = currentSubTab === 'soil';
+    const loggedCount = filteredDayData.filter(d => !d.isMissing && (
+        isAqiCurrent ? d.cpcb_aqi != null : (
+            isSoilCurrent ? (d.soil_temperature != null || d.soil_humidity != null || d.soil_moisture != null) : (d.temperature != null || d.humidity != null || d.pressure != null || d.uv_index != null || d.solar_radiation != null)
+        )
+    )).length;
 
     if (loggedCount === 0) {
         if (days === 1) {
@@ -1216,18 +1523,24 @@ function renderUI(skipDayFilter = false) {
             if (minMaxAqi) minMaxAqi.style.display = 'none';
             const miniChips = document.getElementById('mini-chips-container');
             if (miniChips) miniChips.style.display = 'none';
-            const elTemp = document.getElementById('w-avg-temp');
-            if (elTemp) elTemp.innerText = '--';
-            const elHum = document.getElementById('w-avg-hum');
-            if (elHum) elHum.innerText = '--';
-            const elWind = document.getElementById('w-avg-wind');
-            if (elWind) elWind.innerText = '--';
-            const elGust = document.getElementById('w-max-gust');
-            if (elGust) elGust.innerText = '--';
-            const elDir = document.getElementById('w-mode-dir');
-            if (elDir) elDir.innerText = '--';
-            const elRain = document.getElementById('w-total-rain');
-            if (elRain) elRain.innerText = '--';
+
+            const elSoilTemp = document.getElementById('w-avg-soil-temp');
+            if (elSoilTemp) elSoilTemp.innerText = '--';
+            const elSoilHum = document.getElementById('w-avg-soil-hum');
+            if (elSoilHum) elSoilHum.innerText = '--';
+            const elSoilPh = document.getElementById('w-avg-soil-ph');
+            if (elSoilPh) elSoilPh.innerText = '--';
+            const elSoilEc = document.getElementById('w-avg-soil-ec');
+            if (elSoilEc) elSoilEc.innerText = '--';
+
+            const elWTemp = document.getElementById('w-avg-temp');
+            if (elWTemp) elWTemp.innerText = '--';
+            const elWHum = document.getElementById('w-avg-hum');
+            if (elWHum) elWHum.innerText = '--';
+            const elWWind = document.getElementById('w-avg-wind');
+            if (elWWind) elWWind.innerText = '--';
+            const elWRain = document.getElementById('w-avg-rain');
+            if (elWRain) elWRain.innerText = '--';
         }
         document.getElementById('chart-empty').style.display = 'flex';
         document.getElementById('chart-empty-text').innerText = `No telemetry recorded for ${rangeLabel}.`;
@@ -1248,11 +1561,14 @@ function renderUI(skipDayFilter = false) {
         let sumNo2 = 0, countNo2 = 0;
         let sumO3 = 0, countO3 = 0;
         let minAqi = 9999, maxAqi = -1;
-        let sumTemp = 0, countTemp = 0;
-        let sumHum = 0, countHum = 0;
-        let sumWind = 0, countWind = 0;
-        let maxGust = -1, sumRain = 0;
-        let windDirs = [];
+        let sumSoilTemp = 0, countSoilTemp = 0;
+        let sumSoilHum = 0, countSoilHum = 0;
+        let sumSoilPh = 0, countSoilPh = 0;
+        let sumSoilEc = 0, countSoilEc = 0;
+        let sumWTemp = 0, countWTemp = 0;
+        let sumWHum = 0, countWHum = 0;
+        let sumWWind = 0, countWWind = 0;
+        let sumWRain = 0;
 
         filteredDayData.forEach(d => {
             if (currentSubTab === 'aqi') {
@@ -1262,44 +1578,81 @@ function renderUI(skipDayFilter = false) {
                 if (d.co != null)      { sumCo   += d.co;   countCo++;   }
                 if (d.no2 != null)     { sumNo2  += d.no2;  countNo2++;  }
                 if (d.o3 != null)      { sumO3   += d.o3;   countO3++;   }
-            } else {
-                if (d.temperature != null) { sumTemp += d.temperature; countTemp++; }
-                if (d.humidity != null)    { sumHum  += d.humidity;    countHum++;  }
-                if (d.wind_speed != null)  { sumWind += d.wind_speed;  countWind++; }
-                if (d.wind_gust != null && d.wind_gust > maxGust) maxGust = d.wind_gust;
-                if (d.rain_gauge != null)  sumRain += d.rain_gauge;
-                if (d.wind_direction != null) windDirs.push(d.wind_direction);
+            } else if (currentSubTab === 'soil') {
+                if (d.soil_temperature != null && d.soil_temperature !== '') {
+                    sumSoilTemp += Number(d.soil_temperature);
+                    countSoilTemp++;
+                }
+                const hum = d.soil_humidity != null ? d.soil_humidity : d.soil_moisture;
+                if (hum != null && hum !== '') {
+                    sumSoilHum += Number(hum);
+                    countSoilHum++;
+                }
+                if (d.soil_ph != null && d.soil_ph !== '') {
+                    sumSoilPh += Number(d.soil_ph);
+                    countSoilPh++;
+                }
+                if (d.soil_conductivity != null && d.soil_conductivity !== '') {
+                    sumSoilEc += Number(d.soil_conductivity);
+                    countSoilEc++;
+                }
+            } else { // weather
+                if (d.temperature != null && d.temperature !== '') {
+                    sumWTemp += Number(d.temperature);
+                    countWTemp++;
+                }
+                if (d.humidity != null && d.humidity !== '') {
+                    sumWHum += Number(d.humidity);
+                    countWHum++;
+                }
+                if (d.wind_speed != null && d.wind_speed !== '') {
+                    sumWWind += Number(d.wind_speed);
+                    countWWind++;
+                }
+                if (d.rain_gauge != null && d.rain_gauge !== '') {
+                    sumWRain += Number(d.rain_gauge);
+                }
             }
         });
 
-        const summaryDateEl = document.getElementById('summary-date-display');
-        if (summaryDateEl) {
-            const [y, m, d] = parseDateParts(dateInput);
-            const dtObj = new Date(y, m - 1, d);
-            summaryDateEl.innerText = dtObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-        }
-        const logCountEl = document.getElementById('log-count');
-        if (logCountEl) {
-            logCountEl.innerText = loggedCount;
-        }
-
-        const aqiBlock = document.getElementById('summary-aqi-block');
-        const weatherBlock = document.getElementById('summary-weather-block');
-        if (aqiBlock) aqiBlock.style.display = currentSubTab === 'aqi' ? 'flex' : 'none';
-        if (weatherBlock) weatherBlock.style.display = currentSubTab === 'weather' ? 'flex' : 'none';
-
         if (currentSubTab === 'aqi') {
-            const avgAqi = countAqi > 0 ? Math.round(sumAqi / countAqi) : 0;
+            // Node 2 standard CPCB NAQI calculation from 24-hr mean criteria pollutant concentrations
+            const avgPm25Val = countPm25 > 0 ? (sumPm25 / countPm25) : null;
+            const avgPm10Val = countPm10 > 0 ? (sumPm10 / countPm10) : null;
+            const avgCoVal   = countCo > 0 ? (sumCo / countCo) : null;
+            const avgNo2Val  = countNo2 > 0 ? (sumNo2 / countNo2) : null;
+            const avgO3Val   = countO3 > 0 ? (sumO3 / countO3) : null;
+
+            const subIndices = {
+                pm25: avgPm25Val != null ? calculateCpcbSubIndex('pm25', avgPm25Val) : 0,
+                pm10: avgPm10Val != null ? calculateCpcbSubIndex('pm10', avgPm10Val) : 0,
+                co:   avgCoVal != null ? calculateCpcbSubIndex('co', avgCoVal) : 0,
+                no2:  avgNo2Val != null ? calculateCpcbSubIndex('no2', avgNo2Val) : 0,
+                o3:   avgO3Val != null ? calculateCpcbSubIndex('o3', avgO3Val) : 0
+            };
+
+            let maxSub = 0;
+            let dominantPollutant = 'PM2.5';
+            const domMap = { pm25: 'PM2.5', pm10: 'PM10', co: 'CO', no2: 'NO₂', o3: 'O₃' };
+            for (const [param, sub] of Object.entries(subIndices)) {
+                if (sub >= maxSub) {
+                    maxSub = sub;
+                    dominantPollutant = domMap[param] || 'PM2.5';
+                }
+            }
+
+            // The official 24-hr CPCB AQI is the maximum of the individual pollutant sub-indices
+            const avgAqi = (countPm25 > 0 || countPm10 > 0) ? Math.round(maxSub) : (countAqi > 0 ? Math.round(sumAqi / countAqi) : 0);
             const aqiCat = getAqiCategory(avgAqi);
             const avgAqiVal = document.getElementById('avg-aqi-val');
             if (avgAqiVal) {
-                avgAqiVal.innerText = countAqi > 0 ? avgAqi : '--';
-                avgAqiVal.style.color = countAqi > 0 ? aqiCat.text : '#64748b';
+                avgAqiVal.innerText = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? avgAqi : '--';
+                avgAqiVal.style.color = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.text : '#64748b';
             }
 
             const label = document.getElementById('avg-aqi-label');
             if (label) {
-                if (countAqi > 0) {
+                if (countPm25 > 0 || countPm10 > 0 || countAqi > 0) {
                     label.innerText = aqiCat.label;
                     label.style.display = 'inline-block';
                     label.style.backgroundColor = aqiCat.badgeBg;
@@ -1312,19 +1665,23 @@ function renderUI(skipDayFilter = false) {
             const minAqiVal = document.getElementById('min-aqi-val');
             const maxAqiVal = document.getElementById('max-aqi-val');
             const minMaxAqi = document.getElementById('min-max-aqi');
-            if (minAqiVal) minAqiVal.innerText = countAqi > 0 ? minAqi : '--';
-            if (maxAqiVal) maxAqiVal.innerText = countAqi > 0 ? maxAqi : '--';
+            if (minAqiVal) minAqiVal.innerText = (countAqi > 0 && minAqi !== 9999) ? minAqi : '--';
+            if (maxAqiVal) maxAqiVal.innerText = (countAqi > 0 && maxAqi !== -1) ? maxAqi : '--';
             if (minMaxAqi) minMaxAqi.style.display = countAqi > 0 ? 'flex' : 'none';
 
             const badge = document.getElementById('avg-aqi-badge-container');
             if (badge) {
-                badge.style.backgroundColor = countAqi > 0 ? aqiCat.bg : '#f8fafc';
-                badge.style.borderColor = countAqi > 0 ? aqiCat.border : '#e2e8f0';
+                badge.style.backgroundColor = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.bg : '#f8fafc';
+                badge.style.borderColor = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.border : '#e2e8f0';
+                badge.title = `Dominant Pollutant: ${dominantPollutant} (Sub-index: ${maxSub})`;
             }
             const avgAqiDot = document.getElementById('avg-aqi-dot');
-            if (avgAqiDot) avgAqiDot.style.backgroundColor = countAqi > 0 ? aqiCat.color : '#94a3b8';
+            if (avgAqiDot) avgAqiDot.style.backgroundColor = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.color : '#94a3b8';
             const avgAqiTitle = document.getElementById('avg-aqi-title');
-            if (avgAqiTitle) avgAqiTitle.style.color = countAqi > 0 ? aqiCat.text : '#64748b';
+            if (avgAqiTitle) {
+                avgAqiTitle.style.color = (countPm25 > 0 || countPm10 > 0 || countAqi > 0) ? aqiCat.text : '#64748b';
+                avgAqiTitle.title = `Dominant: ${dominantPollutant}`;
+            }
 
             const miniChips = document.getElementById('mini-chips-container');
             if (miniChips) miniChips.style.display = countAqi > 0 ? 'flex' : 'none';
@@ -1358,36 +1715,24 @@ function renderUI(skipDayFilter = false) {
                 elO3.innerText = countO3 > 0 ? avgVal.toFixed(3) : '0.000';
                 elO3.style.color = countO3 > 0 ? getParamColor('o3', avgVal) : '#d97706';
             }
-        } else {
-            const elTemp = document.getElementById('w-avg-temp');
-            const elHum = document.getElementById('w-avg-hum');
-            const elWind = document.getElementById('w-avg-wind');
-            const elGust = document.getElementById('w-max-gust');
-            const elRain = document.getElementById('w-total-rain');
-            if (elTemp) elTemp.innerText = countTemp > 0 ? (sumTemp/countTemp).toFixed(1) + '°C' : '--';
-            if (elHum)  elHum.innerText = countHum > 0 ? (sumHum/countHum).toFixed(1) + '%' : '--';
-            if (elWind) elWind.innerText = countWind > 0 ? (sumWind/countWind).toFixed(1) + ' km/h' : '--';
-            if (elGust) elGust.innerText = maxGust > -1 ? maxGust.toFixed(1) + ' km/h' : '--';
-            if (elRain) elRain.innerText = sumRain.toFixed(1) + ' mm';
-            
-            let modeDir = '--';
-            if (windDirs.length > 0) {
-                const counts = {};
-                windDirs.forEach(w => {
-                    const d = getCompassDir(w);
-                    if (d && d !== '--') counts[d] = (counts[d] || 0) + 1;
-                });
-                let bestDir = '--', maxC = 0;
-                for (const [dir, c] of Object.entries(counts)) {
-                    if (c > maxC) {
-                        maxC = c;
-                        bestDir = dir;
-                    }
-                }
-                modeDir = bestDir;
-            }
-            const elDir = document.getElementById('w-mode-dir');
-            if (elDir) elDir.innerText = modeDir;
+        } else if (currentSubTab === 'soil') {
+            const elSoilTemp = document.getElementById('w-avg-soil-temp');
+            const elSoilHum = document.getElementById('w-avg-soil-hum');
+            const elSoilPh = document.getElementById('w-avg-soil-ph');
+            const elSoilEc = document.getElementById('w-avg-soil-ec');
+            if (elSoilTemp) elSoilTemp.innerText = countSoilTemp > 0 ? (sumSoilTemp / countSoilTemp).toFixed(1) + '°C' : '--';
+            if (elSoilHum)  elSoilHum.innerText = countSoilHum > 0 ? (sumSoilHum / countSoilHum).toFixed(1) + '%' : '--';
+            if (elSoilPh)   elSoilPh.innerText = countSoilPh > 0 ? (sumSoilPh / countSoilPh).toFixed(2) : '--';
+            if (elSoilEc)   elSoilEc.innerText = countSoilEc > 0 ? (sumSoilEc / countSoilEc).toFixed(1) + ' µS/cm' : '--';
+        } else { // weather
+            const elWTemp = document.getElementById('w-avg-temp');
+            const elWHum = document.getElementById('w-avg-hum');
+            const elWWind = document.getElementById('w-avg-wind');
+            const elWRain = document.getElementById('w-avg-rain');
+            if (elWTemp) elWTemp.innerText = countWTemp > 0 ? (sumWTemp / countWTemp).toFixed(1) + '°C' : '--';
+            if (elWHum)  elWHum.innerText = countWHum > 0 ? (sumWHum / countWHum).toFixed(1) + '%' : '--';
+            if (elWWind) elWWind.innerText = countWWind > 0 ? (sumWWind / countWWind).toFixed(1) + ' km/h' : '--';
+            if (elWRain) elWRain.innerText = sumWRain > 0 ? sumWRain.toFixed(1) + ' mm' : '0.0 mm';
         }
 
         if (window.lucide) {
@@ -1395,221 +1740,271 @@ function renderUI(skipDayFilter = false) {
         }
     }
 
-    // Chart Render
-    if (loggedCount > 0) {
-        const ctx = document.getElementById('historical-chart').getContext('2d');
-
-        const labels = filteredDayData.map(d => {
-            const parts = (d.timestamp || '').split('T');
-            if (parts.length === 2) {
-                const [yr, mo, da] = parts[0].split('-').map(Number);
-                const timeParts = parts[1].split(':');
-                const hr = Number(timeParts[0]) || 0;
-                const period = hr >= 12 ? 'PM' : 'AM';
-                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
-                const timeStr = `${String(displayHr).padStart(2, '0')} ${period}`;
-                if (days > 1) {
-                    return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')} ${timeStr}`;
-                }
-                return timeStr;
-            }
-            const dt = new Date(d.timestamp);
-            if (days > 1) {
-                return `${dt.getDate()}/${dt.getMonth()+1} ${dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true})}`;
-            }
-            return dt.toLocaleTimeString('en-US', {hour: '2-digit', hour12: true});
-        });
-
-        // Preserve valid 0 values so Supabase zeros are displayed
-        const dataPoints = filteredDayData.map(d => (d[currentParam] != null ? d[currentParam] : null));
-        const validPts = dataPoints.filter(v => v !== null && !isNaN(v));
-        const ptMin = validPts.length ? Math.min(...validPts) : 0;
-        const ptMax = validPts.length ? Math.max(...validPts) : 0;
-        const yMin1 = (ptMin < 0) ? undefined : 0;
-        const yMax1 = (ptMax > 0) ? undefined : 1.0;
-        const hasScale = Boolean(POLLUTANT_SCALES[currentParam]);
-        const itemColors = hasScale ? dataPoints.map(v => getParamColor(currentParam, v)) : null;
-        const color = PARAM_COLORS[currentParam] || '#00bfa5';
-
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, color + '66');
-        gradient.addColorStop(1, color + '00');
-
-        // Vertical crosshair plugin for silky-smooth touch dragging and crosshair tracking
-        const crosshairPlugin = {
-            id: 'crosshairLine',
-            afterDatasetsDraw(chart) {
-                if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
-                    const activePoint = chart.tooltip._active[0];
-                    const ctx = chart.ctx;
-                    const x = activePoint.element.x;
-                    const topY = chart.scales.y.top;
-                    const bottomY = chart.scales.y.bottom;
-                    const idx = activePoint.index;
-                    const activeVal = dataPoints[idx];
-                    const activeColor = hasScale ? getParamColor(currentParam, activeVal) : color;
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(x, topY);
-                    ctx.lineTo(x, bottomY);
-                    ctx.lineWidth = 1.5;
-                    ctx.strokeStyle = activeColor || '#00bfa5';
-                    ctx.globalAlpha = 0.55;
-                    ctx.setLineDash([4, 4]);
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            }
+    // Chart Render - Sleek Dark Trend Graph (Single Real Series matching table below)
+    const chartCanvas = document.getElementById('historical-chart');
+    if (chartCanvas) {
+        const ctx = chartCanvas.getContext('2d');
+        const isWeather = (currentSubTab === 'weather');
+        const isSoil = (currentSubTab === 'soil');
+        
+        // Meta definition for Node 2 parameters
+        const paramMeta = {
+            'soil_moisture': { icon: '💧', label: 'Soil Moisture', unit: '%', color: '#0284c7' },
+            'soil_humidity': { icon: '💧', label: 'Soil Humidity', unit: '%', color: '#0284c7' },
+            'soil_temperature': { icon: '🌱', label: 'Soil Temperature', unit: '°C', color: '#ea580c' },
+            'soil_ph': { icon: '🧪', label: 'Soil pH', unit: 'pH', color: '#10b981' },
+            'soil_conductivity': { icon: '⚡', label: 'Soil Conductivity', unit: 'µS/cm', color: '#8b5cf6' },
+            'temperature': { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' },
+            'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0284c7' },
+            'wind_speed': { icon: '💨', label: 'Wind Speed', unit: 'km/h', color: '#0d9488' },
+            'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'm/s', color: '#0891b2' },
+            'rain_gauge': { icon: '🌧️', label: 'Rain Gauge', unit: 'mm', color: '#2563eb' },
+            'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
+            'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
+            'solar_radiation': { icon: '☀️', label: 'Solar Radiation', unit: 'W/m²', color: '#f59e0b' },
+            'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' },
+            'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
+            'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
+            'co': { icon: '🧪', label: 'CO', unit: 'mg/m³', color: '#10b981' },
+            'no2': { icon: '🚗', label: 'NO₂', unit: 'µg/m³', color: '#a855f7' },
+            'o3': { icon: '☀️', label: 'O₃', unit: 'µg/m³', color: '#f59e0b' }
         };
+        const meta = paramMeta[currentParam] || (isSoil
+            ? { icon: '💧', label: 'Soil Moisture', unit: '%', color: '#0284c7' }
+            : (isWeather 
+                ? { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' } 
+                : { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' }));
 
-        // In-place silent update without destroying or flickering
-        if (chartInstance && chartInstance.config && chartInstance.config.type === currentChartType) {
-            if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.x) {
-                chartInstance.options.scales.x.display = false;
-            }
-            if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.y) {
-                chartInstance.options.scales.y.min = yMin1;
-                chartInstance.options.scales.y.suggestedMin = 0;
-                chartInstance.options.scales.y.suggestedMax = yMax1;
-                chartInstance.options.scales.y.beginAtZero = true;
-            }
-            chartInstance.data.labels = labels;
-            if (chartInstance.data.datasets && chartInstance.data.datasets[0]) {
-                chartInstance.data.datasets[0].label = getParamDisplayName(currentParam);
-                chartInstance.data.datasets[0].data = dataPoints;
-                chartInstance.data.datasets[0].borderColor = (hasScale && currentChartType === 'bar') ? itemColors : color;
-                chartInstance.data.datasets[0].backgroundColor = currentChartType === 'line' ? gradient : (hasScale ? itemColors : color);
-                chartInstance.data.datasets[0].borderWidth = currentChartType === 'line' ? 2.5 : 0;
-                chartInstance.data.datasets[0].borderRadius = currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0;
-                chartInstance.data.datasets[0].borderSkipped = false;
-                chartInstance.data.datasets[0].pointRadius = 0;
-                chartInstance.data.datasets[0].pointBackgroundColor = hasScale ? itemColors : color;
-                chartInstance.data.datasets[0].pointHoverRadius = 5;
-                chartInstance.data.datasets[0].pointHitRadius = 28;
-                if (hasScale && currentChartType === 'line') {
-                    chartInstance.data.datasets[0].segment = {
-                        borderColor: ctx => getParamColor(currentParam, ctx.p1?.parsed?.y)
-                    };
-                } else {
-                    delete chartInstance.data.datasets[0].segment;
-                }
-            }
-            chartInstance.update({
-                duration: 320,
-                easing: 'easeOutQuart'
-            });
-        } else {
-            if (typeof Chart === 'undefined') { setTimeout(renderUI, 150); return; }
-            if (chartInstance) { chartInstance.destroy(); }
-            chartInstance = new Chart(ctx, {
-                type: currentChartType,
-                plugins: [crosshairPlugin],
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: getParamDisplayName(currentParam),
-                        data: dataPoints,
-                        borderColor: (hasScale && currentChartType === 'bar') ? itemColors : color,
-                        backgroundColor: currentChartType === 'line' ? gradient : (hasScale ? itemColors : color),
-                        borderWidth: currentChartType === 'line' ? 2.5 : 0,
-                        borderRadius: currentChartType === 'bar' ? { topLeft: 4, topRight: 4 } : 0,
-                        borderSkipped: false,
-                        barPercentage: days > 7 ? 0.9 : 0.72,
-                        categoryPercentage: 0.88,
-                        segment: hasScale && currentChartType === 'line' ? {
-                            borderColor: ctx => getParamColor(currentParam, ctx.p1?.parsed?.y)
-                        } : undefined,
-                        fill: currentChartType === 'line',
-                        tension: 0.4,
-                        pointBackgroundColor: hasScale ? itemColors : color,
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        pointHitRadius: 28,
-                        spanGaps: false
-                    }]
-                },
-                options: {
-                    animation: {
-                        duration: 320,
-                        easing: 'easeOutQuart'
-                    },
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                        axis: 'x'
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#0f172a',
-                            titleColor: '#94a3b8',
-                            bodyColor: '#ffffff',
-                            bodyFont: { size: 14, weight: 'bold', family: 'monospace' },
-                            padding: 10,
-                            cornerRadius: 12,
-                            displayColors: hasScale,
-                            boxWidth: 9,
-                            boxHeight: 9,
-                            usePointStyle: true,
-                            callbacks: {
-                                title: function(items) {
-                                    if (!items.length) return '';
-                                    const idx = items[0].dataIndex;
-                                    const item = filteredDayData[idx];
-                                    if (!item || !item.timestamp) return items[0].label;
-                                    const parts = item.timestamp.split('T');
-                                    if (parts.length === 2) {
-                                        const [yr, mo, da] = parts[0].split('-').map(Number);
-                                        const [hr, mn] = parts[1].split(':').map(Number);
-                                        const dt = new Date(yr, mo - 1, da, hr, mn || 0);
-                                        return `${String(da).padStart(2,'0')}/${String(mo).padStart(2,'0')}/${yr} • ${dt.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}`;
-                                    }
-                                    return items[0].label;
-                                },
-                                label: function(item) {
-                                    const val = item.parsed.y;
-                                    if (val == null || isNaN(val)) return ' No data recorded';
-                                    const unit = PARAM_UNITS[currentParam] || '';
-                                    const paramName = getParamDisplayName(currentParam);
-                                    if (hasScale) {
-                                        const tier = getParamTierInfo(currentParam, val);
-                                        const dispVal = (currentParam === 'cpcb_aqi' || currentParam === 'aqi') 
-                                            ? Math.round(val) 
-                                            : (currentParam === 'co' ? Number(val).toFixed(2) : Number(val).toFixed(1));
-                                        return ` ${paramName}: ${dispVal}${unit ? ' ' + unit : ''} (${tier.label})`;
-                                    }
-                                    return ` ${paramName}: ${val}${unit ? ' ' + unit : ''}`;
-                                },
-                                labelColor: function(item) {
-                                    const val = item.parsed.y;
-                                    const c = hasScale ? getParamColor(currentParam, val) : color;
-                                    return {
-                                        borderColor: c,
-                                        backgroundColor: c,
-                                        borderWidth: 1
-                                    };
-                                }
-                            }
+        // Update top param button & legend
+        const pIcon = document.getElementById('trend-param-icon');
+        const pLabel = document.getElementById('trend-param-label');
+        if (pIcon) pIcon.innerText = meta.icon;
+        if (pLabel) pLabel.innerText = meta.label;
+        updateTrendLegend(currentParam, meta.label);
+
+        // Build 24-hour diurnal or multi-day labels & series from REAL recorded data
+        let labels = [];
+        let actualData = [];
+
+        if (days === 1) {
+            labels = ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'];
+            actualData = new Array(24).fill(null);
+
+            const hourMap = {};
+            filteredDayData.forEach(d => {
+                if (!d.timestamp) return;
+                const parts = d.timestamp.split('T');
+                if (parts.length === 2) {
+                    const hr = parseInt(parts[1].split(':')[0], 10);
+                    if (!isNaN(hr) && hr >= 0 && hr < 24) {
+                        let val = d[currentParam];
+                        if ((val === null || val === undefined || val === '') && (currentParam === 'soil_humidity' || currentParam === 'soil_moisture')) {
+                            val = d.soil_moisture != null ? d.soil_moisture : d.soil_humidity;
                         }
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: {
-                            min: yMin1,
-                            suggestedMin: 0,
-                            suggestedMax: yMax1,
-                            beginAtZero: true,
-                            grid: { color: '#e2e8f0', borderDash: [3, 3] },
-                            ticks: { color: '#64748b' }
+                        if ((val === null || val === undefined || val === '') && currentParam === 'solar_radiation') {
+                            val = d.solar_radiation != null ? d.solar_radiation : (d.solar != null ? d.solar : d.radiation);
+                        }
+                        if ((val === null || val === undefined || val === '') && currentParam === 'temperature') {
+                            val = d.temperature != null ? d.temperature : d.soil_temperature;
+                        }
+                        if ((val === null || val === undefined || val === '') && currentParam === 'humidity') {
+                            val = d.humidity != null ? d.humidity : (d.soil_moisture != null ? d.soil_moisture : d.soil_humidity);
+                        }
+                        if (val !== null && val !== undefined && val !== '') {
+                            const num = parseFloat(val);
+                            if (!isNaN(num)) hourMap[hr] = num;
                         }
                     }
                 }
             });
+
+            for (let h = 0; h < 24; h++) {
+                if (hourMap[h] !== undefined) {
+                    actualData[h] = Number(hourMap[h].toFixed(2));
+                }
+            }
+        } else {
+            // Multi-day range (3, 7, 30 days)
+            const dayMap = {};
+            filteredDayData.forEach(d => {
+                if (!d.timestamp) return;
+                const dayKey = d.timestamp.split('T')[0];
+                if (!dayMap[dayKey]) dayMap[dayKey] = [];
+                let val = d[currentParam];
+                if ((val === null || val === undefined || val === '') && (currentParam === 'soil_humidity' || currentParam === 'soil_moisture')) {
+                    val = d.soil_moisture != null ? d.soil_moisture : d.soil_humidity;
+                }
+                if ((val === null || val === undefined || val === '') && currentParam === 'solar_radiation') {
+                    val = d.solar_radiation != null ? d.solar_radiation : (d.solar != null ? d.solar : d.radiation);
+                }
+                if ((val === null || val === undefined || val === '') && currentParam === 'temperature') {
+                    val = d.temperature != null ? d.temperature : d.soil_temperature;
+                }
+                if ((val === null || val === undefined || val === '') && currentParam === 'humidity') {
+                    val = d.humidity != null ? d.humidity : (d.soil_moisture != null ? d.soil_moisture : d.soil_humidity);
+                }
+                if (val !== null && val !== undefined && val !== '') {
+                    const num = parseFloat(val);
+                    if (!isNaN(num)) dayMap[dayKey].push(num);
+                }
+            });
+
+            const dayKeys = Object.keys(dayMap).sort();
+            if (dayKeys.length > 0) {
+                labels = dayKeys.map(k => {
+                    const p = k.split('-');
+                    const dt = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+                    return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                });
+                actualData = dayKeys.map(k => {
+                    const vals = dayMap[k];
+                    if (!vals.length) return null;
+                    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                    return Number(avg.toFixed(2));
+                });
+            }
+        }
+
+        // Compute legend statistics for the real recorded series matching the table
+        const validValues = actualData.filter(v => v !== null && !isNaN(v));
+        const latestVal = validValues.length > 0 ? validValues[validValues.length - 1] : null;
+        const peakVal = validValues.length > 0 ? Math.max(...validValues) : null;
+        const minVal = validValues.length > 0 ? Math.min(...validValues) : null;
+        const avgVal = validValues.length > 0 ? (validValues.reduce((a, b) => a + b, 0) / validValues.length) : null;
+
+        const u = meta.unit ? ` ${meta.unit}` : '';
+        const elLatest = document.getElementById('leg-latest-val');
+        const elPeak = document.getElementById('leg-peak-val');
+        const elMin = document.getElementById('leg-min-val');
+        const elAvg = document.getElementById('leg-avg-val');
+        if (elLatest) elLatest.innerText = latestVal !== null ? `${latestVal}${u}` : '--';
+        if (elPeak) elPeak.innerText = peakVal !== null ? `${peakVal.toFixed(1)}${u}` : '--';
+        if (elMin) elMin.innerText = minVal !== null ? `${minVal.toFixed(1)}${u}` : '--';
+        if (elAvg) elAvg.innerText = avgVal !== null ? `${avgVal.toFixed(1)}${u}` : '--';
+
+        const primaryColor = meta.color || '#00bfa5';
+        const datasets = [
+            {
+                label: meta.label,
+                paramKey: currentParam,
+                paramUnit: meta.unit || '',
+                data: actualData,
+                borderColor: primaryColor,
+                borderWidth: 2.4,
+                tension: 0.38,
+                pointRadius: days === 1 ? 3 : 2,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: primaryColor,
+                pointBorderWidth: 2.5,
+                backgroundColor: function(ctx) {
+                    const chart = ctx.chart;
+                    const {ctx: c, chartArea} = chart;
+                    if (!chartArea) return 'rgba(0, 191, 165, 0.25)';
+                    const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                    grad.addColorStop(0, primaryColor + '55');
+                    grad.addColorStop(0.5, primaryColor + '20');
+                    grad.addColorStop(1, 'rgba(0,0,0,0)');
+                    return grad;
+                },
+                fill: 'start',
+                spanGaps: false
+            }
+        ];
+
+        const yMin = (minVal !== null && minVal < 0) ? undefined : 0;
+        const ySuggestedMax = (peakVal !== null && peakVal > 0) ? undefined : 1.0;
+
+        try {
+            if (chartInstance && chartInstance.ctx && chartInstance.canvas === chartCanvas) {
+                chartInstance.data.labels = labels;
+                chartInstance.data.datasets = datasets;
+                if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.y) {
+                    if (chartInstance.options.scales.y.title) {
+                        chartInstance.options.scales.y.title.text = meta.unit ? `${meta.label} (${meta.unit})` : meta.label;
+                    }
+                    chartInstance.options.scales.y.min = yMin;
+                    chartInstance.options.scales.y.suggestedMin = 0;
+                    chartInstance.options.scales.y.suggestedMax = ySuggestedMax;
+                    chartInstance.options.scales.y.beginAtZero = true;
+                }
+                chartInstance.update();
+            } else {
+                if (chartInstance) {
+                    try { chartInstance.destroy(); } catch(e) {}
+                }
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 350 },
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(22, 27, 38, 0.96)',
+                                borderColor: 'rgba(255, 255, 255, 0.15)',
+                                borderWidth: 1,
+                                titleColor: '#ffffff',
+                                titleFont: { weight: '700', size: 12, family: 'var(--font-sans)' },
+                                bodyColor: '#cbd5e1',
+                                bodyFont: { size: 11, family: 'var(--font-mono)' },
+                                padding: 10,
+                                cornerRadius: 10,
+                                boxPadding: 4,
+                                callbacks: {
+                                    title: function(items) {
+                                        return `${items[0].label} • ${dateInput}`;
+                                    },
+                                    label: function(c) {
+                                        const ds = c.dataset || {};
+                                        const pKey = ds.paramKey || currentParam;
+                                        const u = (ds.paramUnit !== undefined) ? ds.paramUnit : (PARAM_UNITS[pKey] || '');
+                                        const unitStr = u ? ` ${u}` : '';
+                                        const rawVal = c.parsed.y;
+                                        if (rawVal == null || isNaN(rawVal)) return ` ${ds.label || 'Value'}: No data`;
+
+                                        if (pKey === 'cpcb_aqi' || pKey === 'aqi') {
+                                            const aqiVal = Math.round(rawVal);
+                                            const cat = getAqiCategory(aqiVal);
+                                            return ` ${ds.label || 'CPCB AQI'}: ${aqiVal} (${cat.label})`;
+                                        }
+
+                                        const dispVal = Number.isInteger(rawVal) ? rawVal : Number(rawVal).toFixed(1);
+                                        return ` ${ds.label || meta.label}: ${dispVal}${unitStr}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: true, color: 'rgba(255, 255, 255, 0.05)', borderDash: [2, 2] },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    font: { family: 'var(--font-mono)', size: 10 },
+                                    maxRotation: 0,
+                                    autoSkip: true,
+                                    maxTicksLimit: 12
+                                },
+                                title: { display: true, text: days > 1 ? 'Days Progression' : 'Hours (24-Hour Diurnal Progression)', color: '#64748b', font: { size: 11, weight: '600' } }
+                            },
+                            y: {
+                                min: yMin,
+                                suggestedMin: 0,
+                                suggestedMax: ySuggestedMax,
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255, 255, 255, 0.07)', borderDash: [3, 3] },
+                                ticks: { color: '#94a3b8', font: { family: 'var(--font-mono)', size: 10 } },
+                                title: { display: true, text: meta.unit ? `${meta.label} (${meta.unit})` : meta.label, color: '#94a3b8', font: { size: 11, weight: '700' } }
+                            }
+                        }
+                    }
+                });
+            }
+        } catch(err) {
+            console.warn('Historical trend chart render error:', err);
         }
     }
 
@@ -1654,19 +2049,19 @@ function renderUI(skipDayFilter = false) {
                 ? `<span style="font-weight: 800; color: ${getAqiCategory(d.cpcb_aqi).text};">${Math.round(d.cpcb_aqi)}</span>`
                 : emptyCell;
             const pm25Cell = d.pm25 != null 
-                ? `<span style="font-weight: 700; color: ${getParamColor('pm25', d.pm25)};">${Number(d.pm25).toFixed(3)}</span>`
+                ? `<span style="font-weight: 700; color: ${getParamColor('pm25', d.pm25)}; font-family: var(--font-mono);">${Number(d.pm25).toFixed(3)}</span>`
                 : emptyCell;
             const pm10Cell = d.pm10 != null 
-                ? `<span style="font-weight: 700; color: ${getParamColor('pm10', d.pm10)};">${Number(d.pm10).toFixed(3)}</span>`
+                ? `<span style="font-weight: 700; color: ${getParamColor('pm10', d.pm10)}; font-family: var(--font-mono);">${Number(d.pm10).toFixed(3)}</span>`
                 : emptyCell;
             const coCell = d.co != null 
-                ? `<span style="font-weight: 700; color: ${getParamColor('co', d.co)};">${Number(d.co).toFixed(3)}</span>`
+                ? `<span style="font-weight: 700; color: ${getParamColor('co', d.co)}; font-family: var(--font-mono);">${Number(d.co).toFixed(3)}</span>`
                 : emptyCell;
             const no2Cell = d.no2 != null 
-                ? `<span style="font-weight: 700; color: ${getParamColor('no2', d.no2)};">${Number(d.no2).toFixed(3)}</span>`
+                ? `<span style="font-weight: 700; color: ${getParamColor('no2', d.no2)}; font-family: var(--font-mono);">${Number(d.no2).toFixed(3)}</span>`
                 : emptyCell;
             const o3Cell = d.o3 != null 
-                ? `<span style="font-weight: 700; color: ${getParamColor('o3', d.o3)};">${Number(d.o3).toFixed(3)}</span>`
+                ? `<span style="font-weight: 700; color: ${getParamColor('o3', d.o3)}; font-family: var(--font-mono);">${Number(d.o3).toFixed(3)}</span>`
                 : emptyCell;
 
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
@@ -1680,16 +2075,14 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px;">${o3Cell}</td>
             </tr>`;
         }).join('');
-    } else {
+    } else if (currentSubTab === 'soil') {
         theadRow.innerHTML = `
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Date</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Time</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Temp (°C)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Humidity (%)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Wind Spd (km/h)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Wind Gust (km/h)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Wind Dir</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Rain (mm)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0284c7;">Soil Moisture (%)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ea580c;">Soil Temp (°C)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #059669;">Soil pH</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #7c3aed;">Soil EC (µS/cm)</th>
         `;
         
         tbody.innerHTML = tableRows.map((d, i) => {
@@ -1709,26 +2102,96 @@ function renderUI(skipDayFilter = false) {
                 dateStr = dt.toLocaleDateString('en-GB');
                 timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
             }
-            const isMissing = Boolean(d.isMissing || (d.temperature == null && d.humidity == null));
+            const isMissing = Boolean(d.isMissing || (d.soil_temperature == null && d.soil_humidity == null && d.soil_moisture == null));
             const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
 
-            const tempCell = d.temperature != null 
-                ? `<span style="color: #0f172a; font-weight: 600;">${Number(d.temperature).toFixed(1)}</span>` 
+            const sHum = d.soil_moisture != null ? d.soil_moisture : d.soil_humidity;
+            const soilHumCell = (sHum != null && sHum !== '') 
+                ? `<span style="color: #0284c7; font-weight: 700; font-family: var(--font-mono);">${Number(sHum).toFixed(1)}%</span>` 
                 : emptyCell;
-            const humCell = d.humidity != null 
-                ? `<span style="color: #475569;">${Number(d.humidity).toFixed(1)}</span>` 
+            const soilTempCell = (d.soil_temperature != null && d.soil_temperature !== '') 
+                ? `<span style="color: #ea580c; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_temperature).toFixed(1)}°C</span>` 
                 : emptyCell;
-            const windSpdCell = d.wind_speed != null 
-                ? `<span style="color: #475569;">${Number(d.wind_speed).toFixed(1)}</span>` 
+            const soilPhCell = (d.soil_ph != null && d.soil_ph !== '') 
+                ? `<span style="color: #059669; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_ph).toFixed(2)}</span>` 
                 : emptyCell;
-            const windGustCell = d.wind_gust != null 
-                ? `<span style="color: #475569;">${Number(d.wind_gust).toFixed(1)}</span>` 
+            const soilEcCell = (d.soil_conductivity != null && d.soil_conductivity !== '') 
+                ? `<span style="color: #7c3aed; font-weight: 700; font-family: var(--font-mono);">${Number(d.soil_conductivity).toFixed(1)}</span>` 
                 : emptyCell;
-            const windDirCell = d.wind_direction != null 
-                ? `<span style="color: #475569;">${getCompassDir(d.wind_direction)}</span>` 
+
+            return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
+                <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
+                <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
+                <td style="padding: 10px 16px;">${soilHumCell}</td>
+                <td style="padding: 10px 16px;">${soilTempCell}</td>
+                <td style="padding: 10px 16px;">${soilPhCell}</td>
+                <td style="padding: 10px 16px;">${soilEcCell}</td>
+            </tr>`;
+        }).join('');
+    } else {
+        theadRow.innerHTML = `
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Date</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Time</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ea580c;">Temp (°C)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0284c7;">Humidity (%)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ec4899;">Pressure (mb)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f43f5e;">UV Index</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f59e0b;">Solar (W/m²)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0d9488;">Wind Speed (km/h)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0891b2;">Wind Gust (m/s)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #64748b;">Wind Dir</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #2563eb;">Rain (mm)</th>
+        `;
+        
+        tbody.innerHTML = tableRows.map((d, i) => {
+            const parts = (d.timestamp || '').split('T');
+            let dateStr = '', timeStr = '';
+            if (parts.length === 2) {
+                const [yr, mo, da] = parts[0].split('-').map(Number);
+                const timeParts = parts[1].split(':');
+                const hr = Number(timeParts[0]) || 0;
+                const mn = Number(timeParts[1]) || 0;
+                const period = hr >= 12 ? 'PM' : 'AM';
+                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
+                dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
+                timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
+            } else {
+                const dt = new Date(d.timestamp);
+                dateStr = dt.toLocaleDateString('en-GB');
+                timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
+            }
+            const isMissing = Boolean(d.isMissing || (d.temperature == null && d.humidity == null && d.pressure == null && d.uv_index == null && d.solar_radiation == null));
+            const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
+
+            const tempCell = (d.temperature != null && d.temperature !== '') 
+                ? `<span style="color: #ea580c; font-weight: 700; font-family: var(--font-mono);">${Number(d.temperature).toFixed(1)}°C</span>` 
                 : emptyCell;
-            const rainCell = d.rain_gauge != null 
-                ? `<span style="color: #475569;">${Number(d.rain_gauge).toFixed(1)}</span>` 
+            const humCell = (d.humidity != null && d.humidity !== '') 
+                ? `<span style="color: #0284c7; font-weight: 700; font-family: var(--font-mono);">${Number(d.humidity).toFixed(1)}%</span>` 
+                : emptyCell;
+            const pressCell = (d.pressure != null && d.pressure !== '') 
+                ? `<span style="color: #ec4899; font-weight: 700; font-family: var(--font-mono);">${Math.round(Number(d.pressure))} mb</span>` 
+                : emptyCell;
+            const uvCell = (d.uv_index != null && d.uv_index !== '') 
+                ? `<span style="color: #f43f5e; font-weight: 700; font-family: var(--font-mono);">${Number(d.uv_index).toFixed(1)}</span>` 
+                : emptyCell;
+            const rawSolarVal = (d.solar_radiation != null && d.solar_radiation !== '')
+                ? d.solar_radiation
+                : ((d.solar != null && d.solar !== '') ? d.solar : ((d.radiation != null && d.radiation !== '') ? d.radiation : null));
+            const solarCell = (rawSolarVal != null && rawSolarVal !== '')
+                ? `<span style="color: #f59e0b; font-weight: 700; font-family: var(--font-mono);">${Number(rawSolarVal).toFixed(1)} W/m²</span>` 
+                : emptyCell;
+            const windCell = (d.wind_speed != null && d.wind_speed !== '') 
+                ? `<span style="color: #0d9488; font-weight: 700; font-family: var(--font-mono);">${Number(d.wind_speed).toFixed(1)}</span>` 
+                : emptyCell;
+            const gustCell = (d.wind_gust != null && d.wind_gust !== '') 
+                ? `<span style="color: #0891b2; font-weight: 700; font-family: var(--font-mono);">${Number(d.wind_gust).toFixed(1)}</span>` 
+                : emptyCell;
+            const dirCell = (d.wind_direction != null && d.wind_direction !== '')
+                ? `<span style="color: #475569; font-weight: 700;">${getCompassDir(d.wind_direction)}</span>`
+                : emptyCell;
+            const rainCell = (d.rain_gauge != null && d.rain_gauge !== '') 
+                ? `<span style="color: #2563eb; font-weight: 700; font-family: var(--font-mono);">${Number(d.rain_gauge).toFixed(1)}</span>` 
                 : emptyCell;
 
             return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
@@ -1736,9 +2199,12 @@ function renderUI(skipDayFilter = false) {
                 <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
                 <td style="padding: 10px 16px;">${tempCell}</td>
                 <td style="padding: 10px 16px;">${humCell}</td>
-                <td style="padding: 10px 16px;">${windSpdCell}</td>
-                <td style="padding: 10px 16px;">${windGustCell}</td>
-                <td style="padding: 10px 16px;">${windDirCell}</td>
+                <td style="padding: 10px 16px;">${pressCell}</td>
+                <td style="padding: 10px 16px;">${uvCell}</td>
+                <td style="padding: 10px 16px;">${solarCell}</td>
+                <td style="padding: 10px 16px;">${windCell}</td>
+                <td style="padding: 10px 16px;">${gustCell}</td>
+                <td style="padding: 10px 16px;">${dirCell}</td>
                 <td style="padding: 10px 16px;">${rainCell}</td>
             </tr>`;
         }).join('');
@@ -1755,7 +2221,7 @@ function getPreviousDayDateStr() {
 }
 
 function openDatasetModal() {
-    const scopeLabel = currentSubTab === 'aqi' ? 'AQI Telemetry' : 'Weather Telemetry';
+    const scopeLabel = currentSubTab === 'aqi' ? 'AQI Telemetry' : (currentSubTab === 'soil' ? 'Soil Telemetry' : 'Weather Telemetry');
     const timeFrame = currentSubTab === 'aqi' ? '12:00 AM – 12:00 AM' : '8:00 AM – Next Day 8:00 AM';
     
     // Strictly provide data of the previous day (yesterday)
@@ -2068,7 +2534,7 @@ async function submitDatasetRequest(e) {
     }
     
     const targetDate = window.__requestedDatasetDate || getPreviousDayDateStr();
-    const scopeLabel = currentSubTab === 'aqi' ? 'AQI Telemetry' : 'Weather Telemetry';
+    const scopeLabel = currentSubTab === 'aqi' ? 'AQI Telemetry' : (currentSubTab === 'soil' ? 'Soil Telemetry' : 'Weather Telemetry');
     const timeFrame = currentSubTab === 'aqi' ? '12:00 AM – 12:00 AM' : '8:00 AM – Next Day 8:00 AM';
     const scopeDescription = `${scopeLabel} — ${targetDate} (${timeFrame}) [Previous Day]`;
 
@@ -2170,7 +2636,7 @@ function downloadCSV() {
     
     let csv = '';
     if(currentSubTab === 'aqi') {
-        csv += 'Date,Time,AQI,PM2.5,PM10,CO,NO2,O3\n';
+        csv += 'Date,Time,AQI,Temp,Humidity,PM2.5,PM10,CO,NO2,O3\n';
         filteredDayData.forEach(d => {
             const parts = (d.timestamp || '').split('T');
             let dateStr = '', timeStr = '';
@@ -2188,16 +2654,53 @@ function downloadCSV() {
                 dateStr = dt.toLocaleDateString('en-GB');
                 timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
             }
+            let tempVal = d.temperature;
+            let humVal = d.humidity;
+            if ((tempVal == null || humVal == null) && Array.isArray(historicalDataWeather) && d.timestamp) {
+                const matchPrefix = d.timestamp.slice(0, 13);
+                const matchW = historicalDataWeather.find(w => w.timestamp && w.timestamp.slice(0, 13) === matchPrefix);
+                if (matchW) {
+                    if (tempVal == null && matchW.temperature != null) tempVal = matchW.temperature;
+                    if (humVal == null && matchW.humidity != null) humVal = matchW.humidity;
+                }
+            }
             const aqi = d.cpcb_aqi != null ? Math.round(d.cpcb_aqi) : '';
+            const temp = tempVal != null ? tempVal : '';
+            const hum = humVal != null ? humVal : '';
             const pm25 = d.pm25 != null ? d.pm25 : '';
             const pm10 = d.pm10 != null ? d.pm10 : '';
             const co = d.co != null ? d.co : '';
             const no2 = d.no2 != null ? d.no2 : '';
             const o3 = d.o3 != null ? d.o3 : '';
-            csv += `${dateStr},${timeStr},${aqi},${pm25},${pm10},${co},${no2},${o3}\n`;
+            csv += `${dateStr},${timeStr},${aqi},${temp},${hum},${pm25},${pm10},${co},${no2},${o3}\n`;
+        });
+    } else if (currentSubTab === 'soil') {
+        csv += 'Date,Time,SoilMoisture,SoilTemp,SoilPH,SoilEC\n';
+        filteredDayData.forEach(d => {
+            const parts = (d.timestamp || '').split('T');
+            let dateStr = '', timeStr = '';
+            if (parts.length === 2) {
+                const [yr, mo, da] = parts[0].split('-').map(Number);
+                const timeParts = parts[1].split(':');
+                const hr = Number(timeParts[0]) || 0;
+                const mn = Number(timeParts[1]) || 0;
+                const period = hr >= 12 ? 'PM' : 'AM';
+                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
+                dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
+                timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
+            } else {
+                const dt = new Date(d.timestamp);
+                dateStr = dt.toLocaleDateString('en-GB');
+                timeStr = dt.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+            }
+            const sHum = d.soil_moisture != null ? d.soil_moisture : (d.soil_humidity != null ? d.soil_humidity : '');
+            const sTemp = d.soil_temperature != null ? d.soil_temperature : '';
+            const sPh = d.soil_ph != null ? d.soil_ph : '';
+            const sEc = d.soil_conductivity != null ? d.soil_conductivity : '';
+            csv += `${dateStr},${timeStr},${sHum},${sTemp},${sPh},${sEc}\n`;
         });
     } else {
-        csv += 'Date,Time,Temp,Humidity,WindSpeed,WindGust,WindDir,Rain\n';
+        csv += 'Date,Time,Temp,Humidity,Pressure,UVIndex,SolarRadiation,WindSpeed,WindGust,WindDir,Rain\n';
         filteredDayData.forEach(d => {
             const parts = (d.timestamp || '').split('T');
             let dateStr = '', timeStr = '';
@@ -2217,11 +2720,14 @@ function downloadCSV() {
             }
             const temp = d.temperature != null ? d.temperature : '';
             const hum = d.humidity != null ? d.humidity : '';
+            const press = d.pressure != null ? d.pressure : '';
+            const uv = d.uv_index != null ? d.uv_index : '';
+            const rawSolar = d.solar_radiation != null ? d.solar_radiation : (d.solar != null ? d.solar : (d.radiation != null ? d.radiation : ''));
             const wind = d.wind_speed != null ? d.wind_speed : '';
             const gust = d.wind_gust != null ? d.wind_gust : '';
             const dir = d.wind_direction != null ? getCompassDir(d.wind_direction) : '';
             const rain = d.rain_gauge != null ? d.rain_gauge : '';
-            csv += `${dateStr},${timeStr},${temp},${hum},${wind},${gust},${dir},${rain}\n`;
+            csv += `${dateStr},${timeStr},${temp},${hum},${press},${uv},${rawSolar},${wind},${gust},${dir},${rain}\n`;
         });
     }
     
@@ -2318,6 +2824,9 @@ setTimeout(() => {
 
     persistHistoricalState();
     fetchAllHistory();
+    if (window.lucide) {
+        lucide.createIcons();
+    }
     startAutoRefreshHist();
 }, 0);
 </script>

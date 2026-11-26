@@ -2493,7 +2493,7 @@ body.soil-backdrop-active header {
   <div style="display: flex; justify-content: flex-start; align-items: center; text-align: left; width: 100%; margin-top: 10px; margin-bottom: 6px;">
     <div style="width: 100%; text-align: left;">
       <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: left;">
-        Real-time Air Quality &amp; Weather Telemetry
+        Real-time Air Quality Telemetry
       </h1>
       <span id="latest-time" style="display: none;"><?= htmlspecialchars($init_time_str) ?></span>
       <span id="live-beacon-badge" style="display: none;"></span>

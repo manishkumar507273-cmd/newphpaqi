@@ -555,16 +555,16 @@ if ($is_ajax) {
     </script>
 </head>
 <?php
-$is_initial_weather_live = ((string)$active_node === '2' && (
+$is_initial_weather_live = (
     (isset($_GET['page']) && ($_GET['page'] === 'live-weather' || $_GET['page'] === 'weather')) ||
     (isset($_GET['tab']) && $_GET['tab'] === 'weather') ||
     ($page === 'live-weather')
-));
-$is_initial_soil_live = ((string)$active_node === '2' && (
+);
+$is_initial_soil_live = (
     (isset($_GET['page']) && ($_GET['page'] === 'live-soil' || $_GET['page'] === 'soil')) ||
     (isset($_GET['tab']) && $_GET['tab'] === 'soil') ||
     ($page === 'live-soil')
-));
+);
 ?>
 <body class="text-[#0f172a] font-sans antialiased <?= $is_initial_weather_live ? 'weather-backdrop-active' : '' ?> <?= $is_initial_soil_live ? 'soil-backdrop-active' : '' ?>">
     

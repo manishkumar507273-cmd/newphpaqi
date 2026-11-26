@@ -414,8 +414,8 @@ if ($is_ajax) {
                 @curl_setopt_array($ch, [
                     CURLOPT_RETURNTRANSFER => true,
                     CURLOPT_HTTPHEADER     => $ssrHeaders,
-                    CURLOPT_CONNECTTIMEOUT_MS => 900,
-                    CURLOPT_TIMEOUT_MS     => 1500,
+                    CURLOPT_CONNECTTIMEOUT_MS => 1200,
+                    CURLOPT_TIMEOUT_MS     => 2200,
                     CURLOPT_SSL_VERIFYPEER => false,
                 ]);
                 @curl_multi_add_handle($mhSsr, $ch);

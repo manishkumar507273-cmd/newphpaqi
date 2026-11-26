@@ -953,6 +953,16 @@ switch ($action) {
         $res['status']  = 'ONLINE';
         $res['aqi']     = ($raw['aqi_hist']     && count($raw['aqi_hist'])     > 0) ? formatRawReading($raw['aqi_hist'][0])     : null;
         $res['weather'] = ($raw['weather_hist'] && count($raw['weather_hist']) > 0) ? formatWeatherReading($raw['weather_hist'][0]) : null;
+        if ($res['aqi']) {
+            if (!$res['weather']) $res['weather'] = $res['aqi'];
+            else {
+                foreach (['temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge'] as $fk) {
+                    if (!isset($res['weather'][$fk]) || $res['weather'][$fk] === null) {
+                        if (isset($res['aqi'][$fk]) && $res['aqi'][$fk] !== null) $res['weather'][$fk] = $res['aqi'][$fk];
+                    }
+                }
+            }
+        }
 
         $ah = [];
         if ($raw['aqi_hist']) { foreach ($raw['aqi_hist'] as $row) { $f = formatRawReading($row); if ($f) $ah[] = $f; } }
@@ -1071,6 +1081,16 @@ switch ($action) {
         $res['status']  = 'ONLINE';
         $res['aqi']     = ($raw['aqi_hist']     && count($raw['aqi_hist'])     > 0) ? formatRawReading($raw['aqi_hist'][0])     : null;
         $res['weather'] = ($raw['weather_hist'] && count($raw['weather_hist']) > 0) ? formatWeatherReading($raw['weather_hist'][0]) : null;
+        if ($res['aqi']) {
+            if (!$res['weather']) $res['weather'] = $res['aqi'];
+            else {
+                foreach (['temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge'] as $fk) {
+                    if (!isset($res['weather'][$fk]) || $res['weather'][$fk] === null) {
+                        if (isset($res['aqi'][$fk]) && $res['aqi'][$fk] !== null) $res['weather'][$fk] = $res['aqi'][$fk];
+                    }
+                }
+            }
+        }
 
         // If momentary network blip occurred and both are null, fall back to last known good cached reading
         if ($res['aqi'] === null && $res['weather'] === null) {

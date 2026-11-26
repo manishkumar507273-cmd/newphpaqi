@@ -461,6 +461,12 @@ if ($is_ajax) {
                     'dominant_pollutant' => $row['dominant_pollutant'] ?? ($pm25 !== null ? 'PM2.5' : '--'),
                     'pm25' => $pm25, 'pm2.5' => $pm25, 'pm2_5' => $pm25,
                     'pm10' => $pm10, 'co' => $co, 'no2' => $no2, 'o3' => $o3,
+                    'temperature' => isset($row['temperature']) && $row['temperature'] !== '' ? (float)$row['temperature'] : null,
+                    'humidity' => isset($row['humidity']) && $row['humidity'] !== '' ? (float)$row['humidity'] : null,
+                    'wind_speed' => isset($row['wind_speed']) && $row['wind_speed'] !== '' ? (float)$row['wind_speed'] : null,
+                    'wind_gust' => isset($row['wind_gust']) && $row['wind_gust'] !== '' ? (float)$row['wind_gust'] : null,
+                    'wind_direction' => $row['wind_direction'] ?? null,
+                    'rain_gauge' => isset($row['rain_gauge']) && $row['rain_gauge'] !== '' ? (float)$row['rain_gauge'] : null,
                     'latitude' => $row['latitude'] ?? null, 'longitude' => $row['longitude'] ?? null,
                 ];
             }
@@ -484,16 +490,32 @@ if ($is_ajax) {
                     'soil_moisture' => $sHum,
                     'soil_ph' => isset($row['soil_ph']) ? (float)$row['soil_ph'] : null,
                     'soil_conductivity' => isset($row['soil_conductivity']) ? (float)$row['soil_conductivity'] : null,
+                    'pressure' => isset($row['pressure']) ? (float)$row['pressure'] : null,
+                    'uv_index' => isset($row['uv_index']) ? (float)$row['uv_index'] : (isset($row['uv']) ? (float)$row['uv'] : null),
+                    'solar_radiation' => isset($row['solar_radiation']) ? (float)$row['solar_radiation'] : (isset($row['solar']) ? (float)$row['solar'] : (isset($row['radiation']) ? (float)$row['radiation'] : null)),
                     'latitude' => $row['latitude'] ?? null,
                     'longitude' => $row['longitude'] ?? null,
                 ];
             }
             if (!empty($fmtAqiSsr) || !empty($fmtWthSsr)) {
+                $mergedWthSsr = $fmtWthSsr[0] ?? null;
+                $firstAqiSsr = $fmtAqiSsr[0] ?? null;
+                if ($firstAqiSsr) {
+                    if (!$mergedWthSsr) {
+                        $mergedWthSsr = $firstAqiSsr;
+                    } else {
+                        foreach (['temperature', 'humidity', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge'] as $fk) {
+                            if ((!isset($mergedWthSsr[$fk]) || $mergedWthSsr[$fk] === null) && isset($firstAqiSsr[$fk]) && $firstAqiSsr[$fk] !== null) {
+                                $mergedWthSsr[$fk] = $firstAqiSsr[$fk];
+                            }
+                        }
+                    }
+                }
                 $ssrBulk = [
                     'node' => $active_node,
                     'status' => 'ONLINE',
-                    'aqi' => $fmtAqiSsr[0] ?? null,
-                    'weather' => $fmtWthSsr[0] ?? null,
+                    'aqi' => $firstAqiSsr,
+                    'weather' => $mergedWthSsr,
                     'history' => $fmtAqiSsr,
                     'aqi_history' => $fmtAqiSsr,
                     'weather_history' => $fmtWthSsr,

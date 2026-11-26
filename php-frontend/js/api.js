@@ -412,6 +412,9 @@ function formatWeatherReadingClient(raw) {
         soil_moisture: sHum,
         soil_ph: (raw.soil_ph != null) ? Number(raw.soil_ph) : null,
         soil_conductivity: (raw.soil_conductivity != null) ? Number(raw.soil_conductivity) : null,
+        pressure: (raw.pressure != null) ? Number(Number(raw.pressure).toFixed(2)) : null,
+        uv_index: (raw.uv_index != null) ? Number(Number(raw.uv_index).toFixed(2)) : ((raw.uv != null) ? Number(Number(raw.uv).toFixed(2)) : null),
+        solar_radiation: (raw.solar_radiation != null) ? Number(Number(raw.solar_radiation).toFixed(2)) : ((raw.solar != null) ? Number(Number(raw.solar).toFixed(2)) : ((raw.radiation != null) ? Number(Number(raw.radiation).toFixed(2)) : null)),
         latitude: wLat,
         longitude: wLon,
         coords_display: wCoords
@@ -499,7 +502,21 @@ async function fetchLiveBulk(forceNetwork = false) {
         const weatherHist = Array.isArray(weatherRawList) ? weatherRawList.map(formatWeatherReadingClient).filter(Boolean) : [];
 
         const latestAqi = aqiHist[0] || null;
-        const latestWeather = weatherHist[0] || null;
+        let latestWeather = weatherHist[0] || null;
+
+        // If weather/soil row lacks ambient temp/humidity/wind/rain (e.g. Node 2 SOIL_LIVE_NODE2), merge from AQI_LIVE_NODE2
+        if (latestAqi) {
+            if (!latestWeather) {
+                latestWeather = { ...latestAqi };
+            } else {
+                if (latestWeather.temperature == null && latestAqi.temperature != null) latestWeather.temperature = latestAqi.temperature;
+                if (latestWeather.humidity == null && latestAqi.humidity != null) latestWeather.humidity = latestAqi.humidity;
+                if (latestWeather.wind_speed == null && latestAqi.wind_speed != null) latestWeather.wind_speed = latestAqi.wind_speed;
+                if (latestWeather.wind_gust == null && latestAqi.wind_gust != null) latestWeather.wind_gust = latestAqi.wind_gust;
+                if (latestWeather.wind_direction == null && latestAqi.wind_direction != null) latestWeather.wind_direction = latestAqi.wind_direction;
+                if (latestWeather.rain_gauge == null && latestAqi.rain_gauge != null) latestWeather.rain_gauge = latestAqi.rain_gauge;
+            }
+        }
 
         // Resolve latest coordinates from Supabase records
         let lat = null;

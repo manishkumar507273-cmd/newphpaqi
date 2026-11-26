@@ -1545,46 +1545,57 @@ $init_border_colors = [
     width: 100% !important;
   }
 
-  /* LINE 2: Wind Direction & Speed stacked cleanly on mobile (Compass centered above Direction | Turbine | Speed) */
-  .weather-card-wind {
-    display: flex !important;
-    flex-direction: column !important;
+  /* LINE 2: Paired 2-column mobile grid: [Compass + Direction] | [Turbine + Wind Speed] */
+  .weather-card-dark.weather-card-wind {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
     align-items: center !important;
-    justify-content: center !important;
-    padding: 16px 14px !important;
-    gap: 12px !important;
+    justify-items: center !important;
+    padding: 14px 10px !important;
+    row-gap: 8px !important;
+    column-gap: 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
+  .weather-wind-metrics-group {
+    display: contents !important;
+  }
   .compass-widget-wrap {
-    width: 72px !important;
-    height: 72px !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 62px !important;
+    height: 62px !important;
     flex-shrink: 0 !important;
     margin: 0 auto !important;
   }
-  .weather-wind-metrics-group {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: center !important;
-    align-items: center !important;
-    gap: 16px !important;
-    width: 100% !important;
-    min-width: 0 !important;
+  .weather-dir-block {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
   }
   .weather-wind-divider {
+    grid-column: 2 !important;
+    grid-row: 1 / 3 !important;
     display: block !important;
     width: 1px !important;
-    height: 40px !important;
+    height: 76px !important;
     background: rgba(255,255,255,0.18) !important;
-    flex-shrink: 0 !important;
+    align-self: center !important;
   }
   .wind-turbine-wrap {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
     display: flex !important;
-    width: 42px !important;
-    height: 58px !important;
+    width: 46px !important;
+    height: 62px !important;
     flex-shrink: 0 !important;
     align-items: center !important;
     justify-content: center !important;
+    margin: 0 auto !important;
+  }
+  .weather-speed-block {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
   }
   .weather-metric-block {
     display: flex !important;
@@ -1594,15 +1605,15 @@ $init_border_colors = [
     min-width: 0 !important;
   }
   .weather-metric-large {
-    font-size: 20px !important;
+    font-size: 19px !important;
     line-height: 1.15 !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
   }
   .weather-metric-label {
-    font-size: 11.5px !important;
+    font-size: 11px !important;
     color: #cbd5e1 !important;
-    margin-top: 3px !important;
+    margin-top: 2px !important;
     white-space: nowrap !important;
   }
 

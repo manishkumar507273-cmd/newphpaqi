@@ -66,8 +66,8 @@ $init_history_json = 'null';
 }
 @media (max-width: 640px) {
     .trend-dropdown-menu {
-        left: 0 !important;
-        right: auto !important;
+        right: 0 !important;
+        left: auto !important;
         max-width: calc(100vw - 36px) !important;
     }
 }
@@ -306,7 +306,7 @@ $init_history_json = 'null';
         </p>
       </div>
 
-      <div class="flex items-center gap-2.5 flex-wrap">
+      <div class="flex items-center justify-between sm:justify-end gap-2.5 flex-wrap w-full sm:w-auto">
         <!-- Chart Type Switcher (Bar / Graph) -->
         <div class="inline-flex items-center rounded-full p-0.5 border border-white/15 bg-slate-900/70" id="chart-type-switcher" role="group" aria-label="Chart Type">
           <button type="button" id="chart-type-bar-btn" onclick="setChartType('bar')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer text-slate-300 hover:text-white">
@@ -323,7 +323,7 @@ $init_history_json = 'null';
         <div class="relative inline-flex items-center" id="trend-param-container">
           <button type="button" id="trend-param-btn" class="trend-pill-btn" onclick="toggleTrendParamMenu()">
             <span id="trend-param-icon"><?= $req_subtab === 'weather' ? ($req_param === 'soil_humidity' ? '💧' : ($req_param === 'soil_ph' ? '🧪' : ($req_param === 'soil_conductivity' ? '⚡' : '🌱'))) : ($req_param === 'pm25' ? '🌁' : ($req_param === 'pm10' ? '💨' : ($req_param === 'co' ? '🧪' : ($req_param === 'no2' ? '🚗' : ($req_param === 'o3' ? '☀️' : '🌿'))))) ?></span>
-            <span id="trend-param-label"><?= $req_subtab === 'weather' ? ($req_param === 'soil_humidity' ? 'Soil Humidity' : ($req_param === 'soil_ph' ? 'Soil pH' : ($req_param === 'soil_conductivity' ? 'Soil Conductivity' : 'Soil Temperature'))) : ($req_param === 'pm25' ? 'PM2.5' : ($req_param === 'pm10' ? 'PM10' : ($req_param === 'co' ? 'CO' : ($req_param === 'no2' ? 'NO₂' : ($req_param === 'o3' ? 'O₃' : 'CPCB AQI'))))) ?></span>
+            <span id="trend-param-label"><?= $req_subtab === 'weather' ? ($req_param === 'soil_humidity' ? 'Soil Humidity' : ($req_param === 'soil_ph' ? 'Soil pH' : ($req_param === 'soil_conductivity' ? 'Soil Conductivity' : 'Soil Temperature'))) : ($req_param === 'pm25' ? 'PM2.5' : ($req_param === 'pm10' ? 'PM10' : ($req_param === 'co' ? 'CO' : ($req_param === 'no2' ? 'NO₂' : ($req_param === 'o3' ? 'O₃' : 'AQI'))))) ?></span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
           </button>
 
@@ -391,10 +391,10 @@ $init_history_json = 'null';
                 </div>
                 <div class="trend-check-box"><?= $req_param === 'wind_gust' ? '✓' : '' ?></div>
               </div>
-              <div class="trend-dropdown-item <?= $req_param === 'rain_gauge' ? 'active' : '' ?>" data-param="rain_gauge" onclick="selectTrendParam('rain_gauge', '🌧️', 'Rain Gauge', 'mm')">
+              <div class="trend-dropdown-item <?= $req_param === 'rain_gauge' ? 'active' : '' ?>" data-param="rain_gauge" onclick="selectTrendParam('rain_gauge', '🌧️', 'Precipitation', 'mm')">
                 <div class="flex items-center gap-2.5">
                   <span class="text-base">🌧️</span>
-                  <span>Rain Gauge</span>
+                  <span>Precipitation</span>
                 </div>
                 <div class="trend-check-box"><?= $req_param === 'rain_gauge' ? '✓' : '' ?></div>
               </div>
@@ -423,10 +423,10 @@ $init_history_json = 'null';
 
             <!-- AQI Items for Node 2 -->
             <div id="trend-menu-aqi" style="display: <?= $req_subtab === 'aqi' ? 'block' : 'none' ?>;">
-              <div class="trend-dropdown-item <?= $req_param === 'cpcb_aqi' ? 'active' : '' ?>" data-param="cpcb_aqi" onclick="selectTrendParam('cpcb_aqi', '🌿', 'CPCB AQI', '')">
+              <div class="trend-dropdown-item <?= $req_param === 'cpcb_aqi' ? 'active' : '' ?>" data-param="cpcb_aqi" onclick="selectTrendParam('cpcb_aqi', '🌿', 'AQI', '')">
                 <div class="flex items-center gap-2.5">
                   <span class="text-base">🌿</span>
-                  <span>CPCB AQI</span>
+                  <span>AQI</span>
                 </div>
                 <div class="trend-check-box"><?= $req_param === 'cpcb_aqi' ? '✓' : '' ?></div>
               </div>
@@ -1519,11 +1519,11 @@ function setParam(param, skipRender = false) {
         'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0284c7' },
         'wind_speed': { icon: '💨', label: 'Wind Speed', unit: 'km/h', color: '#0d9488' },
         'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'm/s', color: '#0891b2' },
-        'rain_gauge': { icon: '🌧️', label: 'Rain Gauge', unit: 'mm', color: '#2563eb' },
+        'rain_gauge': { icon: '🌧️', label: 'Precipitation', unit: 'mm', color: '#2563eb' },
         'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
         'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
         'solar_radiation': { icon: '☀️', label: 'Solar Radiation', unit: 'W/m²', color: '#f59e0b' },
-        'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' },
+        'cpcb_aqi': { icon: '🌿', label: 'AQI', unit: '', color: '#00bfa5' },
         'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
         'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
         'co': { icon: '🧪', label: 'CO', unit: 'mg/m³', color: '#10b981' },
@@ -1534,7 +1534,7 @@ function setParam(param, skipRender = false) {
         ? { icon: '💧', label: 'Soil Moisture', unit: '%', color: '#0284c7' }
         : (currentSubTab === 'weather'
             ? { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' }
-            : { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' }));
+            : { icon: '🌿', label: 'AQI', unit: '', color: '#00bfa5' }));
 
     const iconEl = document.getElementById('trend-param-icon');
     const labelEl = document.getElementById('trend-param-label');
@@ -1888,7 +1888,7 @@ function renderUI(skipDayFilter = false) {
                 }
             }
 
-            // The official 24-hr CPCB AQI is the maximum of the individual pollutant sub-indices
+            // The official 24-hr AQI is the maximum of the individual pollutant sub-indices
             const avgAqi = (countPm25 > 0 || countPm10 > 0) ? Math.round(maxSub) : (countAqi > 0 ? Math.round(sumAqi / countAqi) : 0);
             const aqiCat = getAqiCategory(avgAqi);
             const avgAqiVal = document.getElementById('avg-aqi-val');
@@ -2005,11 +2005,11 @@ function renderUI(skipDayFilter = false) {
             'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0284c7' },
             'wind_speed': { icon: '💨', label: 'Wind Speed', unit: 'km/h', color: '#0d9488' },
             'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'm/s', color: '#0891b2' },
-            'rain_gauge': { icon: '🌧️', label: 'Rain Gauge', unit: 'mm', color: '#2563eb' },
+            'rain_gauge': { icon: '🌧️', label: 'Precipitation', unit: 'mm', color: '#2563eb' },
             'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
             'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
             'solar_radiation': { icon: '☀️', label: 'Solar Radiation', unit: 'W/m²', color: '#f59e0b' },
-            'cpcb_aqi': { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' },
+            'cpcb_aqi': { icon: '🌿', label: 'AQI', unit: '', color: '#00bfa5' },
             'pm25': { icon: '🌁', label: 'PM2.5', unit: 'µg/m³', color: '#00bfa5' },
             'pm10': { icon: '💨', label: 'PM10', unit: 'µg/m³', color: '#6366f1' },
             'co': { icon: '🧪', label: 'CO', unit: 'mg/m³', color: '#10b981' },
@@ -2020,7 +2020,7 @@ function renderUI(skipDayFilter = false) {
             ? { icon: '💧', label: 'Soil Moisture', unit: '%', color: '#0284c7' }
             : (isWeather 
                 ? { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' } 
-                : { icon: '🌿', label: 'CPCB AQI', unit: '', color: '#00bfa5' }));
+                : { icon: '🌿', label: 'AQI', unit: '', color: '#00bfa5' }));
 
         // Update top param button & legend
         const pIcon = document.getElementById('trend-param-icon');
@@ -2268,7 +2268,7 @@ function renderUI(skipDayFilter = false) {
                                         if (pKey === 'cpcb_aqi' || pKey === 'aqi') {
                                             const aqiVal = Math.round(rawVal);
                                             const cat = getAqiCategory(aqiVal);
-                                            return ` ${ds.label || 'CPCB AQI'}: ${aqiVal} (${cat.label})`;
+                                            return ` ${ds.label || 'AQI'}: ${aqiVal} (${cat.label})`;
                                         }
 
                                         const dispVal = Number.isInteger(rawVal) ? rawVal : Number(rawVal).toFixed(1);

@@ -705,7 +705,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
         <div class="relative ml-2" id="desktop-node-dropdown-container" style="position: relative;">
           <button type="button" id="node-dropdown-trigger" onclick="window.toggleNodeDropdown(event)" style="display: flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05); transition: all 0.18s ease; outline: none;" onmouseover="this.style.borderColor='#00bfa5';" onmouseout="this.style.borderColor='#e2e8f0';">
             <span style="width: 7.5px; height: 7.5px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#94a3b8' ?>; display: inline-block; flex-shrink: 0;" class="<?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>"></span>
-            <span style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Node 1 (SMVITM)' : 'Node 2 (Field Station)' ?></span>
+            <span style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Station 1 (SMVITM)' : 'Station 2 (Field Station)' ?></span>
             <i data-lucide="chevron-down" id="node-dropdown-chevron" style="width: 13px; height: 13px; color: #64748b; transition: transform 0.2s;"></i>
           </button>
 
@@ -720,7 +720,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '1' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
-                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 1 - SMVITM Campus</span>
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Station 1 - SMVITM Campus</span>
                   <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
                 </div>
               </div>
@@ -734,7 +734,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '2' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
-                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 2 - Field Station</span>
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Station 2 - Field Station</span>
                   <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
                 </div>
               </div>
@@ -767,7 +767,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
         <div class="relative ml-1 shrink-0" id="mobile-node-dropdown-container" style="position: relative;">
           <button type="button" id="mobile-node-dropdown-trigger" onclick="window.toggleNodeDropdown(event, 'mobile')" style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05); transition: all 0.18s ease; outline: none; -webkit-tap-highlight-color: transparent;" onmouseover="this.style.borderColor='#00bfa5';" onmouseout="this.style.borderColor='#e2e8f0';">
             <span style="width: 7px; height: 7px; border-radius: 50%; background-color: <?= $is_telemetry_live ? '#10b981' : '#94a3b8' ?>; display: inline-block; flex-shrink: 0;" class="<?= $is_telemetry_live ? 'live-dot-pulse' : '' ?>"></span>
-            <span style="font-size: 11px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Node 1<span class="hidden sm:inline"> (SMVITM)</span>' : 'Node 2<span class="hidden sm:inline"> (Field Station)</span>' ?></span>
+            <span style="font-size: 11px; font-weight: 700; color: #0f172a; white-space: nowrap;"><?= $selected_node === '1' ? 'Station 1<span class="hidden sm:inline"> (SMVITM)</span>' : 'Station 2<span class="hidden sm:inline"> (Field Station)</span>' ?></span>
             <i data-lucide="chevron-down" id="mobile-node-dropdown-chevron" style="width: 12px; height: 12px; color: #64748b; transition: transform 0.2s;"></i>
           </button>
 
@@ -782,7 +782,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '1' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
-                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 1 - SMVITM Campus</span>
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Station 1 - SMVITM Campus</span>
                   <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
                 </div>
               </div>
@@ -796,7 +796,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '2' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
-                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Node 2 - Field Station</span>
+                  <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Station 2 - Field Station</span>
                   <span style="font-size: 10px; color: #16a34a; font-weight: 600;">Active</span>
                 </div>
               </div>

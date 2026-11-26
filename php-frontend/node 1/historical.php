@@ -1485,6 +1485,7 @@ function renderUI(skipDayFilter = false) {
                 easing: 'easeOutQuart'
             });
         } else {
+            if (typeof Chart === 'undefined') { setTimeout(renderUI, 150); return; }
             if (chartInstance) { chartInstance.destroy(); }
             chartInstance = new Chart(ctx, {
                 type: currentChartType,

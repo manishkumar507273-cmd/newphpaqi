@@ -318,6 +318,10 @@ if ($is_ajax) {
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://unpkg.com">
+    <?php if (!empty($supabaseUrl)): ?>
+    <link rel="preconnect" href="<?= htmlspecialchars($supabaseUrl) ?>" crossorigin>
+    <link rel="dns-prefetch" href="<?= htmlspecialchars($supabaseUrl) ?>">
+    <?php endif; ?>
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://unpkg.com">
@@ -378,7 +382,7 @@ if ($is_ajax) {
     ];
     $best_epoch = 0;
     foreach ($candidates as $cf) {
-        if (file_exists($cf) && (time() - filemtime($cf)) < 25) {
+        if (file_exists($cf) && (time() - filemtime($cf)) < 180) {
             $raw_c = @file_get_contents($cf);
             if ($raw_c && strlen($raw_c) > 20) {
                 $parsed = @json_decode($raw_c, true);
@@ -393,6 +397,121 @@ if ($is_ajax) {
                     if ($e > $best_epoch) {
                         $best_epoch = $e;
                         $initial_overview_json = $raw_c;
+                    }
+                }
+            }
+        }
+    }
+    // Cold-cache SSR Pre-Hydration (prevents blank '--' on first open locally & on cold Vercel containers)
+    if ($initial_overview_json === 'null' && !empty($supabaseUrl) && !empty($supabaseKey) && function_exists('curl_multi_init')) {
+        $orderColSsr = $is_node_2 ? 'id.desc' : 'created_at.desc.nullslast';
+        $ssrHeaders = ["apikey: {$supabaseKey}", "Authorization: Bearer {$supabaseKey}"];
+        $mhSsr = @curl_multi_init();
+        $chAqiSsr = @curl_init(rtrim($supabaseUrl, '/') . "/rest/v1/{$TABLE_AQI_LIVE}?order={$orderColSsr}&limit=30");
+        $chWthSsr = @curl_init(rtrim($supabaseUrl, '/') . "/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order={$orderColSsr}&limit=30");
+        if ($mhSsr && $chAqiSsr && $chWthSsr) {
+            foreach ([$chAqiSsr, $chWthSsr] as $ch) {
+                @curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER     => $ssrHeaders,
+                    CURLOPT_CONNECTTIMEOUT_MS => 900,
+                    CURLOPT_TIMEOUT_MS     => 1500,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                ]);
+                @curl_multi_add_handle($mhSsr, $ch);
+            }
+            $runningSsr = null;
+            do {
+                @curl_multi_exec($mhSsr, $runningSsr);
+                @curl_multi_select($mhSsr, 0.05);
+            } while ($runningSsr > 0);
+            $rawAqiSsr = @curl_multi_getcontent($chAqiSsr);
+            $rawWthSsr = @curl_multi_getcontent($chWthSsr);
+            @curl_multi_remove_handle($mhSsr, $chAqiSsr);
+            @curl_multi_remove_handle($mhSsr, $chWthSsr);
+            @curl_multi_close($mhSsr);
+            @curl_close($chAqiSsr);
+            @curl_close($chWthSsr);
+
+            $aqiRowsSsr = $rawAqiSsr ? (@json_decode($rawAqiSsr, true) ?: []) : [];
+            $wthRowsSsr = $rawWthSsr ? (@json_decode($rawWthSsr, true) ?: []) : [];
+
+            $fmtAqiSsr = [];
+            foreach ($aqiRowsSsr as $row) {
+                if (!is_array($row)) continue;
+                $pm25 = isset($row['pm25']) && $row['pm25'] !== '' ? (float)$row['pm25'] : (isset($row['pm2.5']) && $row['pm2.5'] !== '' ? (float)$row['pm2.5'] : (isset($row['pm2_5']) && $row['pm2_5'] !== '' ? (float)$row['pm2_5'] : null));
+                $pm10 = isset($row['pm10']) && $row['pm10'] !== '' ? (float)$row['pm10'] : null;
+                $co   = isset($row['co']) && $row['co'] !== '' ? (float)$row['co'] : null;
+                $no2  = isset($row['no2']) && $row['no2'] !== '' ? (float)$row['no2'] : null;
+                $o3   = isset($row['o3']) && $row['o3'] !== '' ? (float)$row['o3'] : null;
+                $cpcb = isset($row['cpcb_aqi']) && is_numeric($row['cpcb_aqi']) ? (int)round((float)$row['cpcb_aqi']) : null;
+                if ($cpcb === null && $pm25 !== null) {
+                    if ($pm25 <= 30) $cpcb = (int)round($pm25 * 50 / 30);
+                    elseif ($pm25 <= 60) $cpcb = (int)round(50 + ($pm25 - 30) * 50 / 30);
+                    elseif ($pm25 <= 90) $cpcb = (int)round(100 + ($pm25 - 60) * 100 / 30);
+                    elseif ($pm25 <= 120) $cpcb = (int)round(200 + ($pm25 - 90) * 100 / 30);
+                    elseif ($pm25 <= 250) $cpcb = (int)round(300 + ($pm25 - 120) * 100 / 130);
+                    else $cpcb = (int)round(400 + ($pm25 - 250) * 100 / 130);
+                }
+                $fmtAqiSsr[] = [
+                    'id' => $row['id'] ?? null,
+                    'timestamp' => $row['timestamp'] ?? ($row['created_at'] ?? date('c')),
+                    'created_at' => $row['created_at'] ?? ($row['timestamp'] ?? date('c')),
+                    'cpcb_aqi' => $cpcb,
+                    'dominant_pollutant' => $row['dominant_pollutant'] ?? ($pm25 !== null ? 'PM2.5' : '--'),
+                    'pm25' => $pm25, 'pm2.5' => $pm25, 'pm2_5' => $pm25,
+                    'pm10' => $pm10, 'co' => $co, 'no2' => $no2, 'o3' => $o3,
+                    'latitude' => $row['latitude'] ?? null, 'longitude' => $row['longitude'] ?? null,
+                ];
+            }
+            $fmtWthSsr = [];
+            foreach ($wthRowsSsr as $row) {
+                if (!is_array($row)) continue;
+                $sHum = isset($row['soil_humidity']) ? (float)$row['soil_humidity'] : (isset($row['soil_moisture']) ? (float)$row['soil_moisture'] : null);
+                $sTemp = isset($row['soil_temperature']) ? (float)$row['soil_temperature'] : null;
+                $fmtWthSsr[] = [
+                    'id' => $row['id'] ?? null,
+                    'timestamp' => $row['timestamp'] ?? ($row['created_at'] ?? date('c')),
+                    'created_at' => $row['created_at'] ?? ($row['timestamp'] ?? date('c')),
+                    'temperature' => isset($row['temperature']) ? (float)$row['temperature'] : $sTemp,
+                    'humidity' => isset($row['humidity']) ? (float)$row['humidity'] : $sHum,
+                    'wind_speed' => isset($row['wind_speed']) ? (float)$row['wind_speed'] : null,
+                    'wind_gust' => isset($row['wind_gust']) ? (float)$row['wind_gust'] : null,
+                    'wind_direction' => $row['wind_direction'] ?? null,
+                    'rain_gauge' => isset($row['rain_gauge']) ? (float)$row['rain_gauge'] : null,
+                    'soil_temperature' => $sTemp,
+                    'soil_humidity' => $sHum,
+                    'soil_moisture' => $sHum,
+                    'soil_ph' => isset($row['soil_ph']) ? (float)$row['soil_ph'] : null,
+                    'soil_conductivity' => isset($row['soil_conductivity']) ? (float)$row['soil_conductivity'] : null,
+                    'latitude' => $row['latitude'] ?? null,
+                    'longitude' => $row['longitude'] ?? null,
+                ];
+            }
+            if (!empty($fmtAqiSsr) || !empty($fmtWthSsr)) {
+                $ssrBulk = [
+                    'node' => $active_node,
+                    'status' => 'ONLINE',
+                    'aqi' => $fmtAqiSsr[0] ?? null,
+                    'weather' => $fmtWthSsr[0] ?? null,
+                    'history' => $fmtAqiSsr,
+                    'aqi_history' => $fmtAqiSsr,
+                    'weather_history' => $fmtWthSsr,
+                    'today_rain_total' => 0,
+                    'time' => time() * 1000,
+                ];
+                $encodedSsr = json_encode($ssrBulk);
+                if ($encodedSsr) {
+                    $initial_overview_json = $encodedSsr;
+                    if (!is_dir($cache_dir)) @mkdir($cache_dir, 0777, true);
+                    if ($is_node_2) {
+                        @file_put_contents($cache_dir . '/' . md5('overview_bulk_node_2') . '.json', $encodedSsr);
+                        @file_put_contents($cache_dir . '/' . md5('live_bulk_node_2_60') . '.json', $encodedSsr);
+                    } else {
+                        @file_put_contents($cache_dir . '/' . md5('overview_bulk') . '.json', $encodedSsr);
+                        @file_put_contents($cache_dir . '/' . md5('live_bulk_60') . '.json', $encodedSsr);
+                        @file_put_contents($cache_dir . '/' . md5('overview_bulk_node_1') . '.json', $encodedSsr);
+                        @file_put_contents($cache_dir . '/' . md5('live_bulk_node_1_60') . '.json', $encodedSsr);
                     }
                 }
             }
@@ -424,6 +543,9 @@ if ($is_ajax) {
         };
         // Server pre-hydrated telemetry cache (0ms instant first-paint)
         window.INITIAL_DATA = <?= $initial_overview_json ?>;
+        if (!window.INITIAL_DATA && typeof window.fetchLiveBulk === 'function') {
+            window.__earlyBulkPromise = window.fetchLiveBulk(true).catch(function() { return null; });
+        }
         <?php if ($server_init_aqi !== null): ?>
         window.currentAqiValue = <?= (int)$server_init_aqi ?>;
         if (typeof window.getAQITheme === 'function') {

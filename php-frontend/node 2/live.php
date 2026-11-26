@@ -4134,85 +4134,6 @@ window.selectScaleParam = function(param) {
     if (window.lucide && lucide.createIcons) lucide.createIcons();
 };
 
-window.updateScaleCardLiveValues = function() {
-    const param = window.__activeScaleParam || 'aqi';
-    const info = pollutantDetails[param];
-    const catData = pollutantCategoryRanges[param];
-    if (!info || !catData) return;
-
-    let currentVal = NaN;
-    let currentValStr = '--';
-    if (param === 'aqi') {
-        const el = document.getElementById('hero-aqi-val') || document.getElementById('hero-aqi-value');
-        currentValStr = el ? el.innerText.trim() : '--';
-        currentVal = parseFloat(currentValStr);
-    } else {
-        const el = document.getElementById(`card-${param}`);
-        currentValStr = el ? el.innerText.trim() : '--';
-        currentVal = parseFloat(currentValStr);
-    }
-
-    const currentBadge = document.getElementById('scale-banner-current-badge');
-    const currentValEl = document.getElementById('scale-banner-current-val');
-    const indicator = document.getElementById('param-scale-indicator');
-
-    if (isNaN(currentVal)) {
-        if (currentValEl) currentValEl.innerText = 'No Live Reading';
-        if (currentBadge) {
-            currentBadge.style.background = '#f1f5f9';
-            currentBadge.style.color = '#64748b';
-            currentBadge.style.borderColor = '#cbd5e1';
-            const dot = currentBadge.querySelector('span');
-            if (dot) dot.style.background = '#94a3b8';
-        }
-        if (indicator) {
-            indicator.style.left = '0%';
-            indicator.style.borderColor = '#94a3b8';
-        }
-        return;
-    }
-
-    let pct = 0;
-    let color = '#59b61f';
-    let label = 'Good';
-
-    if (param === 'aqi') {
-        pct = getAQIScalePercentage(currentVal);
-        const theme = getAQITheme(currentVal);
-        color = theme.accent;
-        label = theme.label;
-    } else {
-        const scaleInfo = getPollutantScaleInfo(param, currentVal);
-        pct = scaleInfo.pct;
-        color = scaleInfo.color;
-        label = scaleInfo.label;
-    }
-
-    if (currentValEl) {
-        currentValEl.innerText = `${currentVal.toFixed(param === 'co' ? 2 : 1)} ${catData.unit} • ${label}`;
-    }
-    if (currentBadge) {
-        currentBadge.style.background = `${color}18`;
-        currentBadge.style.color = color;
-        currentBadge.style.borderColor = `${color}40`;
-        const dot = currentBadge.querySelector('span');
-        if (dot) dot.style.background = color;
-    }
-    if (indicator) {
-        indicator.style.left = `clamp(8px, ${pct}%, calc(100% - 8px))`;
-        indicator.style.borderColor = color;
-    }
-};
-
-window.selectScaleParamAndScroll = function(param) {
-    if (window.selectScaleParam) {
-        window.selectScaleParam(param);
-    }
-    const target = document.getElementById('bottom-aqi-scale-card');
-    if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-};
 
 // ═══════════════════════════════════════════════════════════════
 // LIVE AQI COMPARISON CHART CONTROLLER (ORIGINAL GRAPH)
@@ -4976,9 +4897,6 @@ async function refreshDashboard(forceNetwork = false) {
             if (window.evaluateNode2WeatherTheme) {
                 window.evaluateNode2WeatherTheme(null, null, null);
             }
-            if (typeof window.updateScaleCardLiveValues === 'function') {
-                window.updateScaleCardLiveValues();
-            }
             return;
         }
 
@@ -5200,10 +5118,6 @@ async function refreshDashboard(forceNetwork = false) {
             updateCardBorderAccent('card-box-co', 'co', d.co);
             updateCardBorderAccent('card-box-no2', 'no2', d.no2);
             updateCardBorderAccent('card-box-o3', 'o3', d.o3);
-
-            if (typeof window.updateScaleCardLiveValues === 'function') {
-                window.updateScaleCardLiveValues();
-            }
         }
         
         // WEATHER DATA POPULATION
@@ -5971,6 +5885,7 @@ async function refreshDashboard(forceNetwork = false) {
         if (heroLatestTimeEl && liveActiveTimeStr !== '--') {
             heroLatestTimeEl.innerText = liveActiveTimeStr;
         }
+        const isOverallOffline = isAqiOffline && isWeatherOffline;
         if (heroTimeChip) {
             if (isOverallOffline) {
                 heroTimeChip.style.color = '#9a3412';

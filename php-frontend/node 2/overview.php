@@ -1176,9 +1176,12 @@ async function refreshData(isSilent = false, forceNetwork = false) {
 
         if (!forceNetwork && !window.__overviewSyncedOnce) {
             window.__overviewSyncedOnce = true;
-            setTimeout(() => {
-                refreshData(true, true);
-            }, 60);
+            const bulkAge = (bulkData && bulkData.time) ? (Date.now() - Number(bulkData.time)) : 99999;
+            if (bulkAge > 12000) {
+                setTimeout(() => {
+                    refreshData(true, true);
+                }, 60);
+            }
         }
 
         const aqiDate = (bulkData && bulkData.aqi) ? (window.safeParseDate ? window.safeParseDate(bulkData.aqi.timestamp || bulkData.aqi.created_at) : new Date(bulkData.aqi.timestamp || bulkData.aqi.created_at)) : null;

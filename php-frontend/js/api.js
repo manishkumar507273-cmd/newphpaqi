@@ -423,6 +423,8 @@ window.formatWeatherReadingClient = formatWeatherReadingClient;
  * Direct Client-Side Supabase Telemetry Fetcher (Zero-Delay Streaming)
  * Directly connects to Cloudflare/Supabase in Mumbai (~80ms), completely bypassing Vercel Lambda cold start!
  */
+window.__inFlightBulkPromises = window.__inFlightBulkPromises || {};
+
 async function fetchLiveBulk(forceNetwork = false) {
     const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
     const isNode2 = (activeNode === '2');
@@ -436,7 +438,10 @@ async function fetchLiveBulk(forceNetwork = false) {
         if (window.INITIAL_DATA && (String(window.INITIAL_DATA.node) === String(activeNode) || (!window.INITIAL_DATA.node && activeNode === '1')) && (window.INITIAL_DATA.aqi || window.INITIAL_DATA.weather)) {
             apiCache.liveBulk = { data: window.INITIAL_DATA, time: Date.now(), node: activeNode };
             apiCache.overviewBulk = { data: window.INITIAL_DATA, time: Date.now(), node: activeNode };
-            setTimeout(() => { fetchLiveBulk(true).catch(() => {}); }, 15);
+            const initAge = window.INITIAL_DATA.time ? (Date.now() - Number(window.INITIAL_DATA.time)) : 99999;
+            if (initAge > 12000) {
+                setTimeout(() => { fetchLiveBulk(true).catch(() => {}); }, 15);
+            }
             return window.INITIAL_DATA;
         }
         const localCached = getLocalCache(cacheKey);
@@ -448,6 +453,12 @@ async function fetchLiveBulk(forceNetwork = false) {
         }
     }
 
+    // Deduplicate concurrent network fetches for the same node
+    if (window.__inFlightBulkPromises[activeNode]) {
+        return window.__inFlightBulkPromises[activeNode];
+    }
+
+    const networkPromise = (async () => {
     const cfg = getSbConfig(activeNode);
     const headers = {
         'apikey': cfg.key,
@@ -618,6 +629,16 @@ async function fetchLiveBulk(forceNetwork = false) {
             console.error('All live fetch paths failed:', fbErr);
         }
         return getLocalCache(cacheKey) || null;
+    }
+    })();
+
+    window.__inFlightBulkPromises[activeNode] = networkPromise;
+    try {
+        return await networkPromise;
+    } finally {
+        if (window.__inFlightBulkPromises[activeNode] === networkPromise) {
+            delete window.__inFlightBulkPromises[activeNode];
+        }
     }
 }
 window.fetchLiveBulk = fetchLiveBulk;

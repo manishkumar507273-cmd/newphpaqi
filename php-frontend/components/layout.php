@@ -968,7 +968,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
       }
     }
   </style>
-  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden md:!hidden" style="flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 3px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav md:hidden md:!hidden" style="flex-direction: row; align-items: stretch; justify-content: space-around; width: 100%; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid rgba(226, 232, 240, 0.8); height: calc(64px + env(safe-area-inset-bottom, 14px)); padding: 6px 3px calc(6px + env(safe-area-inset-bottom, 14px)); box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07); overflow: hidden; touch-action: manipulation;">
 
     <?php 
     $is_nav_locked = !$is_logged_in; 

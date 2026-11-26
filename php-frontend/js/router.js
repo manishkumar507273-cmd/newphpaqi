@@ -6,8 +6,9 @@
 
 (function () {
     let currentPage = new URLSearchParams(window.location.search).get('page') || 'overview';
-    let isTransitioning = false;
+    let activeNavController = null;
     const pageCache = new Map();
+    const inFlightPrefetches = new Map();
     let prefetchTimeout = null;
 
     // Create & inject top glowing progress bar
@@ -64,7 +65,7 @@
     }
 
     // Prefetch page data on hover/touch or eager pre-cache
-    function prefetchPage(url) {
+    function prefetchPage(url, force = false) {
         try {
             const urlObj = new URL(url, window.location.origin);
             const targetPage = urlObj.searchParams.get('page') || 'overview';
@@ -73,12 +74,14 @@
             const isUserLoggedIn = isUserAuthenticated();
 
             // Skip prefetching protected pages for unauthenticated visitors
-            if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) return;
-            if (targetPage === currentPage || pageCache.has(cacheKey)) return;
+            if (PROTECTED_PAGES.includes(targetPage) && !isUserLoggedIn) return null;
+            if (!force && targetPage === currentPage && pageCache.has(cacheKey)) return null;
+            const existing = pageCache.get(cacheKey);
+            if (!force && existing && (Date.now() - existing.time < 30000)) return null;
+            if (inFlightPrefetches.has(cacheKey)) return inFlightPrefetches.get(cacheKey);
 
             const nodeQuery = (activeNode === '2') ? '&node=2' : '';
-            // No cache-buster — allow HTTP cache to work for page HTML
-            fetch(`?page=${encodeURIComponent(targetPage)}${nodeQuery}`, {
+            const p = fetch(`?page=${encodeURIComponent(targetPage)}${nodeQuery}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
                 .then(res => res.json())
@@ -86,28 +89,33 @@
                     if (data && data.success) {
                         pageCache.set(cacheKey, { data, time: Date.now() });
                     }
+                    return data;
                 })
-                .catch(() => { });
-        } catch (e) { }
+                .catch(() => null)
+                .finally(() => {
+                    inFlightPrefetches.delete(cacheKey);
+                });
+            inFlightPrefetches.set(cacheKey, p);
+            return p;
+        } catch (e) { return null; }
     }
 
     // Eagerly pre-cache all main pages in background so page switching is 0ms instant
-    const CORE_PAGES = ['overview', 'live', 'weather', 'historical', 'predictive'];
+    const CORE_PAGES = ['overview', 'live', 'historical', 'predictive'];
     if (document.readyState === 'complete') {
-        setTimeout(initPrecache, 100);
+        setTimeout(initPrecache, 20);
     } else {
-        window.addEventListener('load', () => setTimeout(initPrecache, 150));
+        window.addEventListener('DOMContentLoaded', () => setTimeout(initPrecache, 20));
     }
     function initPrecache() {
         const isUserLoggedIn = isUserAuthenticated();
         const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
         const nodeSuffix = (activeNode === '2') ? '&node=2' : '';
-        CORE_PAGES.forEach((pg, idx) => {
+        CORE_PAGES.forEach((pg) => {
             if (PROTECTED_PAGES.includes(pg) && !isUserLoggedIn) return;
             const cacheKey = `${pg}_n${activeNode}`;
-            if (pg !== currentPage && !pageCache.has(cacheKey)) {
-                // Reduced stagger to 30ms (was 80ms) for faster pre-population
-                setTimeout(() => prefetchPage(`?page=${pg}${nodeSuffix}`), idx * 30);
+            if (!pageCache.has(cacheKey)) {
+                prefetchPage(`?page=${pg}${nodeSuffix}`, pg === currentPage);
             }
         });
     }
@@ -248,20 +256,20 @@
                 }
             } else if (isLocked) {
                 el.classList.remove('active');
-                el.style.opacity = '0.12';
-                el.style.color = '#cbd5e1';
+                el.style.opacity = '0.88';
+                el.style.color = '#475569';
                 el.style.backgroundColor = 'transparent';
                 if (icon) {
-                    icon.style.color = '#cbd5e1';
-                    icon.style.stroke = '#cbd5e1';
-                    icon.style.opacity = '0.2';
+                    icon.style.color = '#475569';
+                    icon.style.stroke = '#475569';
+                    icon.style.opacity = '1';
                     icon.style.transform = 'scale(1)';
-                    icon.style.strokeWidth = '1.5';
+                    icon.style.strokeWidth = '2';
                 }
                 if (label) {
-                    label.style.color = '#cbd5e1';
-                    label.style.fontWeight = '500';
-                    label.style.opacity = '0.2';
+                    label.style.color = '#475569';
+                    label.style.fontWeight = '700';
+                    label.style.opacity = '1';
                 }
             } else {
                 // Unlocked inactive tab — bold crisp dark slate #0f172a
@@ -321,40 +329,58 @@
             }
         }
 
-        if (isTransitioning) return;
-        isTransitioning = true;
+        // Cancel any previous in-flight navigation instead of dropping the user's tap
+        if (activeNavController) {
+            try { activeNavController.abort(); } catch (e) {}
+            activeNavController = null;
+        }
+        const controller = new AbortController();
+        activeNavController = controller;
 
         // Instant 0ms tactile feedback on tabs/dock before network begins
         updateHeaderUI(targetPage);
-
-        // Progress bar start
-        setProgressBar(35, 1);
 
         // Close mobile dropdown if open
         if (typeof toggleMobileMenu === 'function') {
             toggleMobileMenu(false);
         }
 
-        // Non-destructive transition: keep existing content visible while loading to eliminate blank flash
         const wrapper = document.getElementById('page-content-wrapper');
-        if (wrapper) {
-            wrapper.style.transition = 'opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1), transform 0.16s cubic-bezier(0.4, 0, 0.2, 1)';
-            wrapper.style.opacity = '0.55';
-            wrapper.style.transform = 'translateY(4px)';
+        const cached = pageCache.get(cacheKey);
+        const hasFreshCache = Boolean(cached && (Date.now() - cached.time < 300000));
+
+        if (!hasFreshCache) {
+            setProgressBar(35, 1);
+            if (wrapper) {
+                wrapper.style.transition = 'opacity 0.12s ease';
+                wrapper.style.opacity = '0.72';
+            }
+        } else if (Date.now() - cached.time > 20000) {
+            // Stale-while-revalidate in background
+            prefetchPage(`?page=${encodeURIComponent(targetPage)}${nodeSuffix}`, true);
         }
 
         try {
-            // Check prefetch cache or fetch from server (120s TTL — instant SPA switching for 2 min)
-            let cached = pageCache.get(cacheKey);
-            let data = (cached && (Date.now() - cached.time < 120000)) ? cached.data : null;
+            let data = hasFreshCache ? cached.data : null;
             if (!data) {
                 setProgressBar(65, 1);
-                // No cache-buster — allow HTTP cache to accelerate repeated loads
-                const res = await fetch(`?page=${encodeURIComponent(targetPage)}${nodeSuffix}`, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                data = await res.json();
-                pageCache.set(cacheKey, { data, time: Date.now() });
+                if (inFlightPrefetches.has(cacheKey)) {
+                    data = await inFlightPrefetches.get(cacheKey);
+                }
+                if (!data) {
+                    const res = await fetch(`?page=${encodeURIComponent(targetPage)}${nodeSuffix}`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        signal: controller.signal
+                    });
+                    data = await res.json();
+                    if (data && data.success) {
+                        pageCache.set(cacheKey, { data, time: Date.now() });
+                    }
+                }
+            }
+
+            if (controller.signal.aborted || activeNavController !== controller) {
+                return;
             }
 
             // Handle auth requirement from server response
@@ -363,7 +389,6 @@
                 if (wrapper) {
                     wrapper.style.opacity = '1';
                 }
-                isTransitioning = false;
                 window.__pendingTargetPage = data.target_page || targetPage;
                 if (typeof openAuthModal === 'function') {
                     openAuthModal(true);
@@ -486,10 +511,15 @@
             resetProgressBar();
 
         } catch (err) {
+            if (err && err.name === 'AbortError') {
+                return;
+            }
             console.error('Smooth navigation error, falling back to standard load:', err);
             window.location.href = url;
         } finally {
-            isTransitioning = false;
+            if (activeNavController === controller) {
+                activeNavController = null;
+            }
         }
     }
 

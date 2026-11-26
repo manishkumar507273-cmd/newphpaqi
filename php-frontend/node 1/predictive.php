@@ -131,7 +131,7 @@ $init_f_pin_y = round(83 + 65 * sin($init_f_theta), 2);
 <div class="forecast-page-container p-2.5 sm:p-6 flex flex-col gap-3 sm:gap-6 max-w-[1200px] mx-auto text-slate-900 font-sans">
 
   <div class="mb-0.5 sm:mb-2">
-    <h1 class="text-lg sm:text-[28px] font-extrabold text-slate-900 m-0 tracking-tight">Weather Forecast</h1>
+    <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: left;">Weather Forecast</h1>
     <p class="m-0 text-slate-500 text-[11px] sm:text-sm font-medium mt-0.5">Atmospheric weather and air quality predictive forecasting for SMVITM Campus.</p>
   </div>
 

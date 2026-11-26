@@ -718,7 +718,7 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode
 
     try {
         let filter = '';
-        const lim = days > 1 ? Math.min(1500, Math.max(150, days * 35)) : 150;
+        const lim = days > 1 ? Math.min(1500, Math.max(150, days * 35)) : 72;
         const timeCol = isNode2 ? 'timestamp' : 'timestamp_hour';
         if (normDate) {
             const [y, m, d] = parseDateParts(normDate);

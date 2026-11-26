@@ -803,7 +803,16 @@ img, svg, video, canvas {
     flex: 1 1 auto !important;
     min-width: max-content !important;
     -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation !important;
+    user-select: none !important;
     transition: all 0.15s ease !important;
+  }
+  .mobile-bottom-nav a *,
+  .mobile-bottom-nav button * {
+    pointer-events: none !important;
+  }
+  a, button, .node2-subtab-btn, .trend-pill-btn {
+    touch-action: manipulation;
   }
 
   .mobile-bottom-nav a:hover,

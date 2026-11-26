@@ -500,7 +500,15 @@ $init_weather_epoch = $init_weather_ts ? strtotime($init_weather_ts) : 0;
 
 $init_is_aqi_offline = ($init_aqi_epoch <= 0 || (time() - $init_aqi_epoch) > 300);
 $init_is_weather_offline = ($init_weather_epoch <= 0 || (time() - $init_weather_epoch) > 300);
-$init_is_soil_offline = ($init_weather_epoch <= 0 || (time() - $init_weather_epoch) > 300);
+$w_soil_check = $init_bulk['weather'] ?? [];
+$init_has_soil_data = (
+    (isset($w_soil_check['soil_temperature']) && $w_soil_check['soil_temperature'] !== null && $w_soil_check['soil_temperature'] !== '') ||
+    (isset($w_soil_check['soil_humidity']) && $w_soil_check['soil_humidity'] !== null && $w_soil_check['soil_humidity'] !== '') ||
+    (isset($w_soil_check['soil_moisture']) && $w_soil_check['soil_moisture'] !== null && $w_soil_check['soil_moisture'] !== '') ||
+    (isset($w_soil_check['soil_ph']) && $w_soil_check['soil_ph'] !== null && $w_soil_check['soil_ph'] !== '') ||
+    (isset($w_soil_check['soil_conductivity']) && $w_soil_check['soil_conductivity'] !== null && $w_soil_check['soil_conductivity'] !== '')
+);
+$init_is_soil_offline = (!$init_has_soil_data || $init_weather_epoch <= 0 || (time() - $init_weather_epoch) > 300);
 
 $init_aqi_time_str = $init_aqi_epoch > 0 
     ? ((time() - $init_aqi_epoch) >= 86400 ? date('j M, h:i A', $init_aqi_epoch) : date('h:i A', $init_aqi_epoch)) 
@@ -960,9 +968,14 @@ $init_border_colors = [
     width: 14px !important;
     height: 14px !important;
   }
-  .pollutant-card .pollutant-info-icon,
   .pollutant-card [id^="tag-"] {
     display: none !important;
+  }
+  .pollutant-card .pollutant-info-icon {
+    display: flex !important;
+    width: 22px !important;
+    height: 22px !important;
+    flex-shrink: 0 !important;
   }
 
   /* Pollutant Detail Modal Mobile Optimization */
@@ -1532,43 +1545,43 @@ $init_border_colors = [
     width: 100% !important;
   }
 
-  /* LINE 2: Wind Direction & Speed in the SAME line for mobile also (matching desktop view) */
+  /* LINE 2: Wind Direction & Speed stacked cleanly on mobile (Compass centered above Direction | Turbine | Speed) */
   .weather-card-wind {
     display: flex !important;
-    flex-direction: row !important;
+    flex-direction: column !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    padding: 10px 12px !important;
-    gap: 8px !important;
+    justify-content: center !important;
+    padding: 16px 14px !important;
+    gap: 12px !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    flex-wrap: nowrap !important;
   }
   .compass-widget-wrap {
-    width: 52px !important;
-    height: 52px !important;
+    width: 72px !important;
+    height: 72px !important;
     flex-shrink: 0 !important;
+    margin: 0 auto !important;
   }
   .weather-wind-metrics-group {
     display: flex !important;
     flex-direction: row !important;
-    justify-content: space-evenly !important;
+    justify-content: center !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 16px !important;
+    width: 100% !important;
     min-width: 0 !important;
-    flex: 1 !important;
   }
   .weather-wind-divider {
     display: block !important;
     width: 1px !important;
-    height: 38px !important;
+    height: 40px !important;
     background: rgba(255,255,255,0.18) !important;
     flex-shrink: 0 !important;
   }
   .wind-turbine-wrap {
     display: flex !important;
-    width: 34px !important;
-    height: 48px !important;
+    width: 42px !important;
+    height: 58px !important;
     flex-shrink: 0 !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1581,15 +1594,15 @@ $init_border_colors = [
     min-width: 0 !important;
   }
   .weather-metric-large {
-    font-size: 16px !important;
-    line-height: 1.1 !important;
+    font-size: 20px !important;
+    line-height: 1.15 !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
   }
   .weather-metric-label {
-    font-size: 10px !important;
+    font-size: 11.5px !important;
     color: #cbd5e1 !important;
-    margin-top: 1px !important;
+    margin-top: 3px !important;
     white-space: nowrap !important;
   }
 
@@ -1857,7 +1870,7 @@ $init_border_colors = [
   border: 1px solid #fecaca !important;
   margin-left: 2px !important;
   line-height: 1 !important;
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center !important;
 }
 
@@ -1919,19 +1932,19 @@ body:not(.weather-backdrop-active) .node2-weather-backdrop:not(.active) {
   background-position: center center;
   background-repeat: no-repeat;
   will-change: transform;
-  animation: singleCompletePageSkyGlide 14s ease-in-out infinite alternate;
+  animation: singleCompletePageSkyGlide 7s ease-in-out infinite alternate;
   animation-play-state: running;
 }
 
 @keyframes singleCompletePageSkyGlide {
   0% {
-    transform: translate3d(-45px, -18px, 0) scale(1.03);
+    transform: translate3d(-55px, -20px, 0) scale(1.03);
   }
   50% {
-    transform: translate3d(30px, 14px, 0) scale(1.06);
+    transform: translate3d(35px, 16px, 0) scale(1.06);
   }
   100% {
-    transform: translate3d(45px, -22px, 0) scale(1.04);
+    transform: translate3d(55px, -24px, 0) scale(1.04);
   }
 }
 
@@ -2441,7 +2454,7 @@ body.soil-backdrop-active header {
       }
   };
 
-  const initSavedSubtab = (function() {
+  var initSavedSubtab = (function() {
       try {
           const urlP = new URLSearchParams(window.location.search).get('tab');
           if (urlP && ['aqi', 'weather', 'soil'].includes(urlP)) return urlP;
@@ -3012,8 +3025,8 @@ body.soil-backdrop-active header {
     <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 6px; margin-bottom: 12px; width: 100%;">
       <div style="display: flex; flex-direction: column; gap: 6px;">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #ffffff; text-shadow: 0 2px 10px rgba(15, 23, 42, 0.6); font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0;">
-            Live Weather Conditions
+          <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #ffffff; text-shadow: 0 2px 10px rgba(15, 23, 42, 0.6); font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: left;">
+            Real-time Weather Telemetry
           </h1>
         </div>
       </div>
@@ -3517,20 +3530,10 @@ body.soil-backdrop-active header {
   <div id="node2-view-soil" class="node2-live-view-panel" style="<?= ($active_live_subtab === 'soil') ? 'display: flex;' : 'display: none;' ?> width: 100%; flex-direction: column; gap: 14px; position: relative; z-index: 1;">
 
     <!-- Soil Header / Location / Live status row -->
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
-          <i data-lucide="sprout" style="width: 22px; height: 22px;"></i>
-        </div>
-        <div>
-          <h1 style="font-size: clamp(18px, 2.2vw, 22px); font-weight: 800; color: #0f172a; margin: 0; font-family: var(--font-sans); letter-spacing: -0.01em;">
-            Subsurface Soil Telemetry &amp; Agrimet Grid
-          </h1>
-          <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0; font-weight: 500;">
-            Precision root-zone sensing
-          </p>
-        </div>
-      </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 10px; margin-bottom: 6px; width: 100%;">
+      <h1 class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: left;">
+        Real-time Soil Telemetry
+      </h1>
 
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
         <!-- Last Updated Badge -->
@@ -4340,13 +4343,13 @@ function renderComparisonChart() {
 window.renderComparisonChart = renderComparisonChart;
 
 // ── Node 2 Soil Parameters Comparison Chart ──────────────────────────────────
-let activeSoilParams = {
+var activeSoilParams = {
     soil_moisture: true,
     soil_temperature: true,
     soil_ph: true,
     soil_conductivity: true
 };
-let soilLiveChartInstance = null;
+var soilLiveChartInstance = null;
 
 function toggleSoilParam(key) {
     if (window.triggerHaptic) window.triggerHaptic('light');
@@ -5343,14 +5346,21 @@ async function refreshDashboard(forceNetwork = false) {
             // Dedicated Soil View Cards (Soil Temperature, Moisture, pH, EC)
             const soilLastUpdated = document.getElementById('soil-last-updated-val');
             const weatherLatestTime = document.getElementById('weather-latest-time');
+            const hasSoilData = Boolean(w && (
+                w.soil_temperature != null ||
+                w.soil_humidity != null ||
+                w.soil_moisture != null ||
+                w.soil_ph != null ||
+                w.soil_conductivity != null
+            ));
             let soilTimeStr = '--';
-            let isSoilOffline = false;
+            let isSoilOffline = !hasSoilData;
             if (w && (w.timestamp || w.created_at)) {
                 const sRawTs = w.timestamp || w.created_at;
                 const sDate = (typeof safeParseDate === 'function') ? safeParseDate(sRawTs) : new Date(sRawTs);
                 if (sDate && !isNaN(sDate.getTime())) {
                     const diffMins = Math.floor((Date.now() - sDate.getTime()) / 60000);
-                    isSoilOffline = diffMins > 5;
+                    if (diffMins > 5) isSoilOffline = true;
                     const timePart = sDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
                     soilTimeStr = diffMins >= 1440
                         ? sDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric' }) + ', ' + timePart
@@ -5359,7 +5369,7 @@ async function refreshDashboard(forceNetwork = false) {
             } else {
                 soilTimeStr = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
             }
-            if (soilLastUpdated) soilLastUpdated.innerText = soilTimeStr;
+            if (soilLastUpdated) soilLastUpdated.innerText = hasSoilData ? soilTimeStr : '--';
             if (weatherLatestTime) weatherLatestTime.innerText = soilTimeStr;
 
             const soilStatusPill = document.getElementById('soil-live-status-pill');
@@ -5779,8 +5789,15 @@ async function refreshDashboard(forceNetwork = false) {
             }
         }
 
-        let isSoilOffline = isWeatherOffline;
-        let soilLastUpdateTimeStr = weatherLastUpdateTimeStr;
+        const hasSoilData = Boolean(weatherData && (
+            weatherData.soil_temperature != null ||
+            weatherData.soil_humidity != null ||
+            weatherData.soil_moisture != null ||
+            weatherData.soil_ph != null ||
+            weatherData.soil_conductivity != null
+        ));
+        let isSoilOffline = !hasSoilData || isWeatherOffline;
+        let soilLastUpdateTimeStr = hasSoilData ? weatherLastUpdateTimeStr : '--';
 
         window.__isAqiOffline = isAqiOffline;
         window.__isWeatherOffline = isWeatherOffline;

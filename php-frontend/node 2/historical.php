@@ -203,6 +203,13 @@ $init_history_json = 'null';
     </div>
   </div>
 
+  <!-- Page Header Title -->
+  <div style="display: flex; justify-content: flex-start; align-items: center; text-align: left; width: 100%; margin-top: 6px; margin-bottom: 2px;">
+    <h1 id="analytics-page-heading" class="page-heading live-page-title" style="font-size: clamp(20px, 2.5vw, 24px); font-weight: 800; color: #0f172a; font-family: var(--font-sans); letter-spacing: -0.02em; margin: 0; text-align: left;">
+      <?= $req_subtab === 'weather' ? 'Historical Weather Telemetry' : ($req_subtab === 'soil' ? 'Historical Soil Telemetry' : 'Historical Air Quality Telemetry') ?>
+    </h1>
+  </div>
+
   <!-- ── Analytics Date & Range Picker Card ── -->
   <div class="bg-white rounded-[20px] sm:rounded-[24px] p-3.5 sm:p-5 border border-slate-200/90 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,191,165,0.08)] transition-all">
 
@@ -262,6 +269,18 @@ $init_history_json = 'null';
       </div>
 
       <div class="flex items-center gap-2.5 flex-wrap">
+        <!-- Chart Type Switcher (Bar / Graph) -->
+        <div class="inline-flex items-center rounded-full p-0.5 border border-white/15 bg-slate-900/70" id="chart-type-switcher" role="group" aria-label="Chart Type">
+          <button type="button" id="chart-type-bar-btn" onclick="setChartType('bar')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer text-slate-300 hover:text-white">
+            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+            <span>Bar</span>
+          </button>
+          <button type="button" id="chart-type-line-btn" onclick="setChartType('line')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer text-slate-300 hover:text-white">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+            <span>Graph</span>
+          </button>
+        </div>
+
         <!-- Parameter Selector Dropdown Pill Button -->
         <div class="relative inline-flex items-center" id="trend-param-container">
           <button type="button" id="trend-param-btn" class="trend-pill-btn" onclick="toggleTrendParamMenu()">
@@ -769,7 +788,7 @@ function setRangeDays(days, skipFetch = false) {
         mobileBadge.innerText = currentRangeDays === 1 ? '24 HRS' : `${currentRangeDays} DAYS`;
     }
 
-    animateSummarySection(currentRangeDays === 1);
+    if (typeof animateSummarySection === 'function') animateSummarySection(currentRangeDays === 1);
 
     persistHistoricalState();
     if (!skipFetch) fetchAllHistory();
@@ -1001,7 +1020,10 @@ function prefetchOtherRanges(queryDate) {
     }
 }
 
+var latestHistoryReqId = 0;
+
 async function fetchAllHistory(forcedDate = null, skipCache = false, silent = false) {
+    const reqId = ++latestHistoryReqId;
     try {
         const datePicker = document.getElementById('history-date-picker');
         let rawDate = forcedDate || (datePicker ? datePicker.value : null);
@@ -1034,6 +1056,7 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
             prefetchOtherRanges(queryDate);
             // Silently fetch fresh data in background to ensure all latest hours are rendered
             fetchRangeData(queryDate, days, true).then(freshData => {
+                if (reqId !== latestHistoryReqId || Number(currentRangeDays) !== Number(days)) return;
                 if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
                     const prevLenAqi = historicalDataAqi.length;
                     const prevLenW = historicalDataWeather.length;
@@ -1069,6 +1092,7 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
             const ageMs = Date.now() - (cached.fetchedAt || 0);
             if (isToday || ageMs > 30000) {
                 fetchRangeData(queryDate, days, true).then(freshData => {
+                    if (reqId !== latestHistoryReqId || Number(currentRangeDays) !== Number(days)) return;
                     if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
                         const prevLenAqi = historicalDataAqi.length;
                         const prevLenW = historicalDataWeather.length;
@@ -1085,6 +1109,29 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
             return;
         }
 
+        if (!cached && !skipCache && days === 1) {
+            // Instant 0ms fallback: if a cached multi-day dataset already covers queryDate, render immediately while fetching fresh 1-day slice
+            const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+            const multiKeys = Object.keys(clientRangeCache).filter(k => k.endsWith(`_n${activeNode}`) && !k.includes(`_1_n${activeNode}`));
+            for (const mk of multiKeys) {
+                const mc = clientRangeCache[mk];
+                if (mc && ((mc.aqi && mc.aqi.some(r => (r.timestamp || '').startsWith(queryDate))) || (mc.weather && mc.weather.some(r => (r.timestamp || '').startsWith(queryDate))))) {
+                    historicalDataAqi = mc.aqi || [];
+                    historicalDataWeather = mc.weather || [];
+                    renderUI();
+                    fetchRangeData(queryDate, 1, true).then(freshData => {
+                        if (reqId !== latestHistoryReqId || Number(currentRangeDays) !== 1) return;
+                        if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
+                            historicalDataAqi = freshData.aqi || [];
+                            historicalDataWeather = freshData.weather || [];
+                            renderUI();
+                        }
+                    }).catch(() => {});
+                    return;
+                }
+            }
+        }
+
         const chartCanvas = document.getElementById('historical-chart');
         const chartLoading = document.getElementById('chart-loading');
         const chartEmpty = document.getElementById('chart-empty');
@@ -1095,6 +1142,7 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
         }
 
         const data = await fetchRangeData(queryDate, days, skipCache);
+        if (reqId !== latestHistoryReqId || Number(currentRangeDays) !== Number(days)) return;
         
         const newAqi = data.aqi || [];
         const newWeather = data.weather || [];
@@ -1216,6 +1264,7 @@ function switchHistTab(tab, skipRender = false) {
     if (tabWeather) tabWeather.className = (tab === 'weather') ? activeCls : inactiveCls;
     if (tabSoil) tabSoil.className = (tab === 'soil') ? activeCls : inactiveCls;
 
+    const pageHeading = document.getElementById('analytics-page-heading');
     const tTitle = document.getElementById('trend-graph-title-text');
     const tSub = document.getElementById('trend-graph-subtitle');
     const legText = document.getElementById('leg-text');
@@ -1225,6 +1274,7 @@ function switchHistTab(tab, skipRender = false) {
     const tableTitle = document.getElementById('table-title');
 
     if (tab === 'aqi') {
+        if (pageHeading) pageHeading.innerText = 'Historical Air Quality Telemetry';
         if (tTitle) tTitle.innerText = 'Air Quality Trend Graph';
         if (tSub) tSub.innerText = 'Hourly pollutant concentration telemetry and measured trends';
         if (legText) legText.innerText = 'AQI Telemetry (Recorded)';
@@ -1233,6 +1283,7 @@ function switchHistTab(tab, skipRender = false) {
         if (mSoil) mSoil.style.display = 'none';
         if (tableTitle) tableTitle.innerText = days === 1 ? 'AQI Historical Telemetry Table (12:00 AM – 12:00 AM)' : `AQI Historical Telemetry Table (${days} Days)`;
     } else if (tab === 'weather') {
+        if (pageHeading) pageHeading.innerText = 'Historical Weather Telemetry';
         if (tTitle) tTitle.innerText = 'Weather Trend Graph';
         if (tSub) tSub.innerText = 'Hourly ambient meteorological telemetry and measured trends';
         if (legText) legText.innerText = 'Weather Telemetry (Recorded)';
@@ -1241,6 +1292,7 @@ function switchHistTab(tab, skipRender = false) {
         if (mSoil) mSoil.style.display = 'none';
         if (tableTitle) tableTitle.innerText = days === 1 ? 'Weather Historical Telemetry Table (12:00 AM – 12:00 AM)' : `Weather Historical Telemetry Table (${days} Days)`;
     } else {
+        if (pageHeading) pageHeading.innerText = 'Historical Soil Telemetry';
         if (tTitle) tTitle.innerText = 'Soil Telemetry Trend Graph';
         if (tSub) tSub.innerText = 'Hourly soil subsurface telemetry (Moisture, Temperature, pH, EC)';
         if (legText) legText.innerText = 'Soil Telemetry (Recorded)';
@@ -1254,8 +1306,18 @@ function switchHistTab(tab, skipRender = false) {
     persistHistoricalState();
 }
 
+function syncChartTypeButtons(type) {
+    const barBtn = document.getElementById('chart-type-bar-btn');
+    const lineBtn = document.getElementById('chart-type-line-btn');
+    const activeCls = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer bg-[#00bfa5] text-white shadow-xs';
+    const inactiveCls = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer text-slate-300 hover:text-white';
+    if (barBtn) barBtn.className = (type === 'bar') ? activeCls : inactiveCls;
+    if (lineBtn) lineBtn.className = (type !== 'bar') ? activeCls : inactiveCls;
+}
+
 function setChartType(type, skipRender = false) {
-    currentChartType = type;
+    currentChartType = (type === 'bar') ? 'bar' : 'line';
+    syncChartTypeButtons(currentChartType);
     persistHistoricalState();
     if (!skipRender) renderUI();
 }
@@ -1823,6 +1885,18 @@ function renderUI(skipDayFilter = false) {
                     actualData[h] = Number(hourMap[h].toFixed(2));
                 }
             }
+
+            // Do not show future hours in advance for today's date
+            if (dateInput === '<?= $today_ist ?>') {
+                const nowIstHour = Number(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false })) % 24;
+                let lastDataHr = -1;
+                for (let h = 0; h < 24; h++) {
+                    if (actualData[h] !== null) lastDataHr = h;
+                }
+                const maxHr = Math.min(23, Math.max(isNaN(nowIstHour) ? 0 : nowIstHour, lastDataHr));
+                labels = labels.slice(0, maxHr + 1);
+                actualData = actualData.slice(0, maxHr + 1);
+            }
         } else {
             // Multi-day range (3, 7, 30 days)
             const dayMap = {};
@@ -1883,40 +1957,80 @@ function renderUI(skipDayFilter = false) {
         if (elAvg) elAvg.innerText = avgVal !== null ? `${avgVal.toFixed(1)}${u}` : '--';
 
         const primaryColor = meta.color || '#00bfa5';
-        const datasets = [
-            {
+        const targetChartType = (currentChartType === 'bar') ? 'bar' : 'line';
+        syncChartTypeButtons(targetChartType);
+
+        const getPointColor = (val) => {
+            if (val == null || isNaN(val)) return primaryColor;
+            if (currentParam === 'cpcb_aqi' || currentParam === 'aqi') return getAqiCategory(val).color;
+            if (POLLUTANT_SCALES[currentParam]) return getParamColor(currentParam, val);
+            return primaryColor;
+        };
+        const hasTierColors = (currentParam === 'cpcb_aqi' || currentParam === 'aqi' || Boolean(POLLUTANT_SCALES[currentParam]));
+        const pointColors = actualData.map(v => getPointColor(v));
+        const latestPointColor = latestVal !== null ? getPointColor(latestVal) : primaryColor;
+
+        const datasetConfig = targetChartType === 'bar'
+            ? {
                 label: meta.label,
                 paramKey: currentParam,
                 paramUnit: meta.unit || '',
                 data: actualData,
-                borderColor: primaryColor,
-                borderWidth: 2.4,
+                backgroundColor: pointColors.map(c => c + 'd9'),
+                hoverBackgroundColor: pointColors,
+                borderColor: pointColors,
+                borderWidth: 1.5,
+                borderRadius: 6,
+                maxBarThickness: 28
+            }
+            : {
+                label: meta.label,
+                paramKey: currentParam,
+                paramUnit: meta.unit || '',
+                data: actualData,
+                borderColor: latestPointColor,
+                borderWidth: 2.6,
                 tension: 0.38,
-                pointRadius: days === 1 ? 3 : 2,
+                pointRadius: days === 1 ? 4 : 3,
                 pointHoverRadius: 6,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: primaryColor,
-                pointBorderWidth: 2.5,
+                pointBackgroundColor: pointColors,
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                segment: hasTierColors ? {
+                    borderColor: (segCtx) => {
+                        const yVal = (segCtx.p1 && segCtx.p1.parsed) ? segCtx.p1.parsed.y : null;
+                        return yVal != null ? getPointColor(yVal) : latestPointColor;
+                    }
+                } : undefined,
                 backgroundColor: function(ctx) {
                     const chart = ctx.chart;
                     const {ctx: c, chartArea} = chart;
-                    if (!chartArea) return 'rgba(0, 191, 165, 0.25)';
+                    if (!chartArea) return 'rgba(0, 191, 165, 0.22)';
+                    if (hasTierColors && actualData.length > 1) {
+                        const hGrad = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+                        actualData.forEach((v, idx) => {
+                            const stop = actualData.length > 1 ? idx / (actualData.length - 1) : 0;
+                            hGrad.addColorStop(Math.min(1, Math.max(0, stop)), getPointColor(v) + '38');
+                        });
+                        return hGrad;
+                    }
                     const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                    grad.addColorStop(0, primaryColor + '55');
-                    grad.addColorStop(0.5, primaryColor + '20');
+                    grad.addColorStop(0, latestPointColor + '55');
+                    grad.addColorStop(0.5, latestPointColor + '20');
                     grad.addColorStop(1, 'rgba(0,0,0,0)');
                     return grad;
                 },
                 fill: 'start',
                 spanGaps: false
-            }
-        ];
+            };
+
+        const datasets = [datasetConfig];
 
         const yMin = (minVal !== null && minVal < 0) ? undefined : 0;
         const ySuggestedMax = (peakVal !== null && peakVal > 0) ? undefined : 1.0;
 
         try {
-            if (chartInstance && chartInstance.ctx && chartInstance.canvas === chartCanvas) {
+            if (chartInstance && chartInstance.ctx && chartInstance.canvas === chartCanvas && chartInstance.config && chartInstance.config.type === targetChartType) {
                 chartInstance.data.labels = labels;
                 chartInstance.data.datasets = datasets;
                 if (chartInstance.options && chartInstance.options.scales && chartInstance.options.scales.y) {
@@ -1934,7 +2048,7 @@ function renderUI(skipDayFilter = false) {
                     try { chartInstance.destroy(); } catch(e) {}
                 }
                 chartInstance = new Chart(ctx, {
-                    type: 'line',
+                    type: targetChartType,
                     data: { labels, datasets },
                     options: {
                         responsive: true,
@@ -1984,9 +2098,9 @@ function renderUI(skipDayFilter = false) {
                                 ticks: {
                                     color: '#94a3b8',
                                     font: { family: 'var(--font-mono)', size: 10 },
-                                    maxRotation: 0,
-                                    autoSkip: true,
-                                    maxTicksLimit: 12
+                                    maxRotation: 45,
+                                    minRotation: 0,
+                                    autoSkip: false
                                 },
                                 title: { display: true, text: days > 1 ? 'Days Progression' : 'Hours (24-Hour Diurnal Progression)', color: '#64748b', font: { size: 11, weight: '600' } }
                             },
@@ -2773,9 +2887,18 @@ setTimeout(() => {
         if (!dp.value) dp.value = normalizeDateToYmd(_initState.date || '<?= $today_ist ?>');
         else dp.value = normalizeDateToYmd(dp.value);
         dp.onchange = () => {
+            if (!dp.value) return;
             persistHistoricalState();
-            fetchAllHistory();
+            fetchAllHistory(dp.value);
         };
+        const prefetch30OnInteract = () => {
+            const k30 = getCacheKey('<?= $today_ist ?>', 30);
+            if (!clientRangeCache[k30] && !pendingRangeFetches[k30]) {
+                fetchRangeData('<?= $today_ist ?>', 30).catch(() => {});
+            }
+        };
+        dp.addEventListener('pointerenter', prefetch30OnInteract, { passive: true });
+        dp.addEventListener('focus', prefetch30OnInteract, { passive: true });
     }
     if (_initState.days && _initState.days !== 1) {
         setRangeDays(_initState.days, true);

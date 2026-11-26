@@ -927,13 +927,24 @@ $init_f_pin_y = 58;
         renderForecastUI();
     };
 
+    let autoRefreshForecastTimer = null;
+
     // Clean up on SPA navigation
     window.__cleanupCurrentPage = function() {
-        // Standby mode - no active timers
+        if (autoRefreshForecastTimer) {
+            clearInterval(autoRefreshForecastTimer);
+            autoRefreshForecastTimer = null;
+        }
     };
 
     function initForecastPage() {
         renderForecastUI();
+        if (autoRefreshForecastTimer) clearInterval(autoRefreshForecastTimer);
+        autoRefreshForecastTimer = setInterval(() => {
+            if (!document.hidden) {
+                loadForecastData(true);
+            }
+        }, 15000);
     }
 
     if (document.readyState === 'loading') {

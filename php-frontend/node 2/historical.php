@@ -1009,7 +1009,7 @@ function prefetchOtherRanges(queryDate) {
     }
 }
 
-async function fetchAllHistory(forcedDate = null, skipCache = false) {
+async function fetchAllHistory(forcedDate = null, skipCache = false, silent = false) {
     try {
         const datePicker = document.getElementById('history-date-picker');
         let rawDate = forcedDate || (datePicker ? datePicker.value : null);
@@ -1096,20 +1096,34 @@ async function fetchAllHistory(forcedDate = null, skipCache = false) {
         const chartCanvas = document.getElementById('historical-chart');
         const chartLoading = document.getElementById('chart-loading');
         const chartEmpty = document.getElementById('chart-empty');
-        if (chartCanvas) chartCanvas.style.opacity = '0.7';
-        if (chartLoading) chartLoading.style.display = 'flex';
-        if (chartEmpty) chartEmpty.style.display = 'none';
+        if (!silent) {
+            if (chartCanvas) chartCanvas.style.opacity = '0.7';
+            if (chartLoading) chartLoading.style.display = 'flex';
+            if (chartEmpty) chartEmpty.style.display = 'none';
+        }
 
         const data = await fetchRangeData(queryDate, days, skipCache);
         
-        historicalDataAqi = data.aqi || [];
-        historicalDataWeather = data.weather || [];
+        const newAqi = data.aqi || [];
+        const newWeather = data.weather || [];
+        const changed = !silent
+            || newAqi.length !== (historicalDataAqi || []).length
+            || newWeather.length !== (historicalDataWeather || []).length
+            || (newAqi[0]?.timestamp !== historicalDataAqi?.[0]?.timestamp)
+            || (newWeather[0]?.timestamp !== historicalDataWeather?.[0]?.timestamp);
+
+        historicalDataAqi = newAqi;
+        historicalDataWeather = newWeather;
         
         if (chartLoading) chartLoading.style.display = 'none';
         if (chartCanvas) chartCanvas.style.opacity = '1';
 
-        renderUI();
-        prefetchOtherRanges(queryDate);
+        if (changed) {
+            renderUI();
+        }
+        if (!silent) {
+            prefetchOtherRanges(queryDate);
+        }
     } catch(e) {
         console.error("Error fetching historical data", e);
         const chartCanvas = document.getElementById('historical-chart');
@@ -2737,12 +2751,17 @@ function downloadCSV() {
 var autoRefreshHistInterval = null;
 
 function startAutoRefreshHist() {
-    // Disabled: Historical telemetry is an archive explorer; disabling the 12s timer
-    // prevents constant reloading, spinner flashing, and chart re-animations.
-    if (autoRefreshHistInterval) {
-        clearInterval(autoRefreshHistInterval);
-        autoRefreshHistInterval = null;
-    }
+    if (autoRefreshHistInterval) clearInterval(autoRefreshHistInterval);
+    autoRefreshHistInterval = setInterval(() => {
+        if (document.hidden) return;
+        const dp = document.getElementById('history-date-picker');
+        if (!dp) return;
+        const todayStr = getLocalDateStr();
+        const currentPickerVal = normalizeDateToYmd(dp.value);
+        if (currentPickerVal === todayStr && currentRangeDays === 1) {
+            fetchAllHistory(todayStr, true, true);
+        }
+    }, 12000);
 }
 
 window.__cleanupCurrentPage = function() {

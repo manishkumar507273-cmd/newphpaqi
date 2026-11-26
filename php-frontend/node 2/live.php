@@ -1991,12 +1991,6 @@ body.soil-backdrop-active header {
   border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
 }
 
-body.soil-backdrop-active footer {
-  background-color: rgba(255, 255, 255, 0.65) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-}
-
 .soil-photo-layer {
   position: absolute;
   inset: -20px;
@@ -3685,40 +3679,40 @@ body.soil-backdrop-active footer {
 
     </div>
 
-    <!-- Soil Telemetry Trend Graph Card (Matching Sleek Dark Design) -->
-    <div class="trend-graph-card" style="margin-top: 8px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+    <!-- Soil Parameters Comparison Lineplot Card (Matching AQI Comparison Light Style) -->
+    <div class="comparison-chart-card" style="background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; margin-top: 8px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
         <div>
-          <div style="font-size: 16px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="trending-up" style="width: 17px; height: 17px; color: #10b981;"></i>
-            <span id="soil-trend-chart-title">Soil Subsurface Trend Graph</span>
+          <div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="layers" style="width: 16px; height: 16px; color: #059669;"></i>
+            <span id="soil-trend-chart-title">Soil Parameters Comparison</span>
           </div>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;" id="soil-trend-chart-subtitle">
-            Hourly soil moisture, temperature, pH and electrical conductivity diurnal progression
+          <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;" id="soil-trend-chart-subtitle">
+            All soil parameters on a single graph (Moisture, Temperature, pH &amp; EC)
           </div>
-        </div>
-
-        <!-- Parameter Switcher Buttons (Always single line on mobile & desktop) -->
-        <div class="soil-trend-switcher-row">
-          <button type="button" onclick="switchSoilLiveChartParam('soil_moisture')" id="btn-soil-param-moisture" class="trend-pill-btn" style="background: rgba(16, 185, 129, 0.25); border-color: #10b981; color: #34d399;">
-            <span>💧 Moisture (%)</span>
-          </button>
-          <button type="button" onclick="switchSoilLiveChartParam('soil_temperature')" id="btn-soil-param-temp" class="trend-pill-btn">
-            <span>🌱 Temp (°C)</span>
-          </button>
-          <button type="button" onclick="switchSoilLiveChartParam('soil_ph')" id="btn-soil-param-ph" class="trend-pill-btn">
-            <span>🧪 pH</span>
-          </button>
-          <button type="button" onclick="switchSoilLiveChartParam('soil_conductivity')" id="btn-soil-param-ec" class="trend-pill-btn">
-            <span>⚡ EC (µS/cm)</span>
-          </button>
         </div>
       </div>
 
+      <!-- Soil Parameter Filter Chips -->
+      <div style="display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none;" class="sm:flex-wrap" id="soil-param-filters">
+        <button type="button" onclick="toggleSoilParam('soil_moisture')" id="filter-soil_moisture" data-active="true" data-color="#0284c7" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #0284c7; background-color: rgba(2, 132, 199, 0.12); color: #0284c7; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #0284c7;"></span> Moisture (%)
+        </button>
+        <button type="button" onclick="toggleSoilParam('soil_temperature')" id="filter-soil_temperature" data-active="true" data-color="#ea580c" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #ea580c; background-color: rgba(234, 88, 12, 0.12); color: #ea580c; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #ea580c;"></span> Temp (°C)
+        </button>
+        <button type="button" onclick="toggleSoilParam('soil_ph')" id="filter-soil_ph" data-active="true" data-color="#9333ea" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #9333ea; background-color: rgba(147, 51, 234, 0.12); color: #9333ea; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #9333ea;"></span> pH
+        </button>
+        <button type="button" onclick="toggleSoilParam('soil_conductivity')" id="filter-soil_conductivity" data-active="true" data-color="#059669" style="min-height: 28px; padding: 3px 10px; border-radius: 999px; border: 1.2px solid #059669; background-color: rgba(5, 150, 105, 0.12); color: #059669; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #059669;"></span> EC (µS/cm)
+        </button>
+      </div>
+
       <!-- Chart Canvas Container -->
-      <div style="position: relative; height: 320px; width: 100%;">
+      <div style="width: 100%; height: 250px; position: relative;">
         <canvas id="soil-live-trend-chart"></canvas>
-        <div id="soil-live-chart-empty" style="position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(22, 28, 40, 0.85); color: #94a3b8; font-size: 13px; font-weight: 600;">
+        <div id="soil-live-chart-empty" style="position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); color: #64748b; font-size: 13px;">
           Waiting for live soil telemetry stream...
         </div>
       </div>
@@ -4345,45 +4339,49 @@ function renderComparisonChart() {
 }
 window.renderComparisonChart = renderComparisonChart;
 
-// ── Node 2 Soil Live Trend Chart & Parameter Switching ────────────────────────
-let currentSoilLiveChartParam = 'soil_moisture';
+// ── Node 2 Soil Parameters Comparison Chart ──────────────────────────────────
+let activeSoilParams = {
+    soil_moisture: true,
+    soil_temperature: true,
+    soil_ph: true,
+    soil_conductivity: true
+};
 let soilLiveChartInstance = null;
 
-function switchSoilLiveChartParam(param) {
+function toggleSoilParam(key) {
     if (window.triggerHaptic) window.triggerHaptic('light');
-    currentSoilLiveChartParam = param;
-    
-    // Update button states
-    const btnIds = {
-        'soil_moisture': 'btn-soil-param-moisture',
-        'soil_temperature': 'btn-soil-param-temp',
-        'soil_ph': 'btn-soil-param-ph',
-        'soil_conductivity': 'btn-soil-param-ec'
-    };
-    Object.keys(btnIds).forEach(k => {
-        const btn = document.getElementById(btnIds[k]);
-        if (!btn) return;
-        if (k === param) {
-            btn.style.backgroundColor = 'rgba(16, 185, 129, 0.25)';
-            btn.style.borderColor = '#10b981';
-            btn.style.color = '#34d399';
+    activeSoilParams[key] = !activeSoilParams[key];
+    const btn = document.getElementById(`filter-${key}`);
+    if (btn) {
+        const col = btn.getAttribute('data-color') || '#059669';
+        const dot = btn.querySelector('span');
+        if (activeSoilParams[key]) {
+            btn.style.borderColor = col;
+            btn.style.backgroundColor = col + '1f';
+            btn.style.color = col;
+            if (dot) dot.style.backgroundColor = col;
         } else {
-            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-            btn.style.borderColor = 'rgba(255, 255, 255, 0.14)';
-            btn.style.color = '#f1f5f9';
+            btn.style.borderColor = '#cbd5e1';
+            btn.style.backgroundColor = 'transparent';
+            btn.style.color = '#94a3b8';
+            if (dot) dot.style.backgroundColor = '#94a3b8';
         }
-    });
-
+    }
     renderSoilLiveTrendChart();
 }
-window.switchSoilLiveChartParam = switchSoilLiveChartParam;
+window.toggleSoilParam = toggleSoilParam;
 
 function renderSoilLiveTrendChart() {
     const canvas = document.getElementById('soil-live-trend-chart');
     if (!canvas) return;
 
-    let stream = (window.weatherHistory && window.weatherHistory.length > 0) 
-        ? window.weatherHistory 
+    if (typeof Chart === 'undefined') {
+        setTimeout(renderSoilLiveTrendChart, 100);
+        return;
+    }
+
+    let stream = (window.weatherHistory && window.weatherHistory.length > 0)
+        ? window.weatherHistory
         : ((window.__liveDataStream && window.__liveDataStream.length > 0) ? window.__liveDataStream : (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.weather_history) ? window.INITIAL_DATA.weather_history : []));
     if ((!stream || stream.length === 0) && typeof getLocalCache === 'function') {
         const cached = getLocalCache('smartairnet_bulk_telemetry_n2') || getLocalCache('smartairnet_bulk_telemetry');
@@ -4400,7 +4398,7 @@ function renderSoilLiveTrendChart() {
     }
     if (empty) empty.style.display = 'none';
 
-    // Reverse so chronologically left-to-right (oldest -> newest)
+    // Chronologically left-to-right (oldest -> newest)
     const dataPoints = [...stream].reverse();
 
     const labels = dataPoints.map(d => {
@@ -4410,49 +4408,70 @@ function renderSoilLiveTrendChart() {
         return isNaN(dt.getTime()) ? '' : dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
     });
 
-    const paramConfig = {
-        'soil_moisture': {
-            label: 'Soil Moisture',
+    const datasets = [
+        {
+            key: 'soil_moisture',
+            label: 'Moisture',
             unit: '%',
-            color: '#0284c7',
-            bgColor: 'rgba(2, 132, 199, 0.14)',
-            extractor: d => (d.soil_moisture != null ? Number(d.soil_moisture) : (d.soil_humidity != null ? Number(d.soil_humidity) : null))
+            decimals: 1,
+            data: dataPoints.map(d => (d.soil_moisture != null ? Number(d.soil_moisture) : (d.soil_humidity != null ? Number(d.soil_humidity) : null))),
+            borderColor: '#0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.08)',
+            fill: false,
+            tension: 0.35,
+            borderWidth: 2,
+            pointRadius: 0
         },
-        'soil_temperature': {
-            label: 'Soil Temperature',
+        {
+            key: 'soil_temperature',
+            label: 'Temp',
             unit: '°C',
-            color: '#ea580c',
-            bgColor: 'rgba(234, 88, 12, 0.14)',
-            extractor: d => (d.soil_temperature != null ? Number(d.soil_temperature) : (d.soil_temp != null ? Number(d.soil_temp) : null))
+            decimals: 1,
+            data: dataPoints.map(d => (d.soil_temperature != null ? Number(d.soil_temperature) : (d.soil_temp != null ? Number(d.soil_temp) : null))),
+            borderColor: '#ea580c',
+            backgroundColor: 'rgba(234, 88, 12, 0.08)',
+            fill: false,
+            tension: 0.35,
+            borderWidth: 2,
+            pointRadius: 0
         },
-        'soil_ph': {
-            label: 'Soil pH',
-            unit: '',
-            color: '#10b981',
-            bgColor: 'rgba(16, 185, 129, 0.14)',
-            extractor: d => (d.soil_ph != null ? Number(d.soil_ph) : (d.ph != null ? Number(d.ph) : null))
+        {
+            key: 'soil_ph',
+            label: 'pH',
+            unit: ' pH',
+            decimals: 2,
+            data: dataPoints.map(d => (d.soil_ph != null ? Number(d.soil_ph) : (d.ph != null ? Number(d.ph) : null))),
+            borderColor: '#9333ea',
+            backgroundColor: 'rgba(147, 51, 234, 0.08)',
+            fill: false,
+            tension: 0.35,
+            borderWidth: 2,
+            pointRadius: 0
         },
-        'soil_conductivity': {
-            label: 'Soil Conductivity',
+        {
+            key: 'soil_conductivity',
+            label: 'EC',
             unit: ' µS/cm',
-            color: '#8b5cf6',
-            bgColor: 'rgba(139, 92, 246, 0.14)',
-            extractor: d => (d.soil_conductivity != null ? Number(d.soil_conductivity) : (d.ec != null ? Number(d.ec) : null))
+            decimals: 0,
+            data: dataPoints.map(d => (d.soil_conductivity != null ? Number(d.soil_conductivity) : (d.ec != null ? Number(d.ec) : null))),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.08)',
+            fill: false,
+            tension: 0.35,
+            borderWidth: 2,
+            pointRadius: 0
         }
-    };
-
-    const cfg = paramConfig[currentSoilLiveChartParam] || paramConfig['soil_moisture'];
-    const values = dataPoints.map(cfg.extractor);
+    ].filter(ds => activeSoilParams[ds.key]);
 
     try {
         if (soilLiveChartInstance && soilLiveChartInstance.ctx && soilLiveChartInstance.canvas === canvas) {
             soilLiveChartInstance.data.labels = labels;
-            soilLiveChartInstance.data.datasets[0].label = cfg.label;
-            soilLiveChartInstance.data.datasets[0].data = values;
-            soilLiveChartInstance.data.datasets[0].unit = cfg.unit;
-            soilLiveChartInstance.data.datasets[0].borderColor = cfg.color;
-            soilLiveChartInstance.data.datasets[0].backgroundColor = cfg.bgColor;
-            soilLiveChartInstance.data.datasets[0].pointBorderColor = cfg.color;
+            soilLiveChartInstance.data.datasets = datasets;
+            if (soilLiveChartInstance.options && soilLiveChartInstance.options.scales && soilLiveChartInstance.options.scales.y) {
+                soilLiveChartInstance.options.scales.y.min = 0;
+                soilLiveChartInstance.options.scales.y.suggestedMin = 0;
+                soilLiveChartInstance.options.scales.y.beginAtZero = true;
+            }
             soilLiveChartInstance.update('none');
         } else {
             if (soilLiveChartInstance) {
@@ -4461,29 +4480,15 @@ function renderSoilLiveTrendChart() {
             const ctx = canvas.getContext('2d');
             soilLiveChartInstance = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: cfg.label,
-                        data: values,
-                        unit: cfg.unit,
-                        borderColor: cfg.color,
-                        backgroundColor: cfg.bgColor,
-                        fill: true,
-                        tension: 0.35,
-                        borderWidth: 2.5,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: cfg.color,
-                        pointBorderWidth: 2,
-                        pointHoverRadius: 5
-                    }]
-                },
+                data: { labels, datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     animation: false,
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -4492,13 +4497,14 @@ function renderSoilLiveTrendChart() {
                             bodyColor: '#cbd5e1',
                             padding: 10,
                             cornerRadius: 8,
+                            boxPadding: 4,
                             callbacks: {
                                 label: function(ctx) {
                                     const val = ctx.parsed.y;
                                     const ds = ctx.dataset || {};
-                                    const u = ds.unit !== undefined ? ds.unit : cfg.unit;
-                                    const lbl = (ds.label || cfg.label).split(' ')[0];
-                                    return `${lbl}: ${val != null ? val.toFixed(currentSoilLiveChartParam === 'soil_ph' ? 2 : 1) : '--'}${u}`;
+                                    const u = ds.unit || '';
+                                    const dec = ds.decimals != null ? ds.decimals : 1;
+                                    return `${ds.label}: ${val != null ? val.toFixed(dec) : '--'}${u}`;
                                 }
                             }
                         }
@@ -4518,7 +4524,7 @@ function renderSoilLiveTrendChart() {
                             min: 0,
                             suggestedMin: 0,
                             beginAtZero: true,
-                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            grid: { color: 'rgba(226, 232, 240, 0.6)' },
                             ticks: {
                                 font: { family: 'var(--font-mono)', size: 10 },
                                 color: '#94a3b8'
@@ -4530,7 +4536,7 @@ function renderSoilLiveTrendChart() {
             window.__soilLiveChartInstance = soilLiveChartInstance;
         }
     } catch(e) {
-        console.warn('Soil live chart render error:', e);
+        console.warn('Soil comparison chart render error:', e);
     }
 }
 window.renderSoilLiveTrendChart = renderSoilLiveTrendChart;

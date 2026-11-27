@@ -412,8 +412,8 @@ function formatWeatherReadingClient(raw) {
         soil_moisture: sHum,
         soil_ph: (raw.soil_ph != null) ? Number(raw.soil_ph) : null,
         soil_conductivity: (raw.soil_conductivity != null) ? Number(raw.soil_conductivity) : null,
-        pressure: (raw.pressure != null) ? Number(Number(raw.pressure).toFixed(2)) : null,
-        uv_index: (raw.uv_index != null) ? Number(Number(raw.uv_index).toFixed(2)) : ((raw.uv != null) ? Number(Number(raw.uv).toFixed(2)) : null),
+        pressure: (raw.pressure != null) ? Number(Number(raw.pressure).toFixed(2)) : ((raw.barometric_pressure != null) ? Number(Number(raw.barometric_pressure).toFixed(2)) : null),
+        uv_index: (raw.uv_index != null) ? Number(Number(raw.uv_index).toFixed(2)) : ((raw.uv_radiation != null) ? Number(Number(raw.uv_radiation).toFixed(2)) : ((raw.uv != null) ? Number(Number(raw.uv).toFixed(2)) : null)),
         solar_radiation: (raw.solar_radiation != null) ? Number(Number(raw.solar_radiation).toFixed(2)) : ((raw.solar != null) ? Number(Number(raw.solar).toFixed(2)) : ((raw.radiation != null) ? Number(Number(raw.radiation).toFixed(2)) : null)),
         latitude: wLat,
         longitude: wLon,
@@ -475,34 +475,59 @@ async function fetchLiveBulk(forceNetwork = false) {
         const midnightIst = new Date(Date.UTC(nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate()) - istOffsetMs);
         const midnightIstIso = midnightIst.toISOString();
 
+        const cfgN2 = getSbConfig('2');
+        const headersN2 = {
+            'apikey': cfgN2.key,
+            'Authorization': `Bearer ${cfgN2.key}`
+        };
+
         const orderCol = isNode2 ? 'id.desc' : 'created_at.desc.nullslast';
         const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiLive}?order=${orderCol}&limit=60`;
         const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=*&order=${orderCol}&limit=60`;
+        const urlOtherWeather = `${cfgN2.url}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60`;
         const urlTodayRain = !isNode2
             ? `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=rain_gauge&created_at=gte.${encodeURIComponent(midnightIstIso)}&rain_gauge=gt.0&limit=500`
             : null;
 
-        const [resAqi, resWeather, resTodayRain] = await Promise.all([
+        const [resAqi, resWeather, resTodayRain, resOtherWeather] = await Promise.all([
             fetch(urlAqi, { headers, cache: 'no-cache' }),
             fetch(urlWeather, { headers, cache: 'no-cache' }),
-            urlTodayRain ? fetch(urlTodayRain, { headers, cache: 'no-cache' }).catch(() => null) : Promise.resolve(null)
+            urlTodayRain ? fetch(urlTodayRain, { headers, cache: 'no-cache' }).catch(() => null) : Promise.resolve(null),
+            fetch(urlOtherWeather, { headers: headersN2, cache: 'no-cache' }).catch(() => null)
         ]);
 
         if (!resAqi.ok || !resWeather.ok) {
             throw new Error(`Direct Supabase fetch non-200 status (${resAqi.status}, ${resWeather.status})`);
         }
 
-        const [aqiRawList, weatherRawList, todayRainRawList] = await Promise.all([
+        const [aqiRawList, weatherRawList, todayRainRawList, otherWeatherRawList] = await Promise.all([
             resAqi.json(),
             resWeather.json(),
-            (resTodayRain && resTodayRain.ok) ? resTodayRain.json().catch(() => null) : Promise.resolve(null)
+            (resTodayRain && resTodayRain.ok) ? resTodayRain.json().catch(() => null) : Promise.resolve(null),
+            (resOtherWeather && resOtherWeather.ok) ? resOtherWeather.json().catch(() => null) : Promise.resolve(null)
         ]);
 
         const aqiHist = Array.isArray(aqiRawList) ? aqiRawList.map(formatRawReadingClient).filter(Boolean) : [];
         const weatherHist = Array.isArray(weatherRawList) ? weatherRawList.map(formatWeatherReadingClient).filter(Boolean) : [];
+        const otherWeatherHist = Array.isArray(otherWeatherRawList) ? otherWeatherRawList.map(formatWeatherReadingClient).filter(Boolean) : [];
 
         const latestAqi = aqiHist[0] || null;
         let latestWeather = weatherHist[0] || null;
+        const latestOtherWeather = otherWeatherHist[0] || null;
+
+        // Merge Pressure, UV Radiation, Solar Radiation from Node 2 WEATHER_LIVE_NODE2 so both nodes show identical values
+        if (latestOtherWeather) {
+            if (!latestWeather) {
+                latestWeather = { ...latestOtherWeather };
+            } else {
+                const mergeKeys = isNode2
+                    ? ['pressure', 'uv_index', 'solar_radiation', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge', 'temperature', 'humidity']
+                    : ['pressure', 'uv_index', 'solar_radiation'];
+                mergeKeys.forEach((ok) => {
+                    if (latestWeather[ok] == null && latestOtherWeather[ok] != null) latestWeather[ok] = latestOtherWeather[ok];
+                });
+            }
+        }
 
         // If weather/soil row lacks ambient temp/humidity/wind/rain (e.g. Node 2 SOIL_LIVE_NODE2), merge from AQI_LIVE_NODE2
         if (latestAqi) {
@@ -588,6 +613,8 @@ async function fetchLiveBulk(forceNetwork = false) {
             weather: latestWeather,
             aqi_history: aqiHist,
             weather_history: weatherHist,
+            other_weather: latestOtherWeather,
+            other_weather_history: otherWeatherHist,
             history: aqiHist,
             today_rain_total: Number(todayRainSum.toFixed(2)),
             today_temp_min: todayTemps.length > 0 ? Number(Math.min(...todayTemps).toFixed(1)) : (latestWeather && latestWeather.temperature != null ? Number(latestWeather.temperature) : 28.0),
@@ -760,23 +787,46 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode
             filter = `&${timeCol}=gte.${sIso}T00:00:00&${timeCol}=lt.${eIso}T00:00:00`;
         }
 
+        const cfgN2 = getSbConfig('2');
+        const headersN2 = {
+            'apikey': cfgN2.key,
+            'Authorization': `Bearer ${cfgN2.key}`
+        };
+        const filterN2 = filter.replace(/timestamp_hour=/g, 'timestamp=');
+
         const urlAqi = `${cfg.url}/rest/v1/${cfg.tableAqiHist}?order=${timeCol}.desc&limit=${lim}${filter}`;
         const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherHist}?order=${timeCol}.desc&limit=${lim}${filter}`;
+        const urlOtherWeatherHist = `${cfgN2.url}/rest/v1/WEATHER_NODE2?select=*&order=timestamp.desc&limit=${lim}${filterN2}`;
 
-        const [resAqi, resWeather] = await Promise.all([
+        const [resAqi, resWeather, resOtherWeather] = await Promise.all([
             fetch(urlAqi, { headers }),
-            fetch(urlWeather, { headers })
+            fetch(urlWeather, { headers }),
+            fetch(urlOtherWeatherHist, { headers: headersN2 }).catch(() => null)
         ]);
 
         if (!resAqi.ok || !resWeather.ok) throw new Error('History fetch non-200');
 
-        const [aqiRaw, weatherRaw] = await Promise.all([
+        const [aqiRaw, weatherRaw, otherWeatherRaw] = await Promise.all([
             resAqi.json(),
-            resWeather.json()
+            resWeather.json(),
+            (resOtherWeather && resOtherWeather.ok) ? resOtherWeather.json().catch(() => []) : Promise.resolve([])
         ]);
 
         const aqiList = Array.isArray(aqiRaw) ? aqiRaw.map(formatRawReadingClient).filter(Boolean) : [];
         let weatherList = Array.isArray(weatherRaw) ? weatherRaw.map(formatWeatherReadingClient).filter(Boolean) : [];
+        let otherWeatherList = Array.isArray(otherWeatherRaw) ? otherWeatherRaw.map(formatWeatherReadingClient).filter(Boolean) : [];
+
+        if (otherWeatherList.length === 0) {
+            try {
+                const fbOtherRes = await fetch(`${cfgN2.url}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60`, { headers: headersN2 });
+                if (fbOtherRes.ok) {
+                    const fbOtherJson = await fbOtherRes.json();
+                    if (Array.isArray(fbOtherJson) && fbOtherJson.length > 0) {
+                        otherWeatherList = fbOtherJson.map(formatWeatherReadingClient).filter(Boolean);
+                    }
+                }
+            } catch (e) {}
+        }
 
         // For Node 2: If weatherList is empty (SOIL_NODE2 historical table empty), fall back to recent SOIL_LIVE_NODE2
         if (isNode2 && weatherList.length === 0) {
@@ -796,6 +846,7 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode
             node: activeNode,
             aqi: aqiList,
             weather: weatherList,
+            other_weather: otherWeatherList,
             fetchedAt: Date.now()
         };
 
@@ -815,6 +866,7 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode
                     node: activeNode,
                     aqi: fbData.aqi || [],
                     weather: fbData.weather || [],
+                    other_weather: fbData.other_weather || [],
                     fetchedAt: Date.now()
                 };
                 if (payload.aqi.length > 0 || payload.weather.length > 0) {

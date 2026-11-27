@@ -178,6 +178,68 @@ if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk
     }
 }
 
+// Ensure Node 2 SSR also has WEATHER_LIVE_NODE2 (Pressure, UV Radiation, Solar Radiation)
+if (is_array($init_bulk) && empty($init_bulk['other_weather_history'])) {
+    $ow_cache = $CACHE_DIR . '/' . md5('ssr_raw_other_weather_node2_60') . '.json';
+    $ow_rows = null;
+    if (file_exists($ow_cache) && (time() - filemtime($ow_cache)) < 60) {
+        $ow_rows = @json_decode(@file_get_contents($ow_cache), true);
+    }
+    if (!is_array($ow_rows)) {
+        $ch_ow = @curl_init('https://nahabhzcaeppbteuxogg.supabase.co/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60');
+        if ($ch_ow) {
+            @curl_setopt_array($ch_ow, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'apikey: sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ',
+                    'Authorization: Bearer sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ'
+                ],
+                CURLOPT_TIMEOUT_MS => 2000,
+                CURLOPT_SSL_VERIFYPEER => false,
+            ]);
+            $raw_ow = @curl_exec($ch_ow);
+            @curl_close($ch_ow);
+            $decoded_ow = @json_decode($raw_ow, true);
+            if (is_array($decoded_ow) && !isset($decoded_ow['message'])) {
+                $ow_rows = $decoded_ow;
+                if (!is_dir($CACHE_DIR)) @mkdir($CACHE_DIR, 0755, true);
+                @file_put_contents($ow_cache, json_encode($ow_rows));
+            }
+        }
+    }
+    if (is_array($ow_rows) && !empty($ow_rows)) {
+        $formatted_ow = [];
+        foreach ($ow_rows as $orow) {
+            $formatted_ow[] = [
+                'id' => $orow['id'] ?? null,
+                'timestamp' => $orow['timestamp'] ?? ($orow['created_at'] ?? date('c')),
+                'created_at' => $orow['created_at'] ?? ($orow['timestamp'] ?? date('c')),
+                'pressure' => isset($orow['barometric_pressure']) ? (float)$orow['barometric_pressure'] : (isset($orow['pressure']) ? (float)$orow['pressure'] : null),
+                'uv_index' => isset($orow['uv_radiation']) ? (float)$orow['uv_radiation'] : (isset($orow['uv_index']) ? (float)$orow['uv_index'] : null),
+                'solar_radiation' => isset($orow['solar_radiation']) ? (float)$orow['solar_radiation'] : (isset($orow['solar']) ? (float)$orow['solar'] : null),
+                'wind_speed' => isset($orow['wind_speed']) ? (float)$orow['wind_speed'] : null,
+                'wind_gust' => isset($orow['wind_gust']) ? (float)$orow['wind_gust'] : null,
+                'wind_direction' => $orow['wind_direction'] ?? null,
+                'rain_gauge' => isset($orow['rain_gauge']) ? (float)$orow['rain_gauge'] : null,
+            ];
+        }
+        $init_bulk['other_weather_history'] = $formatted_ow;
+        $init_bulk['other_weather'] = $formatted_ow[0];
+        if (!isset($init_bulk['weather']) || !is_array($init_bulk['weather'])) {
+            $init_bulk['weather'] = [];
+        }
+        $init_bulk['weather']['pressure'] = $formatted_ow[0]['pressure'];
+        $init_bulk['weather']['uv_index'] = $formatted_ow[0]['uv_index'];
+        $init_bulk['weather']['solar_radiation'] = $formatted_ow[0]['solar_radiation'];
+        foreach (['wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge', 'temperature', 'humidity'] as $wk) {
+            if ((!isset($init_bulk['weather'][$wk]) || $init_bulk['weather'][$wk] === null) && isset($ow_rows[0][$wk]) && $ow_rows[0][$wk] !== null) {
+                $init_bulk['weather'][$wk] = $ow_rows[0][$wk];
+            }
+        }
+    }
+}
+$init_other_weather_history = (!empty($init_bulk['other_weather_history']) && is_array($init_bulk['other_weather_history'])) ? $init_bulk['other_weather_history'] : [];
+
 // Fallback: If live Supabase query returned no data (or timed out), use any available cached records
 if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk['weather_history']))) {
     foreach ($cache_candidates as $cf) {
@@ -3491,19 +3553,27 @@ body.soil-backdrop-active header {
                   $rHum = isset($row['humidity']) && is_numeric($row['humidity']) 
                       ? number_format((float)$row['humidity'], 1) . '%' 
                       : (isset($row['soil_moisture']) && is_numeric($row['soil_moisture']) ? number_format((float)$row['soil_moisture'], 1) . '%' : (isset($row['soil_humidity']) && is_numeric($row['soil_humidity']) ? number_format((float)$row['soil_humidity'], 1) . '%' : '--'));
-                  $rPress = isset($row['pressure']) && is_numeric($row['pressure']) ? round((float)$row['pressure']) . ' mb' : '--';
-                  $rUv = isset($row['uv_index']) && is_numeric($row['uv_index']) ? number_format((float)$row['uv_index'], 1) : '--';
-                  $rSolar = isset($row['solar_radiation']) && is_numeric($row['solar_radiation']) 
-                      ? number_format((float)$row['solar_radiation'], 1) . ' W/m²' 
-                      : (isset($row['solar']) && is_numeric($row['solar']) 
-                          ? number_format((float)$row['solar'], 1) . ' W/m²' 
-                          : (isset($row['radiation']) && is_numeric($row['radiation']) 
-                              ? number_format((float)$row['radiation'], 1) . ' W/m²' 
-                              : '--'));
-                  $rWSpd = isset($row['wind_speed']) && is_numeric($row['wind_speed']) ? number_format((float)$row['wind_speed'], 1) . ' km/h' : '--';
-                  $rGust = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? number_format((float)$row['wind_gust'], 1) . ' m/s' : '--';
-                  $rDir = !empty($row['wind_direction']) ? (smartairnet_parse_wind_direction($row['wind_direction'])['cardinal'] ?? $row['wind_direction']) : '--';
-                  $rRain = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? number_format((float)$row['rain_gauge'], 1) . ' mm' : '--';
+                  $otherRow = $init_other_weather_history[$i] ?? ($init_other_weather_history[0] ?? []);
+                  $pVal = isset($row['pressure']) && is_numeric($row['pressure']) ? $row['pressure'] : ($otherRow['pressure'] ?? null);
+                  $uVal = isset($row['uv_index']) && is_numeric($row['uv_index']) ? $row['uv_index'] : ($otherRow['uv_index'] ?? null);
+                  $sVal = isset($row['solar_radiation']) && is_numeric($row['solar_radiation'])
+                      ? $row['solar_radiation']
+                      : (isset($row['solar']) && is_numeric($row['solar'])
+                          ? $row['solar']
+                          : (isset($row['radiation']) && is_numeric($row['radiation'])
+                              ? $row['radiation']
+                              : ($otherRow['solar_radiation'] ?? null)));
+                  $rPress = is_numeric($pVal) ? round((float)$pVal) . ' mb' : '--';
+                  $rUv = is_numeric($uVal) ? number_format((float)$uVal, 1) : '--';
+                  $rSolar = is_numeric($sVal) ? number_format((float)$sVal, 1) . ' W/m²' : '--';
+                  $wSpdVal = isset($row['wind_speed']) && is_numeric($row['wind_speed']) ? $row['wind_speed'] : ($otherRow['wind_speed'] ?? null);
+                  $gustVal = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? $row['wind_gust'] : ($otherRow['wind_gust'] ?? null);
+                  $dirVal = (isset($row['wind_direction']) && $row['wind_direction'] !== '') ? $row['wind_direction'] : ($otherRow['wind_direction'] ?? null);
+                  $rainVal = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? $row['rain_gauge'] : ($otherRow['rain_gauge'] ?? null);
+                  $rWSpd = is_numeric($wSpdVal) ? number_format((float)$wSpdVal, 1) . ' km/h' : '--';
+                  $rGust = is_numeric($gustVal) ? number_format((float)$gustVal, 1) . ' m/s' : '--';
+                  $rDir = ($dirVal !== null && $dirVal !== '') ? (smartairnet_parse_wind_direction($dirVal)['cardinal'] ?? (string)$dirVal) : '--';
+                  $rRain = is_numeric($rainVal) ? number_format((float)$rainVal, 1) . ' mm' : '--';
                   $rowBg = ($i % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
                 ?>
                   <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: <?= $rowBg ?>;">
@@ -4723,18 +4793,29 @@ function renderWeatherLiveTable(hist) {
             : (row.soil_moisture != null ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null));
         const hum = rawHum != null ? `${Number(rawHum).toFixed(1)}%` : '--';
 
-        const press = (row.pressure != null && !isNaN(Number(row.pressure))) ? `${Math.round(Number(row.pressure))} mb` : '--';
-        const uv = (row.uv_index != null && !isNaN(Number(row.uv_index))) ? Number(row.uv_index).toFixed(1) : '--';
+        const oFallback = (Array.isArray(window.otherWeatherHistory) && window.otherWeatherHistory.length > 0)
+            ? (window.otherWeatherHistory[i] || window.otherWeatherHistory[0])
+            : null;
+        const pSrc = (row.pressure != null && !isNaN(Number(row.pressure))) ? row.pressure : (oFallback && oFallback.pressure != null ? oFallback.pressure : null);
+        const uvSrc = (row.uv_index != null && !isNaN(Number(row.uv_index))) ? row.uv_index : (oFallback && oFallback.uv_index != null ? oFallback.uv_index : null);
+        const press = (pSrc != null && !isNaN(Number(pSrc))) ? `${Math.round(Number(pSrc))} mb` : '--';
+        const uv = (uvSrc != null && !isNaN(Number(uvSrc))) ? Number(uvSrc).toFixed(1) : '--';
         const rawSolar = (row.solar_radiation != null && !isNaN(Number(row.solar_radiation)))
             ? row.solar_radiation
             : ((row.solar != null && !isNaN(Number(row.solar)))
                 ? row.solar
-                : ((row.radiation != null && !isNaN(Number(row.radiation))) ? row.radiation : null));
+                : ((row.radiation != null && !isNaN(Number(row.radiation)))
+                    ? row.radiation
+                    : (oFallback && oFallback.solar_radiation != null ? oFallback.solar_radiation : null)));
         const solar = rawSolar != null ? `${Number(rawSolar).toFixed(1)} W/m²` : '--';
-        const wSpd = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? `${Number(row.wind_speed).toFixed(1)} km/h` : '--';
-        const gust = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? `${Number(row.wind_gust).toFixed(1)} m/s` : '--';
-        const dir = (row.wind_direction != null && row.wind_direction !== '') ? (typeof getCompassDir === 'function' ? getCompassDir(row.wind_direction) : row.wind_direction) : '--';
-        const rain = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? `${Number(row.rain_gauge).toFixed(1)} mm` : '--';
+        const wSpdSrc = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? row.wind_speed : (oFallback && oFallback.wind_speed != null ? oFallback.wind_speed : null);
+        const gustSrc = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? row.wind_gust : (oFallback && oFallback.wind_gust != null ? oFallback.wind_gust : null);
+        const dirSrc = (row.wind_direction != null && row.wind_direction !== '') ? row.wind_direction : (oFallback && oFallback.wind_direction != null && oFallback.wind_direction !== '' ? oFallback.wind_direction : null);
+        const rainSrc = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? row.rain_gauge : (oFallback && oFallback.rain_gauge != null ? oFallback.rain_gauge : null);
+        const wSpd = (wSpdSrc != null && !isNaN(Number(wSpdSrc))) ? `${Number(wSpdSrc).toFixed(1)} km/h` : '--';
+        const gust = (gustSrc != null && !isNaN(Number(gustSrc))) ? `${Number(gustSrc).toFixed(1)} m/s` : '--';
+        const dir = (dirSrc != null && dirSrc !== '') ? (typeof getCompassDir === 'function' ? getCompassDir(dirSrc) : dirSrc) : '--';
+        const rain = (rainSrc != null && !isNaN(Number(rainSrc))) ? `${Number(rainSrc).toFixed(1)} mm` : '--';
 
         if (rawTemp != null) {
             temps.push(Number(rawTemp));
@@ -5958,6 +6039,9 @@ async function refreshDashboard(forceNetwork = false) {
         }
         if (weatherHistory && weatherHistory.length > 0) {
             window.weatherHistory = weatherHistory;
+        }
+        if (bulkData && Array.isArray(bulkData.other_weather_history)) {
+            window.otherWeatherHistory = bulkData.other_weather_history;
         }
         try {
             if (typeof renderComparisonChart === 'function') renderComparisonChart();

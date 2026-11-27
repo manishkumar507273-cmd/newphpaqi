@@ -499,6 +499,10 @@ $init_history_json = 'null';
         </p>
       </div>
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div id="n1-hist-weather-table-toggle" style="display: <?= $req_subtab === 'weather' ? 'inline-flex' : 'none' ?>; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 3px; border-radius: 999px; gap: 2px;">
+          <button type="button" id="n1-hist-wt-btn-weather" onclick="switchN1HistWeatherTableGroup('weather')" style="padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; background: #00bfa5; color: #ffffff; transition: all 0.2s;">Weather</button>
+          <button type="button" id="n1-hist-wt-btn-other" onclick="switchN1HistWeatherTableGroup('other')" style="padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s;">Other Parameters</button>
+        </div>
         <button type="button" onclick="openDatasetModal()" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; border-radius: 999px; border: none; background: #00bfa5; color: #ffffff; font-size: 12.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(0, 191, 165, 0.28); transition: all 0.15s ease;">
           <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
           <span>Request Dataset</span>
@@ -740,8 +744,25 @@ var currentChartType = _initState.type;
 var currentRangeDays = _initState.days;
 var historicalDataAqi = [];
 var historicalDataWeather = [];
+var historicalDataOtherWeather = [];
+var currentN1HistWeatherTableGroup = 'weather';
 var chartInstance = null;
 var filteredDayData = [];
+
+function switchN1HistWeatherTableGroup(group) {
+    currentN1HistWeatherTableGroup = (group === 'other') ? 'other' : 'weather';
+    const btnW = document.getElementById('n1-hist-wt-btn-weather');
+    const btnO = document.getElementById('n1-hist-wt-btn-other');
+    if (btnW) {
+        btnW.style.background = currentN1HistWeatherTableGroup === 'weather' ? '#00bfa5' : 'transparent';
+        btnW.style.color = currentN1HistWeatherTableGroup === 'weather' ? '#ffffff' : '#64748b';
+    }
+    if (btnO) {
+        btnO.style.background = currentN1HistWeatherTableGroup === 'other' ? '#00bfa5' : 'transparent';
+        btnO.style.color = currentN1HistWeatherTableGroup === 'other' ? '#ffffff' : '#64748b';
+    }
+    renderUI(true);
+}
 
 function persistHistoricalState() {
     try {
@@ -1166,6 +1187,7 @@ async function fetchRangeData(queryDate, days, force = false) {
                 payload = {
                     aqi: data.aqi || [],
                     weather: data.weather || [],
+                    other_weather: data.other_weather || [],
                     fetchedAt: Date.now()
                 };
             }
@@ -1331,14 +1353,18 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
         
         const newAqi = data.aqi || [];
         const newWeather = data.weather || [];
+        const newOtherWeather = data.other_weather || [];
         const changed = !silent
             || newAqi.length !== (historicalDataAqi || []).length
             || newWeather.length !== (historicalDataWeather || []).length
+            || newOtherWeather.length !== (historicalDataOtherWeather || []).length
             || (newAqi[0]?.timestamp !== historicalDataAqi?.[0]?.timestamp)
-            || (newWeather[0]?.timestamp !== historicalDataWeather?.[0]?.timestamp);
+            || (newWeather[0]?.timestamp !== historicalDataWeather?.[0]?.timestamp)
+            || (newOtherWeather[0]?.timestamp !== historicalDataOtherWeather?.[0]?.timestamp);
 
         historicalDataAqi = newAqi;
         historicalDataWeather = newWeather;
+        historicalDataOtherWeather = newOtherWeather;
         
         if (chartLoading) chartLoading.style.display = 'none';
         if (chartCanvas) chartCanvas.style.opacity = '1';
@@ -1448,6 +1474,8 @@ function switchHistTab(tab, skipRender = false) {
     if (tabAqi) tabAqi.className = (tab === 'aqi') ? activeCls : inactiveCls;
     if (tabWeather) tabWeather.className = (tab === 'weather') ? activeCls : inactiveCls;
     if (tabSoil) tabSoil.className = (tab === 'soil') ? activeCls : inactiveCls;
+    const wtToggle = document.getElementById('n1-hist-weather-table-toggle');
+    if (wtToggle) wtToggle.style.display = (tab === 'weather') ? 'inline-flex' : 'none';
 
     const pageHeading = document.getElementById('analytics-page-heading');
     const tTitle = document.getElementById('trend-graph-title-text');
@@ -1625,6 +1653,40 @@ function renderUI(skipDayFilter = false) {
             }
             hourlyMap.set(hrKey, item);
         });
+
+        // Merge Node 2 WEATHER_NODE2 / WEATHER_LIVE_NODE2 (Pressure, UV Index, Solar Radiation) by hour for Weather tab
+        if (currentSubTab === 'weather' && Array.isArray(historicalDataOtherWeather) && historicalDataOtherWeather.length > 0) {
+            historicalDataOtherWeather.forEach(oItem => {
+                if (!oItem.timestamp) return;
+                const t = parseIsoLocal(oItem.timestamp);
+                if (t < startWindow || t > endWindow) return;
+                const parts = (oItem.timestamp || '').split('T');
+                let hrKey = '';
+                if (parts.length === 2) {
+                    hrKey = normalizeDateToYmd(parts[0]) + ' ' + parts[1].slice(0, 2);
+                } else {
+                    const dt = new Date(oItem.timestamp);
+                    hrKey = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}`;
+                }
+                const existing = hourlyMap.get(hrKey);
+                if (existing) {
+                    if (existing.pressure == null && oItem.pressure != null) existing.pressure = oItem.pressure;
+                    if (existing.uv_index == null && oItem.uv_index != null) existing.uv_index = oItem.uv_index;
+                    if (existing.solar_radiation == null && oItem.solar_radiation != null) existing.solar_radiation = oItem.solar_radiation;
+                } else {
+                    const hrPad = hrKey.split(' ')[1] || '00';
+                    const datePad = hrKey.split(' ')[0] || normalizeDateToYmd(oItem.timestamp);
+                    hourlyMap.set(hrKey, {
+                        timestamp: `${datePad}T${hrPad}:00:00`,
+                        temperature: null, humidity: null, wind_speed: null, wind_gust: null, wind_direction: null, rain_gauge: null,
+                        pressure: oItem.pressure ?? null,
+                        uv_index: oItem.uv_index ?? null,
+                        solar_radiation: oItem.solar_radiation ?? null,
+                        isMissing: false
+                    });
+                }
+            });
+        }
 
         // Ensure every hour slot is populated across the selected range (0 to 23 for past days; 0 to current hour for today)
         const todayYmd = getLocalDateStr();
@@ -2428,85 +2490,121 @@ function renderUI(skipDayFilter = false) {
             </tr>`;
         }).join('');
     } else {
-        theadRow.innerHTML = `
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Date</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Time</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ea580c;">Temp (°C)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0284c7;">Humidity (%)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ec4899;">Pressure (mb)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f43f5e;">UV Index</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f59e0b;">Solar (W/m²)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0d9488;">Wind Speed (km/h)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0891b2;">Wind Gust (m/s)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #64748b;">Wind Dir</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #2563eb;">Rain (mm)</th>
-        `;
-        
-        tbody.innerHTML = tableRows.map((d, i) => {
-            const parts = (d.timestamp || '').split('T');
-            let dateStr = '', timeStr = '';
-            if (parts.length === 2) {
-                const [yr, mo, da] = parts[0].split('-').map(Number);
-                const timeParts = parts[1].split(':');
-                const hr = Number(timeParts[0]) || 0;
-                const mn = Number(timeParts[1]) || 0;
-                const period = hr >= 12 ? 'PM' : 'AM';
-                const displayHr = hr % 12 === 0 ? 12 : hr % 12;
-                dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
-                timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
+        if (currentN1HistWeatherTableGroup === 'other') {
+            theadRow.innerHTML = `
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Date</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Time</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ec4899;">Pressure (mb)</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f43f5e;">UV Index</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f59e0b;">Solar (W/m²)</th>
+            `;
+            const otherRows = tableRows;
+            if (otherRows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 36px 20px; color: #64748b;">No Node 2 Pressure / UV / Solar telemetry found for this period.</td></tr>`;
             } else {
-                const dt = new Date(d.timestamp);
-                dateStr = dt.toLocaleDateString('en-GB');
-                timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
+                tbody.innerHTML = otherRows.map((d, i) => {
+                    const parts = (d.timestamp || '').split('T');
+                    let dateStr = '', timeStr = '';
+                    if (parts.length === 2) {
+                        const [yr, mo, da] = parts[0].split('-').map(Number);
+                        const timeParts = parts[1].split(':');
+                        const hr = Number(timeParts[0]) || 0;
+                        const mn = Number(timeParts[1]) || 0;
+                        const period = hr >= 12 ? 'PM' : 'AM';
+                        const displayHr = hr % 12 === 0 ? 12 : hr % 12;
+                        dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
+                        timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
+                    } else {
+                        const dt = new Date(d.timestamp);
+                        dateStr = dt.toLocaleDateString('en-GB');
+                        timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
+                    }
+                    const isMissing = Boolean(d.isMissing || (d.pressure == null && d.uv_index == null && d.solar_radiation == null));
+                    const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
+                    const pressCell = (d.pressure != null && d.pressure !== '')
+                        ? `<span style="color: #ec4899; font-weight: 700; font-family: var(--font-mono);">${Math.round(Number(d.pressure))} mb</span>`
+                        : emptyCell;
+                    const uvCell = (d.uv_index != null && d.uv_index !== '')
+                        ? `<span style="color: #f43f5e; font-weight: 700; font-family: var(--font-mono);">${Number(d.uv_index).toFixed(1)}</span>`
+                        : emptyCell;
+                    const rawSolarVal = (d.solar_radiation != null && d.solar_radiation !== '')
+                        ? d.solar_radiation
+                        : ((d.solar != null && d.solar !== '') ? d.solar : ((d.radiation != null && d.radiation !== '') ? d.radiation : null));
+                    const solarCell = (rawSolarVal != null && rawSolarVal !== '')
+                        ? `<span style="color: #f59e0b; font-weight: 700; font-family: var(--font-mono);">${Number(rawSolarVal).toFixed(1)} W/m²</span>`
+                        : emptyCell;
+                    return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
+                        <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
+                        <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
+                        <td style="padding: 10px 16px;">${pressCell}</td>
+                        <td style="padding: 10px 16px;">${uvCell}</td>
+                        <td style="padding: 10px 16px;">${solarCell}</td>
+                    </tr>`;
+                }).join('');
             }
-            const isMissing = Boolean(d.isMissing || (d.temperature == null && d.humidity == null && d.pressure == null && d.uv_index == null && d.solar_radiation == null));
-            const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
+        } else {
+            theadRow.innerHTML = `
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Date</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap;">Time</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ea580c;">Temp (°C)</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0284c7;">Humidity (%)</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0d9488;">Wind Speed (km/h)</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0891b2;">Wind Gust (m/s)</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #64748b;">Wind Dir</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #2563eb;">Rain (mm)</th>
+            `;
+            
+            tbody.innerHTML = tableRows.map((d, i) => {
+                const parts = (d.timestamp || '').split('T');
+                let dateStr = '', timeStr = '';
+                if (parts.length === 2) {
+                    const [yr, mo, da] = parts[0].split('-').map(Number);
+                    const timeParts = parts[1].split(':');
+                    const hr = Number(timeParts[0]) || 0;
+                    const mn = Number(timeParts[1]) || 0;
+                    const period = hr >= 12 ? 'PM' : 'AM';
+                    const displayHr = hr % 12 === 0 ? 12 : hr % 12;
+                    dateStr = `${String(da).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${yr}`;
+                    timeStr = `${String(displayHr).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${period}`;
+                } else {
+                    const dt = new Date(d.timestamp);
+                    dateStr = dt.toLocaleDateString('en-GB');
+                    timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
+                }
+                const isMissing = Boolean(d.isMissing || (d.temperature == null && d.humidity == null && d.wind_speed == null && d.rain_gauge == null));
+                const emptyCell = `<span style="color: #94a3b8; font-weight: 600;">--</span>`;
 
-            const tempCell = (d.temperature != null && d.temperature !== '') 
-                ? `<span style="color: #ea580c; font-weight: 700; font-family: var(--font-mono);">${Number(d.temperature).toFixed(1)}°C</span>` 
-                : emptyCell;
-            const humCell = (d.humidity != null && d.humidity !== '') 
-                ? `<span style="color: #0284c7; font-weight: 700; font-family: var(--font-mono);">${Number(d.humidity).toFixed(1)}%</span>` 
-                : emptyCell;
-            const pressCell = (d.pressure != null && d.pressure !== '') 
-                ? `<span style="color: #ec4899; font-weight: 700; font-family: var(--font-mono);">${Math.round(Number(d.pressure))} mb</span>` 
-                : emptyCell;
-            const uvCell = (d.uv_index != null && d.uv_index !== '') 
-                ? `<span style="color: #f43f5e; font-weight: 700; font-family: var(--font-mono);">${Number(d.uv_index).toFixed(1)}</span>` 
-                : emptyCell;
-            const rawSolarVal = (d.solar_radiation != null && d.solar_radiation !== '')
-                ? d.solar_radiation
-                : ((d.solar != null && d.solar !== '') ? d.solar : ((d.radiation != null && d.radiation !== '') ? d.radiation : null));
-            const solarCell = (rawSolarVal != null && rawSolarVal !== '')
-                ? `<span style="color: #f59e0b; font-weight: 700; font-family: var(--font-mono);">${Number(rawSolarVal).toFixed(1)} W/m²</span>` 
-                : emptyCell;
-            const windCell = (d.wind_speed != null && d.wind_speed !== '') 
-                ? `<span style="color: #0d9488; font-weight: 700; font-family: var(--font-mono);">${Number(d.wind_speed).toFixed(1)}</span>` 
-                : emptyCell;
-            const gustCell = (d.wind_gust != null && d.wind_gust !== '') 
-                ? `<span style="color: #0891b2; font-weight: 700; font-family: var(--font-mono);">${Number(d.wind_gust).toFixed(1)}</span>` 
-                : emptyCell;
-            const dirCell = (d.wind_direction != null && d.wind_direction !== '')
-                ? `<span style="color: #475569; font-weight: 700;">${getCompassDir(d.wind_direction)}</span>`
-                : emptyCell;
-            const rainCell = (d.rain_gauge != null && d.rain_gauge !== '') 
-                ? `<span style="color: #2563eb; font-weight: 700; font-family: var(--font-mono);">${Number(d.rain_gauge).toFixed(1)}</span>` 
-                : emptyCell;
+                const tempCell = (d.temperature != null && d.temperature !== '') 
+                    ? `<span style="color: #ea580c; font-weight: 700; font-family: var(--font-mono);">${Number(d.temperature).toFixed(1)}°C</span>` 
+                    : emptyCell;
+                const humCell = (d.humidity != null && d.humidity !== '') 
+                    ? `<span style="color: #0284c7; font-weight: 700; font-family: var(--font-mono);">${Number(d.humidity).toFixed(1)}%</span>` 
+                    : emptyCell;
+                const windCell = (d.wind_speed != null && d.wind_speed !== '') 
+                    ? `<span style="color: #0d9488; font-weight: 700; font-family: var(--font-mono);">${Number(d.wind_speed).toFixed(1)}</span>` 
+                    : emptyCell;
+                const gustCell = (d.wind_gust != null && d.wind_gust !== '') 
+                    ? `<span style="color: #0891b2; font-weight: 700; font-family: var(--font-mono);">${Number(d.wind_gust).toFixed(1)}</span>` 
+                    : emptyCell;
+                const dirCell = (d.wind_direction != null && d.wind_direction !== '')
+                    ? `<span style="color: #475569; font-weight: 700;">${getCompassDir(d.wind_direction)}</span>`
+                    : emptyCell;
+                const rainCell = (d.rain_gauge != null && d.rain_gauge !== '') 
+                    ? `<span style="color: #2563eb; font-weight: 700; font-family: var(--font-mono);">${Number(d.rain_gauge).toFixed(1)}</span>` 
+                    : emptyCell;
 
-            return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
-                <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
-                <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
-                <td style="padding: 10px 16px;">${tempCell}</td>
-                <td style="padding: 10px 16px;">${humCell}</td>
-                <td style="padding: 10px 16px;">${pressCell}</td>
-                <td style="padding: 10px 16px;">${uvCell}</td>
-                <td style="padding: 10px 16px;">${solarCell}</td>
-                <td style="padding: 10px 16px;">${windCell}</td>
-                <td style="padding: 10px 16px;">${gustCell}</td>
-                <td style="padding: 10px 16px;">${dirCell}</td>
-                <td style="padding: 10px 16px;">${rainCell}</td>
-            </tr>`;
-        }).join('');
+                return `<tr style="border-bottom: 1px solid #f1f5f9; background-color: ${isMissing ? '#fffdfa' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')};">
+                    <td style="padding: 10px 16px; color: ${isMissing ? '#64748b' : '#0f172a'}; font-weight: 600; white-space: nowrap;">${dateStr}</td>
+                    <td style="padding: 10px 16px; color: ${isMissing ? '#0d9488' : '#00bfa5'}; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">${timeStr}</td>
+                    <td style="padding: 10px 16px;">${tempCell}</td>
+                    <td style="padding: 10px 16px;">${humCell}</td>
+                    <td style="padding: 10px 16px;">${windCell}</td>
+                    <td style="padding: 10px 16px;">${gustCell}</td>
+                    <td style="padding: 10px 16px;">${dirCell}</td>
+                    <td style="padding: 10px 16px;">${rainCell}</td>
+                </tr>`;
+            }).join('');
+        }
     }
 }
 

@@ -918,6 +918,20 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
     </div>
     
     <!-- Global Footer (Differentiated styling with team LinkedIn links) -->
+    <style>
+      @media (max-width: 767px) {
+        #global-footer {
+          display: flex !important;
+          visibility: visible !important;
+          margin-bottom: calc(74px + env(safe-area-inset-bottom, 14px)) !important;
+        }
+      }
+      @media (min-width: 768px) {
+        #global-footer {
+          margin-bottom: 0 !important;
+        }
+      }
+    </style>
     <footer id="global-footer" style="margin-top: 4px; padding: 12px 16px; text-align: center; position: relative; z-index: 10; font-size: 12.5px; background: #0f172a; color: #94a3b8; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.15);" class="mb-[84px] md:mb-0">
       
       <!-- Top Brand Row -->

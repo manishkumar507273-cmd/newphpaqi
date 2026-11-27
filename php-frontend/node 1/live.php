@@ -178,6 +178,58 @@ if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk
     }
 }
 
+// Ensure Node 1 SSR also has WEATHER_LIVE_NODE2 (Pressure, UV Radiation, Solar Radiation)
+if (is_array($init_bulk) && empty($init_bulk['other_weather_history'])) {
+    $ow_cache = $CACHE_DIR . '/' . md5('ssr_raw_other_weather_node2_60') . '.json';
+    $ow_rows = null;
+    if (file_exists($ow_cache) && (time() - filemtime($ow_cache)) < 60) {
+        $ow_rows = @json_decode(@file_get_contents($ow_cache), true);
+    }
+    if (!is_array($ow_rows)) {
+        $ch_ow = @curl_init('https://nahabhzcaeppbteuxogg.supabase.co/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60');
+        if ($ch_ow) {
+            @curl_setopt_array($ch_ow, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'apikey: sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ',
+                    'Authorization: Bearer sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ'
+                ],
+                CURLOPT_TIMEOUT_MS => 2000,
+                CURLOPT_SSL_VERIFYPEER => false,
+            ]);
+            $raw_ow = @curl_exec($ch_ow);
+            @curl_close($ch_ow);
+            $decoded_ow = @json_decode($raw_ow, true);
+            if (is_array($decoded_ow) && !isset($decoded_ow['message'])) {
+                $ow_rows = $decoded_ow;
+                if (!is_dir($CACHE_DIR)) @mkdir($CACHE_DIR, 0755, true);
+                @file_put_contents($ow_cache, json_encode($ow_rows));
+            }
+        }
+    }
+    if (is_array($ow_rows) && !empty($ow_rows)) {
+        $formatted_ow = [];
+        foreach ($ow_rows as $orow) {
+            $formatted_ow[] = [
+                'id' => $orow['id'] ?? null,
+                'timestamp' => $orow['timestamp'] ?? ($orow['created_at'] ?? date('c')),
+                'created_at' => $orow['created_at'] ?? ($orow['timestamp'] ?? date('c')),
+                'pressure' => isset($orow['barometric_pressure']) ? (float)$orow['barometric_pressure'] : (isset($orow['pressure']) ? (float)$orow['pressure'] : null),
+                'uv_index' => isset($orow['uv_radiation']) ? (float)$orow['uv_radiation'] : (isset($orow['uv_index']) ? (float)$orow['uv_index'] : null),
+                'solar_radiation' => isset($orow['solar_radiation']) ? (float)$orow['solar_radiation'] : (isset($orow['solar']) ? (float)$orow['solar'] : null),
+            ];
+        }
+        $init_bulk['other_weather_history'] = $formatted_ow;
+        $init_bulk['other_weather'] = $formatted_ow[0];
+        if (!isset($init_bulk['weather']) || !is_array($init_bulk['weather'])) {
+            $init_bulk['weather'] = [];
+        }
+        $init_bulk['weather']['pressure'] = $formatted_ow[0]['pressure'];
+        $init_bulk['weather']['uv_index'] = $formatted_ow[0]['uv_index'];
+        $init_bulk['weather']['solar_radiation'] = $formatted_ow[0]['solar_radiation'];
+    }
+}
+
 // Fallback: If live Supabase query returned no data (or timed out), use any available cached records
 if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk['weather_history']))) {
     foreach ($cache_candidates as $cf) {
@@ -3053,13 +3105,6 @@ body.soil-backdrop-active header {
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════
-         ANIMATED WEATHER DASHBOARD (User Requested Exact Row Sequence)
-         Line 1: Temperature & Humidity
-         Line 2: Wind Direction & Speed (Same line on desktop & mobile)
-         Line 3: Wind Gust & Precipitation
-         Line 4: Pressure, UV Radiation, Solar Radiation
-         ═══════════════════════════════════════════════════════════════ -->
     <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 10px;">
 
       <!-- LINE 1: Temperature & Humidity -->
@@ -3447,6 +3492,54 @@ body.soil-backdrop-active header {
       </div>
 
     </div>
+    <style>
+      #n1-weather-records-table.mode-weather th:nth-child(4),
+      #n1-weather-records-table.mode-weather th:nth-child(5),
+      #n1-weather-records-table.mode-weather th:nth-child(6),
+      #n1-weather-records-table.mode-weather td:nth-child(4),
+      #n1-weather-records-table.mode-weather td:nth-child(5),
+      #n1-weather-records-table.mode-weather td:nth-child(6) { display: none !important; }
+
+      #n1-weather-records-table.mode-other th:nth-child(2),
+      #n1-weather-records-table.mode-other th:nth-child(3),
+      #n1-weather-records-table.mode-other th:nth-child(7),
+      #n1-weather-records-table.mode-other th:nth-child(8),
+      #n1-weather-records-table.mode-other th:nth-child(9),
+      #n1-weather-records-table.mode-other th:nth-child(10),
+      #n1-weather-records-table.mode-other td:nth-child(2),
+      #n1-weather-records-table.mode-other td:nth-child(3),
+      #n1-weather-records-table.mode-other td:nth-child(7),
+      #n1-weather-records-table.mode-other td:nth-child(8),
+      #n1-weather-records-table.mode-other td:nth-child(9),
+      #n1-weather-records-table.mode-other td:nth-child(10) { display: none !important; }
+      #n1-weather-records-table.mode-other { min-width: 100% !important; }
+    </style>
+    <script>
+    window.switchNode1WeatherTableGroup = function(mode) {
+        const tbl = document.getElementById('n1-weather-records-table');
+        const wBody = document.getElementById('weather-tbody');
+        const oBody = document.getElementById('n1-other-weather-tbody');
+        const btnW = document.getElementById('n1-wtab-weather');
+        const btnO = document.getElementById('n1-wtab-other');
+        const isOther = (mode === 'other');
+        if (tbl) {
+            tbl.classList.remove('mode-weather', 'mode-other');
+            tbl.classList.add(isOther ? 'mode-other' : 'mode-weather');
+        }
+        if (wBody) wBody.style.display = isOther ? 'none' : '';
+        if (oBody) oBody.style.display = isOther ? '' : 'none';
+        if (btnW) {
+            btnW.style.background = isOther ? 'transparent' : '#00bfa5';
+            btnW.style.color = isOther ? '#e2e8f0' : '#ffffff';
+            btnW.style.boxShadow = isOther ? 'none' : '0 2px 8px rgba(0, 191, 165, 0.35)';
+        }
+        if (btnO) {
+            btnO.style.background = isOther ? '#00bfa5' : 'transparent';
+            btnO.style.color = isOther ? '#ffffff' : '#e2e8f0';
+            btnO.style.boxShadow = isOther ? '0 2px 8px rgba(0, 191, 165, 0.35)' : 'none';
+        }
+    };
+    </script>
 
     <!-- Weather Telemetry Table Section -->
     <div style="margin-top: 14px;">
@@ -3455,6 +3548,11 @@ body.soil-backdrop-active header {
           <i data-lucide="cloud-sun" style="width: 18px; height: 18px; color: #00bfa5;"></i>
           <span>Live Weather Telemetry Records</span>
         </h2>
+
+        <div id="n1-weather-table-toggle" style="display: inline-flex; align-items: center; padding: 3px; border-radius: 9999px; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.22); backdrop-filter: blur(10px); gap: 3px;">
+          <button type="button" id="n1-wtab-weather" onclick="switchNode1WeatherTableGroup('weather')" style="padding: 5px 13px; border-radius: 9999px; font-size: 11.5px; font-weight: 700; border: none; cursor: pointer; transition: all 0.18s ease; background: #00bfa5; color: #ffffff; box-shadow: 0 2px 8px rgba(0, 191, 165, 0.35);">Weather</button>
+          <button type="button" id="n1-wtab-other" onclick="switchNode1WeatherTableGroup('other')" style="padding: 5px 13px; border-radius: 9999px; font-size: 11.5px; font-weight: 700; border: none; cursor: pointer; transition: all 0.18s ease; background: transparent; color: #e2e8f0;">Other Parameters</button>
+        </div>
       </div>
 
       <div id="live-weather-table-container" style="background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.14); overflow: hidden; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35); transition: opacity 0.2s ease; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
@@ -3465,7 +3563,7 @@ body.soil-backdrop-active header {
         </div>
 
         <div style="overflow-x: auto; max-height: 420px; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 880px;">
+          <table id="n1-weather-records-table" class="mode-weather" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: var(--font-sans); min-width: 640px;">
             <thead style="position: sticky; top: 0; z-index: 1; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, 0.14);">
               <tr>
                 <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
@@ -3523,6 +3621,34 @@ body.soil-backdrop-active header {
                 <tr>
                   <td colspan="10" style="padding: 40px; text-align: center; color: #94a3b8;">
                     Currently in standby mode. Telemetry stream will populate when records arrive.
+                  </td>
+                </tr>
+              <?php endif; ?>
+            </tbody>
+            <tbody id="n1-other-weather-tbody" style="display: none;">
+              <?php $init_other_hist = $init_bulk['other_weather_history'] ?? []; ?>
+              <?php if (!empty($init_other_hist) && is_array($init_other_hist)): ?>
+                <?php foreach ($init_other_hist as $i => $orow):
+                  $ots = $orow['timestamp'] ?? ($orow['created_at'] ?? null);
+                  $oTimeStr = $ots ? date('j M, h:i A', strtotime($ots)) : '--';
+                  $oPress = isset($orow['pressure']) && is_numeric($orow['pressure']) ? round((float)$orow['pressure']) . ' mb' : '--';
+                  $oUv = isset($orow['uv_index']) && is_numeric($orow['uv_index']) ? number_format((float)$orow['uv_index'], 1) : '--';
+                  $oSolar = isset($orow['solar_radiation']) && is_numeric($orow['solar_radiation']) ? number_format((float)$orow['solar_radiation'], 1) . ' W/m²' : '--';
+                  $rowBg = ($i % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
+                ?>
+                  <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: <?= $rowBg ?>;">
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #ffffff; white-space: nowrap; font-weight: 600;"><?= htmlspecialchars($oTimeStr) ?></td>
+                    <td></td><td></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;"><?= $oPress ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb7185; white-space: nowrap;"><?= $oUv ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f59e0b; white-space: nowrap;"><?= $oSolar ?></td>
+                    <td></td><td></td><td></td><td></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <tr>
+                  <td colspan="10" style="padding: 40px; text-align: center; color: #94a3b8;">
+                    No Node 2 Pressure / UV / Solar telemetry found.
                   </td>
                 </tr>
               <?php endif; ?>
@@ -5958,6 +6084,35 @@ async function refreshDashboard(forceNetwork = false) {
         }
         if (weatherHistory && weatherHistory.length > 0) {
             window.weatherHistory = weatherHistory;
+        }
+        if (bulkData && Array.isArray(bulkData.other_weather_history)) {
+            window.otherWeatherHistory = bulkData.other_weather_history;
+            const oBody = document.getElementById('n1-other-weather-tbody');
+            if (oBody) {
+                const oHist = bulkData.other_weather_history;
+                if (oHist.length === 0) {
+                    oBody.innerHTML = '<tr><td colspan="10" style="padding: 40px; text-align: center; color: #94a3b8;">No Node 2 Pressure / UV / Solar telemetry found.</td></tr>';
+                } else {
+                    oBody.innerHTML = oHist.map((orow, idx) => {
+                        const dt = (typeof safeParseDate === 'function') ? safeParseDate(orow.timestamp || orow.created_at) : new Date(orow.timestamp || orow.created_at);
+                        const oTimeStr = (dt && !isNaN(dt.getTime()))
+                            ? dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' }) + ', ' + dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })
+                            : '--';
+                        const oPress = (orow.pressure != null && !isNaN(Number(orow.pressure))) ? `${Math.round(Number(orow.pressure))} mb` : '--';
+                        const oUv = (orow.uv_index != null && !isNaN(Number(orow.uv_index))) ? Number(orow.uv_index).toFixed(1) : '--';
+                        const oSolar = (orow.solar_radiation != null && !isNaN(Number(orow.solar_radiation))) ? `${Number(orow.solar_radiation).toFixed(1)} W/m²` : '--';
+                        const rowBg = (idx % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
+                        return `<tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: ${rowBg};">
+                            <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #ffffff; white-space: nowrap; font-weight: 600;">${oTimeStr}</td>
+                            <td></td><td></td>
+                            <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;">${oPress}</td>
+                            <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb7185; white-space: nowrap;">${oUv}</td>
+                            <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f59e0b; white-space: nowrap;">${oSolar}</td>
+                            <td></td><td></td><td></td><td></td>
+                        </tr>`;
+                    }).join('');
+                }
+            }
         }
         try {
             if (typeof renderComparisonChart === 'function') renderComparisonChart();

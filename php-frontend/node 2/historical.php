@@ -740,6 +740,7 @@ var currentChartType = _initState.type;
 var currentRangeDays = _initState.days;
 var historicalDataAqi = [];
 var historicalDataWeather = [];
+var historicalDataOtherWeather = [];
 var chartInstance = null;
 var filteredDayData = [];
 
@@ -1166,6 +1167,7 @@ async function fetchRangeData(queryDate, days, force = false) {
                 payload = {
                     aqi: data.aqi || [],
                     weather: data.weather || [],
+                    other_weather: data.other_weather || [],
                     fetchedAt: Date.now()
                 };
             }
@@ -1331,14 +1333,18 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
         
         const newAqi = data.aqi || [];
         const newWeather = data.weather || [];
+        const newOtherWeather = data.other_weather || [];
         const changed = !silent
             || newAqi.length !== (historicalDataAqi || []).length
             || newWeather.length !== (historicalDataWeather || []).length
+            || newOtherWeather.length !== (historicalDataOtherWeather || []).length
             || (newAqi[0]?.timestamp !== historicalDataAqi?.[0]?.timestamp)
-            || (newWeather[0]?.timestamp !== historicalDataWeather?.[0]?.timestamp);
+            || (newWeather[0]?.timestamp !== historicalDataWeather?.[0]?.timestamp)
+            || (newOtherWeather[0]?.timestamp !== historicalDataOtherWeather?.[0]?.timestamp);
 
         historicalDataAqi = newAqi;
         historicalDataWeather = newWeather;
+        historicalDataOtherWeather = newOtherWeather;
         
         if (chartLoading) chartLoading.style.display = 'none';
         if (chartCanvas) chartCanvas.style.opacity = '1';
@@ -1625,6 +1631,59 @@ function renderUI(skipDayFilter = false) {
             }
             hourlyMap.set(hrKey, item);
         });
+
+        // Merge Node 2 WEATHER_NODE2 / WEATHER_LIVE_NODE2 and AQI_NODE2 (Temp/Hum) by hour for Weather tab
+        if (currentSubTab === 'weather') {
+            const buildHrKey = (ts) => {
+                const parts = (ts || '').split('T');
+                if (parts.length === 2) return normalizeDateToYmd(parts[0]) + ' ' + parts[1].slice(0, 2);
+                const dt = new Date(ts);
+                return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}`;
+            };
+            if (Array.isArray(historicalDataOtherWeather)) {
+                historicalDataOtherWeather.forEach(oItem => {
+                    if (!oItem.timestamp) return;
+                    const t = parseIsoLocal(oItem.timestamp);
+                    if (t < startWindow || t > endWindow) return;
+                    const hrKey = buildHrKey(oItem.timestamp);
+                    const hrPad = hrKey.split(' ')[1] || '00';
+                    const datePad = hrKey.split(' ')[0] || normalizeDateToYmd(oItem.timestamp);
+                    const existing = hourlyMap.get(hrKey);
+                    if (existing) {
+                        ['pressure', 'uv_index', 'solar_radiation', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge', 'temperature', 'humidity'].forEach(k => {
+                            if (existing[k] == null && oItem[k] != null) existing[k] = oItem[k];
+                        });
+                    } else {
+                        hourlyMap.set(hrKey, {
+                            timestamp: `${datePad}T${hrPad}:00:00`,
+                            temperature: oItem.temperature ?? null,
+                            humidity: oItem.humidity ?? null,
+                            pressure: oItem.pressure ?? null,
+                            uv_index: oItem.uv_index ?? null,
+                            solar_radiation: oItem.solar_radiation ?? null,
+                            wind_speed: oItem.wind_speed ?? null,
+                            wind_gust: oItem.wind_gust ?? null,
+                            wind_direction: oItem.wind_direction ?? null,
+                            rain_gauge: oItem.rain_gauge ?? null,
+                            isMissing: false
+                        });
+                    }
+                });
+            }
+            if (Array.isArray(historicalDataAqi)) {
+                historicalDataAqi.forEach(aItem => {
+                    if (!aItem.timestamp) return;
+                    const t = parseIsoLocal(aItem.timestamp);
+                    if (t < startWindow || t > endWindow) return;
+                    const hrKey = buildHrKey(aItem.timestamp);
+                    const existing = hourlyMap.get(hrKey);
+                    if (existing) {
+                        if (existing.temperature == null && aItem.temperature != null) existing.temperature = aItem.temperature;
+                        if (existing.humidity == null && aItem.humidity != null) existing.humidity = aItem.humidity;
+                    }
+                });
+            }
+        }
 
         // Ensure every hour slot is populated across the selected range (0 to 23 for past days; 0 to current hour for today)
         const todayYmd = getLocalDateStr();

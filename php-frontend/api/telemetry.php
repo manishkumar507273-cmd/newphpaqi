@@ -283,8 +283,18 @@ function formatWeatherReading($row) {
     if (isset($row['wind_speed']) && $row['wind_speed'] !== null) $row['wind_speed'] = round((float)$row['wind_speed'], 2);
     if (isset($row['wind_gust']) && $row['wind_gust'] !== null) $row['wind_gust'] = round((float)$row['wind_gust'], 2);
     if (isset($row['rain_gauge']) && $row['rain_gauge'] !== null) $row['rain_gauge'] = round((float)$row['rain_gauge'], 2);
-    if (isset($row['pressure']) && $row['pressure'] !== null) $row['pressure'] = round((float)$row['pressure'], 1);
-    if (isset($row['uv_index']) && $row['uv_index'] !== null) $row['uv_index'] = round((float)$row['uv_index'], 1);
+    if (isset($row['pressure']) && $row['pressure'] !== null) {
+        $row['pressure'] = round((float)$row['pressure'], 1);
+    } elseif (isset($row['barometric_pressure']) && $row['barometric_pressure'] !== null) {
+        $row['pressure'] = round((float)$row['barometric_pressure'], 1);
+    }
+    if (isset($row['uv_index']) && $row['uv_index'] !== null) {
+        $row['uv_index'] = round((float)$row['uv_index'], 1);
+    } elseif (isset($row['uv_radiation']) && $row['uv_radiation'] !== null) {
+        $row['uv_index'] = round((float)$row['uv_radiation'], 1);
+    } elseif (isset($row['uv']) && $row['uv'] !== null) {
+        $row['uv_index'] = round((float)$row['uv'], 1);
+    }
     if (isset($row['solar_radiation']) && $row['solar_radiation'] !== null) {
         $row['solar_radiation'] = round((float)$row['solar_radiation'], 1);
     } elseif (isset($row['solar']) && $row['solar'] !== null) {
@@ -1034,6 +1044,37 @@ switch ($action) {
         }
         $res['today_rain_total'] = round($today_rain_sum, 2);
 
+        $n2OtherUrl = ($supabaseUrlNode2 ?: ($get_v_env('SUPABASE_URL_NODE2') ?: ($get_v_env('VITE_SUPABASE_URL_NODE2') ?: 'https://nahabhzcaeppbteuxogg.supabase.co'))) . "/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60";
+        $n2OtherKey = $supabaseKeyNode2 ?: ($get_v_env('SUPABASE_KEY_NODE2') ?: ($get_v_env('SUPABASE_ANON_KEY_NODE2') ?: ($get_v_env('VITE_SUPABASE_ANON_KEY_NODE2') ?: 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ')));
+        $otherHist = cacheGet('other_weather_node2_60', 15);
+        if ($otherHist === null) {
+            $rawOther = fetchSupabase($n2OtherUrl, $n2OtherKey);
+            $otherHist = [];
+            if ($rawOther && is_array($rawOther)) {
+                foreach ($rawOther as $orow) {
+                    $fo = formatWeatherReading($orow);
+                    if ($fo) $otherHist[] = $fo;
+                }
+            }
+            cacheSet('other_weather_node2_60', $otherHist);
+        }
+        $latestOther = !empty($otherHist) ? $otherHist[0] : null;
+        if ($latestOther) {
+            if (!$res['weather']) $res['weather'] = $latestOther;
+            else {
+                $mergeKeys = $isNode2
+                    ? ['pressure', 'uv_index', 'solar_radiation', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge', 'temperature', 'humidity']
+                    : ['pressure', 'uv_index', 'solar_radiation'];
+                foreach ($mergeKeys as $ok) {
+                    if ((!isset($res['weather'][$ok]) || $res['weather'][$ok] === null) && isset($latestOther[$ok]) && $latestOther[$ok] !== null) {
+                        $res['weather'][$ok] = $latestOther[$ok];
+                    }
+                }
+            }
+        }
+        $res['other_weather'] = $latestOther;
+        $res['other_weather_history'] = $otherHist;
+
         cacheSet($ckey, $res);
         cacheSet("overview_bulk_node_{$reqNode}", $res);
         if (!$isNode2) {
@@ -1171,6 +1212,37 @@ switch ($action) {
         }
         $res['today_rain_total'] = round($today_rain_sum, 2);
 
+        $n2OtherUrl = ($supabaseUrlNode2 ?: ($get_v_env('SUPABASE_URL_NODE2') ?: ($get_v_env('VITE_SUPABASE_URL_NODE2') ?: 'https://nahabhzcaeppbteuxogg.supabase.co'))) . "/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60";
+        $n2OtherKey = $supabaseKeyNode2 ?: ($get_v_env('SUPABASE_KEY_NODE2') ?: ($get_v_env('SUPABASE_ANON_KEY_NODE2') ?: ($get_v_env('VITE_SUPABASE_ANON_KEY_NODE2') ?: 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ')));
+        $otherHist = cacheGet('other_weather_node2_60', 15);
+        if ($otherHist === null) {
+            $rawOther = fetchSupabase($n2OtherUrl, $n2OtherKey);
+            $otherHist = [];
+            if ($rawOther && is_array($rawOther)) {
+                foreach ($rawOther as $orow) {
+                    $fo = formatWeatherReading($orow);
+                    if ($fo) $otherHist[] = $fo;
+                }
+            }
+            cacheSet('other_weather_node2_60', $otherHist);
+        }
+        $latestOther = !empty($otherHist) ? $otherHist[0] : null;
+        if ($latestOther) {
+            if (!$res['weather']) $res['weather'] = $latestOther;
+            else {
+                $mergeKeys = $isNode2
+                    ? ['pressure', 'uv_index', 'solar_radiation', 'wind_speed', 'wind_gust', 'wind_direction', 'rain_gauge', 'temperature', 'humidity']
+                    : ['pressure', 'uv_index', 'solar_radiation'];
+                foreach ($mergeKeys as $ok) {
+                    if ((!isset($res['weather'][$ok]) || $res['weather'][$ok] === null) && isset($latestOther[$ok]) && $latestOther[$ok] !== null) {
+                        $res['weather'][$ok] = $latestOther[$ok];
+                    }
+                }
+            }
+        }
+        $res['other_weather'] = $latestOther;
+        $res['other_weather_history'] = $otherHist;
+
         if ($res['aqi'] !== null || $res['weather'] !== null) {
             cacheSet($ckey, $res);
             if (!$isNode2) {
@@ -1220,6 +1292,10 @@ switch ($action) {
         $cached = cacheGet($ckey, $ttl);
         if ($cached !== null) { echo json_encode($cached); break; }
 
+        $n2HistUrlBase = $supabaseUrlNode2 ?: ($get_v_env('SUPABASE_URL_NODE2') ?: ($get_v_env('VITE_SUPABASE_URL_NODE2') ?: 'https://nahabhzcaeppbteuxogg.supabase.co'));
+        $n2HistKey     = $supabaseKeyNode2 ?: ($get_v_env('SUPABASE_KEY_NODE2') ?: ($get_v_env('SUPABASE_ANON_KEY_NODE2') ?: 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ'));
+        $n2Filter      = str_replace('timestamp_hour', 'timestamp', $filter);
+
         $urls = [
             'aqi'     => "{$supabaseUrl}/rest/v1/{$TABLE_AQI_HISTORICAL}?order={$tsCol}.desc&limit={$lim}{$filter}",
             'weather' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_HIST}?order={$tsCol}.desc&limit={$lim}{$filter}",
@@ -1227,14 +1303,21 @@ switch ($action) {
 
         // Fire requests in parallel
         $raw = fetchParallel($urls, $supabaseKey);
+        $rawOther = fetchSupabase("{$n2HistUrlBase}/rest/v1/WEATHER_NODE2?select=*&order=timestamp.desc&limit={$lim}{$n2Filter}", $n2HistKey);
+        if (empty($rawOther)) {
+            $rawOther = fetchSupabase("{$n2HistUrlBase}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60", $n2HistKey);
+        }
 
         if ($isNode2 && empty($raw['weather'])) {
             $raw['weather'] = fetchSupabase("{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?order={$tsCol}.desc&limit={$lim}", $supabaseKey);
         }
 
-        $res = ['status' => 'success', 'node' => $reqNode, 'aqi' => [], 'weather' => []];
+        $res = ['status' => 'success', 'node' => $reqNode, 'aqi' => [], 'weather' => [], 'other_weather' => []];
         if (!empty($raw['aqi']))     { foreach ($raw['aqi']     as $row) { $f = formatRawReading($row);    if ($f) $res['aqi'][]     = $f; } }
         if (!empty($raw['weather'])) { foreach ($raw['weather'] as $row) { $w = formatWeatherReading($row); if ($w) $res['weather'][] = $w; } }
+        if (!empty($rawOther) && is_array($rawOther)) {
+            foreach ($rawOther as $row) { $ow = formatWeatherReading($row); if ($ow) $res['other_weather'][] = $ow; }
+        }
 
         cacheSet($ckey, $res);
         echo json_encode($res);

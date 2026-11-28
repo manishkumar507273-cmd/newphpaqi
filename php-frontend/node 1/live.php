@@ -1715,16 +1715,22 @@ $init_border_colors = [
     font-size: 18px !important;
     line-height: 1.1 !important;
   }
-  .weather-precip-icon-wrap,
-  .weather-soil-icon-wrap,
-  .soil-kpi-icon-wrap {
+  .weather-precip-icon-wrap {
     width: 36px !important;
     height: 36px !important;
     border-radius: 10px !important;
   }
+  .weather-soil-icon-wrap {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  .soil-kpi-icon-wrap {
+    width: 44px !important;
+    height: 44px !important;
+  }
   .soil-kpi-icon-wrap svg {
-    width: 20px !important;
-    height: 20px !important;
+    width: 100% !important;
+    height: 100% !important;
   }
   .weather-pressure-dial-wrap {
     width: 54px !important;
@@ -3114,14 +3120,26 @@ body.soil-backdrop-active header {
         <!-- Card 1A: Ambient Temperature -->
         <div class="weather-card-dark weather-card-ambient-temp" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
-              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
-                <rect x="27" y="10" width="10" height="30" rx="5" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.6)" stroke-width="1.8" />
-                <circle cx="32" cy="44" r="9" fill="#f97316" filter="drop-shadow(0 0 5px rgba(249, 115, 22, 0.6))" />
-                <rect x="29" y="20" width="6" height="24" rx="3" fill="#f97316" />
-                <line x1="39" y1="16" x2="43" y2="16" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
-                <line x1="39" y1="23" x2="44" y2="23" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
-                <line x1="39" y1="30" x2="43" y2="30" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.85" />
+            <div class="weather-soil-icon-wrap" style="width: 72px; height: 72px; flex-shrink: 0;">
+              <?php $ambTempOffset = round(117.3 * (1 - ($ambient_temp_pct / 100)), 1); ?>
+              <svg viewBox="0 0 72 72" style="width: 100%; height: 100%; overflow: visible;">
+                <defs>
+                  <linearGradient id="ambTempArcGradN1" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#38bdf8" />
+                    <stop offset="45%" stop-color="#10b981" />
+                    <stop offset="75%" stop-color="#f59e0b" />
+                    <stop offset="100%" stop-color="#ef4444" />
+                  </linearGradient>
+                </defs>
+                <!-- 240-deg thermal dial track -->
+                <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="117.3 176" transform="rotate(150 36 36)" />
+                <circle id="weather-temp-arc" cx="36" cy="36" r="28" fill="none" stroke="url(#ambTempArcGradN1)" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="117.3 176" stroke-dashoffset="<?= $ambTempOffset ?>" transform="rotate(150 36 36)" style="transition: stroke-dashoffset 0.9s cubic-bezier(0.22,1,0.36,1);" filter="drop-shadow(0 0 6px rgba(249,115,22,0.5))" />
+                <!-- Center Thermometer -->
+                <rect x="32.5" y="19" width="7" height="21" rx="3.5" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.75)" stroke-width="1.4" />
+                <circle cx="36" cy="43" r="6" fill="#f97316" />
+                <rect x="34.2" y="26" width="3.6" height="16" rx="1.8" fill="#f97316" />
+                <text x="15" y="61" font-size="6.5" font-weight="700" fill="#94a3b8" text-anchor="middle">15°</text>
+                <text x="57" y="61" font-size="6.5" font-weight="700" fill="#94a3b8" text-anchor="middle">45°</text>
               </svg>
             </div>
             <div style="text-align: right;">
@@ -3133,12 +3151,8 @@ body.soil-backdrop-active header {
               </div>
             </div>
           </div>
-          <div style="margin-top: 10px; width: 100%;">
-            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
-              <div id="weather-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #f97316; box-shadow: 0 0 8px rgba(249,115,22,0.9); transition: left 1s ease-in-out;"></div>
-            </div>
-          </div>
-          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          <div style="height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); margin: 12px 0 10px 0;"></div>
+          <div class="weather-metric-note" style="font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
             Thermal reading: <span id="weather-temp-note-val" style="color: #fed7aa; font-weight: 600;"><?= is_numeric($init_weather_temp) ? "{$init_weather_temp} °C (Ambient)" : '--' ?></span>
           </div>
         </div>
@@ -3146,18 +3160,27 @@ body.soil-backdrop-active header {
         <!-- Card 1B: Relative Humidity -->
         <div class="weather-card-dark weather-card-ambient-hum" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-            <div class="weather-soil-icon-wrap" style="width: 58px; height: 58px; flex-shrink: 0;">
-              <svg viewBox="0 0 64 64" style="width: 100%; height: 100%;">
-                <g class="water-drop-anim">
-                  <path d="M 32 10 C 32 10 16 28 16 38 C 16 46.8 23.2 54 32 54 C 40.8 54 48 46.8 48 38 C 48 28 32 10 32 10 Z" fill="url(#ambHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
-                  <ellipse cx="25" cy="35" rx="3.5" ry="7" transform="rotate(-25 25 35)" fill="#ffffff" opacity="0.55" />
-                </g>
+            <div class="weather-soil-icon-wrap" style="width: 72px; height: 72px; flex-shrink: 0;">
+              <?php $ambHumOffset = round(175.9 * (1 - ($ambient_hum_pct / 100)), 1); ?>
+              <svg viewBox="0 0 72 72" style="width: 100%; height: 100%; overflow: visible;">
                 <defs>
                   <linearGradient id="ambHumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#38bdf8" />
                     <stop offset="100%" stop-color="#0284c7" />
                   </linearGradient>
+                  <linearGradient id="ambHumRingGradN1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#38bdf8" />
+                    <stop offset="50%" stop-color="#00bfa5" />
+                    <stop offset="100%" stop-color="#0284c7" />
+                  </linearGradient>
                 </defs>
+                <!-- 360-deg moisture saturation ring -->
+                <circle cx="36" cy="36" r="28" fill="rgba(14, 165, 233, 0.08)" stroke="rgba(255,255,255,0.14)" stroke-width="5" />
+                <circle id="weather-hum-arc" cx="36" cy="36" r="28" fill="none" stroke="url(#ambHumRingGradN1)" stroke-width="5" stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="<?= $ambHumOffset ?>" transform="rotate(-90 36 36)" style="transition: stroke-dashoffset 0.9s cubic-bezier(0.22,1,0.36,1);" filter="drop-shadow(0 0 6px rgba(56,189,248,0.45))" />
+                <g class="water-drop-anim" transform="translate(8, 8) scale(0.875)">
+                  <path d="M 32 13 C 32 13 19 28 19 37 C 19 44.2 24.8 50 32 50 C 39.2 50 45 44.2 45 37 C 45 28 32 13 32 13 Z" fill="url(#ambHumGrad)" filter="drop-shadow(0 2px 6px rgba(14, 165, 233, 0.5))" />
+                  <ellipse cx="26.5" cy="34.5" rx="2.8" ry="5.5" transform="rotate(-25 26.5 34.5)" fill="#ffffff" opacity="0.6" />
+                </g>
               </svg>
             </div>
             <div style="text-align: right;">
@@ -3169,12 +3192,8 @@ body.soil-backdrop-active header {
               </div>
             </div>
           </div>
-          <div style="margin-top: 10px; width: 100%;">
-            <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #00bfa5 45%, #0284c7 100%); position: relative;">
-              <div id="weather-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $ambient_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2,132,199,0.9); transition: left 1s ease-in-out;"></div>
-            </div>
-          </div>
-          <div class="weather-metric-note" style="margin-top: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+          <div style="height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); margin: 12px 0 10px 0;"></div>
+          <div class="weather-metric-note" style="font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
             Atmospheric moisture: <span id="weather-hum-note-val" style="color: #bae6fd; font-weight: 600;"><?= $init_weather_hum !== '--%' ? "Relative RH {$init_weather_hum}" : '--' ?></span>
           </div>
         </div>
@@ -3708,13 +3727,16 @@ body.soil-backdrop-active header {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
 
       <!-- Card 1: Soil Moisture / Humidity -->
+      <?php $soilHumOffset = round(150.8 * (1 - ($soil_hum_pct / 100)), 1); ?>
       <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-          <div class="soil-kpi-icon-wrap" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.35) 0%, rgba(3, 105, 161, 0.45) 100%); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 28px; height: 28px;">
-              <g class="water-drop-anim">
-                <path d="M 32 12 C 32 12 18 28 18 36 C 18 43.7 24.3 50 32 50 C 39.7 50 46 43.7 46 36 C 46 28 32 12 32 12 Z" fill="#38bdf8" />
-                <ellipse cx="26" cy="34" rx="3.5" ry="6" transform="rotate(-28 26 34)" fill="rgba(255,255,255,0.7)" />
+          <div class="soil-kpi-icon-wrap" style="width: 56px; height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            <svg viewBox="0 0 64 64" style="width: 56px; height: 56px; overflow: visible;">
+              <circle cx="32" cy="32" r="24" fill="rgba(2, 132, 199, 0.14)" stroke="rgba(255,255,255,0.14)" stroke-width="4.5" />
+              <circle id="soil-hum-arc" cx="32" cy="32" r="24" fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="<?= $soilHumOffset ?>" transform="rotate(-90 32 32)" style="transition: stroke-dashoffset 0.9s ease;" filter="drop-shadow(0 0 5px rgba(56,189,248,0.55))" />
+              <g class="water-drop-anim" transform="translate(8, 8) scale(0.75)">
+                <path d="M 32 14 C 32 14 20 28 20 36 C 20 42.6 25.4 48 32 48 C 38.6 48 44 42.6 44 36 C 44 28 32 14 32 14 Z" fill="#38bdf8" />
+                <ellipse cx="27" cy="34" rx="2.5" ry="5" transform="rotate(-28 27 34)" fill="rgba(255,255,255,0.75)" />
               </g>
             </svg>
           </div>
@@ -3728,28 +3750,30 @@ body.soil-backdrop-active header {
           </div>
         </div>
 
-        <div style="margin-top: 8px; width: 100%;">
-          <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #eab308 0%, #10b981 45%, #0284c7 100%); position: relative;">
-            <div id="soil-live-hum-slider-dot" class="soil-hum-pulse-dot" style="position: absolute; top: 50%; left: <?= $soil_hum_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #0284c7; box-shadow: 0 0 8px rgba(2, 132, 199, 0.9); transition: left 1s ease-in-out;"></div>
-          </div>
-        </div>
-
-        <div class="weather-metric-note" style="margin-top: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+        <div style="height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); margin: 10px 0 8px 0;"></div>
+        <div class="weather-metric-note" style="font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
           Hydration: <span id="soil-live-hum-note-val" style="color: #38bdf8; font-weight: 600;"><?= $has_soil_hum ? "Adequate ({$init_soil_hum})" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 2: Soil Temperature -->
+      <?php $soilTempOffset = round(100.5 * (1 - ($soil_temp_pct / 100)), 1); ?>
       <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-          <div class="soil-kpi-icon-wrap" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(234, 88, 12, 0.45) 100%); border: 1px solid rgba(251, 146, 60, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 28px; height: 28px;">
-              <rect x="28" y="10" width="8" height="26" rx="4" fill="rgba(255,255,255,0.2)" stroke="#ffffff" stroke-width="1.6" />
-              <circle cx="32" cy="38" r="7.5" fill="#f97316" />
-              <rect x="30" y="18" width="4" height="18" rx="2" fill="#f97316" />
-              <line x1="38" y1="14" x2="41" y2="14" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
-              <line x1="38" y1="20" x2="42" y2="20" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
-              <line x1="38" y1="26" x2="41" y2="26" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
+          <div class="soil-kpi-icon-wrap" style="width: 56px; height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            <svg viewBox="0 0 64 64" style="width: 56px; height: 56px; overflow: visible;">
+              <defs>
+                <linearGradient id="soilTempArcGradN1" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#38bdf8" />
+                  <stop offset="50%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#ef4444" />
+                </linearGradient>
+              </defs>
+              <circle cx="32" cy="32" r="24" fill="rgba(234, 88, 12, 0.12)" stroke="rgba(255,255,255,0.14)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="100.5 151" transform="rotate(150 32 32)" />
+              <circle id="soil-temp-arc" cx="32" cy="32" r="24" fill="none" stroke="url(#soilTempArcGradN1)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="100.5 151" stroke-dashoffset="<?= $soilTempOffset ?>" transform="rotate(150 32 32)" style="transition: stroke-dashoffset 0.9s ease;" filter="drop-shadow(0 0 5px rgba(249,115,22,0.55))" />
+              <rect x="29" y="17" width="6" height="19" rx="3" fill="rgba(255,255,255,0.2)" stroke="#ffffff" stroke-width="1.3" />
+              <circle cx="32" cy="39" r="5.2" fill="#f97316" />
+              <rect x="30.5" y="23" width="3" height="15" rx="1.5" fill="#f97316" />
             </svg>
           </div>
           <div style="text-align: right; min-width: 0;">
@@ -3762,25 +3786,33 @@ body.soil-backdrop-active header {
           </div>
         </div>
 
-        <div style="margin-top: 8px; width: 100%;">
-          <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #0284c7 0%, #10b981 35%, #f59e0b 70%, #ef4444 100%); position: relative;">
-            <div id="soil-live-temp-slider-dot" class="soil-temp-pulse-dot" style="position: absolute; top: 50%; left: <?= $soil_temp_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #ea580c; box-shadow: 0 0 8px rgba(234, 88, 12, 0.9); transition: left 1s ease-in-out;"></div>
-          </div>
-        </div>
-
-        <div class="weather-metric-note" style="margin-top: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+        <div style="height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); margin: 10px 0 8px 0;"></div>
+        <div class="weather-metric-note" style="font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
           Root zone: <span id="soil-live-temp-note-val" style="color: #fed7aa; font-weight: 600;"><?= $has_soil_temp ? "{$init_soil_temp}" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 3: Soil pH -->
+      <?php $soilPhAngle = round(($soil_ph_pct - 50) * 2.4, 1); ?>
       <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-          <div class="soil-kpi-icon-wrap" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.45) 100%); border: 1px solid rgba(52, 211, 153, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 28px; height: 28px;">
-              <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" />
-              <circle cx="32" cy="32" r="15" fill="#10b981" />
-              <text x="32" y="33" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
+          <div class="soil-kpi-icon-wrap" style="width: 56px; height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            <svg viewBox="0 0 64 64" style="width: 56px; height: 56px; overflow: visible;">
+              <defs>
+                <linearGradient id="soilPhLitmusGradN1" x1="0%" y1="50%" x2="100%" y2="50%">
+                  <stop offset="0%" stop-color="#ef4444" />
+                  <stop offset="30%" stop-color="#f59e0b" />
+                  <stop offset="50%" stop-color="#10b981" />
+                  <stop offset="75%" stop-color="#06b6d4" />
+                  <stop offset="100%" stop-color="#8b5cf6" />
+                </linearGradient>
+              </defs>
+              <circle cx="32" cy="32" r="24" fill="rgba(16, 185, 129, 0.1)" stroke="url(#soilPhLitmusGradN1)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="100.5 151" transform="rotate(150 32 32)" opacity="0.9" />
+              <circle cx="32" cy="32" r="14" fill="#10b981" />
+              <text x="32" y="32.5" font-size="10.5" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="var(--font-sans)">pH</text>
+              <g id="soil-ph-needle" style="transform-origin: 32px 32px; transform: rotate(<?= $soilPhAngle ?>deg); transition: transform 0.9s cubic-bezier(0.34,1.56,0.64,1);">
+                <polygon points="32,4 28.5,11 35.5,11" fill="#ffffff" filter="drop-shadow(0 0 3px rgba(255,255,255,0.9))" />
+              </g>
             </svg>
           </div>
           <div style="text-align: right; min-width: 0;">
@@ -3793,23 +3825,28 @@ body.soil-backdrop-active header {
           </div>
         </div>
 
-        <div style="margin-top: 8px; width: 100%;">
-          <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 30%, #10b981 55%, #06b6d4 75%, #8b5cf6 100%); position: relative;">
-            <div id="soil-live-ph-slider-dot" class="soil-ph-pulse-dot" style="position: absolute; top: 50%; left: <?= $soil_ph_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.9); transition: left 1s ease-in-out;"></div>
-          </div>
-        </div>
-
-        <div class="weather-metric-note" style="margin-top: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+        <div style="height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); margin: 10px 0 8px 0;"></div>
+        <div class="weather-metric-note" style="font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
           Acidity: <span id="soil-live-ph-note-val" style="color: #34d399; font-weight: 600;"><?= $has_soil_ph ? "{$soil_ph_status}" : '--' ?></span>
         </div>
       </div>
 
       <!-- Card 4: Soil Electrical Conductivity (EC) -->
+      <?php $soilEcOffset = round(100.5 * (1 - ($soil_ec_pct / 100)), 1); ?>
       <div class="weather-card-dark" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-          <div class="soil-kpi-icon-wrap" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(109, 40, 217, 0.45) 100%); border: 1px solid rgba(192, 132, 252, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25); flex-shrink: 0;">
-            <svg viewBox="0 0 64 64" style="width: 28px; height: 28px;">
-              <path d="M 34 10 L 22 34 L 32 34 L 28 54 L 44 28 L 34 28 Z" fill="#c084fc" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))" />
+          <div class="soil-kpi-icon-wrap" style="width: 56px; height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            <svg viewBox="0 0 64 64" style="width: 56px; height: 56px; overflow: visible;">
+              <defs>
+                <linearGradient id="soilEcArcGradN1" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#10b981" />
+                  <stop offset="50%" stop-color="#06b6d4" />
+                  <stop offset="100%" stop-color="#a855f7" />
+                </linearGradient>
+              </defs>
+              <circle cx="32" cy="32" r="24" fill="rgba(139, 92, 246, 0.14)" stroke="rgba(255,255,255,0.14)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="100.5 151" transform="rotate(150 32 32)" />
+              <circle id="soil-ec-arc" cx="32" cy="32" r="24" fill="none" stroke="url(#soilEcArcGradN1)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="100.5 151" stroke-dashoffset="<?= $soilEcOffset ?>" transform="rotate(150 32 32)" style="transition: stroke-dashoffset 0.9s ease;" filter="drop-shadow(0 0 5px rgba(168,85,247,0.55))" />
+              <path d="M 34 15 L 24 34 L 32 34 L 29 49 L 41 29 L 33 29 Z" fill="#c084fc" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.35))" />
             </svg>
           </div>
           <div style="text-align: right; min-width: 0;">
@@ -3822,13 +3859,8 @@ body.soil-backdrop-active header {
           </div>
         </div>
 
-        <div style="margin-top: 8px; width: 100%;">
-          <div class="live-slider-track" style="height: 5px; width: 100%; border-radius: 999px; background: linear-gradient(90deg, #10b981 0%, #06b6d4 40%, #8b5cf6 75%, #ef4444 100%); position: relative;">
-            <div id="soil-live-ec-slider-dot" class="soil-ec-pulse-dot" style="position: absolute; top: 50%; left: <?= $soil_ec_pct ?>%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.9); transition: left 1s ease-in-out;"></div>
-          </div>
-        </div>
-
-        <div class="weather-metric-note" style="margin-top: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
+        <div style="height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); margin: 10px 0 8px 0;"></div>
+        <div class="weather-metric-note" style="font-size: 12px; color: #cbd5e1; line-height: 1.35; font-weight: 400;">
           Salinity: <span id="soil-live-ec-note-val" style="color: #c084fc; font-weight: 600;"><?= $has_soil_ec ? "{$soil_ec_status}" : '--' ?></span>
         </div>
       </div>
@@ -5428,42 +5460,32 @@ async function refreshDashboard(forceNetwork = false) {
             // Ambient Weather Temperature & Humidity
             const ambTempEl = document.getElementById('card-weather-temp-val');
             const ambTempNote = document.getElementById('weather-temp-note-val');
-            const ambTempDot = document.getElementById('weather-temp-slider-dot');
+            const ambTempArc = document.getElementById('weather-temp-arc');
             if (w.temperature != null && !isNaN(Number(w.temperature))) {
                 const aT = Number(w.temperature).toFixed(1);
+                const tPct = Math.max(5, Math.min(95, Math.round(((Number(aT) - 15) / (45 - 15)) * 100)));
                 if (ambTempEl) ambTempEl.innerText = `${aT} °C`;
                 if (ambTempNote) ambTempNote.innerText = `${aT} °C (Ambient)`;
-                if (ambTempDot) {
-                    ambTempDot.style.display = '';
-                    ambTempDot.style.left = `${Math.max(5, Math.min(95, Math.round(((Number(aT) - 15) / (45 - 15)) * 100)))}%`;
-                }
+                if (ambTempArc) ambTempArc.style.strokeDashoffset = (117.3 * (1 - tPct / 100)).toFixed(1);
             } else {
                 if (ambTempEl) ambTempEl.innerText = '--';
                 if (ambTempNote) ambTempNote.innerText = '--';
-                if (ambTempDot) {
-                    ambTempDot.style.display = '';
-                    ambTempDot.style.left = '40%';
-                }
+                if (ambTempArc) ambTempArc.style.strokeDashoffset = (117.3 * 0.6).toFixed(1);
             }
 
             const ambHumEl = document.getElementById('card-weather-hum-val');
             const ambHumNote = document.getElementById('weather-hum-note-val');
-            const ambHumDot = document.getElementById('weather-hum-slider-dot');
+            const ambHumArc = document.getElementById('weather-hum-arc');
             if (w.humidity != null && !isNaN(Number(w.humidity))) {
                 const aH = Number(w.humidity).toFixed(1);
+                const hPct = Math.max(5, Math.min(95, Math.round(Number(aH))));
                 if (ambHumEl) ambHumEl.innerText = `${aH}%`;
                 if (ambHumNote) ambHumNote.innerText = `Relative RH ${aH}%`;
-                if (ambHumDot) {
-                    ambHumDot.style.display = '';
-                    ambHumDot.style.left = `${Math.max(5, Math.min(95, Math.round(Number(aH))))}%`;
-                }
+                if (ambHumArc) ambHumArc.style.strokeDashoffset = (175.9 * (1 - hPct / 100)).toFixed(1);
             } else {
                 if (ambHumEl) ambHumEl.innerText = '--';
                 if (ambHumNote) ambHumNote.innerText = '--';
-                if (ambHumDot) {
-                    ambHumDot.style.display = '';
-                    ambHumDot.style.left = '35%';
-                }
+                if (ambHumArc) ambHumArc.style.strokeDashoffset = (175.9 * 0.65).toFixed(1);
             }
 
             // Solar Radiation
@@ -5548,87 +5570,67 @@ async function refreshDashboard(forceNetwork = false) {
 
             const soilTempEl = document.getElementById('soil-live-temp-val');
             const soilTempNote = document.getElementById('soil-live-temp-note-val');
-            const soilTempDot = document.getElementById('soil-live-temp-slider-dot');
+            const soilTempArc = document.getElementById('soil-temp-arc');
             if (w.soil_temperature != null && !isNaN(Number(w.soil_temperature))) {
                 const sT = Number(w.soil_temperature).toFixed(1);
+                const stPct = Math.max(5, Math.min(95, Math.round(((Number(sT) - 10) / (40 - 10)) * 100)));
                 if (soilTempEl) soilTempEl.innerText = `${sT} °C`;
                 if (soilTempNote) soilTempNote.innerText = `${sT} °C (Optimal Range)`;
-                if (soilTempDot) {
-                    soilTempDot.style.display = '';
-                    soilTempDot.style.left = `${Math.max(5, Math.min(95, Math.round(((Number(sT) - 10) / (40 - 10)) * 100)))}%`;
-                }
+                if (soilTempArc) soilTempArc.style.strokeDashoffset = (100.5 * (1 - stPct / 100)).toFixed(1);
             } else {
                 if (soilTempEl) soilTempEl.innerText = '--';
                 if (soilTempNote) soilTempNote.innerText = '--';
-                if (soilTempDot) {
-                    soilTempDot.style.display = '';
-                    soilTempDot.style.left = '55%';
-                }
+                if (soilTempArc) soilTempArc.style.strokeDashoffset = (100.5 * 0.45).toFixed(1);
             }
 
             const soilHumEl = document.getElementById('soil-live-hum-val');
             const soilHumNote = document.getElementById('soil-live-hum-note-val');
-            const soilHumDot = document.getElementById('soil-live-hum-slider-dot');
+            const soilHumArc = document.getElementById('soil-hum-arc');
             const rawSoilHum = w.soil_humidity != null ? w.soil_humidity : (w.soil_moisture != null ? w.soil_moisture : null);
             if (rawSoilHum != null && !isNaN(Number(rawSoilHum))) {
                 const sH = Number(rawSoilHum).toFixed(1);
+                const shPct = Math.max(5, Math.min(95, Math.round(Number(sH))));
                 if (soilHumEl) soilHumEl.innerText = `${sH}%`;
                 if (soilHumNote) soilHumNote.innerText = `Adequate Field Capacity (${sH}%)`;
-                if (soilHumDot) {
-                    soilHumDot.style.display = '';
-                    soilHumDot.style.left = `${Math.max(5, Math.min(95, Math.round(Number(sH))))}%`;
-                }
+                if (soilHumArc) soilHumArc.style.strokeDashoffset = (150.8 * (1 - shPct / 100)).toFixed(1);
             } else {
                 if (soilHumEl) soilHumEl.innerText = '--';
                 if (soilHumNote) soilHumNote.innerText = '--';
-                if (soilHumDot) {
-                    soilHumDot.style.display = '';
-                    soilHumDot.style.left = '35%';
-                }
+                if (soilHumArc) soilHumArc.style.strokeDashoffset = (150.8 * 0.65).toFixed(1);
             }
 
             const soilPhEl = document.getElementById('soil-live-ph-val');
             const soilPhNote = document.getElementById('soil-live-ph-note-val');
-            const soilPhDot = document.getElementById('soil-live-ph-slider-dot');
+            const soilPhNeedle = document.getElementById('soil-ph-needle');
             if (w.soil_ph != null && !isNaN(Number(w.soil_ph))) {
                 const sPh = Number(w.soil_ph).toFixed(2);
                 if (soilPhEl) soilPhEl.innerText = `${sPh}`;
                 const phNum = Number(sPh);
                 const phStatus = (phNum < 6.0) ? 'Slightly Acidic' : ((phNum > 7.5) ? 'Slightly Alkaline' : 'Optimal Neutral');
+                const phPct = Math.max(5, Math.min(95, Math.round(((phNum - 3.0) / (10.0 - 3.0)) * 100)));
                 if (soilPhNote) soilPhNote.innerText = `${phStatus} (${sPh})`;
-                if (soilPhDot) {
-                    soilPhDot.style.display = '';
-                    soilPhDot.style.left = `${Math.max(5, Math.min(95, Math.round(((phNum - 3.0) / (10.0 - 3.0)) * 100)))}%`;
-                }
+                if (soilPhNeedle) soilPhNeedle.style.transform = `rotate(${((phPct - 50) * 2.4).toFixed(1)}deg)`;
             } else {
                 if (soilPhEl) soilPhEl.innerText = '--';
                 if (soilPhNote) soilPhNote.innerText = '--';
-                if (soilPhDot) {
-                    soilPhDot.style.display = '';
-                    soilPhDot.style.left = '50%';
-                }
+                if (soilPhNeedle) soilPhNeedle.style.transform = 'rotate(0deg)';
             }
 
             const soilEcEl = document.getElementById('soil-live-ec-val');
             const soilEcNote = document.getElementById('soil-live-ec-note-val');
-            const soilEcDot = document.getElementById('soil-live-ec-slider-dot');
+            const soilEcArc = document.getElementById('soil-ec-arc');
             if (w.soil_conductivity != null && !isNaN(Number(w.soil_conductivity))) {
                 const sEc = Number(w.soil_conductivity).toFixed(1);
                 if (soilEcEl) soilEcEl.innerText = `${sEc} µS/cm`;
                 const ecNum = Number(sEc);
                 const ecStatus = (ecNum < 40) ? 'Low Salinity (Good)' : ((ecNum > 150) ? 'Elevated Salinity' : 'Balanced Fertility');
+                const ecPct = Math.max(5, Math.min(95, Math.round((ecNum / 200.0) * 100)));
                 if (soilEcNote) soilEcNote.innerText = `${ecStatus} (${sEc})`;
-                if (soilEcDot) {
-                    soilEcDot.style.display = '';
-                    soilEcDot.style.left = `${Math.max(5, Math.min(95, Math.round((ecNum / 200.0) * 100)))}%`;
-                }
+                if (soilEcArc) soilEcArc.style.strokeDashoffset = (100.5 * (1 - ecPct / 100)).toFixed(1);
             } else {
                 if (soilEcEl) soilEcEl.innerText = '--';
                 if (soilEcNote) soilEcNote.innerText = '--';
-                if (soilEcDot) {
-                    soilEcDot.style.display = '';
-                    soilEcDot.style.left = '34%';
-                }
+                if (soilEcArc) soilEcArc.style.strokeDashoffset = (100.5 * 0.66).toFixed(1);
             }
             
             const todayRainEl = document.getElementById('card-today-rain');
@@ -5823,18 +5825,12 @@ async function refreshDashboard(forceNetwork = false) {
             }
             const ambTempEl = document.getElementById('card-weather-temp-val');
             if (ambTempEl) ambTempEl.innerText = '--';
-            const ambTempDot = document.getElementById('weather-temp-slider-dot');
-            if (ambTempDot) {
-                ambTempDot.style.display = '';
-                ambTempDot.style.left = '40%';
-            }
+            const ambTempArc = document.getElementById('weather-temp-arc');
+            if (ambTempArc) ambTempArc.style.strokeDashoffset = (117.3 * 0.6).toFixed(1);
             const ambHumEl = document.getElementById('card-weather-hum-val');
             if (ambHumEl) ambHumEl.innerText = '--';
-            const ambHumDot = document.getElementById('weather-hum-slider-dot');
-            if (ambHumDot) {
-                ambHumDot.style.display = '';
-                ambHumDot.style.left = '35%';
-            }
+            const ambHumArc = document.getElementById('weather-hum-arc');
+            if (ambHumArc) ambHumArc.style.strokeDashoffset = (175.9 * 0.65).toFixed(1);
             const solarEl = document.getElementById('card-solar-val');
             if (solarEl) solarEl.innerText = '-- W/m²';
             const solarNote = document.getElementById('solar-note-val');
@@ -5846,32 +5842,20 @@ async function refreshDashboard(forceNetwork = false) {
             }
             const soilTempEl = document.getElementById('soil-live-temp-val');
             if (soilTempEl) soilTempEl.innerText = '--';
-            const soilTempDot = document.getElementById('soil-live-temp-slider-dot');
-            if (soilTempDot) {
-                soilTempDot.style.display = '';
-                soilTempDot.style.left = '55%';
-            }
+            const soilTempArc = document.getElementById('soil-temp-arc');
+            if (soilTempArc) soilTempArc.style.strokeDashoffset = (100.5 * 0.45).toFixed(1);
             const soilHumEl = document.getElementById('soil-live-hum-val');
             if (soilHumEl) soilHumEl.innerText = '--';
-            const soilHumDot = document.getElementById('soil-live-hum-slider-dot');
-            if (soilHumDot) {
-                soilHumDot.style.display = '';
-                soilHumDot.style.left = '35%';
-            }
+            const soilHumArc = document.getElementById('soil-hum-arc');
+            if (soilHumArc) soilHumArc.style.strokeDashoffset = (150.8 * 0.65).toFixed(1);
             const soilPhEl = document.getElementById('soil-live-ph-val');
             if (soilPhEl) soilPhEl.innerText = '--';
-            const soilPhDot = document.getElementById('soil-live-ph-slider-dot');
-            if (soilPhDot) {
-                soilPhDot.style.display = '';
-                soilPhDot.style.left = '50%';
-            }
+            const soilPhNeedle = document.getElementById('soil-ph-needle');
+            if (soilPhNeedle) soilPhNeedle.style.transform = 'rotate(0deg)';
             const soilEcEl = document.getElementById('soil-live-ec-val');
             if (soilEcEl) soilEcEl.innerText = '--';
-            const soilEcDot = document.getElementById('soil-live-ec-slider-dot');
-            if (soilEcDot) {
-                soilEcDot.style.display = '';
-                soilEcDot.style.left = '34%';
-            }
+            const soilEcArc = document.getElementById('soil-ec-arc');
+            if (soilEcArc) soilEcArc.style.strokeDashoffset = (100.5 * 0.66).toFixed(1);
         }
         
         // WEATHER & SOIL TABLES

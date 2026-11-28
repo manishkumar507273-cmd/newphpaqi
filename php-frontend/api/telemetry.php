@@ -953,7 +953,7 @@ switch ($action) {
             'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order={$orderColLive}&limit={$lim}",
         ];
         if (!$isNode2 && $cachedRainSum === null) {
-            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0&limit=100";
+            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge,created_at&created_at=gte.{$today_utc}&rain_gauge=gt.0&order=created_at.desc.nullslast&limit=100";
         }
 
         $raw = fetchParallel($fetchUrls, $supabaseKey);
@@ -1025,24 +1025,43 @@ switch ($action) {
         }
 
         $today_rain_sum = 0.0;
+        $last_rain_epoch = 0;
         if (isset($raw['today_rain_rows'])) {
             if (!empty($raw['today_rain_rows']) && is_array($raw['today_rain_rows'])) {
                 foreach ($raw['today_rain_rows'] as $r) {
                     $rg = (float)($r['rain_gauge'] ?? 0);
-                    if ($rg > 0) $today_rain_sum += $rg;
+                    if ($rg > 0) {
+                        $today_rain_sum += $rg;
+                        $rTs = $r['created_at'] ?? ($r['timestamp'] ?? null);
+                        if ($rTs) {
+                            $ep = strtotime($rTs);
+                            if ($ep && $ep > $last_rain_epoch) $last_rain_epoch = $ep;
+                        }
+                    }
                 }
             }
-            cacheSet('today_rain_sum_node_' . $reqNode, ['total' => round($today_rain_sum, 2)]);
+            cacheSet('today_rain_sum_node_' . $reqNode, ['total' => round($today_rain_sum, 2), 'last_rain_epoch' => $last_rain_epoch]);
         } elseif ($cachedRainSum !== null && isset($cachedRainSum['total'])) {
             $today_rain_sum = (float)$cachedRainSum['total'];
+            if (!empty($cachedRainSum['last_rain_epoch'])) $last_rain_epoch = (int)$cachedRainSum['last_rain_epoch'];
+        }
+        foreach ($wh as $whItem) {
+            if (isset($whItem['rain_gauge']) && (float)$whItem['rain_gauge'] > 0) {
+                $wEp = strtotime($whItem['timestamp'] ?? ($whItem['created_at'] ?? ''));
+                if ($wEp && $wEp > $last_rain_epoch) $last_rain_epoch = $wEp;
+            }
         }
         if ($res['weather'] && isset($res['weather']['rain_gauge'])) {
             $curRain = (float)$res['weather']['rain_gauge'];
-            if ($curRain > 0 && $today_rain_sum < $curRain) {
-                $today_rain_sum = $curRain;
+            if ($curRain > 0) {
+                if ($today_rain_sum < $curRain) $today_rain_sum = $curRain;
+                $cEp = strtotime($res['weather']['timestamp'] ?? ($res['weather']['created_at'] ?? ''));
+                if ($cEp && $cEp > $last_rain_epoch) $last_rain_epoch = $cEp;
             }
         }
         $res['today_rain_total'] = round($today_rain_sum, 2);
+        $res['last_rain_at'] = $last_rain_epoch > 0 ? date('c', $last_rain_epoch) : null;
+        $res['is_rain_active_1h'] = $last_rain_epoch > 0 && (time() - $last_rain_epoch) <= 3600;
 
         $n2OtherUrl = ($supabaseUrlNode2 ?: ($get_v_env('SUPABASE_URL_NODE2') ?: ($get_v_env('VITE_SUPABASE_URL_NODE2') ?: 'https://nahabhzcaeppbteuxogg.supabase.co'))) . "/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60";
         $n2OtherKey = $supabaseKeyNode2 ?: ($get_v_env('SUPABASE_KEY_NODE2') ?: ($get_v_env('SUPABASE_ANON_KEY_NODE2') ?: ($get_v_env('VITE_SUPABASE_ANON_KEY_NODE2') ?: 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ')));
@@ -1083,6 +1102,16 @@ switch ($action) {
         }
         $res['other_weather'] = $latestOther;
         $res['other_weather_history'] = $otherHist;
+        if ($isNode2 && !empty($otherHist)) {
+            foreach ($otherHist as $owItem) {
+                if (isset($owItem['rain_gauge']) && (float)$owItem['rain_gauge'] > 0) {
+                    $owEp = strtotime($owItem['timestamp'] ?? ($owItem['created_at'] ?? ''));
+                    if ($owEp && $owEp > $last_rain_epoch) $last_rain_epoch = $owEp;
+                }
+            }
+            $res['last_rain_at'] = $last_rain_epoch > 0 ? date('c', $last_rain_epoch) : $res['last_rain_at'];
+            $res['is_rain_active_1h'] = $last_rain_epoch > 0 && (time() - $last_rain_epoch) <= 3600;
+        }
 
         cacheSet($ckey, $res);
         cacheSet("overview_bulk_node_{$reqNode}", $res);
@@ -1121,7 +1150,7 @@ switch ($action) {
             'weather_hist' => "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=*&order={$orderColLive}&limit={$lim}",
         ];
         if (!$isNode2 && $cachedRainSum === null) {
-            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge&created_at=gte.{$today_utc}&rain_gauge=gt.0&limit=100";
+            $fetchUrls['today_rain_rows'] = "{$supabaseUrl}/rest/v1/{$TABLE_WEATHER_LIVE}?select=rain_gauge,created_at&created_at=gte.{$today_utc}&rain_gauge=gt.0&order=created_at.desc.nullslast&limit=100";
         }
 
         $raw = fetchParallel($fetchUrls, $supabaseKey);
@@ -1202,24 +1231,43 @@ switch ($action) {
         }
 
         $today_rain_sum = 0.0;
+        $last_rain_epoch = 0;
         if (isset($raw['today_rain_rows'])) {
             if (!empty($raw['today_rain_rows']) && is_array($raw['today_rain_rows'])) {
                 foreach ($raw['today_rain_rows'] as $r) {
                     $rg = (float)($r['rain_gauge'] ?? 0);
-                    if ($rg > 0) $today_rain_sum += $rg;
+                    if ($rg > 0) {
+                        $today_rain_sum += $rg;
+                        $rTs = $r['created_at'] ?? ($r['timestamp'] ?? null);
+                        if ($rTs) {
+                            $ep = strtotime($rTs);
+                            if ($ep && $ep > $last_rain_epoch) $last_rain_epoch = $ep;
+                        }
+                    }
                 }
             }
-            cacheSet('today_rain_sum_node_' . $reqNode, ['total' => round($today_rain_sum, 2)]);
+            cacheSet('today_rain_sum_node_' . $reqNode, ['total' => round($today_rain_sum, 2), 'last_rain_epoch' => $last_rain_epoch]);
         } elseif ($cachedRainSum !== null && isset($cachedRainSum['total'])) {
             $today_rain_sum = (float)$cachedRainSum['total'];
+            if (!empty($cachedRainSum['last_rain_epoch'])) $last_rain_epoch = (int)$cachedRainSum['last_rain_epoch'];
+        }
+        foreach ($wh as $whItem) {
+            if (isset($whItem['rain_gauge']) && (float)$whItem['rain_gauge'] > 0) {
+                $wEp = strtotime($whItem['timestamp'] ?? ($whItem['created_at'] ?? ''));
+                if ($wEp && $wEp > $last_rain_epoch) $last_rain_epoch = $wEp;
+            }
         }
         if ($res['weather'] && isset($res['weather']['rain_gauge'])) {
             $curRain = (float)$res['weather']['rain_gauge'];
-            if ($curRain > 0 && $today_rain_sum < $curRain) {
-                $today_rain_sum = $curRain;
+            if ($curRain > 0) {
+                if ($today_rain_sum < $curRain) $today_rain_sum = $curRain;
+                $cEp = strtotime($res['weather']['timestamp'] ?? ($res['weather']['created_at'] ?? ''));
+                if ($cEp && $cEp > $last_rain_epoch) $last_rain_epoch = $cEp;
             }
         }
         $res['today_rain_total'] = round($today_rain_sum, 2);
+        $res['last_rain_at'] = $last_rain_epoch > 0 ? date('c', $last_rain_epoch) : null;
+        $res['is_rain_active_1h'] = $last_rain_epoch > 0 && (time() - $last_rain_epoch) <= 3600;
 
         $n2OtherUrl = ($supabaseUrlNode2 ?: ($get_v_env('SUPABASE_URL_NODE2') ?: ($get_v_env('VITE_SUPABASE_URL_NODE2') ?: 'https://nahabhzcaeppbteuxogg.supabase.co'))) . "/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60";
         $n2OtherKey = $supabaseKeyNode2 ?: ($get_v_env('SUPABASE_KEY_NODE2') ?: ($get_v_env('SUPABASE_ANON_KEY_NODE2') ?: ($get_v_env('VITE_SUPABASE_ANON_KEY_NODE2') ?: 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ')));
@@ -1260,6 +1308,16 @@ switch ($action) {
         }
         $res['other_weather'] = $latestOther;
         $res['other_weather_history'] = $otherHist;
+        if ($isNode2 && !empty($otherHist)) {
+            foreach ($otherHist as $owItem) {
+                if (isset($owItem['rain_gauge']) && (float)$owItem['rain_gauge'] > 0) {
+                    $owEp = strtotime($owItem['timestamp'] ?? ($owItem['created_at'] ?? ''));
+                    if ($owEp && $owEp > $last_rain_epoch) $last_rain_epoch = $owEp;
+                }
+            }
+            $res['last_rain_at'] = $last_rain_epoch > 0 ? date('c', $last_rain_epoch) : $res['last_rain_at'];
+            $res['is_rain_active_1h'] = $last_rain_epoch > 0 && (time() - $last_rain_epoch) <= 3600;
+        }
 
         if ($res['aqi'] !== null || $res['weather'] !== null) {
             cacheSet($ckey, $res);

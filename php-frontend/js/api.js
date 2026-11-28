@@ -486,13 +486,13 @@ async function fetchLiveBulk(forceNetwork = false) {
         const urlWeather = `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=*&order=${orderCol}&limit=60`;
         const urlOtherWeather = `${cfgN2.url}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60`;
         const urlTodayRain = !isNode2
-            ? `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=rain_gauge&created_at=gte.${encodeURIComponent(midnightIstIso)}&rain_gauge=gt.0&limit=500`
-            : null;
+            ? `${cfg.url}/rest/v1/${cfg.tableWeatherLive}?select=rain_gauge,created_at&created_at=gte.${encodeURIComponent(midnightIstIso)}&rain_gauge=gt.0&order=created_at.desc.nullslast&limit=500`
+            : `${cfgN2.url}/rest/v1/WEATHER_LIVE_NODE2?select=rain_gauge,timestamp&timestamp=gte.${encodeURIComponent(midnightIstIso)}&rain_gauge=gt.0&order=id.desc&limit=500`;
 
         const [resAqi, resWeather, resTodayRain, resOtherWeather] = await Promise.all([
             fetch(urlAqi, { headers, cache: 'no-cache' }),
             fetch(urlWeather, { headers, cache: 'no-cache' }),
-            urlTodayRain ? fetch(urlTodayRain, { headers, cache: 'no-cache' }).catch(() => null) : Promise.resolve(null),
+            urlTodayRain ? fetch(urlTodayRain, { headers: isNode2 ? headersN2 : headers, cache: 'no-cache' }).catch(() => null) : Promise.resolve(null),
             fetch(urlOtherWeather, { headers: headersN2, cache: 'no-cache' }).catch(() => null)
         ]);
 
@@ -578,14 +578,26 @@ async function fetchLiveBulk(forceNetwork = false) {
             if (!latestAqi.coords_display && coordsDisplay) latestAqi.coords_display = coordsDisplay;
         }
 
-        // Calculate today's rain sum & temperature range from readings
+        // Calculate today's rain sum, latest rain timestamp, & temperature range from readings
         let todayRainSum = 0.0;
+        let lastRainMs = 0;
         const todayTemps = [];
+        const recordRainTs = (tsRaw) => {
+            if (!tsRaw) return;
+            const dt = safeParseDate(parseToIstIso(tsRaw));
+            if (dt && !isNaN(dt.getTime())) {
+                const ms = dt.getTime();
+                if (ms > lastRainMs && ms <= Date.now() + 300000) lastRainMs = ms;
+            }
+        };
 
         if (Array.isArray(todayRainRawList)) {
             todayRainRawList.forEach(r => {
                 const rg = r && r.rain_gauge != null ? Number(r.rain_gauge) : 0;
-                if (!isNaN(rg) && rg > 0) todayRainSum += rg;
+                if (!isNaN(rg) && rg > 0) {
+                    todayRainSum += rg;
+                    recordRainTs(r.created_at || r.timestamp);
+                }
             });
         }
 
@@ -600,12 +612,25 @@ async function fetchLiveBulk(forceNetwork = false) {
                     todayRainSum += Number(w.rain_gauge);
                 }
             }
+            if (w.rain_gauge != null && Number(w.rain_gauge) > 0) {
+                recordRainTs(w.timestamp || w.created_at);
+            }
         });
 
-        if (latestWeather && latestWeather.rain_gauge != null && Number(latestWeather.rain_gauge) > todayRainSum) {
-            todayRainSum = Number(latestWeather.rain_gauge);
+        otherWeatherHist.forEach(ow => {
+            if (ow && ow.rain_gauge != null && Number(ow.rain_gauge) > 0) {
+                if (isNode2) recordRainTs(ow.timestamp || ow.created_at);
+            }
+        });
+
+        if (latestWeather && latestWeather.rain_gauge != null && Number(latestWeather.rain_gauge) > 0) {
+            if (Number(latestWeather.rain_gauge) > todayRainSum) {
+                todayRainSum = Number(latestWeather.rain_gauge);
+            }
+            recordRainTs(latestWeather.timestamp || latestWeather.created_at);
         }
 
+        const RAIN_HOLD_MS = 3600000;
         const bulkData = {
             node: activeNode,
             status: 'ONLINE',
@@ -617,6 +642,8 @@ async function fetchLiveBulk(forceNetwork = false) {
             other_weather_history: otherWeatherHist,
             history: aqiHist,
             today_rain_total: Number(todayRainSum.toFixed(2)),
+            last_rain_at: lastRainMs > 0 ? new Date(lastRainMs).toISOString() : null,
+            is_rain_active_1h: lastRainMs > 0 && (Date.now() - lastRainMs) <= RAIN_HOLD_MS,
             today_temp_min: todayTemps.length > 0 ? Number(Math.min(...todayTemps).toFixed(1)) : (latestWeather && latestWeather.temperature != null ? Number(latestWeather.temperature) : 28.0),
             today_temp_max: todayTemps.length > 0 ? Number(Math.max(...todayTemps).toFixed(1)) : (latestWeather && latestWeather.temperature != null ? Number(latestWeather.temperature) : 34.0),
             latitude: lat,
@@ -962,6 +989,67 @@ async function getLiveAqi() {
     return null;
 }
 window.getLiveAqi = getLiveAqi;
+
+/**
+ * Resolve whether overview rain animation should remain active for 1 hour (3,600,000 ms) after any rain_gauge > 0 reading.
+ */
+window.resolveRainHold1h = function(nodeId, w, bulkData) {
+    const HOLD_MS = 3600000;
+    const nowMs = Date.now();
+    const nid = String(nodeId || '1') === '2' ? '2' : '1';
+    const lsKey = `smartairnet_last_rain_ms_n${nid}`;
+    let latestMs = 0;
+
+    const considerTs = (tsRaw) => {
+        if (!tsRaw) return;
+        const dt = safeParseDate(tsRaw);
+        if (dt && !isNaN(dt.getTime())) {
+            const ms = dt.getTime();
+            if (ms > latestMs && ms <= nowMs + 300000) latestMs = ms;
+        }
+    };
+
+    try {
+        const stored = Number(localStorage.getItem(lsKey) || 0);
+        if (stored > 0 && stored <= nowMs + 300000 && (nowMs - stored) <= HOLD_MS) {
+            latestMs = stored;
+        }
+    } catch (e) {}
+
+    if (w && w.rain_gauge != null && Number(w.rain_gauge) > 0) {
+        considerTs(w.timestamp || w.created_at);
+        if (latestMs === 0) latestMs = nowMs;
+    }
+
+    if (bulkData) {
+        if (bulkData.last_rain_at) considerTs(bulkData.last_rain_at);
+        const histLists = [
+            Array.isArray(bulkData.weather_history) ? bulkData.weather_history : [],
+            nid === '2' && Array.isArray(bulkData.other_weather_history) ? bulkData.other_weather_history : []
+        ];
+        histLists.forEach(list => {
+            list.forEach(item => {
+                if (item && item.rain_gauge != null && Number(item.rain_gauge) > 0) {
+                    considerTs(item.timestamp || item.created_at);
+                }
+            });
+        });
+    }
+
+    const active = latestMs > 0 && (nowMs - latestMs) <= HOLD_MS;
+    try {
+        if (active) {
+            localStorage.setItem(lsKey, String(latestMs));
+        } else {
+            localStorage.removeItem(lsKey);
+        }
+    } catch (e) {}
+
+    return {
+        active,
+        remainingMs: active ? Math.max(0, HOLD_MS - (nowMs - latestMs)) : 0
+    };
+};
 
 // Ensure initial sync and icons
 document.addEventListener("DOMContentLoaded", () => {

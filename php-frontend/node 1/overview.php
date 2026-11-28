@@ -127,6 +127,25 @@ if (!empty($init_bulk['weather'])) {
 }
 
 $init_is_raining = (!empty($init_bulk['weather']['rain_gauge']) && (float)$init_bulk['weather']['rain_gauge'] > 0);
+if (!$init_is_raining && !empty($init_bulk)) {
+    if (!empty($init_bulk['is_rain_active_1h'])) {
+        $init_is_raining = true;
+    } elseif (!empty($init_bulk['last_rain_at'])) {
+        $lrEp = strtotime($init_bulk['last_rain_at']);
+        if ($lrEp && (time() - $lrEp) <= 3600) $init_is_raining = true;
+    }
+    if (!$init_is_raining && !empty($init_bulk['weather_history']) && is_array($init_bulk['weather_history'])) {
+        foreach ($init_bulk['weather_history'] as $whRow) {
+            if (isset($whRow['rain_gauge']) && (float)$whRow['rain_gauge'] > 0) {
+                $whEp = strtotime($whRow['timestamp'] ?? ($whRow['created_at'] ?? ''));
+                if ($whEp && (time() - $whEp) <= 3600) {
+                    $init_is_raining = true;
+                    break;
+                }
+            }
+        }
+    }
+}
 if (isset($_GET['rain'])) {
     $init_is_raining = ($_GET['rain'] === '1' || $_GET['rain'] === 'true');
 }
@@ -1343,12 +1362,25 @@ async function refreshData(isSilent = false, forceNetwork = false) {
                 document.getElementById('eq-'+i).style.backgroundColor = wkmh >= (i*2.5) ? '#059669' : '#e2e8f0';
             }
             
-            // Rain (Live & Today's Rain in one card)
-            const isRaining = rain != null && Number(rain) > 0;
-            isRainingGlobal = isRaining;
+            // Rain (Live & Today's Rain in one card; animation persists for 1 hour after rain)
+            const rainHold = (typeof window.resolveRainHold1h === 'function')
+                ? window.resolveRainHold1h('1', w, bulkData)
+                : { active: (rain != null && Number(rain) > 0), remainingMs: 0 };
+            let isRaining = Boolean(rainHold.active);
             const overviewUrlParams = new URLSearchParams(window.location.search);
             if (overviewUrlParams.has('rain')) {
-                isRainingGlobal = (overviewUrlParams.get('rain') === '1' || overviewUrlParams.get('rain') === 'true');
+                isRaining = (overviewUrlParams.get('rain') === '1' || overviewUrlParams.get('rain') === 'true');
+            }
+            isRainingGlobal = isRaining;
+            if (window.__rainExpiryTimer) {
+                clearTimeout(window.__rainExpiryTimer);
+                window.__rainExpiryTimer = null;
+            }
+            if (isRaining && !overviewUrlParams.has('rain') && rainHold.remainingMs > 0) {
+                window.__rainExpiryTimer = setTimeout(() => {
+                    isRainingGlobal = false;
+                    applyRainVisualState(false);
+                }, rainHold.remainingMs + 50);
             }
             rawLiveRain = rain != null ? Number(rain) : 0;
             let currentTodayRain = (bulkData && bulkData.today_rain_total != null) ? Number(bulkData.today_rain_total) : 0;
@@ -1358,14 +1390,21 @@ async function refreshData(isSilent = false, forceNetwork = false) {
             rawTodayRain = currentTodayRain;
             
             updateRainDisplay();
-            
-            document.getElementById('card-rain').style.borderColor = isRaining ? '#7dd3fc' : '#c7d2fe';
-            document.getElementById('rain-grad').style.background = isRaining ? 'linear-gradient(90deg, #0284c7, #38bdf8)' : 'linear-gradient(90deg, #6366f1, #0284c7)';
-            document.getElementById('rain-icon-bg').style.backgroundColor = isRaining ? '#f0f9ff' : '#eef2ff';
-            document.getElementById('rain-icon-bg').style.color = isRaining ? '#0284c7' : '#4f46e5';
-            document.getElementById('rain-icon-bg').style.borderColor = isRaining ? '#bae6fd' : '#c7d2fe';
 
-            applyRainHeroSwitch(isRaining);
+            function applyRainVisualState(active) {
+                const cRain = document.getElementById('card-rain');
+                const cGrad = document.getElementById('rain-grad');
+                const cBg = document.getElementById('rain-icon-bg');
+                if (cRain) cRain.style.borderColor = active ? '#7dd3fc' : '#c7d2fe';
+                if (cGrad) cGrad.style.background = active ? 'linear-gradient(90deg, #0284c7, #38bdf8)' : 'linear-gradient(90deg, #6366f1, #0284c7)';
+                if (cBg) {
+                    cBg.style.backgroundColor = active ? '#f0f9ff' : '#eef2ff';
+                    cBg.style.color = active ? '#0284c7' : '#4f46e5';
+                    cBg.style.borderColor = active ? '#bae6fd' : '#c7d2fe';
+                }
+                applyRainHeroSwitch(active);
+            }
+            applyRainVisualState(isRaining);
 
         }
 
@@ -1869,6 +1908,10 @@ window.__cleanupCurrentPage = function() {
         clearInterval(autoRefreshOverviewTimer);
         autoRefreshOverviewTimer = null;
     }
+    if (window.__rainExpiryTimer) {
+        clearTimeout(window.__rainExpiryTimer);
+        window.__rainExpiryTimer = null;
+    }
     if (typeof mobileChartInstance !== 'undefined' && mobileChartInstance) {
         try { mobileChartInstance.destroy(); } catch(e) {}
         mobileChartInstance = null;
@@ -1913,10 +1956,28 @@ window.addEventListener('resize', () => {
     }
 });
 
+function initOverviewRainHold() {
+    const p = new URLSearchParams(window.location.search);
+    if (p.has('rain')) {
+        isRainingGlobal = (p.get('rain') === '1' || p.get('rain') === 'true');
+        applyRainHeroSwitch(isRainingGlobal);
+        return;
+    }
+    if (typeof window.resolveRainHold1h === 'function') {
+        const initBulk = window.INITIAL_DATA || null;
+        const initW = initBulk ? initBulk.weather : null;
+        const hold = window.resolveRainHold1h('1', initW, initBulk);
+        isRainingGlobal = Boolean(hold.active || <?= $init_is_raining ? 'true' : 'false' ?>);
+        applyRainHeroSwitch(isRainingGlobal);
+    } else {
+        applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
+    }
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", () => {
         initCanvas();
-        applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
+        initOverviewRainHold();
         setupCarouselScrollListener();
         restoreOverviewState();
         refreshData(false);
@@ -1924,7 +1985,7 @@ if (document.readyState === 'loading') {
     });
 } else {
     initCanvas();
-    applyRainHeroSwitch(<?= $init_is_raining ? 'true' : 'false' ?>);
+    initOverviewRainHold();
     setupCarouselScrollListener();
     restoreOverviewState();
     refreshData(false);

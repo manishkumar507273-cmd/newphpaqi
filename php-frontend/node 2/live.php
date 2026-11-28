@@ -3565,13 +3565,13 @@ body.soil-backdrop-active header {
             <thead style="position: sticky; top: 0; z-index: 1; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, 0.14);">
               <tr>
                 <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Timestamp (IST)</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #f472b6; font-size: 12px; white-space: nowrap;">Pressure (mb)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #60a5fa; font-size: 12px; white-space: nowrap;">Rain (mm)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #34d399; font-size: 12px; white-space: nowrap;">Wind Speed</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Wind Dir</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #2dd4bf; font-size: 12px; white-space: nowrap;">Wind Gust</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #fb7185; font-size: 12px; white-space: nowrap;">UV Index</th>
                 <th style="padding: 12px 14px; font-weight: 700; color: #f59e0b; font-size: 12px; white-space: nowrap;">Solar (W/m²)</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #34d399; font-size: 12px; white-space: nowrap;">Wind Speed</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #2dd4bf; font-size: 12px; white-space: nowrap;">Wind Gust</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #cbd5e1; font-size: 12px; white-space: nowrap;">Wind Dir</th>
-                <th style="padding: 12px 14px; font-weight: 700; color: #60a5fa; font-size: 12px; white-space: nowrap;">Rain (mm)</th>
+                <th style="padding: 12px 14px; font-weight: 700; color: #f472b6; font-size: 12px; white-space: nowrap;">Pressure (mb)</th>
               </tr>
             </thead>
             <tbody id="weather-tbody">
@@ -3604,13 +3604,13 @@ body.soil-backdrop-active header {
                 ?>
                   <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: <?= $rowBg ?>;">
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #ffffff; white-space: nowrap; font-weight: 600;"><?= htmlspecialchars($timeStr) ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;"><?= $rPress ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #60a5fa; white-space: nowrap;"><?= $rRain ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #34d399; white-space: nowrap;"><?= $rWSpd ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;"><?= htmlspecialchars($rDir) ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;"><?= $rGust ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb7185; white-space: nowrap;"><?= $rUv ?></td>
                     <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f59e0b; white-space: nowrap;"><?= $rSolar ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #34d399; white-space: nowrap;"><?= $rWSpd ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;"><?= $rGust ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;"><?= htmlspecialchars($rDir) ?></td>
-                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #60a5fa; white-space: nowrap;"><?= $rRain ?></td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;"><?= $rPress ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php else: ?>
@@ -4856,13 +4856,13 @@ function renderWeatherLiveTable(hist) {
         const rowBg = (i % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
         return `<tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background-color: ${rowBg};">
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #ffffff; white-space: nowrap; font-weight: 600;">${timeStr}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;">${press}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #60a5fa; white-space: nowrap;">${rain}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #34d399; white-space: nowrap;">${wSpd}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;">${dir}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;">${gust}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #fb7185; white-space: nowrap;">${uv}</td>
           <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f59e0b; white-space: nowrap;">${solar}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #34d399; white-space: nowrap;">${wSpd}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #2dd4bf; white-space: nowrap;">${gust}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #cbd5e1; white-space: nowrap;">${dir}</td>
-          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #60a5fa; white-space: nowrap;">${rain}</td>
+          <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 600; color: #f472b6; white-space: nowrap;">${press}</td>
         </tr>`;
     }).join('');
 

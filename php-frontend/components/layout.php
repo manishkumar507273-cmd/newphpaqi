@@ -167,13 +167,14 @@ window.syncNavLinksNode = function(nodeId) {
             if (!rawHref || rawHref.indexOf('?page=') === -1) return;
             var u = new URL(rawHref, window.location.origin);
             u.searchParams.set('node', nid);
-            a.setAttribute('href', '?' + u.searchParams.toString());
+            a.setAttribute('href', '/?' + u.searchParams.toString());
         });
     } catch(e) {}
 };
 
 window.switchActiveNode = function(nodeId, ev) {
     if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
     if (nodeId !== '1' && nodeId !== '2') nodeId = '1';
     try {
         localStorage.setItem('smartairnet_selected_node', nodeId);
@@ -204,6 +205,9 @@ window.switchActiveNode = function(nodeId, ev) {
     } catch(e) {}
 
     var url = new URL(window.location.href);
+    var activePage = url.searchParams.get('page') || window.__currentPage || 'overview';
+    url.pathname = '/';
+    url.searchParams.set('page', activePage);
     url.searchParams.set('node', nodeId);
     if (nodeId === '1') {
         if (url.searchParams.get('tab') === 'soil') url.searchParams.delete('tab');
@@ -717,7 +721,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
   </div>
 
   <!-- Sticky Header with Safe-Area Inset -->
-  <header class="px-3 sm:px-4 md:px-6" style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 50; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;">
+  <header class="px-3 sm:px-4 md:px-6" style="min-height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: 0; z-index: 1000; background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); width: 100%; box-sizing: border-box; transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;">
     
     <!-- Left: Desktop Brand & Mobile Header Selector -->
     <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">

@@ -292,6 +292,7 @@ if (in_array($page, $protected_pages) && !$is_logged_in) {
 }
 
 if ($is_ajax) {
+    @ini_set('display_errors', '0');
     ob_start();
     $node_folder = ($active_node_id === '2') ? 'node 2' : 'node 1';
     $page_file = __DIR__ . '/' . $node_folder . '/' . $page . '.php';

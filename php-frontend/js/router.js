@@ -86,11 +86,14 @@
 
             urlObj.searchParams.set('page', targetPage);
             urlObj.searchParams.set('node', activeNode);
-            const fetchQuery = '?' + urlObj.searchParams.toString();
+            const fetchQuery = '/?' + urlObj.searchParams.toString();
+            const pfController = new AbortController();
+            const pfTimeout = setTimeout(() => { try { pfController.abort(); } catch (e) {} }, 8000);
             const p = fetch(fetchQuery, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                signal: pfController.signal
             })
-                .then(res => res.json())
+                .then(res => res.ok ? res.json() : null)
                 .then(data => {
                     if (data && data.success) {
                         pageCache.set(cacheKey, { data, time: Date.now() });
@@ -99,6 +102,7 @@
                 })
                 .catch(() => null)
                 .finally(() => {
+                    clearTimeout(pfTimeout);
                     inFlightPrefetches.delete(cacheKey);
                 });
             inFlightPrefetches.set(cacheKey, p);
@@ -302,7 +306,7 @@
             urlObj.searchParams.set('page', targetPage);
             urlObj.searchParams.set('node', targetNode);
             targetTab = urlObj.searchParams.get('tab') || '';
-            fetchQuery = '?' + urlObj.searchParams.toString();
+            fetchQuery = '/?' + urlObj.searchParams.toString();
         } catch (e) {
             targetPage = 'overview';
         }
@@ -584,13 +588,6 @@
     });
 
     document.addEventListener('pointerdown', (e) => {
-        const link = e.target.closest('a[href*="?page="]');
-        if (link) {
-            prefetchPage(link.getAttribute('href'));
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchstart', (e) => {
         const link = e.target.closest('a[href*="?page="]');
         if (link) {
             prefetchPage(link.getAttribute('href'));

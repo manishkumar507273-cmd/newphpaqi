@@ -27,7 +27,15 @@ $is_node_2 = ($active_node === '2');
 $supabaseUrlNode1 = 'https://sgkdpliqlhgiqsabxzxe.supabase.co';
 $supabaseKeyNode1 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30';
 $supabaseUrlNode2 = getenv('SUPABASE_URL_NODE2') ?: (getenv('VITE_SUPABASE_URL_NODE2') ?: 'https://nahabhzcaeppbteuxogg.supabase.co');
-$supabaseKeyNode2 = getenv('SUPABASE_KEY_NODE2') ?: (getenv('SUPABASE_ANON_KEY_NODE2') ?: (getenv('VITE_SUPABASE_ANON_KEY_NODE2') ?: ''));
+$supabaseKeyNode2 = getenv('VITE_SUPABASE_ANON_KEY_NODE2') ?: (getenv('SUPABASE_ANON_KEY_NODE2') ?: '');
+$supabaseBrowserKeyNode2 = $supabaseKeyNode2;
+if (!$supabaseKeyNode2) {
+    $envKeyN2 = getenv('SUPABASE_KEY_NODE2') ?: '';
+    if ($envKeyN2 && strpos($envKeyN2, 'sb_secret_') !== 0) {
+        $supabaseKeyNode2 = $envKeyN2;
+        $supabaseBrowserKeyNode2 = $envKeyN2;
+    }
+}
 
 foreach ($env_paths as $ep) {
     if (file_exists($ep)) {
@@ -40,10 +48,23 @@ foreach ($env_paths as $ep) {
                 if (($k === 'VITE_SUPABASE_URL' || $k === 'SUPABASE_URL') && $v) $supabaseUrlNode1 = $v;
                 if (($k === 'VITE_SUPABASE_ANON_KEY' || $k === 'SUPABASE_KEY') && $v) $supabaseKeyNode1 = $v;
                 if (($k === 'VITE_SUPABASE_URL_NODE2' || $k === 'SUPABASE_URL_NODE2') && $v) $supabaseUrlNode2 = $v;
-                if (($k === 'SUPABASE_KEY_NODE2' || $k === 'SUPABASE_ANON_KEY_NODE2' || $k === 'VITE_SUPABASE_ANON_KEY_NODE2') && $v) $supabaseKeyNode2 = $v;
+                if (($k === 'SUPABASE_ANON_KEY_NODE2' || $k === 'VITE_SUPABASE_ANON_KEY_NODE2') && $v) {
+                    $supabaseBrowserKeyNode2 = $v;
+                    if (!$supabaseKeyNode2 || strpos($supabaseKeyNode2, 'sb_secret_') === 0) $supabaseKeyNode2 = $v;
+                }
+                if ($k === 'SUPABASE_KEY_NODE2' && $v && strpos($v, 'sb_secret_') !== 0) {
+                    $supabaseKeyNode2 = $v;
+                    if (!$supabaseBrowserKeyNode2) $supabaseBrowserKeyNode2 = $v;
+                }
             }
         }
     }
+}
+if (!$supabaseBrowserKeyNode2) {
+    $supabaseBrowserKeyNode2 = 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ';
+}
+if (!$supabaseKeyNode2) {
+    $supabaseKeyNode2 = $supabaseBrowserKeyNode2;
 }
 
 if ($is_node_2) {

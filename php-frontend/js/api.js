@@ -379,7 +379,7 @@ function formatRawReadingClient(raw) {
         aqi_info: { value: cpcb_aqi, label: label, color: color, standard: 'CPCB (India)' },
         wind_speed: (raw.wind_speed != null) ? Number(Number(raw.wind_speed).toFixed(2)) : null,
         wind_gust: (raw.wind_gust != null) ? Number(Number(raw.wind_gust).toFixed(2)) : ((raw.gust != null) ? Number(Number(raw.gust).toFixed(2)) : null),
-        wind_direction: raw.wind_direction || null,
+        wind_direction: (raw.wind_direction !== undefined && raw.wind_direction !== null && raw.wind_direction !== '') ? raw.wind_direction : null,
         rain_gauge: (raw.rain_gauge != null) ? Number(Number(raw.rain_gauge).toFixed(2)) : ((raw.rain != null) ? Number(Number(raw.rain).toFixed(2)) : null),
         latitude: rawLat,
         longitude: rawLon,
@@ -406,7 +406,7 @@ function formatWeatherReadingClient(raw) {
         wind_speed: (raw.wind_speed != null) ? Number(Number(raw.wind_speed).toFixed(2)) : null,
         wind_gust: (raw.wind_gust != null) ? Number(Number(raw.wind_gust).toFixed(2)) : null,
         rain_gauge: (raw.rain_gauge != null) ? Number(Number(raw.rain_gauge).toFixed(2)) : null,
-        wind_direction: raw.wind_direction || null,
+        wind_direction: (raw.wind_direction !== undefined && raw.wind_direction !== null && raw.wind_direction !== '') ? raw.wind_direction : null,
         soil_temperature: sTemp,
         soil_humidity: sHum,
         soil_moisture: sHum,
@@ -755,7 +755,8 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode
 
     if (!force) {
         const cached = getLocalCache(storageKey);
-        if (cached && (cached.aqi?.length || cached.weather?.length)) {
+        const hasOtherWeather = Array.isArray(cached?.other_weather) && cached.other_weather.length > 0;
+        if (cached && (cached.aqi?.length || cached.weather?.length) && hasOtherWeather) {
             if (Date.now() - (cached.fetchedAt || 0) < maxAge) {
                 return cached;
             }
@@ -818,7 +819,7 @@ async function fetchHistoryBulk(queryDate, days = 1, force = false, explicitNode
 
         if (otherWeatherList.length === 0) {
             try {
-                const fbOtherRes = await fetch(`${cfgN2.url}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60`, { headers: headersN2 });
+                const fbOtherRes = await fetch(`${cfgN2.url}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=500`, { headers: headersN2 });
                 if (fbOtherRes.ok) {
                     const fbOtherJson = await fbOtherRes.json();
                     if (Array.isArray(fbOtherJson) && fbOtherJson.length > 0) {

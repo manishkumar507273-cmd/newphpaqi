@@ -1323,7 +1323,7 @@ switch ($action) {
         $raw = fetchParallel($urls, $supabaseKey);
         $rawOther = fetchSupabase("{$n2HistUrlBase}/rest/v1/WEATHER_NODE2?select=*&order=timestamp.desc&limit={$lim}{$n2Filter}", $n2HistKey);
         if (empty($rawOther)) {
-            $rawOther = fetchSupabase("{$n2HistUrlBase}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=60", $n2HistKey);
+            $rawOther = fetchSupabase("{$n2HistUrlBase}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=500", $n2HistKey);
         }
 
         if ($isNode2 && empty($raw['weather'])) {

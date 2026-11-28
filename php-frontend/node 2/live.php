@@ -355,7 +355,7 @@ $init_weather_temp = ($amb_temp_raw !== null && is_numeric($amb_temp_raw)) ? num
 $init_weather_hum = ($amb_hum_raw !== null && is_numeric($amb_hum_raw)) ? number_format((float)$amb_hum_raw, 1) . '%' : '--%';
 $init_weather_rain = isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '--';
 $init_weather_wind = isset($w_d['wind_speed']) && is_numeric($w_d['wind_speed']) ? number_format((float)$w_d['wind_speed'], 1) . ' km/h' : '--';
-$init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) . ' m/s' : '--';
+$init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) . ' km/h' : '--';
 
 // Telemetry-driven Latitude & Longitude coordinate resolution
 $init_lat = null;
@@ -429,7 +429,7 @@ if (!function_exists('smartairnet_parse_wind_direction')) {
     }
 }
 
-$parsed_wind = !empty($w_d['wind_direction']) ? smartairnet_parse_wind_direction($w_d['wind_direction']) : null;
+$parsed_wind = (isset($w_d['wind_direction']) && $w_d['wind_direction'] !== '') ? smartairnet_parse_wind_direction($w_d['wind_direction']) : null;
 if ($parsed_wind) {
     $compass_angle = $parsed_wind['deg'];
     $init_weather_cardinal = $parsed_wind['cardinal'];
@@ -3591,8 +3591,8 @@ body.soil-backdrop-active header {
                   $dirVal = (isset($row['wind_direction']) && $row['wind_direction'] !== '') ? $row['wind_direction'] : null;
                   $rainVal = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? $row['rain_gauge'] : null;
                   $rWSpd = is_numeric($wSpdVal) ? number_format((float)$wSpdVal, 1) . ' km/h' : '--';
-                  $rGust = is_numeric($gustVal) ? number_format((float)$gustVal, 1) . ' m/s' : '--';
-                  $rDir = ($dirVal !== null && $dirVal !== '') ? (smartairnet_parse_wind_direction($dirVal)['cardinal'] ?? (string)$dirVal) : '--';
+                  $rGust = is_numeric($gustVal) ? number_format((float)$gustVal, 1) . ' km/h' : '--';
+                  $rDir = ($dirVal !== null && $dirVal !== '') ? (smartairnet_parse_wind_direction($dirVal)['display'] ?? (string)$dirVal) : '--';
                   $rRain = is_numeric($rainVal) ? number_format((float)$rainVal, 1) . ' mm' : '--';
                   $rowBg = ($i % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
                 ?>
@@ -4839,7 +4839,7 @@ function renderWeatherLiveTable(hist) {
         const dirSrc = (row.wind_direction != null && row.wind_direction !== '') ? row.wind_direction : null;
         const rainSrc = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? row.rain_gauge : null;
         const wSpd = (wSpdSrc != null && !isNaN(Number(wSpdSrc))) ? `${Number(wSpdSrc).toFixed(1)} km/h` : '--';
-        const gust = (gustSrc != null && !isNaN(Number(gustSrc))) ? `${Number(gustSrc).toFixed(1)} m/s` : '--';
+        const gust = (gustSrc != null && !isNaN(Number(gustSrc))) ? `${Number(gustSrc).toFixed(1)} km/h` : '--';
         const dir = (dirSrc != null && dirSrc !== '') ? (typeof getCompassDir === 'function' ? getCompassDir(dirSrc) : dirSrc) : '--';
         const rain = (rainSrc != null && !isNaN(Number(rainSrc))) ? `${Number(rainSrc).toFixed(1)} mm` : '--';
 
@@ -5296,7 +5296,7 @@ async function refreshDashboard(forceNetwork = false) {
 
             const cardGustVal = document.getElementById('card-gust-val');
             if (cardGustVal) {
-                cardGustVal.innerText = (w.wind_gust != null && !isNaN(Number(w.wind_gust))) ? (Number(w.wind_gust).toFixed(1) + ' m/s') : '--';
+                cardGustVal.innerText = (w.wind_gust != null && !isNaN(Number(w.wind_gust))) ? (Number(w.wind_gust).toFixed(1) + ' km/h') : '--';
             }
 
             const cardRainVal = document.getElementById('card-rain-val');

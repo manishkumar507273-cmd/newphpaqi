@@ -114,27 +114,10 @@ if (file_exists($requests_file)) {
     $requests = json_decode(file_get_contents($requests_file), true) ?: [];
 }
 
-$new_request = [
-    'id'             => $new_id,
-    'name'           => $input['name'] ?? 'Unknown',
-    'email'          => $input['email'],
-    'org'            => $input['org'] ?? 'Unknown',
-    'industry'       => $industry ?: 'Unknown',
-    'id_number'      => $id_number,
-    'proof_file'     => $proof_file_path,
-    'proof_name'     => $clean_name ?: $proof_name,
-    'proof_data'     => $proof_data,
-    'use_case'       => $use_case,
-    'description'    => $use_case,
-    'scope'          => $input['scope'],
-    'target_date'    => $input['target_date'] ?? date('Y-m-d', strtotime('-1 day')),
-    'telemetry_type' => $input['telemetry_type'] ?? 'aqi',
-    'status'         => 'pending',
-    'created_at'     => !empty($input['created_at']) ? $input['created_at'] : date('c'),
-    'user_id'        => $_SESSION['user_id'] ?? 'anonymous'
-];
-
-array_unshift($requests, $new_request);
+$req_node = trim((string)($input['node'] ?? (stripos($input['scope'] ?? '', 'Node 2') !== false ? '2' : '1'))) ?: '1';
+$telemetry_type = strtolower(trim((string)($input['telemetry_type'] ?? 'aqi')));
+$target_date = trim((string)($input['target_date'] ?? date('Y-m-d', strtotime('-1 day'))));
+$include_uv_pressure_solar = !empty($input['include_uv_pressure_solar']) || ($req_node === '1' && $telemetry_type === 'weather');
 
 // ─────────────────────────────────────────────────────────────
 // Environment Variable Resolver for submit_request.php
@@ -150,13 +133,141 @@ $get_env_val = function($key, $default = '') {
                 if (strpos(trim($line), '#') === 0) continue;
                 if (strpos($line, '=') !== false) {
                     list($k, $v) = explode('=', $line, 2);
-                    if (trim($k) === $key) return trim($v);
+                    if (trim($k) === $key) return trim(trim($v), "\"'\r\n\t ");
                 }
             }
         }
     }
     return $default;
 };
+
+/**
+ * Compile Node 1 Weather + Node 2 UV Index, Pressure & Solar Radiation CSV for requested date.
+ */
+function buildMergedNode1WeatherCsv(string $targetDate, callable $get_env_fn): string {
+    $fetchRows = function(string $url, string $key): array {
+        if (empty($url) || empty($key)) return [];
+        $ch = @curl_init($url);
+        if (!$ch) return [];
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 4,
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_HTTPHEADER     => [
+                "apikey: {$key}",
+                "Authorization: Bearer {$key}",
+                "Content-Type: application/json"
+            ]
+        ]);
+        $raw = curl_exec($ch);
+        curl_close($ch);
+        if (!$raw) return [];
+        $parsed = json_decode($raw, true);
+        return is_array($parsed) ? $parsed : [];
+    };
+
+    $toIst = function($ts) {
+        $tz = new DateTimeZone('Asia/Kolkata');
+        $tsStr = trim((string)$ts);
+        if ($tsStr === '') return null;
+        try {
+            $dt = new DateTime($tsStr, $tz);
+            $dt->setTimezone($tz);
+            return $dt;
+        } catch (\Exception $e) {
+            return null;
+        }
+    };
+
+    $n1Url = rtrim($get_env_fn('SUPABASE_URL', '') ?: ($get_env_fn('VITE_SUPABASE_URL', '') ?: 'https://sgkdpliqlhgiqsabxzxe.supabase.co'), '/');
+    $n1Key = $get_env_fn('SUPABASE_KEY', '') ?: ($get_env_fn('SUPABASE_ANON_KEY', '') ?: ($get_env_fn('VITE_SUPABASE_ANON_KEY', '') ?: 'sb_publishable_b6fL25-c8M7Q1_J5Q7bE_A_xZ1y8z1x'));
+    $n2Url = rtrim($get_env_fn('SUPABASE_URL_NODE2', '') ?: ($get_env_fn('VITE_SUPABASE_URL_NODE2', '') ?: 'https://nahabhzcaeppbteuxogg.supabase.co'), '/');
+    $n2Key = $get_env_fn('SUPABASE_KEY_NODE2', '') ?: ($get_env_fn('SUPABASE_ANON_KEY_NODE2', '') ?: ($get_env_fn('VITE_SUPABASE_ANON_KEY_NODE2', '') ?: 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ'));
+
+    if (empty($n1Url) || empty($n1Key)) return '';
+
+    $startDate = date('Y-m-d', strtotime($targetDate . ' -1 day'));
+    $endDate   = date('Y-m-d', strtotime($targetDate . ' +2 days'));
+
+    $n1Rows = $fetchRows("{$n1Url}/rest/v1/WEATHER_NODE1?order=timestamp_hour.desc&limit=150&timestamp_hour=gte.{$startDate}T00:00:00&timestamp_hour=lt.{$endDate}T00:00:00", $n1Key);
+    if (empty($n1Rows)) return '';
+
+    $n2Hist = $fetchRows("{$n2Url}/rest/v1/WEATHER_NODE2?select=*&order=timestamp.desc&limit=200&timestamp=gte.{$startDate}T00:00:00&timestamp=lt.{$endDate}T00:00:00", $n2Key);
+    $n2Live = $fetchRows("{$n2Url}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=500", $n2Key);
+
+    $extraByHour = [];
+    foreach (array_merge($n2Hist, $n2Live) as $n2r) {
+        if (!is_array($n2r)) continue;
+        $dt = $toIst($n2r['timestamp_hour'] ?? $n2r['created_at'] ?? $n2r['timestamp'] ?? '');
+        if (!$dt) continue;
+        $hrKey = $dt->format('Y-m-d H');
+        $press = $n2r['pressure'] ?? ($n2r['barometric_pressure'] ?? null);
+        $uv    = $n2r['uv_index'] ?? ($n2r['uv_radiation'] ?? ($n2r['uv'] ?? null));
+        $solar = $n2r['solar_radiation'] ?? ($n2r['solar'] ?? ($n2r['radiation'] ?? null));
+        if (!isset($extraByHour[$hrKey])) {
+            $extraByHour[$hrKey] = ['pressure' => null, 'uv_index' => null, 'solar_radiation' => null];
+        }
+        if ($extraByHour[$hrKey]['pressure'] === null && $press !== null && $press !== '') $extraByHour[$hrKey]['pressure'] = (float)$press;
+        if ($extraByHour[$hrKey]['uv_index'] === null && $uv !== null && $uv !== '') $extraByHour[$hrKey]['uv_index'] = (float)$uv;
+        if ($extraByHour[$hrKey]['solar_radiation'] === null && $solar !== null && $solar !== '') $extraByHour[$hrKey]['solar_radiation'] = (float)$solar;
+    }
+
+    $csv = "Date,Time,Temperature (deg C),Humidity (%),Pressure (mb),UV Index,Solar Radiation (W/m2),Wind Speed (km/h),Wind Gust (km/h),Wind Direction,Rain Gauge (mm)\n";
+    foreach ($n1Rows as $row) {
+        if (!is_array($row)) continue;
+        $dt = $toIst($row['timestamp_hour'] ?? $row['timestamp'] ?? $row['created_at'] ?? '');
+        $dateStr = $dt ? $dt->format('d/m/Y') : $targetDate;
+        $timeStr = $dt ? $dt->format('h:i A') : '--:--';
+        $hrKey   = $dt ? $dt->format('Y-m-d H') : '';
+        $ex = ($hrKey !== '' && isset($extraByHour[$hrKey])) ? $extraByHour[$hrKey] : ['pressure' => null, 'uv_index' => null, 'solar_radiation' => null];
+
+        $rawPress = $row['pressure'] ?? ($row['barometric_pressure'] ?? $ex['pressure']);
+        $rawUv    = $row['uv_index'] ?? ($row['uv_radiation'] ?? ($row['uv'] ?? $ex['uv_index']));
+        $rawSolar = $row['solar_radiation'] ?? ($row['solar'] ?? ($row['radiation'] ?? $ex['solar_radiation']));
+
+        $temp  = (isset($row['temperature']) && $row['temperature'] !== '') ? number_format((float)$row['temperature'], 1, '.', '') : '--';
+        $hum   = (isset($row['humidity']) && $row['humidity'] !== '')       ? number_format((float)$row['humidity'], 1, '.', '') : '--';
+        $press = ($rawPress !== null && $rawPress !== '') ? number_format((float)$rawPress, 1, '.', '') : '--';
+        $uv    = ($rawUv !== null && $rawUv !== '')       ? number_format((float)$rawUv, 1, '.', '') : '--';
+        $solar = ($rawSolar !== null && $rawSolar !== '') ? number_format((float)$rawSolar, 1, '.', '') : '--';
+        $wind  = (isset($row['wind_speed']) && $row['wind_speed'] !== '')   ? number_format((float)$row['wind_speed'], 2, '.', '') : '0.00';
+        $gust  = (isset($row['wind_gust']) && $row['wind_gust'] !== '')     ? number_format((float)$row['wind_gust'], 2, '.', '') : '0.00';
+        $dir   = (isset($row['wind_direction']) && $row['wind_direction'] !== '') ? $row['wind_direction'] : '--';
+        $rain  = (isset($row['rain_gauge']) && $row['rain_gauge'] !== '')   ? number_format((float)$row['rain_gauge'], 2, '.', '') : '0.00';
+
+        $csv .= "{$dateStr},{$timeStr},{$temp},{$hum},{$press},{$uv},{$solar},{$wind},{$gust},\"{$dir}\",{$rain}\n";
+    }
+    return $csv;
+}
+
+$dataset_csv = ($telemetry_type === 'weather' && $req_node === '1')
+    ? buildMergedNode1WeatherCsv($target_date, $get_env_val)
+    : '';
+
+$new_request = [
+    'id'             => $new_id,
+    'name'           => $input['name'] ?? 'Unknown',
+    'email'          => $input['email'],
+    'org'            => $input['org'] ?? 'Unknown',
+    'industry'       => $industry ?: 'Unknown',
+    'id_number'      => $id_number,
+    'proof_file'     => $proof_file_path,
+    'proof_name'     => $clean_name ?: $proof_name,
+    'proof_data'     => $proof_data,
+    'use_case'       => $use_case,
+    'description'    => $use_case,
+    'scope'          => $input['scope'],
+    'target_date'    => $target_date,
+    'telemetry_type' => $telemetry_type,
+    'node'           => $req_node,
+    'include_uv_pressure_solar' => $include_uv_pressure_solar,
+    'dataset_csv'    => $dataset_csv,
+    'status'         => 'pending',
+    'created_at'     => !empty($input['created_at']) ? $input['created_at'] : date('c'),
+    'user_id'        => $_SESSION['user_id'] ?? 'anonymous'
+];
+
+array_unshift($requests, $new_request);
 
 // Push directly to Firebase Realtime Database using Environment Configuration
 function pushRequestToFirebase($requestData, $get_env_fn) {
@@ -237,8 +348,11 @@ if (!empty($webhook_url)) {
         'industry'       => $industry ?: 'Unknown',
         'id_number'      => $id_number,
         'scope'          => $input['scope'],
-        'target_date'    => $input['target_date'] ?? date('Y-m-d', strtotime('-1 day')),
-        'telemetry_type' => $input['telemetry_type'] ?? 'aqi',
+        'target_date'    => $target_date,
+        'telemetry_type' => $telemetry_type,
+        'node'           => $req_node,
+        'include_uv_pressure_solar' => $include_uv_pressure_solar,
+        'dataset_csv'    => $dataset_csv,
         'use_case'       => $use_case,
         'description'    => $use_case,
         'proof_name'     => $clean_name ?: $proof_name,
@@ -279,5 +393,8 @@ echo json_encode([
     'proof_name'         => $new_request['proof_name'],
     'use_case'           => $use_case,
     'description'        => $use_case,
-    'id_number'          => $id_number
+    'id_number'          => $id_number,
+    'node'               => $req_node,
+    'include_uv_pressure_solar' => $include_uv_pressure_solar,
+    'dataset_csv'        => $dataset_csv
 ]);

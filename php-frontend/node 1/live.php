@@ -338,7 +338,7 @@ $init_weather_temp = (isset($w_d['temperature']) && is_numeric($w_d['temperature
 $init_weather_hum = (isset($w_d['humidity']) && is_numeric($w_d['humidity'])) ? number_format((float)$w_d['humidity'], 1) . '%' : '--%';
 $init_weather_rain = isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '--';
 $init_weather_wind = isset($w_d['wind_speed']) && is_numeric($w_d['wind_speed']) ? number_format((float)$w_d['wind_speed'], 1) . ' km/h' : '--';
-$init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) . ' m/s' : '--';
+$init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) . ' km/h' : '--';
 
 // Telemetry-driven Latitude & Longitude coordinate resolution
 $init_lat = null;
@@ -412,7 +412,7 @@ if (!function_exists('smartairnet_parse_wind_direction')) {
     }
 }
 
-$parsed_wind = !empty($w_d['wind_direction']) ? smartairnet_parse_wind_direction($w_d['wind_direction']) : null;
+$parsed_wind = (isset($w_d['wind_direction']) && $w_d['wind_direction'] !== '') ? smartairnet_parse_wind_direction($w_d['wind_direction']) : null;
 if ($parsed_wind) {
     $compass_angle = $parsed_wind['deg'];
     $init_weather_cardinal = $parsed_wind['cardinal'];
@@ -3549,9 +3549,9 @@ body.soil-backdrop-active header {
           <span>Live Weather Telemetry Records</span>
         </h2>
 
-        <div id="n1-weather-table-toggle" style="display: inline-flex; align-items: center; padding: 3px; border-radius: 9999px; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.22); backdrop-filter: blur(10px); gap: 3px;">
-          <button type="button" id="n1-wtab-weather" onclick="switchNode1WeatherTableGroup('weather')" style="padding: 5px 13px; border-radius: 9999px; font-size: 11.5px; font-weight: 700; border: none; cursor: pointer; transition: all 0.18s ease; background: #00bfa5; color: #ffffff; box-shadow: 0 2px 8px rgba(0, 191, 165, 0.35);">Weather</button>
-          <button type="button" id="n1-wtab-other" onclick="switchNode1WeatherTableGroup('other')" style="padding: 5px 13px; border-radius: 9999px; font-size: 11.5px; font-weight: 700; border: none; cursor: pointer; transition: all 0.18s ease; background: transparent; color: #e2e8f0;">Other Parameters</button>
+        <div id="n1-weather-table-toggle" style="display: inline-flex; align-items: center; padding: 2px; border-radius: 9999px; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.22); backdrop-filter: blur(10px); gap: 2px;">
+          <button type="button" id="n1-wtab-weather" onclick="switchNode1WeatherTableGroup('weather')" style="padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; transition: all 0.18s ease; background: #00bfa5; color: #ffffff; box-shadow: 0 2px 8px rgba(0, 191, 165, 0.35);">Weather</button>
+          <button type="button" id="n1-wtab-other" onclick="switchNode1WeatherTableGroup('other')" style="padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; transition: all 0.18s ease; background: transparent; color: #e2e8f0;">UV & Solar</button>
         </div>
       </div>
 
@@ -3599,8 +3599,8 @@ body.soil-backdrop-active header {
                               ? number_format((float)$row['radiation'], 1) . ' W/m²' 
                               : '--'));
                   $rWSpd = isset($row['wind_speed']) && is_numeric($row['wind_speed']) ? number_format((float)$row['wind_speed'], 1) . ' km/h' : '--';
-                  $rGust = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? number_format((float)$row['wind_gust'], 1) . ' m/s' : '--';
-                  $rDir = !empty($row['wind_direction']) ? (smartairnet_parse_wind_direction($row['wind_direction'])['cardinal'] ?? $row['wind_direction']) : '--';
+                  $rGust = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? number_format((float)$row['wind_gust'], 1) . ' km/h' : '--';
+                  $rDir = (isset($row['wind_direction']) && $row['wind_direction'] !== '') ? (smartairnet_parse_wind_direction($row['wind_direction'])['display'] ?? (string)$row['wind_direction']) : '--';
                   $rRain = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? number_format((float)$row['rain_gauge'], 1) . ' mm' : '--';
                   $rowBg = ($i % 2 === 0) ? 'rgba(30, 41, 59, 0.40)' : 'rgba(15, 23, 42, 0.40)';
                 ?>
@@ -4858,7 +4858,7 @@ function renderWeatherLiveTable(hist) {
                 : ((row.radiation != null && !isNaN(Number(row.radiation))) ? row.radiation : null));
         const solar = rawSolar != null ? `${Number(rawSolar).toFixed(1)} W/m²` : '--';
         const wSpd = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? `${Number(row.wind_speed).toFixed(1)} km/h` : '--';
-        const gust = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? `${Number(row.wind_gust).toFixed(1)} m/s` : '--';
+        const gust = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? `${Number(row.wind_gust).toFixed(1)} km/h` : '--';
         const dir = (row.wind_direction != null && row.wind_direction !== '') ? (typeof getCompassDir === 'function' ? getCompassDir(row.wind_direction) : row.wind_direction) : '--';
         const rain = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? `${Number(row.rain_gauge).toFixed(1)} mm` : '--';
 
@@ -5315,7 +5315,7 @@ async function refreshDashboard(forceNetwork = false) {
 
             const cardGustVal = document.getElementById('card-gust-val');
             if (cardGustVal) {
-                cardGustVal.innerText = (w.wind_gust != null && !isNaN(Number(w.wind_gust))) ? (Number(w.wind_gust).toFixed(1) + ' m/s') : '--';
+                cardGustVal.innerText = (w.wind_gust != null && !isNaN(Number(w.wind_gust))) ? (Number(w.wind_gust).toFixed(1) + ' km/h') : '--';
             }
 
             const cardRainVal = document.getElementById('card-rain-val');

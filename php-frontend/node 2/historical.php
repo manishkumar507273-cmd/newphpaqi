@@ -384,7 +384,7 @@ $init_history_json = 'null';
                 </div>
                 <div class="trend-check-box"><?= $req_param === 'wind_speed' ? '✓' : '' ?></div>
               </div>
-              <div class="trend-dropdown-item <?= $req_param === 'wind_gust' ? 'active' : '' ?>" data-param="wind_gust" onclick="selectTrendParam('wind_gust', '⚡', 'Wind Gust', 'm/s')">
+              <div class="trend-dropdown-item <?= $req_param === 'wind_gust' ? 'active' : '' ?>" data-param="wind_gust" onclick="selectTrendParam('wind_gust', '⚡', 'Wind Gust', 'km/h')">
                 <div class="flex items-center gap-2.5">
                   <span class="text-base">⚡</span>
                   <span>Wind Gust</span>
@@ -1036,7 +1036,7 @@ var PARAM_UNITS = {
     cpcb_aqi: '', aqi: '', pm25: 'µg/m³', pm10: 'µg/m³',
     co: 'mg/m³', no2: 'µg/m³', o3: 'µg/m³',
     temperature: '°C', humidity: '%',
-    wind_speed: 'km/h', wind_gust: 'm/s', wind_direction: '°', rain_gauge: 'mm',
+    wind_speed: 'km/h', wind_gust: 'km/h', wind_direction: '°', rain_gauge: 'mm',
     pressure: 'mb', uv_index: '', solar_radiation: 'W/m²',
     soil_temperature: '°C', soil_humidity: '%', soil_moisture: '%', soil_ph: 'pH', soil_conductivity: 'µS/cm'
 };
@@ -1524,7 +1524,7 @@ function setParam(param, skipRender = false) {
         'temperature': { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' },
         'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0284c7' },
         'wind_speed': { icon: '💨', label: 'Wind Speed', unit: 'km/h', color: '#0d9488' },
-        'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'm/s', color: '#0891b2' },
+        'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'km/h', color: '#0891b2' },
         'rain_gauge': { icon: '🌧️', label: 'Precipitation', unit: 'mm', color: '#2563eb' },
         'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
         'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
@@ -2063,7 +2063,7 @@ function renderUI(skipDayFilter = false) {
             'temperature': { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' },
             'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0284c7' },
             'wind_speed': { icon: '💨', label: 'Wind Speed', unit: 'km/h', color: '#0d9488' },
-            'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'm/s', color: '#0891b2' },
+            'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'km/h', color: '#0891b2' },
             'rain_gauge': { icon: '🌧️', label: 'Precipitation', unit: 'mm', color: '#2563eb' },
             'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
             'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
@@ -2484,7 +2484,7 @@ function renderUI(skipDayFilter = false) {
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f43f5e;">UV Index</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #f59e0b;">Solar (W/m²)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0d9488;">Wind Speed (km/h)</th>
-            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0891b2;">Wind Gust (m/s)</th>
+            <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0891b2;">Wind Gust (km/h)</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #64748b;">Wind Dir</th>
             <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #2563eb;">Rain (mm)</th>
         `;
@@ -2908,7 +2908,8 @@ async function submitDatasetRequest(e) {
             use_case: formDataObj.get('use_case'),
             scope: scopeDescription,
             target_date: targetDate,
-            telemetry_type: currentSubTab
+            telemetry_type: currentSubTab,
+            node: '2'
         };
         
         const response = await fetch('api/submit_request.php', {
@@ -2941,6 +2942,7 @@ async function submitDatasetRequest(e) {
                 scope: formData.scope,
                 target_date: targetDate,
                 telemetry_type: currentSubTab,
+                node: '2',
                 status: 'pending',
                 created_at: new Date().toISOString()
             };

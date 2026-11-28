@@ -384,7 +384,7 @@ $init_history_json = 'null';
                 </div>
                 <div class="trend-check-box"><?= $req_param === 'wind_speed' ? '✓' : '' ?></div>
               </div>
-              <div class="trend-dropdown-item <?= $req_param === 'wind_gust' ? 'active' : '' ?>" data-param="wind_gust" onclick="selectTrendParam('wind_gust', '⚡', 'Wind Gust', 'm/s')">
+              <div class="trend-dropdown-item <?= $req_param === 'wind_gust' ? 'active' : '' ?>" data-param="wind_gust" onclick="selectTrendParam('wind_gust', '⚡', 'Wind Gust', 'km/h')">
                 <div class="flex items-center gap-2.5">
                   <span class="text-base">⚡</span>
                   <span>Wind Gust</span>
@@ -499,9 +499,9 @@ $init_history_json = 'null';
         </p>
       </div>
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <div id="n1-hist-weather-table-toggle" style="display: <?= $req_subtab === 'weather' ? 'inline-flex' : 'none' ?>; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 3px; border-radius: 999px; gap: 2px;">
-          <button type="button" id="n1-hist-wt-btn-weather" onclick="switchN1HistWeatherTableGroup('weather')" style="padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; background: #00bfa5; color: #ffffff; transition: all 0.2s;">Weather</button>
-          <button type="button" id="n1-hist-wt-btn-other" onclick="switchN1HistWeatherTableGroup('other')" style="padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s;">Other Parameters</button>
+        <div id="n1-hist-weather-table-toggle" style="display: <?= $req_subtab === 'weather' ? 'inline-flex' : 'none' ?>; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 2px; border-radius: 999px; gap: 2px;">
+          <button type="button" id="n1-hist-wt-btn-weather" onclick="switchN1HistWeatherTableGroup('weather')" style="padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; background: #00bfa5; color: #ffffff; transition: all 0.2s;">Weather</button>
+          <button type="button" id="n1-hist-wt-btn-other" onclick="switchN1HistWeatherTableGroup('other')" style="padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s;">UV & Solar</button>
         </div>
         <button type="button" onclick="openDatasetModal()" style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; border-radius: 999px; border: none; background: #00bfa5; color: #ffffff; font-size: 12.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(0, 191, 165, 0.28); transition: all 0.15s ease;">
           <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
@@ -761,7 +761,7 @@ function switchN1HistWeatherTableGroup(group) {
         btnO.style.background = currentN1HistWeatherTableGroup === 'other' ? '#00bfa5' : 'transparent';
         btnO.style.color = currentN1HistWeatherTableGroup === 'other' ? '#ffffff' : '#64748b';
     }
-    renderUI(true);
+    renderUI();
 }
 
 function persistHistoricalState() {
@@ -1056,7 +1056,7 @@ var PARAM_UNITS = {
     cpcb_aqi: '', aqi: '', pm25: 'µg/m³', pm10: 'µg/m³',
     co: 'mg/m³', no2: 'µg/m³', o3: 'µg/m³',
     temperature: '°C', humidity: '%',
-    wind_speed: 'km/h', wind_gust: 'm/s', wind_direction: '°', rain_gauge: 'mm',
+    wind_speed: 'km/h', wind_gust: 'km/h', wind_direction: '°', rain_gauge: 'mm',
     pressure: 'mb', uv_index: '', solar_radiation: 'W/m²',
     soil_temperature: '°C', soil_humidity: '%', soil_moisture: '%', soil_ph: 'pH', soil_conductivity: 'µS/cm'
 };
@@ -1253,6 +1253,7 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
             clientRangeCache[key].fetchedAt = Date.now();
             historicalDataAqi = window.INITIAL_HISTORY.aqi || [];
             historicalDataWeather = window.INITIAL_HISTORY.weather || [];
+            historicalDataOtherWeather = window.INITIAL_HISTORY.other_weather || [];
             window.INITIAL_HISTORY = null;
             try {
                 if (typeof window.setLocalCache === 'function') {
@@ -1261,17 +1262,21 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
             } catch(e) {}
             renderUI();
             prefetchOtherRanges(queryDate);
-            // Silently fetch fresh data in background to ensure all latest hours are rendered
+            // Silently fetch fresh data in background to ensure all latest hours & Node 2 Pressure/UV/Solar are rendered
             fetchRangeData(queryDate, days, true).then(freshData => {
                 if (reqId !== latestHistoryReqId || Number(currentRangeDays) !== Number(days)) return;
-                if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
+                if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0) || (freshData.other_weather && freshData.other_weather.length > 0))) {
                     const prevLenAqi = historicalDataAqi.length;
                     const prevLenW = historicalDataWeather.length;
+                    const prevLenOther = (historicalDataOtherWeather || []).length;
                     const newLenAqi = (freshData.aqi || []).length;
                     const newLenW = (freshData.weather || []).length;
-                    if (prevLenAqi !== newLenAqi || prevLenW !== newLenW) {
+                    const newOther = freshData.other_weather || [];
+                    const newLenOther = newOther.length;
+                    if (prevLenAqi !== newLenAqi || prevLenW !== newLenW || prevLenOther !== newLenOther || newOther[0]?.timestamp !== historicalDataOtherWeather?.[0]?.timestamp) {
                         historicalDataAqi = freshData.aqi || [];
                         historicalDataWeather = freshData.weather || [];
+                        historicalDataOtherWeather = newOther;
                         renderUI();
                     }
                 }
@@ -1292,22 +1297,28 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
         if (cached && !skipCache) {
             historicalDataAqi = cached.aqi || [];
             historicalDataWeather = cached.weather || [];
+            historicalDataOtherWeather = cached.other_weather || [];
             renderUI();
             prefetchOtherRanges(queryDate);
 
-            // Silently revalidate in background if records are for today or older than 30s
+            // Silently revalidate in background if records are for today, older than 30s, or missing Node 2 other_weather
             const ageMs = Date.now() - (cached.fetchedAt || 0);
-            if (isToday || ageMs > 30000) {
+            const missingOther = !Array.isArray(cached.other_weather) || cached.other_weather.length === 0;
+            if (isToday || ageMs > 30000 || missingOther) {
                 fetchRangeData(queryDate, days, true).then(freshData => {
                     if (reqId !== latestHistoryReqId || Number(currentRangeDays) !== Number(days)) return;
-                    if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
+                    if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0) || (freshData.other_weather && freshData.other_weather.length > 0))) {
                         const prevLenAqi = historicalDataAqi.length;
                         const prevLenW = historicalDataWeather.length;
+                        const prevLenOther = (historicalDataOtherWeather || []).length;
                         const newLenAqi = (freshData.aqi || []).length;
                         const newLenW = (freshData.weather || []).length;
-                        if (prevLenAqi !== newLenAqi || prevLenW !== newLenW) {
+                        const newOther = freshData.other_weather || [];
+                        const newLenOther = newOther.length;
+                        if (prevLenAqi !== newLenAqi || prevLenW !== newLenW || prevLenOther !== newLenOther || newOther[0]?.timestamp !== historicalDataOtherWeather?.[0]?.timestamp) {
                             historicalDataAqi = freshData.aqi || [];
                             historicalDataWeather = freshData.weather || [];
+                            historicalDataOtherWeather = newOther;
                             renderUI();
                         }
                     }
@@ -1325,12 +1336,14 @@ async function fetchAllHistory(forcedDate = null, skipCache = false, silent = fa
                 if (mc && ((mc.aqi && mc.aqi.some(r => (r.timestamp || '').startsWith(queryDate))) || (mc.weather && mc.weather.some(r => (r.timestamp || '').startsWith(queryDate))))) {
                     historicalDataAqi = mc.aqi || [];
                     historicalDataWeather = mc.weather || [];
+                    historicalDataOtherWeather = mc.other_weather || [];
                     renderUI();
                     fetchRangeData(queryDate, 1, true).then(freshData => {
                         if (reqId !== latestHistoryReqId || Number(currentRangeDays) !== 1) return;
-                        if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0))) {
+                        if (freshData && ((freshData.aqi && freshData.aqi.length > 0) || (freshData.weather && freshData.weather.length > 0) || (freshData.other_weather && freshData.other_weather.length > 0))) {
                             historicalDataAqi = freshData.aqi || [];
                             historicalDataWeather = freshData.weather || [];
+                            historicalDataOtherWeather = freshData.other_weather || [];
                             renderUI();
                         }
                     }).catch(() => {});
@@ -1546,7 +1559,7 @@ function setParam(param, skipRender = false) {
         'temperature': { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' },
         'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0284c7' },
         'wind_speed': { icon: '💨', label: 'Wind Speed', unit: 'km/h', color: '#0d9488' },
-        'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'm/s', color: '#0891b2' },
+        'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'km/h', color: '#0891b2' },
         'rain_gauge': { icon: '🌧️', label: 'Precipitation', unit: 'mm', color: '#2563eb' },
         'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
         'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
@@ -2066,7 +2079,7 @@ function renderUI(skipDayFilter = false) {
             'temperature': { icon: '🌡️', label: 'Temperature', unit: '°C', color: '#f97316' },
             'humidity': { icon: '💧', label: 'Humidity', unit: '%', color: '#0284c7' },
             'wind_speed': { icon: '💨', label: 'Wind Speed', unit: 'km/h', color: '#0d9488' },
-            'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'm/s', color: '#0891b2' },
+            'wind_gust': { icon: '⚡', label: 'Wind Gust', unit: 'km/h', color: '#0891b2' },
             'rain_gauge': { icon: '🌧️', label: 'Precipitation', unit: 'mm', color: '#2563eb' },
             'pressure': { icon: '⏱️', label: 'Pressure', unit: 'mb', color: '#ec4899' },
             'uv_index': { icon: '☀️', label: 'UV Index', unit: '', color: '#f59e0b' },
@@ -2549,7 +2562,7 @@ function renderUI(skipDayFilter = false) {
                 <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #ea580c;">Temp (°C)</th>
                 <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0284c7;">Humidity (%)</th>
                 <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0d9488;">Wind Speed (km/h)</th>
-                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0891b2;">Wind Gust (m/s)</th>
+                <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #0891b2;">Wind Gust (km/h)</th>
                 <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #64748b;">Wind Dir</th>
                 <th style="padding: 11px 16px; font-weight: 700; white-space: nowrap; color: #2563eb;">Rain (mm)</th>
             `;
@@ -2618,7 +2631,7 @@ function getPreviousDayDateStr() {
 }
 
 function openDatasetModal() {
-    const scopeLabel = currentSubTab === 'aqi' ? 'AQI Telemetry' : (currentSubTab === 'soil' ? 'Soil Telemetry' : 'Weather Telemetry');
+    const scopeLabel = currentSubTab === 'aqi' ? 'AQI Telemetry' : (currentSubTab === 'soil' ? 'Soil Telemetry' : 'Weather Telemetry (Node 1 + UV, Pressure & Solar)');
     const timeFrame = currentSubTab === 'aqi' ? '12:00 AM – 12:00 AM' : '8:00 AM – Next Day 8:00 AM';
     
     // Strictly provide data of the previous day (yesterday)
@@ -2931,9 +2944,10 @@ async function submitDatasetRequest(e) {
     }
     
     const targetDate = window.__requestedDatasetDate || getPreviousDayDateStr();
-    const scopeLabel = currentSubTab === 'aqi' ? 'AQI Telemetry' : (currentSubTab === 'soil' ? 'Soil Telemetry' : 'Weather Telemetry');
+    const scopeLabel = currentSubTab === 'aqi' ? 'AQI Telemetry' : (currentSubTab === 'soil' ? 'Soil Telemetry' : 'Weather Telemetry (Node 1 + UV, Pressure & Solar)');
     const timeFrame = currentSubTab === 'aqi' ? '12:00 AM – 12:00 AM' : '8:00 AM – Next Day 8:00 AM';
     const scopeDescription = `${scopeLabel} — ${targetDate} (${timeFrame}) [Previous Day]`;
+    const includeUvPressureSolar = (currentSubTab === 'weather');
 
     btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle;"></i> <span style="vertical-align: middle;">Securing Proof &amp; Transmitting...</span>`;
     btn.style.pointerEvents = 'none';
@@ -2959,7 +2973,9 @@ async function submitDatasetRequest(e) {
             use_case: formDataObj.get('use_case'),
             scope: scopeDescription,
             target_date: targetDate,
-            telemetry_type: currentSubTab
+            telemetry_type: currentSubTab,
+            node: '1',
+            include_uv_pressure_solar: includeUvPressureSolar
         };
         
         const response = await fetch('api/submit_request.php', {
@@ -2992,6 +3008,9 @@ async function submitDatasetRequest(e) {
                 scope: formData.scope,
                 target_date: targetDate,
                 telemetry_type: currentSubTab,
+                node: '1',
+                include_uv_pressure_solar: includeUvPressureSolar,
+                dataset_csv: data.dataset_csv || '',
                 status: 'pending',
                 created_at: new Date().toISOString()
             };

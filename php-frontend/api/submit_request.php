@@ -145,25 +145,45 @@ $get_env_val = function($key, $default = '') {
  * Compile Node 1 Weather + Node 2 UV Index, Pressure & Solar Radiation CSV for requested date.
  */
 function buildMergedNode1WeatherCsv(string $targetDate, callable $get_env_fn): string {
-    $fetchRows = function(string $url, string $key): array {
-        if (empty($url) || empty($key)) return [];
-        $ch = @curl_init($url);
-        if (!$ch) return [];
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 4,
-            CURLOPT_CONNECTTIMEOUT => 2,
-            CURLOPT_HTTPHEADER     => [
-                "apikey: {$key}",
-                "Authorization: Bearer {$key}",
-                "Content-Type: application/json"
-            ]
-        ]);
-        $raw = curl_exec($ch);
-        curl_close($ch);
-        if (!$raw) return [];
-        $parsed = json_decode($raw, true);
-        return is_array($parsed) ? $parsed : [];
+    $fetchMulti = function(array $specs): array {
+        $mh = @curl_multi_init();
+        $handles = [];
+        $results = [];
+        foreach ($specs as $k => $sp) {
+            $results[$k] = [];
+            if (empty($sp['url']) || empty($sp['key']) || !$mh) continue;
+            $ch = @curl_init($sp['url']);
+            if (!$ch) continue;
+            @curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 8,
+                CURLOPT_CONNECTTIMEOUT => 3,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTPHEADER     => [
+                    "apikey: {$sp['key']}",
+                    "Authorization: Bearer {$sp['key']}",
+                    "Content-Type: application/json"
+                ]
+            ]);
+            @curl_multi_add_handle($mh, $ch);
+            $handles[$k] = $ch;
+        }
+        if ($mh && !empty($handles)) {
+            $running = null;
+            do {
+                @curl_multi_exec($mh, $running);
+                @curl_multi_select($mh, 0.05);
+            } while ($running > 0);
+            foreach ($handles as $k => $ch) {
+                $raw = @curl_multi_getcontent($ch);
+                @curl_multi_remove_handle($mh, $ch);
+                @curl_close($ch);
+                $parsed = $raw ? json_decode($raw, true) : null;
+                $results[$k] = is_array($parsed) ? $parsed : [];
+            }
+            @curl_multi_close($mh);
+        }
+        return $results;
     };
 
     $toIst = function($ts) {
@@ -180,7 +200,7 @@ function buildMergedNode1WeatherCsv(string $targetDate, callable $get_env_fn): s
     };
 
     $n1Url = rtrim($get_env_fn('SUPABASE_URL', '') ?: ($get_env_fn('VITE_SUPABASE_URL', '') ?: 'https://sgkdpliqlhgiqsabxzxe.supabase.co'), '/');
-    $n1Key = $get_env_fn('SUPABASE_KEY', '') ?: ($get_env_fn('SUPABASE_ANON_KEY', '') ?: ($get_env_fn('VITE_SUPABASE_ANON_KEY', '') ?: 'sb_publishable_b6fL25-c8M7Q1_J5Q7bE_A_xZ1y8z1x'));
+    $n1Key = $get_env_fn('SUPABASE_KEY', '') ?: ($get_env_fn('SUPABASE_ANON_KEY', '') ?: ($get_env_fn('VITE_SUPABASE_ANON_KEY', '') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNna2RwbGlxbGhnaXFzYWJ4enhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzgzMTIsImV4cCI6MjEwMDQ1NDMxMn0.vMtbXomFdmOcBkhhSoiyYyp_vFxOhg4MYCFCw9-pL30'));
     $n2Url = rtrim($get_env_fn('SUPABASE_URL_NODE2', '') ?: ($get_env_fn('VITE_SUPABASE_URL_NODE2', '') ?: 'https://nahabhzcaeppbteuxogg.supabase.co'), '/');
     $n2Key = $get_env_fn('SUPABASE_KEY_NODE2', '') ?: ($get_env_fn('SUPABASE_ANON_KEY_NODE2', '') ?: ($get_env_fn('VITE_SUPABASE_ANON_KEY_NODE2', '') ?: 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ'));
 
@@ -189,11 +209,26 @@ function buildMergedNode1WeatherCsv(string $targetDate, callable $get_env_fn): s
     $startDate = date('Y-m-d', strtotime($targetDate . ' -1 day'));
     $endDate   = date('Y-m-d', strtotime($targetDate . ' +2 days'));
 
-    $n1Rows = $fetchRows("{$n1Url}/rest/v1/WEATHER_NODE1?order=timestamp_hour.desc&limit=150&timestamp_hour=gte.{$startDate}T00:00:00&timestamp_hour=lt.{$endDate}T00:00:00", $n1Key);
+    $fetched = $fetchMulti([
+        'n1' => [
+            'url' => "{$n1Url}/rest/v1/WEATHER_NODE1?order=timestamp_hour.desc&limit=150&timestamp_hour=gte.{$startDate}T00:00:00&timestamp_hour=lt.{$endDate}T00:00:00",
+            'key' => $n1Key,
+        ],
+        'n2Hist' => [
+            'url' => "{$n2Url}/rest/v1/WEATHER_NODE2?select=*&order=timestamp.desc&limit=200&timestamp=gte.{$startDate}T00:00:00&timestamp=lt.{$endDate}T00:00:00",
+            'key' => $n2Key,
+        ],
+        'n2Live' => [
+            'url' => "{$n2Url}/rest/v1/WEATHER_LIVE_NODE2?select=timestamp,barometric_pressure,uv_radiation,solar_radiation&order=id.desc&limit=500",
+            'key' => $n2Key,
+        ],
+    ]);
+
+    $n1Rows = $fetched['n1'] ?? [];
     if (empty($n1Rows)) return '';
 
-    $n2Hist = $fetchRows("{$n2Url}/rest/v1/WEATHER_NODE2?select=*&order=timestamp.desc&limit=200&timestamp=gte.{$startDate}T00:00:00&timestamp=lt.{$endDate}T00:00:00", $n2Key);
-    $n2Live = $fetchRows("{$n2Url}/rest/v1/WEATHER_LIVE_NODE2?select=*&order=id.desc&limit=500", $n2Key);
+    $n2Hist = $fetched['n2Hist'] ?? [];
+    $n2Live = $fetched['n2Live'] ?? [];
 
     $extraByHour = [];
     foreach (array_merge($n2Hist, $n2Live) as $n2r) {

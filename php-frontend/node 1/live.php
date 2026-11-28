@@ -3512,7 +3512,19 @@ body.soil-backdrop-active header {
       #n1-weather-records-table.mode-other td:nth-child(8),
       #n1-weather-records-table.mode-other td:nth-child(9),
       #n1-weather-records-table.mode-other td:nth-child(10) { display: none !important; }
-      #n1-weather-records-table.mode-other { min-width: 100% !important; }
+      #n1-weather-records-table.mode-other { min-width: 0 !important; width: 100% !important; }
+      @media (max-width: 640px) {
+        #n1-weather-records-table.mode-other th,
+        #n1-weather-records-table.mode-other td {
+          padding: 9px 6px !important;
+          font-size: 11px !important;
+          white-space: normal !important;
+        }
+        #n1-weather-records-table.mode-other th:first-child,
+        #n1-weather-records-table.mode-other td:first-child {
+          white-space: nowrap !important;
+        }
+      }
     </style>
     <script>
     window.switchNode1WeatherTableGroup = function(mode) {
@@ -3521,11 +3533,13 @@ body.soil-backdrop-active header {
         const oBody = document.getElementById('n1-other-weather-tbody');
         const btnW = document.getElementById('n1-wtab-weather');
         const btnO = document.getElementById('n1-wtab-other');
+        const swipeHint = document.getElementById('n1-weather-swipe-hint');
         const isOther = (mode === 'other');
         if (tbl) {
             tbl.classList.remove('mode-weather', 'mode-other');
             tbl.classList.add(isOther ? 'mode-other' : 'mode-weather');
         }
+        if (swipeHint) swipeHint.style.display = isOther ? 'none' : '';
         if (wBody) wBody.style.display = isOther ? 'none' : '';
         if (oBody) oBody.style.display = isOther ? '' : 'none';
         if (btnW) {
@@ -3557,7 +3571,7 @@ body.soil-backdrop-active header {
 
       <div id="live-weather-table-container" style="background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.14); overflow: hidden; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35); transition: opacity 0.2s ease; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
         <!-- Mobile swipe indicator -->
-        <div class="block sm:hidden px-4 py-2 bg-slate-900/60 border-b border-white/10 text-[11px] text-slate-300 font-medium flex items-center justify-between">
+        <div id="n1-weather-swipe-hint" class="block sm:hidden px-4 py-2 bg-slate-900/60 border-b border-white/10 text-[11px] text-slate-300 font-medium flex items-center justify-between">
           <span>👈 Swipe horizontally to view all weather parameters</span>
           <span class="font-mono text-[10px] bg-slate-800 text-sky-300 border border-slate-700 px-1.5 py-0.5 rounded font-bold">WEATHER STREAM</span>
         </div>

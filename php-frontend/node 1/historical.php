@@ -511,13 +511,30 @@ $init_history_json = 'null';
     </div>
 
     <!-- Mobile swipe indicator -->
-    <div class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
+    <div id="n1-hist-swipe-hint" class="block sm:hidden px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium flex items-center justify-between">
       <span>👈 Swipe horizontally to view all hourly readings</span>
       <span id="mobile-table-badge" class="font-mono text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">24 HRS</span>
     </div>
 
+    <style>
+      #n1-hist-records-table.mode-other { min-width: 0 !important; width: 100% !important; }
+      @media (max-width: 640px) {
+        #n1-hist-records-table.mode-other th,
+        #n1-hist-records-table.mode-other td {
+          padding: 8px 5px !important;
+          font-size: 11px !important;
+          white-space: normal !important;
+        }
+        #n1-hist-records-table.mode-other th:nth-child(1),
+        #n1-hist-records-table.mode-other td:nth-child(1),
+        #n1-hist-records-table.mode-other th:nth-child(2),
+        #n1-hist-records-table.mode-other td:nth-child(2) {
+          white-space: nowrap !important;
+        }
+      }
+    </style>
     <div style="overflow-x: auto; max-height: 440px; -webkit-overflow-scrolling: touch;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 980px;">
+      <table id="n1-hist-records-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 980px;">
         <thead style="position: sticky; top: 0; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; z-index: 2;">
           <tr style="color: #475569; font-size: 12px;" id="table-head-row">
             <!-- Headers injected by JS -->
@@ -751,6 +768,14 @@ var filteredDayData = [];
 
 function switchN1HistWeatherTableGroup(group) {
     currentN1HistWeatherTableGroup = (group === 'other') ? 'other' : 'weather';
+    const tbl = document.getElementById('n1-hist-records-table');
+    const swipeHint = document.getElementById('n1-hist-swipe-hint');
+    if (tbl) {
+        tbl.classList.toggle('mode-other', currentN1HistWeatherTableGroup === 'other');
+    }
+    if (swipeHint) {
+        swipeHint.style.display = currentN1HistWeatherTableGroup === 'other' ? 'none' : '';
+    }
     const btnW = document.getElementById('n1-hist-wt-btn-weather');
     const btnO = document.getElementById('n1-hist-wt-btn-other');
     if (btnW) {

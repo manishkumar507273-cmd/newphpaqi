@@ -424,8 +424,8 @@ if ($is_ajax) {
             }
         }
     }
-    // Cold-cache SSR Pre-Hydration (prevents blank '--' on first open locally & on cold Vercel containers)
-    if ($initial_overview_json === 'null' && !empty($supabaseUrl) && !empty($supabaseKey) && function_exists('curl_multi_init')) {
+    // Cold-cache SSR Pre-Hydration for overview only (tight 900ms cap so station switches never stall)
+    if ($page === 'overview' && $initial_overview_json === 'null' && !empty($supabaseUrl) && !empty($supabaseKey) && function_exists('curl_multi_init')) {
         $orderColSsr = $is_node_2 ? 'id.desc' : 'created_at.desc.nullslast';
         $ssrHeaders = ["apikey: {$supabaseKey}", "Authorization: Bearer {$supabaseKey}"];
         $mhSsr = @curl_multi_init();
@@ -436,8 +436,8 @@ if ($is_ajax) {
                 @curl_setopt_array($ch, [
                     CURLOPT_RETURNTRANSFER => true,
                     CURLOPT_HTTPHEADER     => $ssrHeaders,
-                    CURLOPT_CONNECTTIMEOUT_MS => 1200,
-                    CURLOPT_TIMEOUT_MS     => 2200,
+                    CURLOPT_CONNECTTIMEOUT_MS => 500,
+                    CURLOPT_TIMEOUT_MS     => 900,
                     CURLOPT_SSL_VERIFYPEER => false,
                 ]);
                 @curl_multi_add_handle($mhSsr, $ch);

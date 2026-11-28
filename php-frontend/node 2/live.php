@@ -50,8 +50,8 @@ foreach ($cache_candidates as $cf) {
     }
 }
 
-// If no cached records exist at all, query Supabase directly using parallel curl_multi
-if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk['weather_history']))) {
+// If no cached records exist at all, query Supabase directly using parallel curl_multi (skip on AJAX SPA swaps since client hydrates from cache + direct Supabase in ~80ms)
+if (empty($is_ajax) && ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk['weather_history'])))) {
     $sb_url = !empty($node_config['supabase']['url']) ? rtrim($node_config['supabase']['url'], '/') : 'https://nahabhzcaeppbteuxogg.supabase.co';
     $sb_key = !empty($node_config['supabase']['secret_key']) ? $node_config['supabase']['secret_key'] : (!empty($node_config['supabase']['anon_key']) ? $node_config['supabase']['anon_key'] : 'sb_publishable_RXM8H-D8m6qWz2Yy2xA6VQ_TjxxY3bJ');
     $tbl_aqi = $node_config['tables']['aqi_live'] ?? 'AQI_LIVE_NODE2';
@@ -70,13 +70,15 @@ if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk
         @curl_setopt_array($ch_aqi, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_TIMEOUT_MS     => 2000,
+            CURLOPT_CONNECTTIMEOUT_MS => 500,
+            CURLOPT_TIMEOUT_MS     => 900,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
         @curl_setopt_array($ch_soil, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_TIMEOUT_MS     => 2000,
+            CURLOPT_CONNECTTIMEOUT_MS => 500,
+            CURLOPT_TIMEOUT_MS     => 900,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
         @curl_multi_add_handle($mh, $ch_aqi);
@@ -183,8 +185,8 @@ if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk
     }
 }
 
-// Ensure Node 2 SSR also has WEATHER_LIVE_NODE2 (Pressure, UV Radiation, Solar Radiation)
-if (is_array($init_bulk) && empty($init_bulk['other_weather_history'])) {
+// Ensure Node 2 SSR also has WEATHER_LIVE_NODE2 (Pressure, UV Radiation, Solar Radiation) — skip blocking curl on AJAX SPA swaps
+if (empty($is_ajax) && is_array($init_bulk) && empty($init_bulk['other_weather_history'])) {
     $ow_cache = $CACHE_DIR . '/' . md5('ssr_raw_other_weather_node2_60') . '.json';
     $ow_rows = null;
     if (file_exists($ow_cache) && (time() - filemtime($ow_cache)) < 60) {

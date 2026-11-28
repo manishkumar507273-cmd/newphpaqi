@@ -145,8 +145,8 @@ if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk
             'id' => $srow['id'] ?? null,
             'timestamp' => $srow['timestamp'] ?? ($srow['created_at'] ?? date('c')),
             'created_at' => $srow['created_at'] ?? ($srow['timestamp'] ?? date('c')),
-            'temperature' => $sTemp,
-            'humidity' => $sHum,
+            'temperature' => null,
+            'humidity' => null,
             'soil_temperature' => $sTemp,
             'soil_humidity' => $sHum,
             'soil_moisture' => $sHum,
@@ -158,11 +158,16 @@ if ($init_bulk === null || (empty($init_bulk['aqi_history']) && empty($init_bulk
     }
 
     if (!empty($formatted_aqi) || !empty($formatted_soil)) {
+        $init_w_ssr = !empty($formatted_soil) ? $formatted_soil[0] : [];
+        if (!empty($formatted_aqi[0])) {
+            if (isset($formatted_aqi[0]['temperature']) && $formatted_aqi[0]['temperature'] !== null) $init_w_ssr['temperature'] = $formatted_aqi[0]['temperature'];
+            if (isset($formatted_aqi[0]['humidity']) && $formatted_aqi[0]['humidity'] !== null) $init_w_ssr['humidity'] = $formatted_aqi[0]['humidity'];
+        }
         $init_bulk = [
             'node' => '2',
             'status' => 'ONLINE',
             'aqi' => !empty($formatted_aqi) ? $formatted_aqi[0] : null,
-            'weather' => !empty($formatted_soil) ? $formatted_soil[0] : null,
+            'weather' => !empty($init_w_ssr) ? $init_w_ssr : null,
             'aqi_history' => $formatted_aqi,
             'weather_history' => $formatted_soil,
             'history' => $formatted_aqi,
@@ -342,10 +347,12 @@ if (!empty($init_bulk['aqi'])) {
     $init_pm10 = (isset($aqi_d['pm10']) && is_numeric($aqi_d['pm10'])) ? number_format((float)$aqi_d['pm10'], 1) : '--';
 }
 
-// Weather pre-calculated fields
+// Weather pre-calculated fields (Node 2 ambient Temp & Humidity come from AQI_LIVE_NODE2)
 $w_d = !empty($init_bulk['weather']) ? $init_bulk['weather'] : [];
-$init_weather_temp = (isset($w_d['temperature']) && is_numeric($w_d['temperature'])) ? number_format((float)$w_d['temperature'], 1) : '--';
-$init_weather_hum = (isset($w_d['humidity']) && is_numeric($w_d['humidity'])) ? number_format((float)$w_d['humidity'], 1) . '%' : '--%';
+$amb_temp_raw = (isset($aqi_d['temperature']) && is_numeric($aqi_d['temperature'])) ? $aqi_d['temperature'] : ($w_d['temperature'] ?? null);
+$amb_hum_raw = (isset($aqi_d['humidity']) && is_numeric($aqi_d['humidity'])) ? $aqi_d['humidity'] : ($w_d['humidity'] ?? null);
+$init_weather_temp = ($amb_temp_raw !== null && is_numeric($amb_temp_raw)) ? number_format((float)$amb_temp_raw, 1) : '--';
+$init_weather_hum = ($amb_hum_raw !== null && is_numeric($amb_hum_raw)) ? number_format((float)$amb_hum_raw, 1) . '%' : '--%';
 $init_weather_rain = isset($w_d['rain_gauge']) && is_numeric($w_d['rain_gauge']) ? number_format((float)$w_d['rain_gauge'], 1) . ' mm' : '--';
 $init_weather_wind = isset($w_d['wind_speed']) && is_numeric($w_d['wind_speed']) ? number_format((float)$w_d['wind_speed'], 1) . ' km/h' : '--';
 $init_weather_gust = isset($w_d['wind_gust']) && is_numeric($w_d['wind_gust']) ? number_format((float)$w_d['wind_gust'], 1) . ' m/s' : '--';
@@ -3543,33 +3550,46 @@ body.soil-backdrop-active header {
               </tr>
             </thead>
             <tbody id="weather-tbody">
-              <?php if (!empty($init_weather_history) && is_array($init_weather_history)): ?>
-                <?php foreach ($init_weather_history as $i => $row): 
+              <?php 
+                $weather_table_rows = (!empty($init_other_weather_history) && is_array($init_other_weather_history)) ? $init_other_weather_history : [];
+                $aqi_hist_for_weather = (!empty($init_bulk['aqi_history']) && is_array($init_bulk['aqi_history'])) ? $init_bulk['aqi_history'] : [];
+              ?>
+              <?php if (!empty($weather_table_rows)): ?>
+                <?php foreach ($weather_table_rows as $i => $row): 
                   $tsRaw = $row['timestamp'] ?? ($row['created_at'] ?? null);
                   $timeStr = $tsRaw ? date('h:i:s A', strtotime($tsRaw)) : '--';
-                  $rTemp = isset($row['temperature']) && is_numeric($row['temperature']) 
-                      ? number_format((float)$row['temperature'], 1) . ' °C' 
-                      : (isset($row['soil_temperature']) && is_numeric($row['soil_temperature']) ? number_format((float)$row['soil_temperature'], 1) . ' °C' : '--');
-                  $rHum = isset($row['humidity']) && is_numeric($row['humidity']) 
-                      ? number_format((float)$row['humidity'], 1) . '%' 
-                      : (isset($row['soil_moisture']) && is_numeric($row['soil_moisture']) ? number_format((float)$row['soil_moisture'], 1) . '%' : (isset($row['soil_humidity']) && is_numeric($row['soil_humidity']) ? number_format((float)$row['soil_humidity'], 1) . '%' : '--'));
-                  $otherRow = $init_other_weather_history[$i] ?? ($init_other_weather_history[0] ?? []);
-                  $pVal = isset($row['pressure']) && is_numeric($row['pressure']) ? $row['pressure'] : ($otherRow['pressure'] ?? null);
-                  $uVal = isset($row['uv_index']) && is_numeric($row['uv_index']) ? $row['uv_index'] : ($otherRow['uv_index'] ?? null);
+                  $wTempVal = (isset($row['temperature']) && is_numeric($row['temperature'])) ? $row['temperature'] : null;
+                  $wHumVal = (isset($row['humidity']) && is_numeric($row['humidity'])) ? $row['humidity'] : null;
+                  if (($wTempVal === null || $wHumVal === null) && $tsRaw && !empty($aqi_hist_for_weather)) {
+                      $wEpoch = strtotime($tsRaw);
+                      if ($wEpoch) {
+                          foreach ($aqi_hist_for_weather as $aRow) {
+                              $aTs = $aRow['timestamp'] ?? ($aRow['created_at'] ?? null);
+                              $aEpoch = $aTs ? strtotime($aTs) : 0;
+                              if ($aEpoch && abs($wEpoch - $aEpoch) <= 120) {
+                                  if ($wTempVal === null && isset($aRow['temperature']) && is_numeric($aRow['temperature'])) $wTempVal = $aRow['temperature'];
+                                  if ($wHumVal === null && isset($aRow['humidity']) && is_numeric($aRow['humidity'])) $wHumVal = $aRow['humidity'];
+                                  if ($wTempVal !== null && $wHumVal !== null) break;
+                              }
+                          }
+                      }
+                  }
+                  $rTemp = is_numeric($wTempVal) ? number_format((float)$wTempVal, 1) . ' °C' : '--';
+                  $rHum = is_numeric($wHumVal) ? number_format((float)$wHumVal, 1) . '%' : '--';
+                  $pVal = isset($row['pressure']) && is_numeric($row['pressure']) ? $row['pressure'] : (isset($row['barometric_pressure']) && is_numeric($row['barometric_pressure']) ? $row['barometric_pressure'] : null);
+                  $uVal = isset($row['uv_index']) && is_numeric($row['uv_index']) ? $row['uv_index'] : (isset($row['uv_radiation']) && is_numeric($row['uv_radiation']) ? $row['uv_radiation'] : null);
                   $sVal = isset($row['solar_radiation']) && is_numeric($row['solar_radiation'])
                       ? $row['solar_radiation']
                       : (isset($row['solar']) && is_numeric($row['solar'])
                           ? $row['solar']
-                          : (isset($row['radiation']) && is_numeric($row['radiation'])
-                              ? $row['radiation']
-                              : ($otherRow['solar_radiation'] ?? null)));
+                          : (isset($row['radiation']) && is_numeric($row['radiation']) ? $row['radiation'] : null));
                   $rPress = is_numeric($pVal) ? round((float)$pVal) . ' mb' : '--';
                   $rUv = is_numeric($uVal) ? number_format((float)$uVal, 1) : '--';
                   $rSolar = is_numeric($sVal) ? number_format((float)$sVal, 1) . ' W/m²' : '--';
-                  $wSpdVal = isset($row['wind_speed']) && is_numeric($row['wind_speed']) ? $row['wind_speed'] : ($otherRow['wind_speed'] ?? null);
-                  $gustVal = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? $row['wind_gust'] : ($otherRow['wind_gust'] ?? null);
-                  $dirVal = (isset($row['wind_direction']) && $row['wind_direction'] !== '') ? $row['wind_direction'] : ($otherRow['wind_direction'] ?? null);
-                  $rainVal = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? $row['rain_gauge'] : ($otherRow['rain_gauge'] ?? null);
+                  $wSpdVal = isset($row['wind_speed']) && is_numeric($row['wind_speed']) ? $row['wind_speed'] : null;
+                  $gustVal = isset($row['wind_gust']) && is_numeric($row['wind_gust']) ? $row['wind_gust'] : null;
+                  $dirVal = (isset($row['wind_direction']) && $row['wind_direction'] !== '') ? $row['wind_direction'] : null;
+                  $rainVal = isset($row['rain_gauge']) && is_numeric($row['rain_gauge']) ? $row['rain_gauge'] : null;
                   $rWSpd = is_numeric($wSpdVal) ? number_format((float)$wSpdVal, 1) . ' km/h' : '--';
                   $rGust = is_numeric($gustVal) ? number_format((float)$gustVal, 1) . ' m/s' : '--';
                   $rDir = ($dirVal !== null && $dirVal !== '') ? (smartairnet_parse_wind_direction($dirVal)['cardinal'] ?? (string)$dirVal) : '--';
@@ -4763,55 +4783,61 @@ function renderWeatherLiveTable(hist) {
     if (!tbodyWeather) return;
     let history = (hist && Array.isArray(hist) && hist.length > 0)
         ? hist
-        : (window.weatherHistory && window.weatherHistory.length > 0
-            ? window.weatherHistory
-            : (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.weather_history) ? window.INITIAL_DATA.weather_history : []));
+        : ((window.otherWeatherHistory && window.otherWeatherHistory.length > 0)
+            ? window.otherWeatherHistory
+            : (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.other_weather_history) ? window.INITIAL_DATA.other_weather_history : []));
     if ((!history || history.length === 0) && typeof getLocalCache === 'function') {
-        const cached = getLocalCache('smartairnet_bulk_telemetry_n2') || getLocalCache('smartairnet_bulk_telemetry');
-        if (cached && Array.isArray(cached.weather_history) && cached.weather_history.length > 0) {
-            history = cached.weather_history;
-            window.weatherHistory = history;
+        const cached = getLocalCache('smartairnet_bulk_telemetry_n2');
+        if (cached && Array.isArray(cached.other_weather_history) && cached.other_weather_history.length > 0) {
+            history = cached.other_weather_history;
+            window.otherWeatherHistory = history;
         }
     }
     if (!history || history.length === 0) {
-        if (tbodyWeather.children.length > 1 || (tbodyWeather.children.length === 1 && !tbodyWeather.innerText.includes('mode') && !tbodyWeather.innerText.includes('Loading'))) {
-            return;
-        }
         tbodyWeather.innerHTML = '<tr><td colspan="10" style="padding: 40px; text-align: center; color: #94a3b8;">No live weather telemetry found.</td></tr>';
         return;
     }
     let temps = [];
+    const aqiStream = (window.__liveDataStream && Array.isArray(window.__liveDataStream))
+        ? window.__liveDataStream
+        : ((window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.aqi_history)) ? window.INITIAL_DATA.aqi_history : []);
     tbodyWeather.innerHTML = history.map((row, i) => {
         const timeStr = typeof formatStreamTimestamp === 'function' ? formatStreamTimestamp(row) : (row.timestamp || '--');
-        const rawTemp = (row.temperature != null && !isNaN(Number(row.temperature))) 
-            ? row.temperature 
-            : (row.soil_temperature != null && !isNaN(Number(row.soil_temperature)) ? row.soil_temperature : null);
+        let rawTemp = (row.temperature != null && !isNaN(Number(row.temperature))) ? row.temperature : null;
+        let rawHum = (row.humidity != null && !isNaN(Number(row.humidity))) ? row.humidity : null;
+        if ((rawTemp == null || rawHum == null) && aqiStream.length > 0 && (row.timestamp || row.created_at)) {
+            const wDt = typeof safeParseDate === 'function' ? safeParseDate(row.timestamp || row.created_at) : new Date(row.timestamp || row.created_at);
+            const wMs = wDt ? wDt.getTime() : NaN;
+            if (!isNaN(wMs)) {
+                for (let k = 0; k < aqiStream.length; k++) {
+                    const aRow = aqiStream[k];
+                    const aDt = typeof safeParseDate === 'function' ? safeParseDate(aRow.timestamp || aRow.created_at) : new Date(aRow.timestamp || aRow.created_at);
+                    const aMs = aDt ? aDt.getTime() : NaN;
+                    if (!isNaN(aMs) && Math.abs(wMs - aMs) <= 120000) {
+                        if (rawTemp == null && aRow.temperature != null && !isNaN(Number(aRow.temperature))) rawTemp = aRow.temperature;
+                        if (rawHum == null && aRow.humidity != null && !isNaN(Number(aRow.humidity))) rawHum = aRow.humidity;
+                        if (rawTemp != null && rawHum != null) break;
+                    }
+                }
+            }
+        }
         const temp = rawTemp != null ? `${Number(rawTemp).toFixed(1)} °C` : '--';
-
-        const rawHum = (row.humidity != null && !isNaN(Number(row.humidity))) 
-            ? row.humidity 
-            : (row.soil_moisture != null ? row.soil_moisture : (row.soil_humidity != null ? row.soil_humidity : null));
         const hum = rawHum != null ? `${Number(rawHum).toFixed(1)}%` : '--';
 
-        const oFallback = (Array.isArray(window.otherWeatherHistory) && window.otherWeatherHistory.length > 0)
-            ? (window.otherWeatherHistory[i] || window.otherWeatherHistory[0])
-            : null;
-        const pSrc = (row.pressure != null && !isNaN(Number(row.pressure))) ? row.pressure : (oFallback && oFallback.pressure != null ? oFallback.pressure : null);
-        const uvSrc = (row.uv_index != null && !isNaN(Number(row.uv_index))) ? row.uv_index : (oFallback && oFallback.uv_index != null ? oFallback.uv_index : null);
+        const pSrc = (row.pressure != null && !isNaN(Number(row.pressure))) ? row.pressure : ((row.barometric_pressure != null && !isNaN(Number(row.barometric_pressure))) ? row.barometric_pressure : null);
+        const uvSrc = (row.uv_index != null && !isNaN(Number(row.uv_index))) ? row.uv_index : ((row.uv_radiation != null && !isNaN(Number(row.uv_radiation))) ? row.uv_radiation : null);
         const press = (pSrc != null && !isNaN(Number(pSrc))) ? `${Math.round(Number(pSrc))} mb` : '--';
         const uv = (uvSrc != null && !isNaN(Number(uvSrc))) ? Number(uvSrc).toFixed(1) : '--';
         const rawSolar = (row.solar_radiation != null && !isNaN(Number(row.solar_radiation)))
             ? row.solar_radiation
             : ((row.solar != null && !isNaN(Number(row.solar)))
                 ? row.solar
-                : ((row.radiation != null && !isNaN(Number(row.radiation)))
-                    ? row.radiation
-                    : (oFallback && oFallback.solar_radiation != null ? oFallback.solar_radiation : null)));
+                : ((row.radiation != null && !isNaN(Number(row.radiation))) ? row.radiation : null));
         const solar = rawSolar != null ? `${Number(rawSolar).toFixed(1)} W/m²` : '--';
-        const wSpdSrc = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? row.wind_speed : (oFallback && oFallback.wind_speed != null ? oFallback.wind_speed : null);
-        const gustSrc = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? row.wind_gust : (oFallback && oFallback.wind_gust != null ? oFallback.wind_gust : null);
-        const dirSrc = (row.wind_direction != null && row.wind_direction !== '') ? row.wind_direction : (oFallback && oFallback.wind_direction != null && oFallback.wind_direction !== '' ? oFallback.wind_direction : null);
-        const rainSrc = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? row.rain_gauge : (oFallback && oFallback.rain_gauge != null ? oFallback.rain_gauge : null);
+        const wSpdSrc = (row.wind_speed != null && !isNaN(Number(row.wind_speed))) ? row.wind_speed : null;
+        const gustSrc = (row.wind_gust != null && !isNaN(Number(row.wind_gust))) ? row.wind_gust : null;
+        const dirSrc = (row.wind_direction != null && row.wind_direction !== '') ? row.wind_direction : null;
+        const rainSrc = (row.rain_gauge != null && !isNaN(Number(row.rain_gauge))) ? row.rain_gauge : null;
         const wSpd = (wSpdSrc != null && !isNaN(Number(wSpdSrc))) ? `${Number(wSpdSrc).toFixed(1)} km/h` : '--';
         const gust = (gustSrc != null && !isNaN(Number(gustSrc))) ? `${Number(gustSrc).toFixed(1)} m/s` : '--';
         const dir = (dirSrc != null && dirSrc !== '') ? (typeof getCompassDir === 'function' ? getCompassDir(dirSrc) : dirSrc) : '--';
@@ -5364,12 +5390,13 @@ async function refreshDashboard(forceNetwork = false) {
                 }
             }
 
-            // Ambient Weather Temperature & Humidity
+            // Ambient Weather Temperature & Humidity (Node 2 prefers AQI_LIVE_NODE2)
             const ambTempEl = document.getElementById('card-weather-temp-val');
             const ambTempNote = document.getElementById('weather-temp-note-val');
             const ambTempDot = document.getElementById('weather-temp-slider-dot');
-            if (w.temperature != null && !isNaN(Number(w.temperature))) {
-                const aT = Number(w.temperature).toFixed(1);
+            const ambTempSrc = (aqiData && aqiData.temperature != null && !isNaN(Number(aqiData.temperature))) ? aqiData.temperature : w.temperature;
+            if (ambTempSrc != null && !isNaN(Number(ambTempSrc))) {
+                const aT = Number(ambTempSrc).toFixed(1);
                 if (ambTempEl) ambTempEl.innerText = `${aT} °C`;
                 if (ambTempNote) ambTempNote.innerText = `${aT} °C (Ambient)`;
                 if (ambTempDot) {
@@ -5388,8 +5415,9 @@ async function refreshDashboard(forceNetwork = false) {
             const ambHumEl = document.getElementById('card-weather-hum-val');
             const ambHumNote = document.getElementById('weather-hum-note-val');
             const ambHumDot = document.getElementById('weather-hum-slider-dot');
-            if (w.humidity != null && !isNaN(Number(w.humidity))) {
-                const aH = Number(w.humidity).toFixed(1);
+            const ambHumSrc = (aqiData && aqiData.humidity != null && !isNaN(Number(aqiData.humidity))) ? aqiData.humidity : w.humidity;
+            if (ambHumSrc != null && !isNaN(Number(ambHumSrc))) {
+                const aH = Number(ambHumSrc).toFixed(1);
                 if (ambHumEl) ambHumEl.innerText = `${aH}%`;
                 if (ambHumNote) ambHumNote.innerText = `Relative RH ${aH}%`;
                 if (ambHumDot) {
@@ -5814,10 +5842,17 @@ async function refreshDashboard(forceNetwork = false) {
         }
         
         // WEATHER & SOIL TABLES
+        if (historyData && historyData.length > 0) {
+            liveDataStream = historyData;
+            window.__liveDataStream = historyData;
+        }
+        if (bulkData && Array.isArray(bulkData.other_weather_history)) {
+            window.otherWeatherHistory = bulkData.other_weather_history;
+        }
         let wMinFormatted = '--';
         let wMaxFormatted = '--';
         // Render Weather & Soil Live Tables
-        renderWeatherLiveTable(weatherHistory);
+        renderWeatherLiveTable((bulkData && bulkData.other_weather_history) || window.otherWeatherHistory);
         renderSoilLiveTable(weatherHistory);
 
         // Cache unified hero state for 0ms instant reload

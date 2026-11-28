@@ -2110,12 +2110,6 @@ function renderUI(skipDayFilter = false) {
                         if ((val === null || val === undefined || val === '') && currentParam === 'solar_radiation') {
                             val = d.solar_radiation != null ? d.solar_radiation : (d.solar != null ? d.solar : d.radiation);
                         }
-                        if ((val === null || val === undefined || val === '') && currentParam === 'temperature') {
-                            val = d.temperature != null ? d.temperature : d.soil_temperature;
-                        }
-                        if ((val === null || val === undefined || val === '') && currentParam === 'humidity') {
-                            val = d.humidity != null ? d.humidity : (d.soil_moisture != null ? d.soil_moisture : d.soil_humidity);
-                        }
                         if (val !== null && val !== undefined && val !== '') {
                             const num = parseFloat(val);
                             if (!isNaN(num)) hourMap[hr] = num;
@@ -2154,12 +2148,6 @@ function renderUI(skipDayFilter = false) {
                 }
                 if ((val === null || val === undefined || val === '') && currentParam === 'solar_radiation') {
                     val = d.solar_radiation != null ? d.solar_radiation : (d.solar != null ? d.solar : d.radiation);
-                }
-                if ((val === null || val === undefined || val === '') && currentParam === 'temperature') {
-                    val = d.temperature != null ? d.temperature : d.soil_temperature;
-                }
-                if ((val === null || val === undefined || val === '') && currentParam === 'humidity') {
-                    val = d.humidity != null ? d.humidity : (d.soil_moisture != null ? d.soil_moisture : d.soil_humidity);
                 }
                 if (val !== null && val !== undefined && val !== '') {
                     const num = parseFloat(val);

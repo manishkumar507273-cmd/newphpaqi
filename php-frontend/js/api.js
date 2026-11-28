@@ -40,14 +40,14 @@ window.setLocalCache = setLocalCache;
 (function initClientStorageCache() {
     try {
         const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-        const cachedBulk = getLocalCache(STORAGE_KEYS.BULK + '_n' + activeNode) || getLocalCache(STORAGE_KEYS.BULK);
+        const cachedBulk = getLocalCache(STORAGE_KEYS.BULK + '_n' + activeNode);
         if (cachedBulk && (cachedBulk.aqi || cachedBulk.weather)) {
             if (!window.INITIAL_DATA || (!window.INITIAL_DATA.aqi && !window.INITIAL_DATA.weather)) {
                 window.INITIAL_DATA = cachedBulk;
             }
             const stamp = cachedBulk.fetchedAt || cachedBulk.time || 0;
-            if (!apiCache.liveBulk) apiCache.liveBulk = { data: cachedBulk, time: stamp };
-            if (!apiCache.overviewBulk) apiCache.overviewBulk = { data: cachedBulk, time: stamp };
+            if (!apiCache.liveBulk) apiCache.liveBulk = { data: cachedBulk, time: stamp, node: activeNode };
+            if (!apiCache.overviewBulk) apiCache.overviewBulk = { data: cachedBulk, time: stamp, node: activeNode };
             if (!apiCache.aqiLive && cachedBulk.aqi) apiCache.aqiLive = { data: cachedBulk.aqi, time: stamp };
         }
         const cachedForecast = getLocalCache(STORAGE_KEYS.FORECAST);
@@ -401,8 +401,8 @@ function formatWeatherReadingClient(raw) {
         id: raw.id || null,
         created_at: raw.created_at || raw.timestamp || null,
         timestamp: parseToIstIso(tsRaw),
-        temperature: (raw.temperature != null) ? adjustTempByHour(raw.temperature, tsRaw) : sTemp,
-        humidity: (raw.humidity != null) ? Number(Number(raw.humidity).toFixed(2)) : sHum,
+        temperature: (raw.temperature != null) ? adjustTempByHour(raw.temperature, tsRaw) : null,
+        humidity: (raw.humidity != null) ? Number(Number(raw.humidity).toFixed(2)) : null,
         wind_speed: (raw.wind_speed != null) ? Number(Number(raw.wind_speed).toFixed(2)) : null,
         wind_gust: (raw.wind_gust != null) ? Number(Number(raw.wind_gust).toFixed(2)) : null,
         rain_gauge: (raw.rain_gauge != null) ? Number(Number(raw.rain_gauge).toFixed(2)) : null,
@@ -529,13 +529,13 @@ async function fetchLiveBulk(forceNetwork = false) {
             }
         }
 
-        // If weather/soil row lacks ambient temp/humidity/wind/rain (e.g. Node 2 SOIL_LIVE_NODE2), merge from AQI_LIVE_NODE2
+        // If weather/soil row lacks ambient temp/humidity/wind/rain (Node 2 prefers AQI_LIVE_NODE2 temperature & humidity)
         if (latestAqi) {
             if (!latestWeather) {
                 latestWeather = { ...latestAqi };
             } else {
-                if (latestWeather.temperature == null && latestAqi.temperature != null) latestWeather.temperature = latestAqi.temperature;
-                if (latestWeather.humidity == null && latestAqi.humidity != null) latestWeather.humidity = latestAqi.humidity;
+                if ((isNode2 || latestWeather.temperature == null) && latestAqi.temperature != null) latestWeather.temperature = latestAqi.temperature;
+                if ((isNode2 || latestWeather.humidity == null) && latestAqi.humidity != null) latestWeather.humidity = latestAqi.humidity;
                 if (latestWeather.wind_speed == null && latestAqi.wind_speed != null) latestWeather.wind_speed = latestAqi.wind_speed;
                 if (latestWeather.wind_gust == null && latestAqi.wind_gust != null) latestWeather.wind_gust = latestAqi.wind_gust;
                 if (latestWeather.wind_direction == null && latestAqi.wind_direction != null) latestWeather.wind_direction = latestAqi.wind_direction;

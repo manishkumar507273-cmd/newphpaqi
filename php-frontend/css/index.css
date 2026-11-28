@@ -1678,8 +1678,9 @@ img, svg, video, canvas {
     padding-bottom: 0px !important;
   }
   #global-footer {
-    margin-top: 8px !important;
-    margin-bottom: calc(76px + env(safe-area-inset-bottom, 12px)) !important;
+    margin-top: 4px !important;
+    margin-bottom: calc(64px + env(safe-area-inset-bottom, 12px)) !important;
+    padding: 9px 14px !important;
   }
 }
 

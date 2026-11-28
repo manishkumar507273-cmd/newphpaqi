@@ -403,7 +403,7 @@ if ($latest_epoch > 0) {
       <div id="overview-chart-carousel" class="overview-chart-carousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; gap: 16px; padding-bottom: 2px; scrollbar-width: none;">
         
         <!-- SLIDE 0: AQI Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -419,13 +419,13 @@ if ($latest_epoch > 0) {
             </div>
           </div>
 
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-aqi-chart"></canvas>
           </div>
         </div>
 
         <!-- SLIDE 1: Temperature Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -440,13 +440,13 @@ if ($latest_epoch > 0) {
               Current: <span id="overview-temp-current">--</span>
             </div>
           </div>
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-temp-chart"></canvas>
           </div>
         </div>
 
         <!-- SLIDE 2: Humidity Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -461,13 +461,13 @@ if ($latest_epoch > 0) {
               Current: <span id="overview-hum-current">--</span>
             </div>
           </div>
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-hum-chart"></canvas>
           </div>
         </div>
 
         <!-- SLIDE 3: Wind Speed Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -482,13 +482,13 @@ if ($latest_epoch > 0) {
               Current: <span id="overview-wind-current">--</span>
             </div>
           </div>
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-wind-chart"></canvas>
           </div>
         </div>
 
         <!-- SLIDE 4: Rainfall Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -503,7 +503,7 @@ if ($latest_epoch > 0) {
               Current: <span id="overview-rain-current">--</span>
             </div>
           </div>
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-rain-chart"></canvas>
           </div>
         </div>
@@ -798,8 +798,8 @@ if ($latest_epoch > 0) {
         border-radius: 13px !important;
         gap: 6px !important;
       }
-      .overview-chart-carousel-section [style*="height: clamp(200px"] {
-        height: 155px !important;
+      .overview-chart-carousel-section [style*="height: clamp(165px"] {
+        height: 142px !important;
       }
       #btn-chart-prev, #btn-chart-next {
         width: 26px !important;

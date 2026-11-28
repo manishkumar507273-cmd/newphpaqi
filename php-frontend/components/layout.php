@@ -159,16 +159,57 @@ window.getActiveNode = function() {
     return window.__selectedNode || '1';
 };
 
-window.switchActiveNode = function(nodeId) {
+window.syncNavLinksNode = function(nodeId) {
+    var nid = (String(nodeId) === '2') ? '2' : '1';
+    try {
+        document.querySelectorAll('#desktop-nav a[data-nav-link], #mobile-bottom-nav a[data-bottom-nav], #mobile-brand-overview, header a[href*="?page="]').forEach(function(a) {
+            var rawHref = a.getAttribute('href');
+            if (!rawHref || rawHref.indexOf('?page=') === -1) return;
+            var u = new URL(rawHref, window.location.origin);
+            u.searchParams.set('node', nid);
+            a.setAttribute('href', '?' + u.searchParams.toString());
+        });
+    } catch(e) {}
+};
+
+window.switchActiveNode = function(nodeId, ev) {
+    if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
     if (nodeId !== '1' && nodeId !== '2') nodeId = '1';
     try {
         localStorage.setItem('smartairnet_selected_node', nodeId);
-        document.cookie = "smartairnet_selected_node=" + nodeId + "; path=/; max-age=" + (365 * 86400) + "; SameSite=Lax";
+        var isSecure = (window.location.protocol === 'https:') ? '; Secure' : '';
+        document.cookie = "smartairnet_selected_node=" + nodeId + "; path=/; max-age=" + (365 * 86400) + "; SameSite=Lax" + isSecure;
     } catch(e) {}
-    
+
+    // Close dropdown menus & show immediate transition feedback
+    try {
+        ['node-dropdown-menu', 'mobile-node-dropdown-menu'].forEach(function(id) {
+            var m = document.getElementById(id);
+            if (m) m.style.display = 'none';
+        });
+        ['node-dropdown-chevron', 'mobile-node-dropdown-chevron'].forEach(function(id) {
+            var c = document.getElementById(id);
+            if (c) c.style.transform = 'rotate(0deg)';
+        });
+        document.body.style.cursor = 'wait';
+        var pb = document.getElementById('page-progress-bar');
+        if (pb) {
+            pb.style.opacity = '1';
+            pb.style.width = '55%';
+        }
+        if (window.__apiCache) {
+            window.__apiCache.liveBulk = null;
+            window.__apiCache.overviewBulk = null;
+        }
+    } catch(e) {}
+
     var url = new URL(window.location.href);
     url.searchParams.set('node', nodeId);
-    window.location.href = url.toString();
+    if (nodeId === '1') {
+        if (url.searchParams.get('tab') === 'soil') url.searchParams.delete('tab');
+        if (String(url.searchParams.get('param') || '').indexOf('soil_') === 0) url.searchParams.delete('param');
+    }
+    window.location.assign(url.toString());
 };
 
 window.toggleNodeDropdown = function(e, target) {
@@ -716,7 +757,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
             </div>
             
             <!-- Option: Node 1 -->
-            <button type="button" onclick="switchActiveNode('1')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '1' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s;" onmouseover="if('<?= $selected_node ?>' !== '1') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '1') this.style.background='transparent';">
+            <button type="button" onclick="window.switchActiveNode('1', event)" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '1' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s;" onmouseover="if('<?= $selected_node ?>' !== '1') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '1') this.style.background='transparent';">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '1' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
@@ -730,7 +771,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
             </button>
 
             <!-- Option: Node 2 -->
-            <button type="button" onclick="switchActiveNode('2')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '2' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s; margin-top: 2px;" onmouseover="if('<?= $selected_node ?>' !== '2') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '2') this.style.background='transparent';">
+            <button type="button" onclick="window.switchActiveNode('2', event)" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '2' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s; margin-top: 2px;" onmouseover="if('<?= $selected_node ?>' !== '2') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '2') this.style.background='transparent';">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '2' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
@@ -778,7 +819,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
             </div>
             
             <!-- Option: Node 1 -->
-            <button type="button" onclick="switchActiveNode('1')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '1' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s;" onmouseover="if('<?= $selected_node ?>' !== '1') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '1') this.style.background='transparent';">
+            <button type="button" onclick="window.switchActiveNode('1', event)" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '1' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s;" onmouseover="if('<?= $selected_node ?>' !== '1') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '1') this.style.background='transparent';">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '1' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
@@ -792,7 +833,7 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
             </button>
 
             <!-- Option: Node 2 -->
-            <button type="button" onclick="switchActiveNode('2')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '2' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s; margin-top: 2px;" onmouseover="if('<?= $selected_node ?>' !== '2') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '2') this.style.background='transparent';">
+            <button type="button" onclick="window.switchActiveNode('2', event)" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 10px; border: none; background: <?= $selected_node === '2' ? '#f0fdf4' : 'transparent' ?>; cursor: pointer; text-align: left; transition: background 0.15s; margin-top: 2px;" onmouseover="if('<?= $selected_node ?>' !== '2') this.style.background='#f8fafc';" onmouseout="if('<?= $selected_node ?>' !== '2') this.style.background='transparent';">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; display: inline-block; flex-shrink: 0;" class="<?= ($selected_node === '2' && $is_telemetry_live) ? 'live-dot-pulse' : '' ?>"></span>
                 <div style="display: flex; flex-direction: column;">
@@ -923,12 +964,16 @@ $active_layout_bg = ($is_weather_tab_active || $is_soil_tab_active)
         #global-footer {
           display: flex !important;
           visibility: visible !important;
-          margin-bottom: calc(74px + env(safe-area-inset-bottom, 14px)) !important;
+          margin-top: 4px !important;
+          margin-bottom: calc(64px + env(safe-area-inset-bottom, 12px)) !important;
+          padding: 9px 14px !important;
         }
       }
       @media (min-width: 768px) {
         #global-footer {
+          margin-top: 4px !important;
           margin-bottom: 0 !important;
+          padding: 9px 16px !important;
         }
       }
     </style>

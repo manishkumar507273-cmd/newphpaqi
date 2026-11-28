@@ -65,12 +65,14 @@ if (!empty($init_bulk['aqi'])) {
     }
 }
 
-// Weather / Soil pre-calculated fields
+// Weather / AQI ambient Temperature & Humidity for Node 2 (from AQI_LIVE_NODE2 first, then WEATHER_LIVE_NODE2)
 $w_d = !empty($init_bulk['weather']) ? $init_bulk['weather'] : [];
-$init_temp = (isset($w_d['temperature']) && is_numeric($w_d['temperature'])) ? number_format((float)$w_d['temperature'], 1) : ((isset($w_d['soil_temperature']) && is_numeric($w_d['soil_temperature'])) ? number_format((float)$w_d['soil_temperature'], 1) : '--');
+$aqi_w_src = !empty($init_bulk['aqi']) ? $init_bulk['aqi'] : [];
+$raw_ov_temp = (isset($aqi_w_src['temperature']) && is_numeric($aqi_w_src['temperature'])) ? $aqi_w_src['temperature'] : ($w_d['temperature'] ?? null);
+$init_temp = ($raw_ov_temp !== null && is_numeric($raw_ov_temp)) ? number_format((float)$raw_ov_temp, 1) : '--';
 $init_temp_bar_width = is_numeric($init_temp) ? max(5, min(95, round(((float)$init_temp / 50) * 100))) . '%' : '0%';
 
-$hum_val = $w_d['humidity'] ?? ($w_d['soil_moisture'] ?? ($w_d['soil_humidity'] ?? null));
+$hum_val = (isset($aqi_w_src['humidity']) && is_numeric($aqi_w_src['humidity'])) ? $aqi_w_src['humidity'] : ($w_d['humidity'] ?? null);
 $init_hum = ($hum_val !== null && is_numeric($hum_val)) ? number_format((float)$hum_val, 1) : '--';
 $init_hum_badge = '';
 $init_hum_bar_width = is_numeric($init_hum) ? max(5, min(95, round((float)$init_hum))) . '%' : '0%';
@@ -89,7 +91,7 @@ $is_overview_offline = empty($init_bulk);
 $latest_epoch = !empty($init_bulk['aqi']['timestamp']) ? strtotime($init_bulk['aqi']['timestamp']) : (!empty($init_bulk['weather']['timestamp']) ? strtotime($init_bulk['weather']['timestamp']) : 0);
 $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) : '--';
 ?>
-<div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow-x: hidden; width: 100%; max-width: 100%; box-sizing: border-box; padding: clamp(12px, 2.5vw, 20px) clamp(12px, 2.5vw, 20px) 6px; margin-bottom: 2px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
+<div class="overview-page-root" style="position: relative; min-height: auto; border-radius: 24px; overflow: hidden; width: 100%; max-width: 100%; box-sizing: border-box; padding: clamp(12px, 2.5vw, 20px) clamp(12px, 2.5vw, 20px) 6px; margin-bottom: 2px; background: radial-gradient(ellipse 120% 80% at 50% -10%, #e2e8f0 0%, #f1f5f9 60%, #e2e8f0 100%); color: #0f172a; font-family: var(--font-sans); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04); animation: fade-in 0.4s ease-out;">
   
   <!-- Dynamic Ambient Canvas -->
   <canvas id="ambient-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.9;"></canvas>
@@ -338,7 +340,7 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
       <div id="overview-chart-carousel" class="overview-chart-carousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; gap: 16px; padding-bottom: 2px; scrollbar-width: none;">
         
         <!-- SLIDE 0: AQI Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -354,13 +356,13 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
             </div>
           </div>
 
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-aqi-chart"></canvas>
           </div>
         </div>
 
         <!-- SLIDE 1: Temperature Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -375,13 +377,13 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
               Current: <span id="overview-temp-current">--</span>
             </div>
           </div>
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-temp-chart"></canvas>
           </div>
         </div>
 
         <!-- SLIDE 2: Humidity Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -396,13 +398,13 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
               Current: <span id="overview-hum-current">--</span>
             </div>
           </div>
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-hum-chart"></canvas>
           </div>
         </div>
 
         <!-- SLIDE 3: Wind Speed Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -417,13 +419,13 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
               Current: <span id="overview-wind-current">--</span>
             </div>
           </div>
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-wind-chart"></canvas>
           </div>
         </div>
 
         <!-- SLIDE 4: Rainfall Card -->
-        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(14px, 3vw, 24px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 14px;">
+        <div class="chart-slide-card snap-center" style="flex: 0 0 100%; min-width: 100%; box-sizing: border-box; background-color: #ffffff; border-radius: 20px; padding: clamp(12px, 2vw, 18px); border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -438,7 +440,7 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
               Current: <span id="overview-rain-current">--</span>
             </div>
           </div>
-          <div style="width: 100%; height: clamp(200px, 32vh, 260px); position: relative;">
+          <div style="width: 100%; height: clamp(165px, 24vh, 220px); position: relative;">
             <canvas id="overview-rain-chart"></canvas>
           </div>
         </div>
@@ -733,8 +735,8 @@ $overview_offline_time_str = ($latest_epoch > 0) ? date('h:i A', $latest_epoch) 
         border-radius: 13px !important;
         gap: 6px !important;
       }
-      .overview-chart-carousel-section [style*="height: clamp(200px"] {
-        height: 155px !important;
+      .overview-chart-carousel-section [style*="height: clamp(165px"] {
+        height: 142px !important;
       }
       #btn-chart-prev, #btn-chart-next {
         width: 26px !important;
@@ -1259,12 +1261,13 @@ async function refreshData(isSilent = false, forceNetwork = false) {
             if (deskChartCur) deskChartCur.innerText = aqi;
         }
 
-        // Weather
-        if (weatherRes && weatherRes.data) {
-            const w = weatherRes.data;
-            rawTemp = w.temperature;
+        // Weather (Node 2 ambient Temp & Humidity come from AQI_LIVE_NODE2)
+        if ((weatherRes && weatherRes.data) || (aqiRes && aqiRes.data)) {
+            const w = (weatherRes && weatherRes.data) ? weatherRes.data : {};
+            const a = (aqiRes && aqiRes.data) ? aqiRes.data : {};
+            rawTemp = (a.temperature != null && !isNaN(Number(a.temperature))) ? a.temperature : w.temperature;
             rawWind = w.wind_speed;
-            const hum = w.humidity;
+            const hum = (a.humidity != null && !isNaN(Number(a.humidity))) ? a.humidity : w.humidity;
             const rain = w.rain_gauge;
             
             updateTempDisplay();
@@ -1343,11 +1346,17 @@ async function refreshData(isSilent = false, forceNetwork = false) {
             renderGenericChart('overview-aqi-chart', [timeStr], [curAqi], 'AQI', '#00bfa5');
         }
 
-        // Weather History Charts
-        const weatherHistoryRes = bulkData.weather_history;
-        if (weatherHistoryRes && weatherHistoryRes.length > 0) {
-            cachedWeatherHistory = weatherHistoryRes;
-            renderWeatherHistoryCharts(weatherHistoryRes);
+        // Weather History Charts (Temp & Hum from AQI_LIVE_NODE2; Wind & Rain from WEATHER_LIVE_NODE2)
+        const weatherHistoryRes = (bulkData.other_weather_history && bulkData.other_weather_history.length > 0)
+            ? bulkData.other_weather_history
+            : bulkData.weather_history;
+        const aqiTempHumHist = (bulkData.aqi_history && bulkData.aqi_history.length > 0)
+            ? bulkData.aqi_history
+            : weatherHistoryRes;
+        if ((aqiTempHumHist && aqiTempHumHist.length > 0) || (weatherHistoryRes && weatherHistoryRes.length > 0)) {
+            cachedWeatherHistory = weatherHistoryRes || aqiTempHumHist;
+            window.__cachedAqiTempHumHist = aqiTempHumHist;
+            renderWeatherHistoryCharts(cachedWeatherHistory, aqiTempHumHist);
         }
 
         setupCarouselScrollListener();
@@ -1368,61 +1377,65 @@ async function refreshData(isSilent = false, forceNetwork = false) {
     }
 }
 
-function renderWeatherHistoryCharts(weatherHistoryRes) {
-    if (!weatherHistoryRes || !weatherHistoryRes.length) return;
-    const wHistory = weatherHistoryRes.slice().reverse();
+function renderWeatherHistoryCharts(weatherHistoryRes, aqiTempHumHistParam) {
+    const aqiSrc = (aqiTempHumHistParam && aqiTempHumHistParam.length)
+        ? aqiTempHumHistParam
+        : ((window.__cachedAqiTempHumHist && window.__cachedAqiTempHumHist.length) ? window.__cachedAqiTempHumHist : weatherHistoryRes);
+    const wHistory = (weatherHistoryRes && weatherHistoryRes.length) ? weatherHistoryRes.slice().reverse() : [];
+    const thHistory = (aqiSrc && aqiSrc.length) ? aqiSrc.slice().reverse() : [];
+    if (!wHistory.length && !thHistory.length) return;
+
+    const thLabels = [];
+    const tempData = [], humData = [];
+    thHistory.forEach(row => {
+        const dt = new Date(row.timestamp || row.created_at || new Date());
+        thLabels.push(dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' }).toLowerCase());
+        let tVal = null;
+        if (row.temperature != null && !isNaN(Number(row.temperature))) {
+            tVal = Number(row.temperature);
+            tVal = (tempUnit === 'F') ? Number(((tVal * 9/5) + 32).toFixed(1)) : Number(tVal.toFixed(1));
+        }
+        const hVal = (row.humidity != null && !isNaN(Number(row.humidity))) ? Number(Number(row.humidity).toFixed(1)) : null;
+        tempData.push(tVal);
+        humData.push(hVal);
+    });
+
     const wLabels = [];
-    const tempData = [], humData = [], windData = [], rainData = [];
-
-    let minTemp = 999, maxTemp = -999;
-    let minHum = 999, maxHum = -999;
-    let minWind = 999, maxWind = -999;
-    let minRain = 999, maxRain = -999;
-
+    const windData = [], rainData = [];
     wHistory.forEach(row => {
         const dt = new Date(row.timestamp || row.created_at || new Date());
         wLabels.push(dt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute:'2-digit' }).toLowerCase());
-        
-        let tVal = row.temperature != null ? Number(row.temperature) : 0;
-        if (tempUnit === 'F') tVal = Number(((tVal * 9/5) + 32).toFixed(1));
-        else tVal = Number(tVal.toFixed(1));
-
-        const hVal = row.humidity != null ? Number(Number(row.humidity).toFixed(1)) : 0;
-        
-        let wVal = row.wind_speed != null ? Number(row.wind_speed) : 0;
-        if (windUnit === 'ms') wVal = Number((wVal / 3.6).toFixed(1));
-        else wVal = Number(wVal.toFixed(1));
-
-        const rawR = row.rain_gauge != null ? Number(row.rain_gauge) : 0;
-        const rVal = rainUnit === 'cm' ? Number((rawR / 10).toFixed(2)) : Number(rawR.toFixed(1));
-
-        tempData.push(tVal);
-        humData.push(hVal);
+        let wVal = row.wind_speed != null ? Number(row.wind_speed) : null;
+        if (wVal != null) wVal = (windUnit === 'ms') ? Number((wVal / 3.6).toFixed(1)) : Number(wVal.toFixed(1));
+        const rawR = row.rain_gauge != null ? Number(row.rain_gauge) : null;
+        const rVal = (rawR != null) ? (rainUnit === 'cm' ? Number((rawR / 10).toFixed(2)) : Number(rawR.toFixed(1))) : null;
         windData.push(wVal);
         rainData.push(rVal);
-
-        if (tVal < minTemp) minTemp = tVal;
-        if (tVal > maxTemp) maxTemp = tVal;
-        if (hVal < minHum) minHum = hVal;
-        if (hVal > maxHum) maxHum = hVal;
-        if (wVal < minWind) minWind = wVal;
-        if (wVal > maxWind) maxWind = wVal;
-        if (rVal < minRain) minRain = rVal;
-        if (rVal > maxRain) maxRain = rVal;
     });
+
+    const lastNonNull = (arr) => {
+        for (let idx = arr.length - 1; idx >= 0; idx--) {
+            if (arr[idx] != null) return arr[idx];
+        }
+        return null;
+    };
+    const latestT = lastNonNull(tempData);
+    const latestH = lastNonNull(humData);
+    const latestW = lastNonNull(windData);
+    const latestR = lastNonNull(rainData);
 
     // Update Current Value Badges on Chart Slides
     const tCur = document.getElementById('overview-temp-current');
-    if (tCur) tCur.innerText = tempData.length ? `${tempData[tempData.length - 1]} °${tempUnit}` : '--';
+    if (tCur) tCur.innerText = latestT != null ? `${latestT} °${tempUnit}` : '--';
     const hCur = document.getElementById('overview-hum-current');
-    if (hCur) hCur.innerText = humData.length ? `${humData[humData.length - 1]}%` : '--';
+    if (hCur) hCur.innerText = latestH != null ? `${latestH}%` : '--';
     const wCur = document.getElementById('overview-wind-current');
-    if (wCur) wCur.innerText = windData.length ? `${windData[windData.length - 1]} ${windUnit === 'kmh' ? 'km/h' : 'm/s'}` : '--';
+    if (wCur) wCur.innerText = latestW != null ? `${latestW} ${windUnit === 'kmh' ? 'km/h' : 'm/s'}` : '--';
     const rCur = document.getElementById('overview-rain-current');
-    if (rCur) rCur.innerText = rainData.length ? `${rainData[rainData.length - 1]} ${rainUnit}` : '--';
+    if (rCur) rCur.innerText = latestR != null ? `${latestR} ${rainUnit}` : '--';
 
-    renderGenericChart('overview-temp-chart', wLabels, tempData, `Temperature (°${tempUnit})`, '#f97316');
-    renderGenericChart('overview-hum-chart', wLabels, humData, 'Humidity (%)', '#0ea5e9');
+    renderGenericChart('overview-temp-chart', thLabels, tempData, `Temperature (°${tempUnit})`, '#f97316');
+    renderGenericChart('overview-hum-chart', thLabels, humData, 'Humidity (%)', '#0ea5e9');
     renderGenericChart('overview-wind-chart', wLabels, windData, `Wind Speed (${windUnit === 'kmh' ? 'km/h' : 'm/s'})`, '#10b981');
     renderGenericChart('overview-rain-chart', wLabels, rainData, `Rainfall (${rainUnit})`, '#6366f1');
 

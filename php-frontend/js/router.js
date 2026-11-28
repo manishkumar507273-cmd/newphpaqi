@@ -64,13 +64,17 @@
         }
     }
 
-    // Prefetch page data on hover/touch or eager pre-cache
+    // Prefetch page data on hover/touch
     function prefetchPage(url, force = false) {
         try {
             const urlObj = new URL(url, window.location.origin);
             const targetPage = urlObj.searchParams.get('page') || 'overview';
             const activeNode = urlObj.searchParams.get('node') || (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-            const cacheKey = `${targetPage}_n${activeNode}`;
+            const currentNode = String(window.__selectedNode || (window.getActiveNode ? window.getActiveNode() : '1'));
+            // Do not prefetch across different stations
+            if (String(activeNode) !== currentNode) return null;
+            const targetTab = urlObj.searchParams.get('tab') || '';
+            const cacheKey = `${targetPage}_n${activeNode}${targetTab ? '_t' + targetTab : ''}`;
             const isUserLoggedIn = isUserAuthenticated();
 
             // Skip prefetching protected pages for unauthenticated visitors
@@ -80,8 +84,10 @@
             if (!force && existing && (Date.now() - existing.time < 30000)) return null;
             if (inFlightPrefetches.has(cacheKey)) return inFlightPrefetches.get(cacheKey);
 
-            const nodeQuery = (activeNode === '2') ? '&node=2' : '';
-            const p = fetch(`?page=${encodeURIComponent(targetPage)}${nodeQuery}`, {
+            urlObj.searchParams.set('page', targetPage);
+            urlObj.searchParams.set('node', activeNode);
+            const fetchQuery = '?' + urlObj.searchParams.toString();
+            const p = fetch(fetchQuery, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
                 .then(res => res.json())
@@ -100,24 +106,10 @@
         } catch (e) { return null; }
     }
 
-    // Eagerly pre-cache main pages sequentially in background so Vercel serverless & mobile connections aren't saturated
+    // Avoid firing eager heavy SSR requests on load (prevents saturating Vercel serverless lambdas)
     const CORE_PAGES = ['overview', 'live', 'historical', 'predictive'];
-    if (document.readyState === 'complete') {
-        setTimeout(initPrecache, 350);
-    } else {
-        window.addEventListener('load', () => setTimeout(initPrecache, 350));
-    }
     async function initPrecache() {
-        const isUserLoggedIn = isUserAuthenticated();
-        const activeNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
-        const nodeSuffix = (activeNode === '2') ? '&node=2' : '';
-        for (const pg of CORE_PAGES) {
-            if (PROTECTED_PAGES.includes(pg) && !isUserLoggedIn) continue;
-            const cacheKey = `${pg}_n${activeNode}`;
-            if (!pageCache.has(cacheKey)) {
-                await prefetchPage(`?page=${pg}${nodeSuffix}`, pg === currentPage);
-            }
-        }
+        return;
     }
 
     // Update Header Navigation elements to match target page
@@ -296,22 +288,40 @@
     // Main Navigation Function
     async function navigateToPage(url, pushState = true) {
         let targetPage = 'overview';
-        let targetNode = (window.getActiveNode ? window.getActiveNode() : (window.__selectedNode || '1'));
+        let targetNode = String(window.__selectedNode || (window.getActiveNode ? window.getActiveNode() : '1'));
+        let fetchQuery = url;
+        let targetTab = '';
         try {
             const urlObj = new URL(url, window.location.origin);
             targetPage = urlObj.searchParams.get('page') || 'overview';
             if (targetPage === 'weather') targetPage = 'live';
             if (urlObj.searchParams.has('node')) {
-                targetNode = urlObj.searchParams.get('node');
+                const rawNode = urlObj.searchParams.get('node');
+                if (rawNode === '1' || rawNode === '2') targetNode = rawNode;
             }
+            urlObj.searchParams.set('page', targetPage);
+            urlObj.searchParams.set('node', targetNode);
+            targetTab = urlObj.searchParams.get('tab') || '';
+            fetchQuery = '?' + urlObj.searchParams.toString();
         } catch (e) {
             targetPage = 'overview';
         }
 
-        const cacheKey = `${targetPage}_n${targetNode}`;
-        const nodeSuffix = (targetNode === '2') ? '&node=2' : '';
+        const currentNode = String(window.__selectedNode || '1');
+        // If switching stations via link, perform a full station reload so header, SUPABASE_CONFIG, and footer sync completely
+        if (String(targetNode) !== currentNode) {
+            if (typeof window.switchActiveNode === 'function') {
+                window.switchActiveNode(targetNode);
+            } else {
+                window.location.assign(fetchQuery);
+            }
+            return;
+        }
 
-        if (targetPage === currentPage && !pushState) {
+        const cacheKey = `${targetPage}_n${targetNode}${targetTab ? '_t' + targetTab : ''}`;
+        const nodeSuffix = (targetNode === '2') ? '&node=2' : '&node=1';
+
+        if (targetPage === currentPage && !pushState && !targetTab) {
             return;
         }
 
@@ -357,14 +367,14 @@
             }
         } else if (Date.now() - cached.time > 20000) {
             // Stale-while-revalidate in background
-            prefetchPage(`?page=${encodeURIComponent(targetPage)}${nodeSuffix}`, true);
+            prefetchPage(fetchQuery, true);
         }
 
         let timedOut = false;
         const timeoutId = setTimeout(() => {
             timedOut = true;
             try { controller.abort(); } catch (e) {}
-        }, 4500);
+        }, 15000);
 
         try {
             let data = hasFreshCache ? cached.data : null;
@@ -374,7 +384,7 @@
                     data = await inFlightPrefetches.get(cacheKey);
                 }
                 if (!data) {
-                    const res = await fetch(`?page=${encodeURIComponent(targetPage)}${nodeSuffix}`, {
+                    const res = await fetch(fetchQuery, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest' },
                         signal: controller.signal
                     });
@@ -392,7 +402,7 @@
             }
 
             if (!data) {
-                window.location.href = url;
+                window.location.href = fetchQuery;
                 return;
             }
 
@@ -411,7 +421,7 @@
             }
 
             if (!data.success) {
-                window.location.href = url;
+                window.location.href = fetchQuery;
                 return;
             }
 
@@ -425,14 +435,19 @@
                 window.__cleanupCurrentPage = null;
             }
             document.body.classList.remove('weather-backdrop-active');
+            document.body.classList.remove('soil-backdrop-active');
 
             // Instant content swap (no artificial delays)
             // Push to history
             if (pushState) {
-                history.pushState({ page: targetPage, node: targetNode }, '', `?page=${targetPage}${nodeSuffix}`);
+                history.pushState({ page: targetPage, node: targetNode }, '', fetchQuery);
             }
             currentPage = targetPage;
+            window.__currentPage = targetPage;
             window.__selectedNode = String(targetNode);
+            if (typeof window.syncNavLinksNode === 'function') {
+                window.syncNavLinksNode(targetNode);
+            }
             const footerStation = document.getElementById('footer-station-name');
             const footerBullet = document.getElementById('footer-station-bullet');
             if (footerStation) {

@@ -1072,6 +1072,15 @@ switch ($action) {
                 }
             }
         }
+        if ($isNode2 && $res['aqi']) {
+            if (!isset($res['weather'])) $res['weather'] = [];
+            if (isset($res['aqi']['temperature']) && $res['aqi']['temperature'] !== null) {
+                $res['weather']['temperature'] = $res['aqi']['temperature'];
+            }
+            if (isset($res['aqi']['humidity']) && $res['aqi']['humidity'] !== null) {
+                $res['weather']['humidity'] = $res['aqi']['humidity'];
+            }
+        }
         $res['other_weather'] = $latestOther;
         $res['other_weather_history'] = $otherHist;
 
@@ -1238,6 +1247,15 @@ switch ($action) {
                         $res['weather'][$ok] = $latestOther[$ok];
                     }
                 }
+            }
+        }
+        if ($isNode2 && $res['aqi']) {
+            if (!isset($res['weather'])) $res['weather'] = [];
+            if (isset($res['aqi']['temperature']) && $res['aqi']['temperature'] !== null) {
+                $res['weather']['temperature'] = $res['aqi']['temperature'];
+            }
+            if (isset($res['aqi']['humidity']) && $res['aqi']['humidity'] !== null) {
+                $res['weather']['humidity'] = $res['aqi']['humidity'];
             }
         }
         $res['other_weather'] = $latestOther;

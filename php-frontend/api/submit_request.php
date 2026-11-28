@@ -212,14 +212,31 @@ function buildMergedNode1WeatherCsv(string $targetDate, callable $get_env_fn): s
         if ($extraByHour[$hrKey]['solar_radiation'] === null && $solar !== null && $solar !== '') $extraByHour[$hrKey]['solar_radiation'] = (float)$solar;
     }
 
-    $csv = "Date,Time,Temperature (deg C),Humidity (%),Pressure (mb),UV Index,Solar Radiation (W/m2),Wind Speed (km/h),Wind Gust (km/h),Wind Direction,Rain Gauge (mm)\n";
+    $tz = new DateTimeZone('Asia/Kolkata');
+    $winStart = new DateTime("{$targetDate} 08:00:00", $tz);
+    $winEnd   = (clone $winStart)->modify('+24 hours')->modify('-1 second');
+
+    $hourlyRows = [];
     foreach ($n1Rows as $row) {
         if (!is_array($row)) continue;
         $dt = $toIst($row['timestamp_hour'] ?? $row['timestamp'] ?? $row['created_at'] ?? '');
-        $dateStr = $dt ? $dt->format('d/m/Y') : $targetDate;
-        $timeStr = $dt ? $dt->format('h:i A') : '--:--';
-        $hrKey   = $dt ? $dt->format('Y-m-d H') : '';
-        $ex = ($hrKey !== '' && isset($extraByHour[$hrKey])) ? $extraByHour[$hrKey] : ['pressure' => null, 'uv_index' => null, 'solar_radiation' => null];
+        if (!$dt || $dt < $winStart || $dt > $winEnd) continue;
+        $hrKey = $dt->format('Y-m-d H');
+        if (!isset($hourlyRows[$hrKey])) {
+            $hourlyRows[$hrKey] = ['dt' => $dt, 'row' => $row];
+        }
+    }
+    if (empty($hourlyRows)) return '';
+    ksort($hourlyRows);
+    $hourlyRows = array_slice($hourlyRows, 0, 24, true);
+
+    $csv = "Date,Time,Temperature (deg C),Humidity (%),Pressure (mb),UV Index,Solar Radiation (W/m2),Wind Speed (km/h),Wind Gust (km/h),Wind Direction,Rain Gauge (mm)\n";
+    foreach ($hourlyRows as $hrKey => $entry) {
+        $dt = $entry['dt'];
+        $row = $entry['row'];
+        $dateStr = $dt->format('d/m/Y');
+        $timeStr = $dt->format('h:i A');
+        $ex = isset($extraByHour[$hrKey]) ? $extraByHour[$hrKey] : ['pressure' => null, 'uv_index' => null, 'solar_radiation' => null];
 
         $rawPress = $row['pressure'] ?? ($row['barometric_pressure'] ?? $ex['pressure']);
         $rawUv    = $row['uv_index'] ?? ($row['uv_radiation'] ?? ($row['uv'] ?? $ex['uv_index']));

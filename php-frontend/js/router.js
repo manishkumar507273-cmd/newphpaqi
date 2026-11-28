@@ -116,8 +116,8 @@
         return;
     }
 
-    // Update Header Navigation elements to match target page
-    function updateHeaderUI(targetPage) {
+    // Update Header Navigation elements (and optionally background) to match target page
+    function updateHeaderUI(targetPage, applyBackground = true) {
         const PAGE_TITLES = {
             overview: 'Atmosphere Snapshot',
             live: 'Live Data Stream',
@@ -137,27 +137,32 @@
             mobileSecondary.style.display = 'none';
         }
 
-        // Update Page Background dynamically: Live AQI matches the current AQI bar theme
-        const curAqi = (window.currentAqiValue != null && !isNaN(window.currentAqiValue)) ? window.currentAqiValue : 38;
-        const aqiTheme = window.currentAQITheme || (typeof window.getAQITheme === 'function' ? window.getAQITheme(curAqi) : null);
-        const livePageBg = aqiTheme ? `background-color: ${aqiTheme.pageColor}; background-image: ${aqiTheme.pageBg};` : 'background-color: #dcfce7; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #86efac 0%, #bbf7d0 35%, #dcfce7 65%, #bbf7d0 100%);';
+        if (applyBackground) {
+            // Update Page Background dynamically: Live AQI matches the current AQI bar theme
+            const curAqi = (window.currentAqiValue != null && !isNaN(window.currentAqiValue)) ? window.currentAqiValue : 38;
+            const aqiTheme = window.currentAQITheme || (typeof window.getAQITheme === 'function' ? window.getAQITheme(curAqi) : null);
+            const livePageBg = aqiTheme ? `background-color: ${aqiTheme.pageColor}; background-image: ${aqiTheme.pageBg};` : 'background-color: #dcfce7; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #86efac 0%, #bbf7d0 35%, #dcfce7 65%, #bbf7d0 100%);';
 
-        const pageBgStyles = {
-            'live': livePageBg,
-            'weather': 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
-            'historical': 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
-            'predictive': 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',
-            'overview': 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);'
-        };
-        const appRoot = document.getElementById('app-layout-root');
-        if (appRoot && pageBgStyles[targetPage]) {
-            if (targetPage === 'live' && document.body.classList.contains('weather-backdrop-active')) {
-                appRoot.style.setProperty('background', 'transparent', 'important');
-                appRoot.style.setProperty('background-image', 'none', 'important');
-            } else {
-                appRoot.style.cssText = `min-height: 100vh; ${pageBgStyles[targetPage]} position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.15s ease, background-color 0.15s ease;`;
-                if (targetPage === 'live' && aqiTheme && aqiTheme.pageColor) {
-                    document.body.style.backgroundColor = aqiTheme.pageColor;
+            const pageBgStyles = {
+                'live': livePageBg,
+                'weather': 'background-color: #f0fdf4; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #dcfce7 0%, #e0f2fe 35%, #f0fdfa 65%, #f8fafc 100%);',
+                'historical': 'background-color: #f0f4fa; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #e0e7ff 0%, #e0f2fe 35%, #f0f4f8 65%, #f8fafc 100%);',
+                'predictive': 'background-color: #f0f9ff; background-image: radial-gradient(ellipse 120% 70% at 50% -10%, #bae6fd 0%, #e0f2fe 30%, #e0f7f6 60%, #f8fafc 100%);',
+                'overview': 'background-color: #f1f5f9; background-image: radial-gradient(ellipse 120% 80% at 50% -20%, #e2e8f0 0%, #f1f5f9 65%, #e2e8f0 100%);'
+            };
+            const appRoot = document.getElementById('app-layout-root');
+            if (appRoot && pageBgStyles[targetPage]) {
+                if (targetPage === 'live' && (document.body.classList.contains('weather-backdrop-active') || document.body.classList.contains('soil-backdrop-active'))) {
+                    appRoot.style.setProperty('background', 'transparent', 'important');
+                    appRoot.style.setProperty('background-image', 'none', 'important');
+                    document.body.style.backgroundColor = '';
+                } else {
+                    appRoot.style.cssText = `min-height: 100vh; ${pageBgStyles[targetPage]} position: relative; width: 100%; display: flex; flex-direction: column; transition: background 0.15s ease, background-color 0.15s ease;`;
+                    if (targetPage === 'live' && aqiTheme && aqiTheme.pageColor) {
+                        document.body.style.backgroundColor = aqiTheme.pageColor;
+                    } else {
+                        document.body.style.backgroundColor = '';
+                    }
                 }
             }
         }
@@ -351,8 +356,8 @@
         const controller = new AbortController();
         activeNavController = controller;
 
-        // Instant 0ms tactile feedback on tabs/dock before network begins
-        updateHeaderUI(targetPage);
+        // Instant 0ms tactile feedback on nav pills only (keep current page background until new DOM swaps in)
+        updateHeaderUI(targetPage, false);
 
         // Close mobile dropdown if open
         if (typeof toggleMobileMenu === 'function') {
@@ -413,6 +418,7 @@
             // Handle auth requirement from server response
             if (data.require_login) {
                 resetProgressBar();
+                updateHeaderUI(currentPage, false);
                 if (wrapper) {
                     wrapper.style.opacity = '1';
                 }
@@ -472,8 +478,8 @@
                 document.title = data.title;
             }
 
-            // Re-verify UI headers & nav pills
-            updateHeaderUI(targetPage);
+            // Re-verify nav pills (delay background swap until new DOM + scripts are inserted)
+            updateHeaderUI(targetPage, false);
 
             // Swap content
             if (wrapper) {
@@ -524,6 +530,9 @@
                         console.warn("Script execution warning:", err);
                     }
                 });
+
+                // Apply page background cleanly in the same frame after DOM & scripts are ready
+                updateHeaderUI(targetPage, true);
 
                 // Scroll to top instantly
                 window.scrollTo({ top: 0, behavior: 'instant' });
